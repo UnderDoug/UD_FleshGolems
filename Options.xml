@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<options>
+  <!-- Option_UD_FleshGolems_ 
+  
+  Mod Options
+  -->
+  <option
+        ID="Option_UD_FleshGolems_ExampleOption"
+        DisplayText="Enable an Example Option."
+        Category="Mod: Animatable Corpses"
+        Type="Checkbox"
+        Default="No" >
+    <helptext>
+      When enabled, does nothing. It's just an example.
+
+      The default is {{w|Disabled}}.
+    </helptext>
+  </option>
+  
+</options>
