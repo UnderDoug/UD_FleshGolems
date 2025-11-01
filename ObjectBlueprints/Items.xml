@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <objects>
   <object Name="Corpse" Load="Merge">
-    <part Name="UnderDoug_FleshGolems_CoprseReanimationHelper" />
+    <part Name="UD_FleshGolems_CoprseReanimationHelper" />
     <tag Name="Animatable" />
     <builder Name="Animated" ChanceOneIn="15000" />
     <tag Name="HeroNameTitleDescriptor" Value="Cracked,Crackless,Once-Cracked,Painted,Still-Standing,Studded,Sturdy,Twice-Cracked,Unpainted,Unstudded" />

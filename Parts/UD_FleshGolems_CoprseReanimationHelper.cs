@@ -5,7 +5,7 @@ using System.Text;
 namespace XRL.World.Parts
 {
     [Serializable]
-    public class UnderDoug_FleshGolems_CoprseReanimationHelper : IScribedPart
+    public class UD_FleshGolems_CoprseReanimationHelper : IScribedPart
     {
 
         public override bool AllowStaticRegistration()
@@ -28,7 +28,7 @@ namespace XRL.World.Parts
                     && convo.ConversationID == "NewlySentientBeings")
                 {
                     frankenCorpse.RemovePart(convo);
-                    frankenCorpse.AddPart(new ConversationScript("UnderDoug_FleshGolems NewlyReanimatedBeings"));
+                    frankenCorpse.AddPart(new ConversationScript("UD_FleshGolems NewlyReanimatedBeings"));
                 }
                 if (frankenCorpse.GetStringProperty("SourceBlueprint") is string sourceBlueprint)
                 {

@@ -2,7 +2,7 @@
 <naming>
   <namestyles>
     
-    <namestyle Name="UnderDoug_FleshGolems Reanimated Hero Honorific">
+    <namestyle Name="UD_FleshGolems Reanimated Hero Honorific">
       <scopes>
         <scope Name="Main" Type="Honorific" Special="Hero" Tag="Reanimated" Priority="300" Combine="true" Chance="25" />
       </scopes>
@@ -11,7 +11,7 @@
       </templates>
     </namestyle>
 
-    <namestyle Name="UnderDoug_FleshGolems Reanimated Hero Epithet">
+    <namestyle Name="UD_FleshGolems Reanimated Hero Epithet">
       <scopes>
         <scope Name="Main" Type="Epithet" Special="Hero" Tag="Reanimated" Priority="300" Combine="true" SkipIfHasHonorific="true" />
       </scopes>
@@ -20,7 +20,7 @@
       </templates>
     </namestyle>
 
-    <namestyle Name="UnderDoug_FleshGolems Reanimated Hero Title">
+    <namestyle Name="UD_FleshGolems Reanimated Hero Title">
       <scopes>
         <scope Name="Main" Type="Title" Special="Hero" Tag="Reanimated" Priority="300" Combine="true" Chance="50" />
       </scopes>
@@ -30,7 +30,7 @@
       </templates>
     </namestyle>
 
-    <namestyle Name="UnderDoug_FleshGolems Reanimated Hero Extra Title">
+    <namestyle Name="UD_FleshGolems Reanimated Hero Extra Title">
       <scopes>
         <scope Name="Main" Type="ExtraTitle" Special="Hero" Tag="Reanimated" Priority="300" Combine="true" Chance="50" />
       </scopes>

@@ -13,7 +13,6 @@
     <None Remove="obj\**" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Parts\" />
     <Folder Include="Textures\" />
   </ItemGroup>
 </Project>

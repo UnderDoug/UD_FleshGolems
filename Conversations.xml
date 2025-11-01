@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <conversations>
-  <conversation ID="UnderDoug_FleshGolems NewlyReanimatedBeings">
+  <conversation ID="UD_FleshGolems NewlyReanimatedBeings">
     <node ID="Start">
       <text>
         Wh- why??~
@@ -10,7 +10,7 @@
     </node>
   </conversation>
   
-  <conversation ID="UnderDoug_FleshGolems Jofo Qudwufo">
+  <conversation ID="UD_FleshGolems Jofo Qudwufo">
     <node ID="choices">
       <choice ID="GoEnd" Target="End">
         <text>Live and drink.</text>
@@ -21,9 +21,9 @@
       </choice>
       
       <choice ID="GoWhoJohnQud" Target="WhoJohnQud"
-              SetBooleanState="UnderDoug_FleshGolems_Asked_WhoJohnQud,true">
-        <text IfNotHaveState="UnderDoug_FleshGolems_Asked_WhoJohnQud">John Qud?</text>
-        <text IfTestState="UnderDoug_FleshGolems_Asked_WhoJohnQud">Remind me who John Qud is?</text>
+              SetBooleanState="UD_FleshGolems_Asked_WhoJohnQud,true">
+        <text IfNotHaveState="UD_FleshGolems_Asked_WhoJohnQud">John Qud?</text>
+        <text IfTestState="UD_FleshGolems_Asked_WhoJohnQud">Remind me who John Qud is?</text>
       </choice>
     </node>
     
