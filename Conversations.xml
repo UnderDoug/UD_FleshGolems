@@ -4,9 +4,10 @@
     <node ID="Start">
       <text>
         Wh- why??~
-        What is &quot;live&quot;? What is &quot;drink&quot;?
+        Hrgh.. urgh.. ghuh?~
+        {{emote|*wilhelm scream*}}
       </text>
-      <choice GotoID="End">Live and drink.</choice>
+      <choice GotoID="End">Uh... Sorry?</choice>
     </node>
   </conversation>
   

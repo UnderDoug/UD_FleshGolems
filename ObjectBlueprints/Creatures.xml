@@ -1,25 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <objects>
-  <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Golem">
-    <part Name="Render" DisplayName="Jofo Qudwufo" TileColor="r" DetailColor="w" />
+  <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <part Name="ConversationScript" ConversationID="UD_FleshGolems Jofo Qudwufo" />
     <part Name="Epithets" Primary=", {{UD_FleshGolem_reanimated|reanimated}} snapjaw" />
-    <part Name="AnimatedObject" />
-    <removepart Name="Interior" />
-    <removepart Name="Vehicle" />
-    <removepart Name="Unreplicable" />
-    <removepart Name="TetheredOnboardRecoilerTeleporter" />
-    <removepart Name="CannotBeInfluenced" />
-    <removetag Name="ExcludeFromRecoilerList" />
-    <removetag Name="Gigantic" />
-    <removetag Name="Golem" />
-    <removetag Name="Robot" />
-    <removetag Name="NonMutant" />
-    <removetag Name="RepairTool" />
-    <stat Name="Level" Value="4" />
-    <stat Name="Hitpoints" Value="18" />
-    <tag Name="BleedLiquid" Value="blood-500,putrid-300,gel-150,acid-50" />
-    <tag Name="NoSleep" />
-    <xtagGrammar Proper="true" />
+    <part Name="UD_FleshGolems_CoprseReanimationHelper" AlwaysAnimate="true" />
+    <stringproperty Name="CreatureName" Value="Jofo Qudwufo" />
+    <stringproperty Name="SourceBlueprint" Value="Snapjaw" />
   </object>
 </objects>
