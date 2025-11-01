@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<objects>
+  <object Name="Corpse" Load="Merge">
+    <part Name="UnderDoug_FleshGolems_CoprseReanimationHelper" />
+    <tag Name="Animatable" />
+    <builder Name="Animated" ChanceOneIn="15000" />
+    <tag Name="HeroNameTitleDescriptor" Value="Cracked,Crackless,Once-Cracked,Painted,Still-Standing,Studded,Sturdy,Twice-Cracked,Unpainted,Unstudded" />
+    <tag Name="HeroNameTitleClientele" Value="Builders,Cowards,Defenders,Roofs,the Assailed,the Stalwart" />
+    <tag Name="DynamicObjectsTable:AnimatableFurniture" />
+    <tag Name="BodyType" Value="Humanoid" />
+    <xtagTextFragments Skin="panel" PoeticFeatures="charming moulding,oiled hinges,inviting knob" />
+    <tag Name="AnimatedSkills" Value="CookingAndGathering,CookingAndGathering_Butchery,Persuasion_Intimidate,Multiweapon_Fighting,ShortBlades,Axes,Cudgels,LongBlades" />
+  </object>
+</objects>

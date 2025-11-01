@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<conversations>
+  <conversation ID="UnderDoug_FleshGolems NewlyReanimatedBeings">
+    <node ID="Start">
+      <text>
+        Wh- why??~
+        What is &quot;live&quot;? What is &quot;drink&quot;?
+      </text>
+      <choice GotoID="End">Live and drink.</choice>
+    </node>
+  </conversation>
+  
+  <conversation ID="UnderDoug_FleshGolems Jofo Qudwufo">
+    <node ID="choices">
+      <choice ID="GoEnd" Target="End">
+        <text>Live and drink.</text>
+      </choice>
+      
+      <choice ID="GoStart" Target="Start">
+        <text>There was something else...</text>
+      </choice>
+      
+      <choice ID="GoWhoJohnQud" Target="WhoJohnQud"
+              SetBooleanState="UnderDoug_FleshGolems_Asked_WhoJohnQud,true">
+        <text IfNotHaveState="UnderDoug_FleshGolems_Asked_WhoJohnQud">John Qud?</text>
+        <text IfTestState="UnderDoug_FleshGolems_Asked_WhoJohnQud">Remind me who John Qud is?</text>
+      </choice>
+    </node>
+    
+    <!-- Actual convo starts here -->
+    <node ID="Start">
+      <text>
+        I'm Jofo Qudwufo, reanimated snapjaw and companion of the late John Qud!
+      </text>
+      <choice UseID="GoWhoJohnQud" />
+      <choice UseID="GoEnd" />
+    </node>
+    
+    <node ID="WhoJohnQud">
+      <text>
+        You haven't heard of John Qud!?
+        
+        Why, the game was named after him, didn't you know?
+      </text>
+      <choice UseID="GoStart" />
+      <choice UseID="GoEnd" />
+    </node>
+    
+  </conversation>
+</conversations>
