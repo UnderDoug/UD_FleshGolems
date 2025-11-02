@@ -3,12 +3,28 @@
   <object Name="Corpse" Load="Merge">
     <part Name="UD_FleshGolems_CoprseReanimationHelper" />
     <tag Name="Animatable" />
-    <builder Name="Animated" ChanceOneIn="15000" />
-    <tag Name="HeroNameTitleDescriptor" Value="Cracked,Crackless,Once-Cracked,Painted,Still-Standing,Studded,Sturdy,Twice-Cracked,Unpainted,Unstudded" />
+    <builder Name="Animated" ChanceOneIn="3000" />
+    <tag Name="HeroNameTitleDescriptor" Value="Suffering,Waiting,Silent" />
     <tag Name="HeroNameTitleClientele" Value="Builders,Cowards,Defenders,Roofs,the Assailed,the Stalwart" />
     <tag Name="DynamicObjectsTable:AnimatableFurniture" />
     <tag Name="BodyType" Value="Humanoid" />
-    <xtagTextFragments Skin="panel" PoeticFeatures="charming moulding,oiled hinges,inviting knob" />
+    <xtagTextFragments
+      Skin="leather"
+      PoeticFeatures="viscera,muck,entrails,sinew,bone"
+      PoeticVerbs="squirming,wriggling,squelching"
+      PoeticAdjectives="wet,moist,meaty"
+      PoeticnNoises="gurgles,slurps,squelches" />
     <tag Name="AnimatedSkills" Value="CookingAndGathering,CookingAndGathering_Butchery,Persuasion_Intimidate,Multiweapon_Fighting,ShortBlades,Axes,Cudgels,LongBlades" />
+  </object>
+  <object Name="Robot Corpse" Load="Merge">
+    <tag Name="HeroNameTitleDescriptor" Value="Scuffed,Broken-down,Corrupted" />
+    <tag Name="HeroNameTitleClientele" Value="Builders,Cowards,Defenders,Roofs,the Assailed,the Stalwart" />
+    <tag Name="BodyType" Value="HumanoidRobot" />
+    <xtagTextFragments
+      Skin="shorn metal"
+      PoeticFeatures="oil,gell,bent chrome,jagged edges"
+      PoeticVerbs="jittering,stuttering,whining"
+      PoeticAdjectives="slick,erratic,crunchy"
+      PoeticnNoises="sizzles,whirs,sputters" />
   </object>
 </objects>

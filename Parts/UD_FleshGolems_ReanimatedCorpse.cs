@@ -3,16 +3,20 @@ using System.Collections.Generic;
 
 using XRL.World.Effects;
 
+using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
+
 namespace XRL.World.Parts
 {
     [Serializable]
-    public class UD_FleshGolem_ReanimatedCorpse : IScribedPart
+    public class UD_FleshGolems_ReanimatedCorpse : IScribedPart
     {
+        public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolem_reanimated|reanimated}}";
+
         public string BleedLiquid;
 
         public Dictionary<string, int> BleedLiquidPortions;
 
-        public UD_FleshGolem_ReanimatedCorpse()
+        public UD_FleshGolems_ReanimatedCorpse()
         {
             BleedLiquid = null;
             BleedLiquidPortions = null;
@@ -99,13 +103,15 @@ namespace XRL.World.Parts
         {
             return base.WantEvent(ID, cascade)
                 || ID == GetDisplayNameEvent.ID
-                || ID == GetBleedLiquidEvent.ID;
+                || ID == GetBleedLiquidEvent.ID
+                || ID == BeforeDeathRemovalEvent.ID;
         }
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
-            if (!E.Object.HasProperName && !E.Object.HasTagOrProperty("NoReanimatedNamePrefix"))
+            if (int.TryParse(E.Object.GetPropertyOrTag("NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
+                && NoReanimatedNamePrefix < 1)
             {
-                E.AddAdjective("{{UD_FleshGolem_reanimated|reanimated}}", 5);
+                E.AddAdjective(REANIMATED_ADJECTIVE, 5);
             }
             return base.HandleEvent(E);
         }
@@ -158,6 +164,19 @@ namespace XRL.World.Parts
                 }
             }
             E.Liquid = BleedLiquid;
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(BeforeDeathRemovalEvent E)
+        {
+            if (ParentObject is GameObject dying
+                && dying == E.Dying
+                && IsDyingCreatureCorpse(dying, out GameObject corpseObject)
+                && corpseObject.TryGetPart(out UD_FleshGolems_CoprseReanimationHelper reanimationHelper))
+            {
+                corpseObject.SetStringProperty("OriginalCreatureName", reanimationHelper.CreatureName);
+                corpseObject.SetStringProperty("OriginalSourceBlueprint", reanimationHelper.SourceBlueprint);
+                corpseObject.SetStringProperty("CorpseDescription", reanimationHelper.SourceBlueprint);
+            }
             return base.HandleEvent(E);
         }
         public override bool FireEvent(Event E)
