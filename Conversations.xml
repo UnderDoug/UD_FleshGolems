@@ -231,7 +231,7 @@
         <text IfTestState="UD_FleshGolems_Asked_WhoMadMonger">Remind me who the Mad 'Monger is?</text>
       </choice>
       
-      <choice ID="AskHeMadeYou" Target="ReactAskHeMadeYou"
+      <choice ID="AskHeMadeYou" Target="ReactHeMadeYou"
               IfTestState="UD_FleshGolems_Asked_WhoMadMonger"
               SetBooleanState="UD_FleshGolems_Asked_HeMadeYou,true">
         <text IfNotHaveState="UD_FleshGolems_Asked_HeMadeYou">The Mad 'Monger {{Y|made}} you??</text>
