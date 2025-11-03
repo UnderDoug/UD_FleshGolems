@@ -559,6 +559,12 @@ namespace XRL.World.Parts
             return false;
         }
 
+        public override void Register(GameObject Object, IEventRegistrar Registrar)
+        {
+            base.Register(Object, Registrar);
+
+            Registrar.Register(DroppedEvent.ID, EventOrder.EXTREMELY_EARLY);
+        }
         public override bool WantEvent(int ID, int Cascade)
         {
             return base.WantEvent(ID, Cascade)
@@ -574,11 +580,22 @@ namespace XRL.World.Parts
             if (!IsALIVE
                 && ParentObject == E.Object)
             {
-                IsALIVE = MakeItALIVE(E.Object, ref CreatureName, ref SourceBlueprint, ref CorpseDescription);
+                IsALIVE = MakeItALIVE(E.Object, ref CreatureName, ref SourceBlueprint, ref CorpseDescription, E.Actor);
             }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(EnvironmentalUpdateEvent E)
+        {
+            if (AlwaysAnimate
+                && !IsALIVE
+                && ParentObject != null
+                && Animate())
+            {
+                return true;
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(DroppedEvent E)
         {
             if (AlwaysAnimate
                 && !IsALIVE

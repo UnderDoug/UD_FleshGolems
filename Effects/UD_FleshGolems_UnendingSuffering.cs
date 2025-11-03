@@ -10,9 +10,11 @@ using XRL.Rules;
 
 using SerializeField = UnityEngine.SerializeField;
 using XRL.Core;
+using XRL.World.Conversations;
 
 namespace XRL.World.Effects
 {
+    [HasConversationDelegate]
     [Serializable]
     public class UD_FleshGolems_UnendingSuffering : IScribedEffect, ITierInitialized
     {
@@ -239,6 +241,14 @@ namespace XRL.World.Effects
                 return false;
             }
             return true;
+        }
+
+        [ConversationDelegate]
+        public static bool IfSourceOfSuffering(DelegateContext Context)
+        {
+            return Conversation.Speaker is GameObject speaker
+                && speaker.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering)
+                && unendingSuffering.SourceObject == Context.Target;
         }
     }
 }

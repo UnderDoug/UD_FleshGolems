@@ -27,8 +27,8 @@
   </object>
   
   <object Name="UD_FleshGolems MadMonger" Inherits="Gutsmonger">
-    <part Name="Render" DisplayName="'Monger" DetailColor="R" TileColor="W" />
-    <part Name="Honorifics" DisplayName="Mad" />
+    <part Name="Render" DisplayName="'Monger" DetailColor="R" TileColor="&amp;W" />
+    <part Name="Honorifics" Primary="Mad" />
     <xtagGrammar Proper="true" />
     <part Name="ConversationScript" ConversationID="UD_FleshGolems MadMonger" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />

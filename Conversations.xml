@@ -1,14 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <conversations>
   <conversation ID="UD_FleshGolems NewlyReanimatedBeings">
+    
+    <node ID="choices">
+      <choice ID="JoinPartyChoice" IfSourceOfSuffering="true">
+        <text>Come along now... {{r|friend}}.</text>
+        <part Name="WaterRitualJoinParty" />
+      </choice>
+      <choice ID="GoEnd" Target="End">
+        <text IfSourceOfSuffering="true">Uh... Sorry?</text>
+        <text IfSourceOfSuffering="false">Unlive and drink...</text>
+      </choice>
+    </node>
     <node ID="Start">
-      <text>
-        Wh- why??~
+      <text IfSourceOfSuffering="false">
         Hrgh.. urgh.. ghuh?~
         Unlive..... and drink???~
+      </text>
+      <text>
+        Wh- why??~
         {{emote|*wilhelm scream*}}
       </text>
-      <choice GotoID="End">Uh... Sorry?</choice>
+      <choice UseID="JoinPartyChoice" />
+      <choice UseID="GoEnd" />
     </node>
   </conversation>
 
@@ -37,6 +51,7 @@
 
       <choice ID="GoPostGreeting" Target="PostGreeting">
         <text>There was something else...</text>
+        <part Name="Tag">{{K|[start over]}}</part>
       </choice>
 
       <choice ID="Trade" Load="Merge">
@@ -90,7 +105,7 @@
     -->
     
     <node ID="Start">
-      <text IfTrueKin="true" Priority="1">
+      <text IfTrueKin="true" Priority="3">
         Why if it isn't the meat that fancies itself nobility.~
         Do you have to have all of those machines implanted? They make perfoming vivisections so annoying.~
         Does the rare meat wish to purchase more meat? Perhaps there's a goodie or two you could use.~
@@ -108,7 +123,7 @@
         Would you like to purchase something? Perhaps it can provide a little comfort while you cower from unseen "eyes".~
         One wrong step and I activate my normalitly field.
       </text>
-      <text Priority="3">
+      <text Priority="1">
         Salutations, meat.~
         May I have your legs? I promise to return them.~
         Would you kindly lay upon this table here, I assure you that it is entirly safe.~
