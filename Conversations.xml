@@ -67,6 +67,7 @@
         <text>
           Let's trade.
         </text>
+        <part Name="Trade" />
       </choice>
 
       <choice ID="WhatYouDoing" Target="WhatImDoing">
@@ -230,7 +231,7 @@
         <text IfTestState="UD_FleshGolems_Asked_WhoMadMonger">Remind me who the Mad 'Monger is?</text>
       </choice>
       
-      <choice ID="AskHeMadeYou" Target="ReactWhoMadMonger"
+      <choice ID="AskHeMadeYou" Target="ReactAskHeMadeYou"
               IfTestState="UD_FleshGolems_Asked_WhoMadMonger"
               SetBooleanState="UD_FleshGolems_Asked_HeMadeYou,true">
         <text IfNotHaveState="UD_FleshGolems_Asked_HeMadeYou">The Mad 'Monger {{Y|made}} you??</text>
@@ -238,8 +239,8 @@
       </choice>
       
       <choice ID="AskWhereMadMonger" Target="ReactWhereMadMonger"
-              IfTestState="UD_FleshGolems_Asked_WhoMadMonger"
-              SetBooleanState="UD_FleshGolems_Asked_HeMadeYou,true">
+              IfTestState="UD_FleshGolems_Asked_HeMadeYou"
+              SetBooleanState="UD_FleshGolems_Asked_WhereMadMonger,true">
         <text IfNotHaveState="UD_FleshGolems_Asked_WhereMadMonger">Where is this supposedly Mad 'Monger?</text>
         <text IfTestState="UD_FleshGolems_Asked_WhereMadMonger">Where is the Mad 'Monger, again?</text>
       </choice>
@@ -317,7 +318,7 @@
       <choice UseID="GoEnd" />
     </node>
     
-    <node ID="HelpFindMadMonger"
+    <node ID="ReactHelpFindMadMonger"
           SetBooleanState="UD_FleshGolems_Reacted_HelpFindMadMonger,true">
       <text>
         Rarooh!!
