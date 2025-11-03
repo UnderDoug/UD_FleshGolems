@@ -143,8 +143,15 @@ namespace XRL.World.Effects
             }
 
             StartMessage(Object);
+            StatShifter.SetStatShift("AcidResist", 100);
             return base.Apply(Object);
         }
+        public override void Remove(GameObject Object)
+        {
+            StatShifter.RemoveStatShifts();
+            base.Remove(Object);
+        }
+
         public virtual void StartMessage(GameObject Object)
         {
             Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
@@ -158,15 +165,18 @@ namespace XRL.World.Effects
                 .AddObject(Object)
                 .ToString();
 
-            Object.TakeDamage(
-                Amount: Damage.RollCached(),
-                Attributes: DamageAttributes(),
-                Owner: Object,
-                Message: DamageMessage(),
-                DeathReason: deathMessage,
-                ThirdPersonDeathReason: deathMessage,
-                Source: Object,
-                Indirect: true);
+            if (50.in100())
+            {
+                Object.TakeDamage(
+                    Amount: Damage.RollCached(),
+                    Attributes: DamageAttributes(),
+                    Owner: Object,
+                    Message: DamageMessage(),
+                    DeathReason: deathMessage,
+                    ThirdPersonDeathReason: deathMessage,
+                    Source: Object,
+                    Indirect: true);
+            }
 
             if (Object.CurrentCell is not Cell suferrerCell || suferrerCell.OnWorldMap())
             {

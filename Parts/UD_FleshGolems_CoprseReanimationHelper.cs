@@ -18,6 +18,8 @@ namespace XRL.World.Parts
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
 
+
+        // TODO: Add a means to remove specific parts if the corpse blueprint indicates to.
         public static List<string> IPartsToSkipWhenReanimating => new()
         {
             nameof(Titles),
@@ -373,6 +375,14 @@ namespace XRL.World.Parts
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
                     AssignMutationsFromBlueprint(frankenMutations, sourceBlueprint);
                     AssignSkillsFromBlueprint(frankenSkills, sourceBlueprint);
+
+                    if (frankenCorpse.Brain is Brain frankenBrain)
+                    {
+                        if (sourceBlueprint.TryGetPartParameter(nameof(Brain), nameof(Brain.Wanders), out bool sourceBrainWanders))
+                        {
+                            frankenBrain.Wanders = sourceBrainWanders;
+                        }
+                    }
 
                     if (sourceBlueprint.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG) is string sourceCreatureConvoID
                         && convo != null)
