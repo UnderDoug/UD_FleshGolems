@@ -29,14 +29,14 @@
   
       <Text if Esper
         Grey meat, the second worst kind, so little viable material.~  
-        When your mind is inevitably consumed by sights unseen, may I have your remains?~  
+        When your mind is inevitably consumed by sights older than sight, may I have your remains?~  
         Would you like to purchase something? Perhaps it can provide comfort while you cower away from Ptoh's gaze.~  
         One wrong step and I activate my normalitly field.
   
        <Text if mutant
-        Salutations meat.
-        May I have your legs? I promise to return them.
-        Would you kindly lay upon this table here, I assure you that it is entirly safe. 
+        Salutations meat.~ 
+        May I have your legs? I promise to return them.~ 
+        Would you kindly lay upon this table here, I assure you that it is entirly safe.~ 
         Would you like to purchase something meat? 
         
          
