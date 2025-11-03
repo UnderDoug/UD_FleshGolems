@@ -20,7 +20,9 @@ namespace XRL.World.Parts
 
         public static List<string> IPartsToSkipWhenReanimating => new()
         {
-            nameof(ReplaceObject),
+            nameof(Titles),
+            nameof(Epithets),
+            nameof(Honorifics),
             nameof(Lovely),
             nameof(SecretObject),
             nameof(ConvertSpawner),
