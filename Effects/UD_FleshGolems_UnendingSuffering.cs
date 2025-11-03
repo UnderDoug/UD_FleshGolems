@@ -153,7 +153,11 @@ namespace XRL.World.Effects
 
         public void Suffer()
         {
-            string deathMessage = "=subject.name's= unending suffering... well, ended =subject.objective=.".StartReplace().AddObject(Object).ToString();
+            string deathMessage = "=subject.name's= unending suffering... well, ended =subject.objective=."
+                .StartReplace()
+                .AddObject(Object)
+                .ToString();
+
             Object.TakeDamage(
                 Amount: Damage.RollCached(),
                 Attributes: DamageAttributes(),
@@ -213,7 +217,8 @@ namespace XRL.World.Effects
         {
             return base.WantEvent(ID, cascade)
                 || ID == GetCompanionStatusEvent.ID
-                || ID == EndTurnEvent.ID;
+                || ID == EndTurnEvent.ID
+                || ID == PhysicalContactEvent.ID;
         }
         public override bool HandleEvent(GetCompanionStatusEvent E)
         {
@@ -242,13 +247,10 @@ namespace XRL.World.Effects
             }
             return true;
         }
-
-        [ConversationDelegate]
-        public static bool IfSourceOfSuffering(DelegateContext Context)
+        public override bool HandleEvent(PhysicalContactEvent E)
         {
-            return Conversation.Speaker is GameObject speaker
-                && speaker.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering)
-                && unendingSuffering.SourceObject == Context.Target;
+            E.Actor.MakeBloody(E.Object.GetBleedLiquid(), Stat.Random(1, 3));
+            return base.HandleEvent(E);
         }
     }
 }
