@@ -2,5 +2,6 @@
 <colors>
   <shaders>
     <shader Name="UD_FleshGolem_reanimated" Type="distribution" Colors="r-r-w" ShowInPicker="true" />
+    <shader Name="UD_FleshGolem_meat" Type="sequence" Colors="r-w-y-m-w-r-w" ShowInPicker="true" />
   </shaders>
 </colors>
