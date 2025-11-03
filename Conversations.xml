@@ -13,13 +13,37 @@
   </conversation>
 
   
-<!-- <conversation ID="UD_MadMonger">
+<!-- <conversation ID="UD_MadMonger"> (This is all a placeholder, I'll figure out proper formating later. 
     <node ID="Start">
       <text if truekin>
         Why if it isn't the meat that fancies itself nobility.~
         Do you have to have all of those machines implanted, they make perfoming vivisections so annoying.~
         Does the rare meat wish to purchase more meat? Perhaps there's a goodie or two you could use.~ 
-        You'd be better served 'becoming' my test subject. -->
+        You'd be better served 'becoming' my test subject. 
+  
+      <Text if Chimera
+        Your biology is so......unstable, fasinating.~
+        May I have a limb or two, you can surely spare at least one.~
+        So much material to work with!!!~
+        Would you like to purchase a snack, gargantuan meat? There must be something here to your liking. 
+  
+      <Text if Esper
+        Grey meat, the second worst kind, so little viable material.~  
+        When your mind is inevitably consumed by sights unseen, may I have your remains?~  
+        Would you like to purchase something? Perhaps it can provide comfort while you cower away from Ptoh's gaze.~  
+        One wrong step and I activate my normalitly field.
+  
+       <Text if mutant
+        Salutations meat.
+        May I have your legs? I promise to return them.
+        Would you kindly lay upon this table here, I assure you that it is entirly safe. 
+        Would you like to purchase something meat? 
+        
+         
+        
+  
+  
+  -->
         
   <conversation ID="UD_FleshGolems Jofo Qudwufo">
     <node ID="choices">
