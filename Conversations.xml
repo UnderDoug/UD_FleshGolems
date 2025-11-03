@@ -38,13 +38,13 @@
         <text IfTrueKin="true" Priority="1">
           Live and drink.
         </text>
-        <text IfHavePart="Chimera" Priority="2">
+        <text IfHavePart="Chimera" Priority="1">
           Live and... Mong?
         </text>
-        <text IfHavePart="Esper" Priority="2">
+        <text IfHavePart="Esper" Priority="1">
           Who'd want to meet meat?
         </text>
-        <text Priority="3">
+        <text>
           Live and drink.
         </text>
       </choice>
@@ -58,13 +58,13 @@
         <text IfTrueKin="true" Priority="1">
           You mentioned goodies?
         </text>
-        <text IfHavePart="Chimera" Priority="2">
+        <text IfHavePart="Chimera" Priority="1">
           Meat??
         </text>
-        <text IfHavePart="Esper" Priority="2">
+        <text IfHavePart="Esper" Priority="1">
           Show me your wares.
         </text>
-        <text Priority="3">
+        <text>
           Let's trade.
         </text>
       </choice>
@@ -105,31 +105,37 @@
     -->
     
     <node ID="Start">
-      <text IfTrueKin="true" Priority="3">
+      <text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
+        Oh ho! I see you've brought that slavering failure of an attempt to ascertain.
+        
+        
+      </text>
+      <text IfTrueKin="true" Priority="1">
         Why if it isn't the meat that fancies itself nobility.~
         Do you have to have all of those machines implanted? They make perfoming vivisections so annoying.~
         Does the rare meat wish to purchase more meat? Perhaps there's a goodie or two you could use.~
         You'd be better served 'becoming' my test subject.
       </text>
-      <text IfHavePart="Chimera" Priority="2">
+      <text IfHavePart="Chimera" Priority="1">
         Your biology is so......unstable, fasinating.~
         May I have a limb or two, you can surely spare at least one.~
         So much material to work with!!!~
         Would you like to purchase a snack, gargantuan meat? There must be something here to your liking.
       </text>
-      <text IfHavePart="Esper" Priority="2">
+      <text IfHavePart="Esper" Priority="1">
         Grey meat, the second worst kind, so little viable material.~
         When your mind is inevitably consumed by sights older than sight, may I have your remains?~
         Would you like to purchase something? Perhaps it can provide a little comfort while you cower from unseen "eyes".~
         One wrong step and I activate my normalitly field.
       </text>
-      <text Priority="1">
+      <text>
         Salutations, meat.~
         May I have your legs? I promise to return them.~
         Would you kindly lay upon this table here, I assure you that it is entirly safe.~
         Would you like to purchase something, meat?
       </text>
       <choice UseID="WhatYouDoing" />
+      <choice UseID="Trade" />
       <choice UseID="GoEnd" />
     </node>
 
@@ -138,32 +144,79 @@
       <text IfTrueKin="true" Priority="1">
         Oh, the liege lord wants of =player.possessive= subject?
       </text>
-      <text IfHavePart="Chimera" Priority="2">
+      <text IfHavePart="Chimera" Priority="1">
         The beast speaks.
       </text>
-      <text IfHavePart="Esper" Priority="2">
+      <text IfHavePart="Esper" Priority="1">
         As a gray worm in my ear, I'm sure.
       </text>
-      <text Priority="3">
+      <text>
         Out with it then, meat.
       </text>
       <choice UseID="WhatYouDoing" />
+      <choice UseID="Trade" />
       <choice UseID="GoEnd" />
     </node>
     
     <node ID="WhatImDoing">
+      <text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
+        My mess?? And what of {{Y|your}} mess, meat?
+
+        How Jofo Qudwufo hasn't made actual {{UD_FleshGolem_meat|meat}} of you yet is a wonder to me.
+        
+        I'm, understandably, reticent to discuss such a... meaty endouvour, with that squelching affront to my work heaving nearby.
+      </text>
       <text>
         Perchance, lesser mind, what, pray, does it {{Y|appear}} I might be doing?
       </text>
-      <!-- choices can possible have their text changed on the fly on a per-node basis (I'll test and let you know) -->
-      <choice UseID="GoPostGreeting">Rightio, then! There was something else...</choice>
-      <choice UseID="GoEnd" />
+      <!-- choices can have their text changed on the fly on a per-node basis -->
+      <choice UseID="GoPostGreeting" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
+        <text>
+          Rightio, then! There was something else...
+        </text>
+      </choice>
+      <choice UseID="Trade" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" />
+      <choice UseID="GoEnd" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" />
+      <choice ID="IMeanIt" IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
+        <text>
+          ...
+        </text>
+      </choice>
+    </node>
+    
+    <node ID="IMeanIt" AllowEscape="false">
+      <text>
+        Go on, then.
+        
+        Get.
+      </text>
+      <choice ID="IReallyMeanIt">
+        <text>
+          ...
+        </text>
+      </choice>
+    </node>
+    
+    <node ID="IReallyMeanIt" AllowEscape="false">
+      <text>
+        ...
+        
+        Meat! Go!
+      </text>
+      <choice UseID="GoEnd">
+        <text>
+          {{emote|*sigh*}}... fine.
+        </text>
+      </choice>
     </node>
   </conversation> 
         
   <conversation ID="UD_FleshGolems Jofo Qudwufo">
     <node ID="choices">
       <choice ID="GoEnd" Target="End">
+        <text IfTestState="UD_FleshGolems_Reacted_HelpFindMadMonger" Priority="3">Let's keep looking, =speaker.refname=.</text>
+        <text IfTestState="UD_FleshGolems_Asked_HelpFindMadMonger" Priority="2">Let's start looking, =speaker.refname=.</text>
+        <text IfTestState="UD_FleshGolems_Asked_WhereMadMonger" Priority="1">Live and drink, =speaker.refname=.</text>
         <text>Live and drink.</text>
       </choice>
       
@@ -171,29 +224,116 @@
         <text>There was something else...</text>
       </choice>
       
-      <choice ID="GoWhoJohnQud" Target="WhoJohnQud"
-              SetBooleanState="UD_FleshGolems_Asked_WhoJohnQud,true">
-        <text IfNotHaveState="UD_FleshGolems_Asked_WhoJohnQud">John Qud?</text>
-        <text IfTestState="UD_FleshGolems_Asked_WhoJohnQud">Remind me who John Qud is?</text>
+      <choice ID="AskWhoMadMonger" Target="ReactWhoMadMonger"
+              SetBooleanState="UD_FleshGolems_Asked_WhoMadMonger,true">
+        <text IfNotHaveState="UD_FleshGolems_Asked_WhoMadMonger">The Mad 'Monger?</text>
+        <text IfTestState="UD_FleshGolems_Asked_WhoMadMonger">Remind me who the Mad 'Monger is?</text>
+      </choice>
+      
+      <choice ID="AskHeMadeYou" Target="ReactWhoMadMonger"
+              IfTestState="UD_FleshGolems_Asked_WhoMadMonger"
+              SetBooleanState="UD_FleshGolems_Asked_HeMadeYou,true">
+        <text IfNotHaveState="UD_FleshGolems_Asked_HeMadeYou">The Mad 'Monger {{Y|made}} you??</text>
+        <text IfTestState="UD_FleshGolems_Asked_HeMadeYou">Did the Mad 'Monger {{Y|really}} make you?</text>
+      </choice>
+      
+      <choice ID="AskWhereMadMonger" Target="ReactWhereMadMonger"
+              IfTestState="UD_FleshGolems_Asked_WhoMadMonger"
+              SetBooleanState="UD_FleshGolems_Asked_HeMadeYou,true">
+        <text IfNotHaveState="UD_FleshGolems_Asked_WhereMadMonger">Where is this supposedly Mad 'Monger?</text>
+        <text IfTestState="UD_FleshGolems_Asked_WhereMadMonger">Where is the Mad 'Monger, again?</text>
+      </choice>
+      
+      <choice ID="AskHelpFindMadMonger" Target="ReactHelpFindMadMonger"
+              IfTestState="UD_FleshGolems_Asked_WhereMadMonger"
+              SetBooleanState="UD_FleshGolems_Asked_HelpFindMadMonger,true">
+        <text IfNotHaveState="UD_FleshGolems_Asked_HelpFindMadMonger">Would you like help finding him?</text>
+        <text IfTestState="UD_FleshGolems_Asked_HelpFindMadMonger">I'll help you find the Mad 'Monger.</text>
       </choice>
     </node>
     
     <!-- Actual convo starts here -->
     <node ID="Start">
       <text>
-        I'm Jofo Qudwufo, reanimated snapjaw and companion of the late John Qud!
+        Reh, reh! Am Jofo Qudwufo, ref-{{emote|*retch*}} ...renemit snaphjaf!
+
+        Yoo... yoo not-{{emote|*hock*}} eh.. hmm...
+
+        See yoo... Fruf! Seen seen?? {{emote|*snap-snap*}} d... Mad 'Monger?!
       </text>
-      <choice UseID="GoWhoJohnQud" />
+      <choice UseID="AskWhoMadMonger" />
+      <choice UseID="AskHeMadeYou" />
+      <choice UseID="AskWhereMadMonger" />
+      <choice UseID="AskHelpFindMadMonger" />
       <choice UseID="GoEnd" />
     </node>
     
-    <node ID="WhoJohnQud">
+    <node ID="ReactWhoMadMonger">
       <text>
-        You haven't heard of John Qud!?
+        Rarp, fraf! Yoo not heer-raf {{emote|*sputter*}}-uh Mad 'Monger!?
+
+        Ra-{{emote|*hack*}} rah Mad... {{emote|*wheeze*}}... 'Monger mabe... er... Raff..
         
-        Why, the game was named after him, didn't you know?
+        ... Mong- mabed... me?
       </text>
       <choice UseID="GoStart" />
+      <choice UseID="AskHeMadeYou" />
+      <choice UseID="AskWhereMadMonger" />
+      <choice UseID="AskHelpFindMadMonger" />
+      <choice UseID="GoEnd" />
+    </node>
+    
+    <node ID="ReactHeMadeYou">
+      <text>
+        Yip yip!
+
+        Yeh, raff! Mabed Jofo! Yah!
+
+        {{emote|*wobbles excitedly*}}
+      </text>
+      <choice UseID="GoStart" />
+      <choice UseID="AskWhoMadMonger" />
+      <choice UseID="AskWhereMadMonger" />
+      <choice UseID="AskHelpFindMadMonger" />
+      <choice UseID="GoEnd" />
+    </node>
+    
+    <node ID="ReactWhereMadMonger">
+      <text>
+        {{emote|*looks as confused as a lightly rotted corpse can look*}}
+
+        Fra-{{emote|*snap-snap*}} rahf!!
+
+        Mad... err... 'Monger is??
+
+        Is... ssss{{emote|*wheeze*}} Heff feff!
+
+        {{emote|*shrugs or slumps, you can't really tell*}}
+      </text>
+      <choice UseID="GoStart" />
+      <choice UseID="AskWhoMadMonger" />
+      <choice UseID="AskHeMadeYou" />
+      <choice UseID="AskHelpFindMadMonger" />
+      <choice UseID="GoEnd" />
+    </node>
+    
+    <node ID="HelpFindMadMonger"
+          SetBooleanState="UD_FleshGolems_Reacted_HelpFindMadMonger,true">
+      <text>
+        Rarooh!!
+
+        Yih yih yih-{{emote|*cough*}}!
+
+        {{emote|*cough*}} {{emote|*cough*}} {{emote|*wheeze*}}
+
+        Greff ref!!
+        
+        {{emote|*starts side-stepping circles around you*}}
+      </text>
+      <choice UseID="GoStart" />
+      <choice UseID="AskWhoMadMonger" />
+      <choice UseID="AskHeMadeYou" />
+      <choice UseID="AskWhereMadMonger" />
       <choice UseID="GoEnd" />
     </node>
     
