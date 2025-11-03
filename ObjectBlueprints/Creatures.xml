@@ -1,24 +1,36 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <objects>
+  
   <object Name="Creature" Load="Merge">
     <!--builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" /-->
   </object>
+  
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
     <part Name="Render" DisplayName="Jofo Qudwufo" />
     <xtagGrammar Proper="true" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <!--part Name="Render" DisplayName="Jofo Qudwufo" />
     <xtagGrammar Proper="true" />
     <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" /-->
     <part Name="UD_FleshGolems_CoprseReanimationHelper" AlwaysAnimate="true" />
-    <stringproperty Name="CreatureName" Value="Jofo Qudwufo" />
-    <stringproperty Name="CreatureProperName" Value="Jofo Qudwufo" />
-    <stringproperty Name="SourceBlueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
-    <tag Name="NoReanimatedNamePrefix" Value="1" />
+    <property Name="CreatureName" Value="Jofo Qudwufo" />
+    <property Name="UD_FleshGolems_CreatureProperName" Value="Jofo Qudwufo" />
+    <property Name="SourceBlueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
+    <tag Name="UD_FleshGolems_NoReanimatedNamePrefix" Value="1" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
     <tag Name="UD_FleshGolems_ReanimatedConversationID" Value="UD_FleshGolems Jofo Qudwufo" />
     <tag Name="UD_FleshGolems_ReanimatedEpithets" Value=", {{UD_FleshGolem_reanimated|reanimated}} snapjaw" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <object Name="UD_FleshGolems MadMonger" Inherits="Gutsmonger">
+    <part Name="Render" DisplayName="'Monger" DetailColor="R" TileColor="W" />
+    <part Name="Honorifics" DisplayName="Mad" />
+    <xtagGrammar Proper="true" />
+    <part Name="ConversationScript" ConversationID="UD_FleshGolems MadMonger" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
 </objects>

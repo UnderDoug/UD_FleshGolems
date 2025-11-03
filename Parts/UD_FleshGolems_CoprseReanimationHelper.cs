@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
+using XRL.Core;
 using XRL.Language;
 using XRL.Rules;
 using XRL.World.Anatomy;
@@ -16,6 +17,22 @@ namespace XRL.World.Parts
     {
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
+
+        public static List<string> IPartsToSkipWhenReanimating => new()
+        {
+            nameof(ReplaceObject),
+            nameof(Lovely),
+            nameof(SecretObject),
+            nameof(ConvertSpawner),
+            nameof(Leader),
+            nameof(Followers),
+            nameof(DromadCaravan),
+            nameof(HasGuards),
+            nameof(SnapjawPack1),
+            nameof(BaboonHero1Pack),
+            nameof(GoatfolkClan1),
+            nameof(EyelessKingCrabSkuttle1),
+        };
 
         public bool IsALIVE;
 
@@ -41,6 +58,27 @@ namespace XRL.World.Parts
             return true;
         }
 
+        public bool Animate(out GameObject FrankenCorpse)
+        {
+            FrankenCorpse = null;
+            UnityEngine.Debug.Log(nameof(UD_FleshGolems_CoprseReanimationHelper) + "." + nameof(Animate));
+            if (!ParentObject.HasPart<AnimatedObject>())
+            {
+                UnityEngine.Debug.Log("    " + nameof(ParentObject) + " not " + nameof(AnimatedObject));
+                AnimateObject.Animate(ParentObject);
+
+                if (ParentObject.HasPart<AnimatedObject>())
+                {
+                    FrankenCorpse = ParentObject;
+                    return true;
+                }
+            }
+            return false;
+        }
+        public bool Animate()
+        {
+            return Animate(out _);
+        }
 
         public static void AssignStatsFromBlueprint(GameObject FrankenCorpse, GameObjectBlueprint SourceBlueprint)
         {
@@ -64,6 +102,54 @@ namespace XRL.World.Parts
                 }
             }
             FrankenCorpse.FinalizeStats();
+            if (FrankenCorpse.TryGetPart(out Leveler frankenLeveler))
+            {
+                frankenLeveler.LevelUp();
+                if (Stat.RollCached("1d2") == 1)
+                {
+                    frankenLeveler.LevelUp();
+                }
+                int floorXP = Leveler.GetXPForLevel(FrankenCorpse.Level);
+                int ceilingXP = Leveler.GetXPForLevel(FrankenCorpse.Level + 1);
+                FrankenCorpse.GetStat("XP").BaseValue = Stat.RandomCosmetic(floorXP, ceilingXP);
+            }
+        }
+
+        public static void AssignPartsFromBlueprint(
+            GameObject FrankenCorpse,
+            GameObjectBlueprint SourceBlueprint,
+            Predicate<IPart> Exclude = null)
+        {
+            if (FrankenCorpse == null || SourceBlueprint == null || SourceBlueprint.allparts.IsNullOrEmpty())
+            {
+                return;
+            }
+            foreach (GamePartBlueprint sourcePartBlueprint in SourceBlueprint.allparts.Values)
+            {
+                if (Stat.Random(1, sourcePartBlueprint.ChanceOneIn) == 1)
+                {
+                    if (sourcePartBlueprint.T == null)
+                    {
+                        XRLCore.LogError("Unknown part " + sourcePartBlueprint.Name + "!");
+                        return;
+                    }
+                    IPart sourcePart = sourcePartBlueprint.Reflector?.GetInstance() ?? (Activator.CreateInstance(sourcePartBlueprint.T) as IPart);
+                    if (Exclude != null && Exclude(sourcePart))
+                    {
+                        continue;
+                    }
+                    sourcePart.ParentObject = FrankenCorpse;
+                    sourcePartBlueprint.InitializePartInstance(sourcePart);
+                    FrankenCorpse.AddPart(sourcePart);
+
+                    if (sourcePartBlueprint.TryGetParameter("Builder", out string partBuilderName)
+                        && ModManager.ResolveType("XRL.World.PartBuilders", partBuilderName) is Type partBuilderType
+                        && Activator.CreateInstance(partBuilderType) is IPartBuilder partBuilder)
+                    {
+                        partBuilder.BuildPart(sourcePart);
+                    }
+                }
+            }
         }
 
         public static void AssignMutationsFromBlueprint(
@@ -75,13 +161,13 @@ namespace XRL.World.Parts
             {
                 return;
             }
-            foreach (GamePartBlueprint sourceMutation in SourceBlueprint.Mutations.Values)
+            foreach (GamePartBlueprint sourceMutationBlueprint in SourceBlueprint.Mutations.Values)
             {
-                if (Stat.Random(1, sourceMutation.ChanceOneIn) != 1)
+                if (Stat.Random(1, sourceMutationBlueprint.ChanceOneIn) != 1)
                 {
                     continue;
                 }
-                string mutationNamespace = "XRL.World.Parts.Mutation." + sourceMutation.Name;
+                string mutationNamespace = "XRL.World.Parts.Mutation." + sourceMutationBlueprint.Name;
                 Type mutationType = ModManager.ResolveType(mutationNamespace);
 
                 if (mutationType == null)
@@ -89,7 +175,7 @@ namespace XRL.World.Parts
                     MetricsManager.LogError("Unknown mutation " + mutationNamespace);
                     return;
                 }
-                if ((sourceMutation.Reflector?.GetNewInstance() ?? Activator.CreateInstance(mutationType)) is not BaseMutation baseMutation)
+                if ((sourceMutationBlueprint.Reflector?.GetNewInstance() ?? Activator.CreateInstance(mutationType)) is not BaseMutation baseMutation)
                 {
                     MetricsManager.LogError("Mutation " + mutationNamespace + " is not a BaseMutation");
                     continue;
@@ -98,8 +184,8 @@ namespace XRL.World.Parts
                 {
                     continue;
                 }
-                sourceMutation.InitializePartInstance(baseMutation);
-                if (sourceMutation.TryGetParameter("Builder", out string mutationBuilderName)
+                sourceMutationBlueprint.InitializePartInstance(baseMutation);
+                if (sourceMutationBlueprint.TryGetParameter("Builder", out string mutationBuilderName)
                     && ModManager.ResolveType("XRL.World.PartBuilders." + mutationBuilderName) is Type mutationBuilderType
                     && Activator.CreateInstance(mutationBuilderType) is IPartBuilder mutationBuilder)
                 {
@@ -121,13 +207,13 @@ namespace XRL.World.Parts
             {
                 return;
             }
-            foreach (GamePartBlueprint sourceSkill in SourceBlueprint.Skills.Values)
+            foreach (GamePartBlueprint sourceSkillBlueprint in SourceBlueprint.Skills.Values)
             {
-                if (Stat.Random(1, sourceSkill.ChanceOneIn) != 1)
+                if (Stat.Random(1, sourceSkillBlueprint.ChanceOneIn) != 1)
                 {
                     continue;
                 }
-                string skillNamespace = "XRL.World.Parts.Skill." + sourceSkill.Name;
+                string skillNamespace = "XRL.World.Parts.Skill." + sourceSkillBlueprint.Name;
                 Type skillType = ModManager.ResolveType(skillNamespace);
 
                 if (skillType == null)
@@ -135,7 +221,7 @@ namespace XRL.World.Parts
                     MetricsManager.LogError("Unknown skill " + skillNamespace);
                     return;
                 }
-                if ((sourceSkill.Reflector?.GetNewInstance() ?? Activator.CreateInstance(skillType)) is not BaseSkill baseSkill)
+                if ((sourceSkillBlueprint.Reflector?.GetNewInstance() ?? Activator.CreateInstance(skillType)) is not BaseSkill baseSkill)
                 {
                     MetricsManager.LogError("Skill " + skillNamespace + " is not a " + nameof(BaseSkill));
                     continue;
@@ -144,8 +230,8 @@ namespace XRL.World.Parts
                 {
                     continue;
                 }
-                sourceSkill.InitializePartInstance(baseSkill);
-                if (sourceSkill.TryGetParameter("Builder", out string skillBuilderName)
+                sourceSkillBlueprint.InitializePartInstance(baseSkill);
+                if (sourceSkillBlueprint.TryGetParameter("Builder", out string skillBuilderName)
                     && ModManager.ResolveType("XRL.World.PartBuilders." + skillBuilderName) is Type skillBuilderType
                     && Activator.CreateInstance(skillBuilderType) is IPartBuilder skillBuilder)
                 {
@@ -155,7 +241,7 @@ namespace XRL.World.Parts
             }
         }
 
-        public static bool MakeItALIVE(GameObject Corpse, ref string CreatureName, ref string SourceBlueprint, ref string CorpseDescription)
+        public static bool MakeItALIVE(GameObject Corpse, ref string CreatureName, ref string SourceBlueprint, ref string CorpseDescription, GameObject SourceObject = null)
         {
             UnityEngine.Debug.Log("    " + nameof(MakeItALIVE) + ", " + nameof(Corpse) + ": " + Corpse?.DebugName ?? "null");
             if (Corpse is GameObject frankenCorpse)
@@ -164,6 +250,7 @@ namespace XRL.World.Parts
                 frankenCorpse.SetIntProperty("Bleeds", 1);
 
                 UD_FleshGolems_ReanimatedCorpse reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
+                reanimatedCorpse.SourceObject = SourceObject;
 
                 string convoID = frankenCorpse.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG);
                 if (frankenCorpse.TryGetPart(out ConversationScript convo)
@@ -210,7 +297,7 @@ namespace XRL.World.Parts
                             .Replace("*secondNoise*", secondPoeticNoise);
                 }
                 string sourceBlueprintName = frankenCorpse.GetPropertyOrTag("SourceBlueprint")
-                    ?? frankenCorpse.GetPropertyOrTag("OriginalCorpse")
+                    ?? frankenCorpse.GetPropertyOrTag("UD_FleshGolems_OriginalCorpse")
                     ?? frankenCorpse.GetPropertyOrTag("CorpseBlueprint", frankenCorpse?.Blueprint)?.Replace(" Corpse", "")
                     ?? "Trash Monk";
                 SourceBlueprint = sourceBlueprintName;
@@ -275,7 +362,13 @@ namespace XRL.World.Parts
 
                 if (GameObjectFactory.Factory.GetBlueprintIfExists(sourceBlueprintName) is GameObjectBlueprint sourceBlueprint)
                 {
+                    bool isProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
+                    {
+                        return IPartsToSkipWhenReanimating.Contains(p.Name)
+                            || frankenCorpse.HasPart(p.Name);
+                    }
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
+                    AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
                     AssignMutationsFromBlueprint(frankenMutations, sourceBlueprint);
                     AssignSkillsFromBlueprint(frankenSkills, sourceBlueprint);
 
@@ -312,7 +405,7 @@ namespace XRL.World.Parts
                                 sourceCreatureName = sampleSourceObject.GetReferenceDisplayName(Short: true);
                             }
                         }
-                        if (frankenCorpse.GetPropertyOrTag("CreatureProperName") is string frankenCorpseProperName)
+                        if (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_CreatureProperName") is string frankenCorpseProperName)
                         {
                             wereProperlyNamed = true;
                             sourceCreatureName = frankenCorpseProperName;
@@ -322,7 +415,7 @@ namespace XRL.World.Parts
                         if (frankenDescription != null
                             && sourceBlueprint.TryGetPartParameter(nameof(Description), nameof(Description.Short), out string sourceDescription))
                         {
-                            if (frankenCorpse.GetPropertyOrTag("CorpseDescription") is string sourceCorpseDescription)
+                            if (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_CorpseDescription") is string sourceCorpseDescription)
                             {
                                 sourceDescription = sourceCorpseDescription;
                             }
@@ -453,33 +546,17 @@ namespace XRL.World.Parts
                     }
                     frankenCorpse.TakeObject(Event.NewGameObjectList(frankenCorpse.CurrentCell.GetObjects(isItemThatNotSelf)));
                     frankenCorpse.Brain?.WantToReequip();
+
+                    if (frankenCorpse.TryGetPart(out GenericInventoryRestocker frankenRestocker))
+                    {
+                        frankenRestocker.PerformRestock();
+                        frankenRestocker.LastRestockTick = The.Game.TimeTicks;
+                    }
                 }
 
                 return true;
             }
             return false;
-        }
-
-        public bool Animate(out GameObject FrankenCorpse)
-        {
-            FrankenCorpse = null;
-            UnityEngine.Debug.Log(nameof(UD_FleshGolems_CoprseReanimationHelper) + "." + nameof(Animate));
-            if (!ParentObject.HasPart<AnimatedObject>())
-            {
-                UnityEngine.Debug.Log("    " + nameof(ParentObject) + " not " + nameof(AnimatedObject));
-                AnimateObject.Animate(ParentObject);
-
-                if (ParentObject.HasPart<AnimatedObject>())
-                {
-                    FrankenCorpse = ParentObject;
-                    return true;
-                }
-            }
-            return false;
-        }
-        public bool Animate()
-        {
-            return Animate(out _);
         }
 
         public override bool WantEvent(int ID, int Cascade)

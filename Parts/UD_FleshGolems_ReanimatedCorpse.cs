@@ -5,12 +5,28 @@ using XRL.World.Effects;
 
 using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
 
+using SerializeField = UnityEngine.SerializeField;
+
 namespace XRL.World.Parts
 {
     [Serializable]
     public class UD_FleshGolems_ReanimatedCorpse : IScribedPart
     {
         public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolem_reanimated|reanimated}}";
+
+        [SerializeField]
+        private string SourceID;
+
+        private GameObject _SourceObject;
+        public GameObject SourceObject
+        {
+            get => _SourceObject ??= GameObject.FindByID(SourceID);
+            set
+            {
+                SourceID = value?.ID;
+                _SourceObject = value;
+            }
+        }
 
         public string BleedLiquid;
 
@@ -20,6 +36,12 @@ namespace XRL.World.Parts
         {
             BleedLiquid = null;
             BleedLiquidPortions = null;
+        }
+
+        public override void Attach()
+        {
+            base.Attach();
+            AttemptToSuffer();
         }
 
         public override bool SameAs(IPart p)
@@ -64,36 +86,23 @@ namespace XRL.World.Parts
             return liquids;
         }
 
-        public bool AttemptToBleed()
+        public bool AttemptToSuffer()
         {
-            if (ParentObject is GameObject frankenCorpse
-                && !frankenCorpse.HasEffect<Bleeding>())
+            if (ParentObject is GameObject frankenCorpse)
             {
-                return frankenCorpse.ForceApplyEffect(new Bleeding( Damage: "1d2", SaveTarget: 999));
+                if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
+                {
+                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(SourceObject, frankenCorpse.GetTier()));
+                }
+                else
+                if (unendingSuffering.SourceObject == null && SourceObject != null)
+                {
+                    unendingSuffering.SourceObject = SourceObject;
+                }
             }
             return false;
         }
 
-        public override bool WantTurnTick()
-        {
-            return true;
-        }
-        public override void TurnTick(long TimeTick, int Amount)
-        {
-            base.TurnTick(TimeTick, Amount);
-            if (AttemptToBleed())
-            {
-                if (75.in100())
-                {
-                    ParentObject?.Bloodsplatter();
-                }
-                else
-                if (50.in100())
-                {
-                    ParentObject?.BigBloodsplatter(SelfSplatter: false);
-                }
-            }
-        }
         public override void Register(GameObject Object, IEventRegistrar Registrar)
         {
             Registrar.Register("Regenera");
@@ -103,16 +112,22 @@ namespace XRL.World.Parts
         {
             return base.WantEvent(ID, cascade)
                 || ID == GetDisplayNameEvent.ID
+                || ID == EndTurnEvent.ID
                 || ID == GetBleedLiquidEvent.ID
                 || ID == BeforeDeathRemovalEvent.ID;
         }
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
-            if (int.TryParse(E.Object.GetPropertyOrTag("NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
+            if (int.TryParse(E.Object.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
                 && NoReanimatedNamePrefix < 1)
             {
                 E.AddAdjective(REANIMATED_ADJECTIVE, 5);
             }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(EndTurnEvent E)
+        {
+            AttemptToSuffer();
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(GetBleedLiquidEvent E)
@@ -173,19 +188,11 @@ namespace XRL.World.Parts
                 && IsDyingCreatureCorpse(dying, out GameObject corpseObject)
                 && corpseObject.TryGetPart(out UD_FleshGolems_CoprseReanimationHelper reanimationHelper))
             {
-                corpseObject.SetStringProperty("OriginalCreatureName", reanimationHelper.CreatureName);
-                corpseObject.SetStringProperty("OriginalSourceBlueprint", reanimationHelper.SourceBlueprint);
-                corpseObject.SetStringProperty("CorpseDescription", reanimationHelper.SourceBlueprint);
+                corpseObject.SetStringProperty("UD_FleshGolems_OriginalCreatureName", reanimationHelper.CreatureName);
+                corpseObject.SetStringProperty("UD_FleshGolems_OriginalSourceBlueprint", reanimationHelper.SourceBlueprint);
+                corpseObject.SetStringProperty("UD_FleshGolems_CorpseDescription", reanimationHelper.SourceBlueprint);
             }
             return base.HandleEvent(E);
-        }
-        public override bool FireEvent(Event E)
-        {
-            if (E.ID == "Regenera")
-            {
-                AttemptToBleed();
-            }
-            return base.FireEvent(E);
         }
     }
 }
