@@ -6,6 +6,7 @@ using ConsoleLib.Console;
 using Qud.API;
 
 using XRL.Core;
+using XRL.Rules;
 using XRL.UI;
 using XRL.World.Capabilities;
 using XRL.World.Effects;
