@@ -112,7 +112,7 @@ namespace XRL.World.Effects
                 ChanceToSmear = 50;
                 ChanceToSplatter = 10;
             }
-            ChanceToDamage = 10 * (1 + Math.Max(1, Tier))
+            ChanceToDamage = 10 * (1 + Math.Max(1, Tier));
         }
 
         public override int GetEffectType()
