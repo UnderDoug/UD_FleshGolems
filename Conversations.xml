@@ -182,7 +182,7 @@
       <text IfHavepart="Esper" Priority="1">
         Grey meat, yes, for only your brain is of interest to me. The rest of you is as immutable as the form of those worthless and yet tantalizingly metal-laced animals who strut around as though they are the children of gods.
       </text>
-      <text IfHavepart="Chimera Priority="1">
+      <text IfHavepart="Chimera" Priority="1">
         Prime meat, yes, for your body is as ever-changing and adapting as my unfathomablely vast intellect, so much room for error too, so much excess material. You are the height of usefulness to me. 
       </text>
       <text IfTrueKin="true" Priority="1">
