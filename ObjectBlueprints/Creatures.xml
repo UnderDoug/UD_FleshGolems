@@ -11,7 +11,6 @@
     <xtagGrammar Proper="true" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
-    <stat Name="AcidResistance" Value="100" />
     <stat Name="Hitpoints" alue="17d3+4" />
     <mutation Name="Regeneration" Level="10" />
   </object>
@@ -28,7 +27,6 @@
     <property Name="UD_FleshGolems_CreatureProperName" Value="Jofo Qudwufo" />
     <property Name="SourceBlueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
     <part Name="Brain" Hostile="false" />
-    <stat Name="AcidResistance" Value="100" />
     <tag Name="UD_FleshGolems_NoReanimatedNamePrefix" Value="1" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
     <tag Name="UD_FleshGolems_ReanimatedConversationID" Value="UD_FleshGolems Jofo Qudwufo" />
