@@ -18,7 +18,6 @@ namespace XRL.World.Parts
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
 
-
         // TODO: Add a means to remove specific parts if the corpse blueprint indicates to.
         public static List<string> IPartsToSkipWhenReanimating => new()
         {
@@ -108,10 +107,14 @@ namespace XRL.World.Parts
             FrankenCorpse.FinalizeStats();
             if (FrankenCorpse.TryGetPart(out Leveler frankenLeveler))
             {
-                frankenLeveler.LevelUp();
-                if (Stat.RollCached("1d2") == 1)
+                if (int.TryParse(FrankenCorpse.GetPropertyOrTag("UD_FleshGolems_SkipLevelsOnReanimate", "0"), out int SkipLevelsOnReanimate)
+                    && SkipLevelsOnReanimate < 1)
                 {
                     frankenLeveler.LevelUp();
+                    if (Stat.RollCached("1d2") == 1)
+                    {
+                        frankenLeveler.LevelUp();
+                    }
                 }
                 int floorXP = Leveler.GetXPForLevel(FrankenCorpse.Level);
                 int ceilingXP = Leveler.GetXPForLevel(FrankenCorpse.Level + 1);
@@ -369,7 +372,8 @@ namespace XRL.World.Parts
                     bool isProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
                     {
                         return IPartsToSkipWhenReanimating.Contains(p.Name)
-                            || frankenCorpse.HasPart(p.Name);
+                            || frankenCorpse.HasPart(p.Name)
+                            || frankenCorpse.GetPropertyOrTag("UD_FleshGolems_Reanimated_PartExclusions").CachedCommaExpansion().Contains(p.Name);
                     }
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);

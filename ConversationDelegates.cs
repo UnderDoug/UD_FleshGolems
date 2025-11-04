@@ -12,18 +12,35 @@ namespace UD_FleshGolems
     [HasConversationDelegate]
     public static class ConversationDelegates
     {
-        [ConversationDelegate]
+        [ConversationDelegate(Speaker = true)]
         public static bool IfSourceOfSuffering(DelegateContext Context)
         {
-            return Conversation.Speaker is GameObject speaker
-                && speaker.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering)
-                && unendingSuffering.SourceObject == Context.Target;
+            if (Conversation.Speaker is GameObject speaker
+                && The.Player is GameObject player)
+            {
+                GameObject sufferer = null;
+                if (Context.Target == speaker)
+                {
+                    sufferer = player;
+                }
+                else
+                {
+                    sufferer = speaker;
+                }
+                return sufferer.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering)
+                    && unendingSuffering.SourceObject == Context.Target;
+            }
+            return false;
         }
 
-        [ConversationDelegate]
+        [ConversationDelegate(Speaker = true)]
         public static bool IfHaveCompanionWithBlueprint(DelegateContext Context)
         {
-            return Context.Target.GetCompanionsReadonly(The.ActiveZone.Width / 2, GO => GO.Blueprint == Context.Value).Count > 0;
+            foreach (GameObject companion in Context.Target.GetCompanionsReadonly(The.ActiveZone.Width))
+            {
+                UnityEngine.Debug.Log("    [" + companion.Blueprint);
+            }
+            return Context.Target.GetCompanionsReadonly(The.ActiveZone.Width, GO => GO.Blueprint == Context.Value).Count > 0;
         }
     }
 }
