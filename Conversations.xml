@@ -70,7 +70,7 @@
         <part Name="Trade" />
       </choice>
       
-      <choice ID="Diatribe">
+      <choice ID="GoDiatribe" Target="Diatribe">
         <text IfHavePart="Esper" Priority="1">
           Why do you call me grey meat?
         </text>
@@ -157,7 +157,7 @@
       <choice UseID="WhatYouDoing" />
       <choice UseID="Trade" />
       <choice UseID="GoEnd" />
-      <choice UseID="Diatribe" />
+      <choice UseID="GoDiatribe" />
     </start>
 
     <!-- Returning directly to the start feels strange, so the below acts as a landing node for the "there was something else" choice -->
@@ -177,7 +177,7 @@
       <choice UseID="WhatYouDoing" />
       <choice UseID="Trade" />
       <choice UseID="GoEnd" />
-      <choice UseID="Diatribe"/>
+      <choice UseID="GoDiatribe"/>
     </node>
     <node ID="Diatribe"> 
       <text IfHavePart="Esper" Priority="1">
