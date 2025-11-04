@@ -191,6 +191,7 @@
       <text>
         Meat, yes, would you prefer I say materials, components, resources? You are a walking sack of things I find moderately useful. Be grateful I've decided not to harvest you for the time being.
       </text>
+      <choice UseID="GoEnd" />
     </node>
       
 
