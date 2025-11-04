@@ -34,6 +34,7 @@ namespace XRL.World.Effects
 
         public string Damage;
 
+        public int ChanceToDamage;
         public int ChanceToSmear;
         public int ChanceToSplatter;
 
@@ -41,7 +42,8 @@ namespace XRL.World.Effects
         {
             SourceObject = null;
             Damage = "1";
-            ChanceToSmear = 75;
+            ChanceToDamage = 10;
+            ChanceToSmear = 50;
             ChanceToSplatter = 10;
 
             DisplayName = "{{UD_FleshGolem_reanimated|endlessly suffering}}";
@@ -89,24 +91,28 @@ namespace XRL.World.Effects
                 ChanceToSmear = 75;
                 ChanceToSplatter = 30;
             }
-            else if (Tier >= 5)
+            else
+            if (Tier >= 5)
             {
                 Damage = "2-3";
                 ChanceToSmear = 70;
                 ChanceToSplatter = 25;
             }
-            else if (Tier >= 3)
+            else
+            if (Tier >= 3)
             {
                 Damage = "1-2";
                 ChanceToSmear = 60;
                 ChanceToSplatter = 20;
             }
-            else if (Tier >= 1)
+            else
+            if (Tier >= 1)
             {
                 Damage = "1d3-2";
                 ChanceToSmear = 50;
                 ChanceToSplatter = 10;
             }
+            ChanceToDamage = 10 * (1 + Math.Max(1, Tier))
         }
 
         public override int GetEffectType()
@@ -143,12 +149,16 @@ namespace XRL.World.Effects
             }
 
             StartMessage(Object);
-            StatShifter.SetStatShift("AcidResistance", 100);
+            StatShifter.SetStatShift(
+                target: Object,
+                statName: "AcidResistance",
+                amount: 100,
+                baseValue: true);
             return base.Apply(Object);
         }
         public override void Remove(GameObject Object)
         {
-            StatShifter.RemoveStatShifts();
+            StatShifter.RemoveStatShifts(Object);
             base.Remove(Object);
         }
 
@@ -165,7 +175,7 @@ namespace XRL.World.Effects
                 .AddObject(Object)
                 .ToString();
 
-            if (50.in100())
+            if (ChanceToDamage.in100())
             {
                 Object.TakeDamage(
                     Amount: Damage.RollCached(),
@@ -246,7 +256,7 @@ namespace XRL.World.Effects
         public override bool Render(RenderEvent E)
         {
             _ = Object.Render;
-            int currentFrame = XRLCore.CurrentFrame % 120;
+            int currentFrame = XRLCore.CurrentFrame % 60;
             bool firstRange = currentFrame > 15 && currentFrame < 25;
             bool secondRange = currentFrame > 45 && currentFrame < 55;
             if (firstRange || secondRange)
@@ -259,7 +269,7 @@ namespace XRL.World.Effects
         }
         public override bool HandleEvent(PhysicalContactEvent E)
         {
-            E.Actor.MakeBloody(E.Object.GetBleedLiquid(), Stat.Random(1, 3));
+            E.Actor.MakeBloodstained(E.Object.GetBleedLiquid(), Stat.RollCached("1d2"));
             return base.HandleEvent(E);
         }
     }
