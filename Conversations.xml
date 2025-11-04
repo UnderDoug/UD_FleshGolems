@@ -70,7 +70,7 @@
         <part Name="Trade" />
       </choice>
       
-      <choice ID="Diatribe"
+      <choice ID="Diatribe">
         <text IfHavePart="Esper" Priority="1">
           Why do you call me grey meat?
         </text>
