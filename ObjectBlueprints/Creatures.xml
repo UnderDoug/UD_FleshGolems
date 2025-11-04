@@ -49,7 +49,7 @@
     <part Name="Render" DisplayName="'Monger" DetailColor="R" TileColor="&amp;W" />
     <part Name="Honorifics" Primary="Mad" />
     <xtagGrammar Proper="true" />
-    <part Name="ConversationScript" ConversationID="UD_FleshGolems MadMonger" />
+    <part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger" />
     <removepart Name="HasGuards" />
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
