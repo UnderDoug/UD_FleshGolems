@@ -149,6 +149,7 @@ namespace XRL.World.Effects
             }
 
             StartMessage(Object);
+
             StatShifter.SetStatShift(
                 target: Object,
                 statName: "AcidResistance",
