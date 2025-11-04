@@ -143,7 +143,7 @@ namespace XRL.World.Effects
             }
 
             StartMessage(Object);
-            StatShifter.SetStatShift("AcidResist", 100);
+            StatShifter.SetStatShift("AcidResistance", 100);
             return base.Apply(Object);
         }
         public override void Remove(GameObject Object)
@@ -247,12 +247,12 @@ namespace XRL.World.Effects
         {
             _ = Object.Render;
             int currentFrame = XRLCore.CurrentFrame % 120;
-            bool firstRange = currentFrame > 45 && currentFrame < 55;
-            bool secondRange = currentFrame > 90 && currentFrame < 120;
+            bool firstRange = currentFrame > 15 && currentFrame < 25;
+            bool secondRange = currentFrame > 45 && currentFrame < 55;
             if (firstRange || secondRange)
             {
                 E.RenderString = "\u0003";
-                E.ApplyColors(firstRange ? "&r" : "&K", ICON_COLOR_PRIORITY);
+                E.ApplyColors(firstRange ? "&K" : "&R", ICON_COLOR_PRIORITY);
                 return false;
             }
             return true;
