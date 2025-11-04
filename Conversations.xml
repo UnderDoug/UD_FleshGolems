@@ -69,7 +69,23 @@
         </text>
         <part Name="Trade" />
       </choice>
+      
+      <choice ID="Diatribe"
+        <text IfHavePart="Esper" Priority="1">
+          Why do you call me grey meat?
+        </text>
+         <text IfTruekin="True" Priority="1">
+          Why do you call me rare meat?
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          Why do you call me prime meat?
+        <text>
+          Why do you call me meat? 
+        </text>
+        </choice>
 
+
+          
       <choice ID="WhatYouDoing" Target="WhatImDoing">
         <text>
           What are you doing with that mess?
@@ -140,6 +156,7 @@
       <choice UseID="WhatYouDoing" />
       <choice UseID="Trade" />
       <choice UseID="GoEnd" />
+      <choice UseId="Diatribe" />
     </start>
 
     <!-- Returning directly to the start feels strange, so the below acts as a landing node for the "there was something else" choice -->
@@ -159,8 +176,26 @@
       <choice UseID="WhatYouDoing" />
       <choice UseID="Trade" />
       <choice UseID="GoEnd" />
+      <choice UseID="Diatribe"/>
     </node>
-    
+    <node ID="Diatribe"> 
+      <text IfHavepart="Esper" Priority="1">
+        Grey meat, yes, for only your brain is of interest to me. The rest of you is as immutable as the form of those worthless and yet tantalizingly metal-laced animals who strut around as though they are the children of gods.
+      </text>
+      <text IfHavepart="Chimera Priority="1">
+        Prime meat, yes, for your body is as ever-changing and adapting as my unfathomablely vast intellect, so much room for error too, so much excess material. You are the height of usefulness to me. 
+      </text>
+      <text IfTrueKin="true" Priority="1">
+        Rare meat, yes, though rare may be a misnomer, I speak only in terms of the difficulty of finding materials like yours, not to the value that they provide; worthless meat may be a more accurate descriptor. 
+      </text>
+      <text>
+        Meat, yes, would you prefer I say materials, components, resources? You are a walking sack of things I find moderately useful. Be grateful I've decided not to harvest you for the time being.
+      </text>
+    </node>
+      
+
+
+        
     <node ID="WhatImDoing">
       <text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
         My mess?? And what of {{Y|your}} mess, meat?
