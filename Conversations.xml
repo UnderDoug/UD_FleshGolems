@@ -105,11 +105,13 @@
     
     -->
     
-    <node ID="Start">
+    <start ID="Greeting">
       <text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
         Oh ho! I see you've brought that slavering failure of an attempt to ascertain.
         
+        Try to keep its leaking everywhere away from my equipment.
         
+        I don't want its mank griming up my work.
       </text>
       <text IfTrueKin="true" Priority="1">
         Why if it isn't the meat that fancies itself nobility.~
@@ -138,7 +140,7 @@
       <choice UseID="WhatYouDoing" />
       <choice UseID="Trade" />
       <choice UseID="GoEnd" />
-    </node>
+    </start>
 
     <!-- Returning directly to the start feels strange, so the below acts as a landing node for the "there was something else" choice -->
     <node ID="PostGreeting">
@@ -165,7 +167,7 @@
 
         How Jofo Qudwufo hasn't made actual {{UD_FleshGolem_meat|meat}} of you yet is a wonder to me.
         
-        I'm, understandably, reticent to discuss such a... meaty endouvour, with that squelching affront to my work heaving nearby.
+        I'm, understandably, reticent to discuss such a... meaty endeavour, with that squelching affront to my work heaving nearby.
       </text>
       <text>
         Perchance, lesser mind, what, pray, does it {{Y|appear}} I might be doing?
@@ -178,7 +180,7 @@
       </choice>
       <choice UseID="Trade" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" />
       <choice UseID="GoEnd" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" />
-      <choice ID="IMeanIt" IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
+      <choice GotoID="IMeanIt" IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
         <text>
           ...
         </text>
@@ -191,7 +193,7 @@
         
         Get.
       </text>
-      <choice ID="IReallyMeanIt">
+      <choice GotoID="IReallyMeanIt">
         <text>
           ...
         </text>
@@ -215,14 +217,15 @@
   <conversation ID="UD_FleshGolems Jofo Qudwufo">
     <node ID="choices">
       <choice ID="GoEnd" Target="End">
-        <text IfTestState="UD_FleshGolems_Reacted_HelpFindMadMonger" Priority="3">Let's keep looking, =speaker.refname=.</text>
-        <text IfTestState="UD_FleshGolems_Asked_HelpFindMadMonger" Priority="2">Let's start looking, =speaker.refname=.</text>
-        <text IfTestState="UD_FleshGolems_Asked_WhereMadMonger" Priority="1">Live and drink, =speaker.refname=.</text>
+        <text IfTestState="UD_FleshGolems_Reacted_HelpFindMadMonger" Priority="3">Let's keep looking, =refname=.</text>
+        <text IfTestState="UD_FleshGolems_Asked_HelpFindMadMonger" Priority="2">Let's start looking, =refname=.</text>
+        <text IfTestState="UD_FleshGolems_Asked_WhereMadMonger" Priority="1">Live and drink, =refname=.</text>
         <text>Live and drink.</text>
       </choice>
       
       <choice ID="GoStart" Target="Start">
         <text>There was something else...</text>
+        <part Name="Tag">{{K|[start over]}}</part>
       </choice>
       
       <choice ID="AskWhoMadMonger" Target="ReactWhoMadMonger"
@@ -254,7 +257,7 @@
     </node>
     
     <!-- Actual convo starts here -->
-    <node ID="Start">
+    <start ID="Greeting">
       <text>
         Reh, reh! Am Jofo Qudwufo, ref-{{emote|*retch*}} ...renemit snaphjaf!
 
@@ -267,7 +270,12 @@
       <choice UseID="AskWhereMadMonger" />
       <choice UseID="AskHelpFindMadMonger" />
       <choice UseID="GoEnd" />
-    </node>
+    </start>
+
+    <start ID="OfferedToHelp" Inherits="Greeting"
+          IfTestState="UD_FleshGolems_Asked_HelpFindMadMonger"
+          IfNotHaveState="UD_FleshGolems_Reacted_HelpFindMadMonger"
+          SetBooleanState="UD_FleshGolems_Reacted_HelpFindMadMonger,true" />
     
     <node ID="ReactWhoMadMonger">
       <text>
@@ -277,10 +285,10 @@
         
         ... Mong- mabed... me?
       </text>
-      <choice UseID="GoStart" />
       <choice UseID="AskHeMadeYou" />
       <choice UseID="AskWhereMadMonger" />
       <choice UseID="AskHelpFindMadMonger" />
+      <choice UseID="GoStart" />
       <choice UseID="GoEnd" />
     </node>
     
@@ -292,10 +300,10 @@
 
         {{emote|*wobbles excitedly*}}
       </text>
-      <choice UseID="GoStart" />
       <choice UseID="AskWhoMadMonger" />
       <choice UseID="AskWhereMadMonger" />
       <choice UseID="AskHelpFindMadMonger" />
+      <choice UseID="GoStart" />
       <choice UseID="GoEnd" />
     </node>
     
@@ -307,34 +315,35 @@
 
         Mad... err... 'Monger is??
 
-        Is... ssss{{emote|*wheeze*}} Heff feff!
+        Is... ssss-{{emote|*wheeze*}}... uh.. Graa-feff!
 
         {{emote|*shrugs or slumps, you can't really tell*}}
       </text>
-      <choice UseID="GoStart" />
       <choice UseID="AskWhoMadMonger" />
       <choice UseID="AskHeMadeYou" />
       <choice UseID="AskHelpFindMadMonger" />
+      <choice UseID="GoStart" />
       <choice UseID="GoEnd" />
     </node>
     
-    <node ID="ReactHelpFindMadMonger"
-          SetBooleanState="UD_FleshGolems_Reacted_HelpFindMadMonger,true">
+    <node ID="ReactHelpFindMadMonger">
       <text>
         Rarooh!!
 
         Yih yih yih-{{emote|*cough*}}!
 
-        {{emote|*cough*}} {{emote|*cough*}} {{emote|*wheeze*}}
+        {{emote|*cough*}} {{emote|*cough*}}
+        
+        {{emote|*wheeze*}}
 
-        Greff ref!!
+        Greff-ref!!
         
         {{emote|*starts side-stepping circles around you*}}
       </text>
-      <choice UseID="GoStart" />
       <choice UseID="AskWhoMadMonger" />
       <choice UseID="AskHeMadeYou" />
       <choice UseID="AskWhereMadMonger" />
+      <choice UseID="GoStart" Target="Greeting" />
       <choice UseID="GoEnd" />
     </node>
     

@@ -11,6 +11,8 @@
     <xtagGrammar Proper="true" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <stat Name="AcidResistance" Value="100" />
+    <stat Name="Hitpoints" alue="17d3+4" />
     <mutation Name="Regeneration" Level="10" />
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
@@ -19,21 +21,29 @@
     <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" /-->
     <part Name="UD_FleshGolems_CoprseReanimationHelper" AlwaysAnimate="true" />
     <part Name="Render" DetailColor="w" TileColor="&amp;r"
-          RenderString="w" ColorString="&amp;r"
-          Tile="Creatures/sw_golem_snapjaw.png" 
-          DisplayName="corpse of Jofo Qudwufo, {{UD_FleshGolem_reanimated|reanimated}} snapjaw" />
+          DisplayName="the corpse of Jofo Qudwufo" />
+    <!--  RenderString="w" ColorString="&amp;r"
+          Tile="Creatures/sw_golem_snapjaw.png" -->
     <property Name="CreatureName" Value="Jofo Qudwufo" />
     <property Name="UD_FleshGolems_CreatureProperName" Value="Jofo Qudwufo" />
     <property Name="SourceBlueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
+    <part Name="Brain" Hostile="false" />
+    <stat Name="AcidResistance" Value="100" />
     <tag Name="UD_FleshGolems_NoReanimatedNamePrefix" Value="1" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
     <tag Name="UD_FleshGolems_ReanimatedConversationID" Value="UD_FleshGolems Jofo Qudwufo" />
     <tag Name="UD_FleshGolems_ReanimatedEpithets" Value=", {{UD_FleshGolem_reanimated|reanimated}} snapjaw" />
-    <tag Name="PetResponse" Value="=subject.T's= matted fur is slick with the grime of death.,Your hand squelches against =subject.t's= disturbingly infirm scalp.,What can only be described as a gentle hacking cough can be heard from deep with =subject.t's= mass." />
-    <part Name="Pettable" />
-    <!-- tag Name="UD_FleshGolems_Reanimated_PartExclusions" Value="" /-->
+    <tag Name="PetResponse" Value="=subject.possessive= matted fur is slick with the grime of death,Your hand squelches against =subject.possessive= disturbingly infirm scalp,What can only be described as a gentle hacking cough can be heard from deep with =subject.possessive= mass" />
+    <part Name="Pettable" UseFactionForFeelingFloor="Player"  />
+    <tag Name="UD_FleshGolems_Reanimated_PartExclusions" Value="Pettable" />
     <tag Name="Pet"/>
+    <tag Name="PreferChatToPet"/>
     <tag Name="StartingPet"/>
+    <tag Name="UD_FleshGolems_SkipLevelsOnReanimate" Value="1" />
+    <tag Name="PronounSet" Value="xe/xem/xyr/xyrs/xemself" />
+    <property Name="Story" Value="UD_FleshGolems Jofo Qudwufo" />
+    <!--(Add this dynamically by completing the quest)-->
+    <tag Name="Kernelmethod_BetterPetSelector_Description" Value="A twitching mound of wet fur and rotting flesh seemingly uncontent with remaining still." />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
@@ -42,6 +52,7 @@
     <part Name="Honorifics" Primary="Mad" />
     <xtagGrammar Proper="true" />
     <part Name="ConversationScript" ConversationID="UD_FleshGolems MadMonger" />
+    <removepart Name="HasGuards" />
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
