@@ -156,7 +156,7 @@
       <choice UseID="WhatYouDoing" />
       <choice UseID="Trade" />
       <choice UseID="GoEnd" />
-      <choice UseId="Diatribe" />
+      <choice UseID="Diatribe" />
     </start>
 
     <!-- Returning directly to the start feels strange, so the below acts as a landing node for the "there was something else" choice -->
