@@ -77,7 +77,6 @@ namespace XRL.World.Parts
             return IsDyingCreatureCorpse(Dying, out _);
         }
 
-
         public override void Register(GameObject Object, IEventRegistrar Registrar)
         {
             int eventOrder = EventOrder.EXTREMELY_LATE + EventOrder.EXTREMELY_LATE;
@@ -118,7 +117,8 @@ namespace XRL.World.Parts
         public override bool HandleEvent(BeforeDeathRemovalEvent E)
         {
             if (ParentObject is GameObject dying
-                && dying == E.Dying)
+                && dying == E.Dying
+                && false)
             {
                 IsDyingCreatureCorpse(dying, out Corpse);
             }
@@ -130,12 +130,21 @@ namespace XRL.World.Parts
                 && BuiltToBeReanimated
                 && ParentObject is GameObject soonToBeCorpse)
             {
-                Attempted = true;
-                soonToBeCorpse.Die();
                 if (!soonToBeCorpse.IsPlayer())
                 {
+                    Attempted = true;
                     ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
                 }
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(BeforeObjectCreatedEvent E)
+        {
+            if (BuiltToBeReanimated
+                && ParentObject == E.Object
+                && Corpse is GameObject soonToBeCreature)
+            {
+                E.ReplacementObject = soonToBeCreature;
             }
             return base.HandleEvent(E);
         }

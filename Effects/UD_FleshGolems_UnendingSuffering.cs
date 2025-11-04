@@ -18,6 +18,8 @@ namespace XRL.World.Effects
     [Serializable]
     public class UD_FleshGolems_UnendingSuffering : IScribedEffect, ITierInitialized
     {
+        public const string ENDLESSLY_SUFFERING = "{{UD_FleshGolems_reanimated|endlessly suffering}}";
+
         [SerializeField]
         private string SourceID;
 
@@ -38,6 +40,8 @@ namespace XRL.World.Effects
         public int ChanceToSmear;
         public int ChanceToSplatter;
 
+        private int CurrentTier;
+
         public UD_FleshGolems_UnendingSuffering()
         {
             SourceObject = null;
@@ -46,8 +50,10 @@ namespace XRL.World.Effects
             ChanceToSmear = 50;
             ChanceToSplatter = 10;
 
-            DisplayName = "{{UD_FleshGolem_reanimated|endlessly suffering}}";
+            DisplayName = ENDLESSLY_SUFFERING;
             Duration = 1;
+
+            CurrentTier = 0;
         }
 
         public UD_FleshGolems_UnendingSuffering(GameObject Source)
@@ -65,19 +71,16 @@ namespace XRL.World.Effects
         public UD_FleshGolems_UnendingSuffering(GameObject Source, int Tier)
             : this(Source)
         {
-            SourceObject = Source;
             Initialize(Tier);
         }
 
         public UD_FleshGolems_UnendingSuffering(string Damage, int Duration, GameObject Source, int ChanceToSmear, int ChanceToSplatter)
             : this(Source)
         {
-            SourceObject = Source;
             this.Damage = Damage;
             this.ChanceToSmear = ChanceToSmear;
             this.ChanceToSplatter = ChanceToSplatter;
 
-            DisplayName = "{{UD_FleshGolem_reanimated|endlessly suffering}}";
             this.Duration = Duration;
         }
 
@@ -113,6 +116,12 @@ namespace XRL.World.Effects
                 ChanceToSplatter = 10;
             }
             ChanceToDamage = 10 * (1 + Math.Max(1, Tier));
+
+            if (CurrentTier != 0 && Tier > CurrentTier)
+            {
+                WorsenedMessage(Object);
+            }
+            CurrentTier = Tier;
         }
 
         public override int GetEffectType()
@@ -153,8 +162,8 @@ namespace XRL.World.Effects
             StatShifter.SetStatShift(
                 target: Object,
                 statName: "AcidResistance",
-                amount: 100,
-                baseValue: true);
+                amount: 200,
+                true);
             return base.Apply(Object);
         }
         public override void Remove(GameObject Object)
@@ -169,6 +178,12 @@ namespace XRL.World.Effects
             DidX(Verb: "begin", Extra: DisplayNameStripped, EndMark: "!", ColorAsBadFor: Object);
         }
 
+        public virtual void WorsenedMessage(GameObject Object)
+        {
+            Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
+            DidX(Verb: "start", Extra: DisplayNameStripped + " even worse", EndMark: "!", ColorAsBadFor: Object);
+        }
+
         public void Suffer()
         {
             string deathMessage = "=subject.name's= unending suffering... well, ended =subject.objective=."
@@ -176,9 +191,10 @@ namespace XRL.World.Effects
                 .AddObject(Object)
                 .ToString();
 
+            bool tookDamage = false;
             if (ChanceToDamage.in100())
             {
-                Object.TakeDamage(
+                tookDamage = Object.TakeDamage(
                     Amount: Damage.RollCached(),
                     Attributes: DamageAttributes(),
                     Owner: Object,
@@ -186,7 +202,8 @@ namespace XRL.World.Effects
                     DeathReason: deathMessage,
                     ThirdPersonDeathReason: deathMessage,
                     Source: Object,
-                    Indirect: true);
+                    Indirect: true,
+                    SilentIfNoDamage: true);
             }
 
             if (Object.CurrentCell is not Cell suferrerCell || suferrerCell.OnWorldMap())
@@ -224,6 +241,10 @@ namespace XRL.World.Effects
                     {
                         bloodSplashVolume.InitialLiquid = bleedLiquid;
                         suferrerCell.AddObject(bloodySplashObject);
+                        if (tookDamage)
+                        {
+                            DidX("spatter", "blood everywhere", "!");
+                        }
                     }
                     else
                     {
@@ -239,7 +260,8 @@ namespace XRL.World.Effects
             return base.WantEvent(ID, cascade)
                 || ID == GetCompanionStatusEvent.ID
                 || ID == EndTurnEvent.ID
-                || ID == PhysicalContactEvent.ID;
+                || ID == PhysicalContactEvent.ID
+                || ID == AfterLevelGainedEvent.ID;
         }
         public override bool HandleEvent(GetCompanionStatusEvent E)
         {
@@ -271,6 +293,11 @@ namespace XRL.World.Effects
         public override bool HandleEvent(PhysicalContactEvent E)
         {
             E.Actor.MakeBloodstained(E.Object.GetBleedLiquid(), Stat.RollCached("1d2"));
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(AfterLevelGainedEvent E)
+        {
+            Initialize(UD_FleshGolems_ReanimatedCorpse.GetTierFromLevel(Object));
             return base.HandleEvent(E);
         }
     }

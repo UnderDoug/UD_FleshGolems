@@ -13,7 +13,7 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_ReanimatedCorpse : IScribedPart
     {
-        public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolem_reanimated|reanimated}}";
+        public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolems_reanimated|reanimated}}";
         public const int ICON_COLOR_PRIORITY = 100;
 
         [SerializeField]
@@ -88,13 +88,19 @@ namespace XRL.World.Parts
             return liquids;
         }
 
+        public static int GetTierFromLevel(GameObject Creature)
+        {
+            return Capabilities.Tier.Constrain((Creature.Stat("Level") - 1) / 5 + 1);
+        }
+        public int GetTierFromLevel() => GetTierFromLevel(ParentObject);
         public bool AttemptToSuffer()
         {
             if (ParentObject is GameObject frankenCorpse)
             {
                 if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
                 {
-                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(SourceObject, frankenCorpse.GetTier()));
+                    int tier = (frankenCorpse.Stat("Level") - 1) / 5 + 1;
+                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(SourceObject, tier));
                 }
                 else
                 if (unendingSuffering.SourceObject == null && SourceObject != null)
@@ -150,9 +156,9 @@ namespace XRL.World.Parts
                 int combinedFactor = combinedPortions / 10;
                 List<(string Liquid, int Portion)> contamination = new()
                 {
-                    ("putrid", combinedFactor * 6),
-                    ("gel", combinedFactor * 3),
-                    ("acid", combinedFactor * 1),
+                    ("putrid", (int)(combinedFactor * 6.5)),
+                    ("slime", (int)(combinedFactor * 3.0)),
+                    ("acid", (int)(combinedFactor * 0.5)),
                 };
                 foreach ((string liquid, int portion) in contamination)
                 {
@@ -185,10 +191,10 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(BeforeDeathRemovalEvent E)
         {
-            if (ParentObject is GameObject dying
+            if (false && ParentObject is GameObject dying
                 && dying == E.Dying
                 && IsDyingCreatureCorpse(dying, out GameObject corpseObject)
-                && corpseObject.TryGetPart(out UD_FleshGolems_CoprseReanimationHelper reanimationHelper))
+                && corpseObject.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
             {
                 corpseObject.SetStringProperty("UD_FleshGolems_OriginalCreatureName", reanimationHelper.CreatureName);
                 corpseObject.SetStringProperty("UD_FleshGolems_OriginalSourceBlueprint", reanimationHelper.SourceBlueprint);

@@ -13,7 +13,7 @@ using XRL.World.Quests.GolemQuest;
 namespace XRL.World.Parts
 {
     [Serializable]
-    public class UD_FleshGolems_CoprseReanimationHelper : IScribedPart
+    public class UD_FleshGolems_CorpseReanimationHelper : IScribedPart
     {
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
@@ -47,7 +47,7 @@ namespace XRL.World.Parts
 
         public string CorpseDescription;
 
-        public UD_FleshGolems_CoprseReanimationHelper()
+        public UD_FleshGolems_CorpseReanimationHelper()
         {
             IsALIVE = false;
             AlwaysAnimate = false;
@@ -64,7 +64,7 @@ namespace XRL.World.Parts
         public bool Animate(out GameObject FrankenCorpse)
         {
             FrankenCorpse = null;
-            UnityEngine.Debug.Log(nameof(UD_FleshGolems_CoprseReanimationHelper) + "." + nameof(Animate));
+            UnityEngine.Debug.Log(nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(Animate));
             if (!ParentObject.HasPart<AnimatedObject>())
             {
                 UnityEngine.Debug.Log("    " + nameof(ParentObject) + " not " + nameof(AnimatedObject));
@@ -141,7 +141,7 @@ namespace XRL.World.Parts
                         return;
                     }
                     IPart sourcePart = sourcePartBlueprint.Reflector?.GetInstance() ?? (Activator.CreateInstance(sourcePartBlueprint.T) as IPart);
-                    if (Exclude != null && Exclude(sourcePart))
+                    if (sourcePart == null || Exclude != null && Exclude(sourcePart))
                     {
                         continue;
                     }
@@ -253,11 +253,10 @@ namespace XRL.World.Parts
             UnityEngine.Debug.Log("    " + nameof(MakeItALIVE) + ", " + nameof(Corpse) + ": " + Corpse?.DebugName ?? "null");
             if (Corpse is GameObject frankenCorpse)
             {
+                string corpseType = frankenCorpse.Blueprint.Replace(" Corpse", "");
                 frankenCorpse.SetIntProperty("NoAnimatedNamePrefix", 1);
                 frankenCorpse.SetIntProperty("Bleeds", 1);
-
-                UD_FleshGolems_ReanimatedCorpse reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
-                reanimatedCorpse.SourceObject = SourceObject;
+                frankenCorpse.SetStringProperty("Species", corpseType);
 
                 string convoID = frankenCorpse.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG);
                 if (frankenCorpse.TryGetPart(out ConversationScript convo)
@@ -305,9 +304,10 @@ namespace XRL.World.Parts
                 }
                 string sourceBlueprintName = frankenCorpse.GetPropertyOrTag("SourceBlueprint")
                     ?? frankenCorpse.GetPropertyOrTag("UD_FleshGolems_OriginalCorpse")
-                    ?? frankenCorpse.GetPropertyOrTag("CorpseBlueprint", frankenCorpse?.Blueprint)?.Replace(" Corpse", "")
+                    ?? frankenCorpse.GetPropertyOrTag("CorpseBlueprint", corpseType)
                     ?? "Trash Monk";
-                SourceBlueprint = sourceBlueprintName;
+                
+                SourceBlueprint ??= sourceBlueprintName;
 
                 Corpse frankenCorpseCorpse = frankenCorpse.RequirePart<Corpse>();
                 if (frankenCorpseCorpse != null)
@@ -373,12 +373,19 @@ namespace XRL.World.Parts
                     {
                         return IPartsToSkipWhenReanimating.Contains(p.Name)
                             || frankenCorpse.HasPart(p.Name)
-                            || frankenCorpse.GetPropertyOrTag("UD_FleshGolems_Reanimated_PartExclusions").CachedCommaExpansion().Contains(p.Name);
+                            || (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_Reanimated_PartExclusions") is string propertyPartExclusions
+                                && propertyPartExclusions.CachedCommaExpansion() is List<string> partExclusionsList
+                                && partExclusionsList.Contains(p.Name));
                     }
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
                     AssignMutationsFromBlueprint(frankenMutations, sourceBlueprint);
                     AssignSkillsFromBlueprint(frankenSkills, sourceBlueprint);
+
+                    if (sourceBlueprint.Tags.ContainsKey("Species"))
+                    {
+                        frankenCorpse.SetStringProperty("Species", sourceBlueprint.Tags["Species"]);
+                    }
 
                     if (frankenCorpse.Brain is Brain frankenBrain)
                     {
@@ -435,10 +442,18 @@ namespace XRL.World.Parts
                             {
                                 sourceDescription = sourceCorpseDescription;
                             }
+                            if (sourceBlueprintDisplayName.Contains("[") || sourceBlueprintDisplayName.Contains("]"))
+                            {
+                                wereProperlyNamed = true;
+                            }
                             string whoTheyWere = wereProperlyNamed ? sourceCreatureName : sourceBlueprintDisplayName;
                             if (whoTheyWere.ToLower().EndsWith(" corpse") || whoTheyWere.ToLower().StartsWith("corpse of "))
                             {
                                 whoTheyWere = UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE + " " + whoTheyWere;
+                            }
+                            if (whoTheyWere.Contains("[") || whoTheyWere.Contains("]") || frankenCorpse.GetStringProperty("SourceID") == "1")
+                            {
+                                whoTheyWere = frankenGenotype;
                             }
                             if (!wereProperlyNamed)
                             {
@@ -570,6 +585,9 @@ namespace XRL.World.Parts
                     }
                 }
 
+                UD_FleshGolems_ReanimatedCorpse reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
+                reanimatedCorpse.SourceObject = SourceObject;
+
                 return true;
             }
             return false;
@@ -590,7 +608,7 @@ namespace XRL.World.Parts
         public override bool HandleEvent(AnimateEvent E)
         {
             UnityEngine.Debug.Log(
-                nameof(UD_FleshGolems_CoprseReanimationHelper) + "." + nameof(AnimateEvent) + ", " +
+                nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(AnimateEvent) + ", " +
                 nameof(IsALIVE) + ": " + IsALIVE);
 
             if (!IsALIVE

@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <objects>
   <object Name="Corpse" Load="Merge">
-    <part Name="UD_FleshGolems_CoprseReanimationHelper" />
+    <part Name="UD_FleshGolems_CorpseReanimationHelper" />
     <tag Name="Animatable" />
+    <removetag Name="Tier" />
     <builder Name="Animated" ChanceOneIn="3000" />
     <tag Name="HeroNameTitleDescriptor" Value="Suffering,Waiting,Silent" />
     <tag Name="HeroNameTitleClientele" Value="Builders,Cowards,Defenders,Roofs,the Assailed,the Stalwart" />
@@ -22,7 +23,7 @@
     <tag Name="BodyType" Value="HumanoidRobot" />
     <xtagTextFragments
       Skin="shorn metal"
-      PoeticFeatures="oil,gell,bent chrome,jagged edges"
+      PoeticFeatures="oil,gel,bent chrome,jagged edges"
       PoeticVerbs="jittering,stuttering,whining"
       PoeticAdjectives="slick,erratic,crunchy"
       PoeticnNoises="sizzles,whirs,sputters" />
