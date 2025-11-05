@@ -6,7 +6,7 @@
     <removetag Name="Tier" />
     <builder Name="Animated" ChanceOneIn="3000" />
     <tag Name="HeroNameTitleDescriptor" Value="Suffering,Waiting,Silent" />
-    <tag Name="HeroNameTitleClientele" Value="Builders,Cowards,Defenders,Roofs,the Assailed,the Stalwart" />
+    <tag Name="HeroNameTitleAdmirers" Value="Surgeons,Healers,Scientists,Scientists of the Mad Variety" />
     <tag Name="DynamicObjectsTable:AnimatableFurniture" />
     <tag Name="BodyType" Value="Humanoid" />
     <xtagTextFragments
@@ -19,7 +19,7 @@
   </object>
   <object Name="Robot Corpse" Load="Merge">
     <tag Name="HeroNameTitleDescriptor" Value="Scuffed,Broken-down,Corrupted" />
-    <tag Name="HeroNameTitleClientele" Value="Builders,Cowards,Defenders,Roofs,the Assailed,the Stalwart" />
+    <tag Name="HeroNameTitleAdmirers" Value="Tinkers,Craftspeople,Robots" />
     <tag Name="BodyType" Value="HumanoidRobot" />
     <xtagTextFragments
       Skin="shorn metal"
@@ -28,4 +28,82 @@
       PoeticAdjectives="slick,erratic,crunchy"
       PoeticnNoises="sizzles,whirs,sputters" />
   </object>
+  
+  <object Name="PlantCorpseHeroics">
+    <tag Name="HeroNameTitleDescriptor" Value="Wilted,Composted,Blighted" />
+    <tag Name="HeroNameTitleAdmirers" Value="Gardeners,Arborists" />
+  </object>
+  <object Name="Plant Corpse" Inherits="Plant">
+    <mixin Name="Corpse" />
+    <mixin Name="PlantCorpseHeroics" />
+    <xtagTextFragments
+      Skin="fibres"
+      PoeticFeatures="sap,fibre,roots"
+      PoeticVerbs="tangling,stuttering,wriggling"
+      PoeticAdjectives="damp,moist,mulchy"
+      PoeticnNoises="gurgles,slurps,squelches" />
+  </object>
+  <object Name="Bush Corpse" Inherits="Plant">
+    <mixin Name="Corpse" />
+    <mixin Name="PlantCorpseHeroics" />
+    <xtagTextFragments
+      Skin="fibres"
+      PoeticFeatures="sap,fibre,roots,wood,fruit,leaves"
+      PoeticVerbs="tangling,stuttering,wriggling"
+      PoeticAdjectives="damp,moist,mulchy"
+      PoeticnNoises="gurgles,slurps,squelches" />
+  </object>
+  <object Name="Cactus Corpse" Inherits="Plant">
+    <mixin Name="Corpse" />
+    <mixin Name="PlantCorpseHeroics" />
+    <xtagTextFragments
+      Skin="fibres"
+      PoeticFeatures="sap,fibre,roots,spines,fruit"
+      PoeticVerbs="tangling,stuttering,wriggling"
+      PoeticAdjectives="damp,moist,mulchy"
+      PoeticnNoises="gurgles,slurps,squelches" />
+  </object>
+  <object Name="Flower Corpse" Inherits="Plant">
+    <mixin Name="Corpse" />
+    <mixin Name="PlantCorpseHeroics" />
+    <xtagTextFragments
+      Skin="fibres"
+      PoeticFeatures="sap,fibre,roots,petals,leaves"
+      PoeticVerbs="tangling,stuttering,wriggling"
+      PoeticAdjectives="damp,moist,mulchy"
+      PoeticnNoises="gurgles,slurps,squelches" />
+  </object>
+  <object Name="Vine Corpse" Inherits="Plant">
+    <mixin Name="Corpse" />
+    <mixin Name="PlantCorpseHeroics" />
+    <xtagTextFragments
+      Skin="fibres"
+      PoeticFeatures="sap,fibre,roots,petals,leaves,thorns,fruit"
+      PoeticVerbs="tangling,stuttering,wriggling"
+      PoeticAdjectives="damp,moist,mulchy"
+      PoeticnNoises="gurgles,slurps,squelches" />
+  </object>
+  <object Name="Tree Corpse" Inherits="Tree">
+    <mixin Name="Corpse" />
+    <mixin Name="PlantCorpseHeroics" />
+    <xtagTextFragments
+      Skin="fibres"
+      PoeticFeatures="sap,fibre,roots,leaves,fruit"
+      PoeticVerbs="tangling,stuttering,wriggling"
+      PoeticAdjectives="damp,moist,mulchy"
+      PoeticnNoises="gurgles,slurps,squelches" />
+  </object>
+  
+  <object Name="Fungus Corpse" Inherits="Fungus">
+    <mixin Name="Corpse" />
+    <tag Name="HeroNameTitleDescriptor" Value="Decayed,Barren,Blighted" />
+    <tag Name="HeroNameTitleClientele" Value="Builders,Cowards,Defenders,Roofs,the Assailed,the Stalwart" />
+    <xtagTextFragments
+      Skin="mycelia"
+      PoeticFeatures="spores,fibre,tendrils"
+      PoeticVerbs="tangling,stuttering,wriggling"
+      PoeticAdjectives="damp,moist,mulchy"
+      PoeticnNoises="gurgles,slurps,squelches" />
+  </object>
+  
 </objects>

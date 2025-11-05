@@ -2,7 +2,7 @@
 <objects>
   
   <object Name="Creature" Load="Merge">
-    <!--builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" /-->
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" />
   </object>
   
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
@@ -55,4 +55,55 @@
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
+  
+  <!--
+  
+    Bestowing corpses!
+  
+  -->
+  <object Name="ActivePlant" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Plant Corpse" CorpseChance="0" />
+  </object>
+  <object Name="Fracti" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Cactus Corpse" CorpseChance="0" />
+  </object>
+  <object Name="MutatedBush" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Bush Corpse" CorpseChance="0" />
+  </object>
+  <object Name="MutatedFlower" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Flower Corpse" CorpseChance="0" />
+  </object>
+  <object Name="MutatedSucculent" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Cactus Corpse" CorpseChance="0" />
+  </object>
+  <object Name="MutatedVine" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Vine Corpse" CorpseChance="0" />
+  </object>
+  <object Name="MutatedTree" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Tree Corpse" CorpseChance="0" />
+  </object>
+  <object Name="ActiveFungus" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Fungus Corpse" CorpseChance="0" />
+  </object>
+  
+  <object Name="SapientMutatedBush" Load="Merge">
+    <part Name="Corpse" CorpseChance="20" />
+  </object>
+  <object Name="SapientMutatedSucculent" Load="Merge">
+    <part Name="Corpse" CorpseChance="20" />
+  </object>
+  <object Name="SapientMutatedFlower" Load="Merge">
+    <part Name="Corpse" CorpseChance="20" />
+  </object>
+  <object Name="SapientMutatedVine" Load="Merge">
+    <part Name="Corpse" CorpseChance="20" />
+  </object>
+  <object Name="SapientMutatedTree" Load="Merge">
+    <part Name="Corpse" CorpseChance="20" />
+  </object>
+  
+  <object Name="SapientMutatedFungus" Load="Merge">
+    <part Name="Corpse" CorpseChance="20" />
+  </object>
+  
 </objects>

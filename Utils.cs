@@ -4,8 +4,11 @@ using System.Collections.Generic;
 using System.Text;
 
 using XRL;
+using XRL.Language;
 using XRL.World.Text.Attributes;
 using XRL.World.Text.Delegates;
+using XRL.CharacterBuilds;
+using XRL.CharacterBuilds.Qud;
 
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
@@ -17,6 +20,24 @@ namespace UD_FleshGolems
     {
         public static ModInfo ThisMod => ModManager.GetMod(MOD_ID);
 
+        public static string GetPlayerBlueprint()
+        {
+            if (!EmbarkBuilderConfiguration.activeModules.IsNullOrEmpty())
+            {
+                foreach (AbstractEmbarkBuilderModule activeModule in EmbarkBuilderConfiguration.activeModules)
+                {
+                    if (activeModule.type == nameof(QudSpecificCharacterInitModule))
+                    {
+                        QudSpecificCharacterInitModule characterInit = activeModule as QudSpecificCharacterInitModule;
+                        string blueprint = characterInit?.builder?.GetModule<QudGenotypeModule>()?.data?.Entry?.BodyObject
+                            ?? characterInit?.builder?.GetModule<QudSubtypeModule>()?.data?.Entry?.BodyObject
+                            ?? "Humanoid";
+                        return characterInit.builder.info.fireBootEvent(QudGameBootModule.BOOTEVENT_BOOTPLAYEROBJECTBLUEPRINT, The.Game, blueprint);
+                    }
+                }
+            }
+            return null;
+        }
 
         [VariableReplacer]
         public static string ud_nbsp(DelegateContext Context)
@@ -31,6 +52,16 @@ namespace UD_FleshGolems
                 }
             }
             return output;
+        }
+
+        [VariableReplacer]
+        public static string ud_weird(DelegateContext Context)
+        {
+            if (!Context.Parameters.IsNullOrEmpty())
+            {
+                return TextFilters.Weird(Context.Parameters[0]);
+            }
+            return null;
         }
     }
 }

@@ -8,7 +8,10 @@ using XRL.Rules;
 using XRL.World.Anatomy;
 using XRL.World.Parts.Mutation;
 using XRL.World.Parts.Skill;
+using XRL.World.ObjectBuilders;
 using XRL.World.Quests.GolemQuest;
+using XRL.World.Skills;
+using XRL.World.AI;
 
 namespace XRL.World.Parts
 {
@@ -18,7 +21,11 @@ namespace XRL.World.Parts
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
 
-        // TODO: Add a means to remove specific parts if the corpse blueprint indicates to.
+        public UD_FleshGolems_PastLife PastLife => ParentObject?.GetPart<UD_FleshGolems_PastLife>();
+
+        public static List<string> PhysicalStats => new() { "Strength", "Agility", "Toughness", };
+        public static List<string> MentalStats => new() { "Intelligence", "Willpower", "Ego", };
+
         public static List<string> IPartsToSkipWhenReanimating => new()
         {
             nameof(Titles),
@@ -83,13 +90,18 @@ namespace XRL.World.Parts
             return Animate(out _);
         }
 
-        public static void AssignStatsFromBlueprint(GameObject FrankenCorpse, GameObjectBlueprint SourceBlueprint)
+        public static bool AssignStatsFromStatistics(
+            GameObject FrankenCorpse,
+            Dictionary<string, Statistic> Statistics,
+            bool Override = true,
+            Dictionary<string, int> StatAdjustments = null)
         {
-            if (FrankenCorpse == null || SourceBlueprint == null || SourceBlueprint.Stats.IsNullOrEmpty())
+            bool any = false;
+            if (FrankenCorpse == null || Statistics.IsNullOrEmpty())
             {
-                return;
+                return any;
             }
-            foreach ((string statName, Statistic sourceStat) in SourceBlueprint.Stats)
+            foreach ((string statName, Statistic sourceStat) in Statistics)
             {
                 Statistic statistic = new(sourceStat)
                 {
@@ -100,26 +112,85 @@ namespace XRL.World.Parts
                     FrankenCorpse.Statistics.Add(statName, statistic);
                 }
                 else
+                if (Override)
                 {
                     FrankenCorpse.Statistics[statName] = statistic;
                 }
+                if (!StatAdjustments.IsNullOrEmpty() && StatAdjustments.ContainsKey(statName))
+                {
+                    FrankenCorpse.Statistics[statName].BaseValue += StatAdjustments[statName];
+                }
+                any = true;
             }
             FrankenCorpse.FinalizeStats();
-            if (FrankenCorpse.TryGetPart(out Leveler frankenLeveler))
+            return any;
+        }
+        public static bool AssignStatsFromPastLife(
+            GameObject FrankenCorpse,
+            UD_FleshGolems_PastLife PastLife,
+            bool Override = true,
+            Dictionary<string, int> StatAdjustments = null)
+        {
+            return AssignStatsFromStatistics(FrankenCorpse, PastLife.Stats, Override, StatAdjustments);
+        }
+        public static bool AssignStatsFromPastLifeWithAdjustment(
+            GameObject FrankenCorpse,
+            UD_FleshGolems_PastLife PastLife,
+            bool Override = true,
+            int PhysicalAdjustment = 0,
+            int MentalAdjustment = 0)
+        {
+            return AssignStatsFromStatistics(FrankenCorpse, PastLife.Stats, Override, new()
             {
-                if (int.TryParse(FrankenCorpse.GetPropertyOrTag("UD_FleshGolems_SkipLevelsOnReanimate", "0"), out int SkipLevelsOnReanimate)
-                    && SkipLevelsOnReanimate < 1)
+                { "Strength", PhysicalAdjustment },
+                { "Agility", PhysicalAdjustment },
+                { "Toughness", PhysicalAdjustment },
+                { "Intelligence", MentalAdjustment },
+                { "Willpower", MentalAdjustment },
+                { "Ego", MentalAdjustment },
+            });
+        }
+        public static bool AssignStatsFromPastLifeWithFactor(
+            GameObject FrankenCorpse,
+            UD_FleshGolems_PastLife PastLife,
+            bool Override = true,
+            float PhysicalAdjustmentFactor = 1f,
+            float MentalAdjustmentFactor = 1f)
+        {
+            if (FrankenCorpse == null || PastLife == null || PastLife.Stats.IsNullOrEmpty())
+            {
+                return false;
+            }
+            Dictionary<string, int> StatAdjustments = new();
+            foreach ((string statName, Statistic stat) in PastLife?.Stats)
+            {
+                if (PhysicalStats.Contains(statName) || MentalStats.Contains(statName))
                 {
-                    frankenLeveler.LevelUp();
-                    if (Stat.RollCached("1d2") == 1)
+                    float adjustmentFactor = 1f;
+                    if (PhysicalStats.Contains(statName))
                     {
-                        frankenLeveler.LevelUp();
+                        adjustmentFactor = PhysicalAdjustmentFactor;
+                    }
+                    else
+                    if (MentalStats.Contains(statName))
+                    {
+                        adjustmentFactor = MentalAdjustmentFactor;
+                    }
+                    if (adjustmentFactor != 1f)
+                    {
+                        StatAdjustments.Add(statName, (int)(stat.BaseValue * adjustmentFactor) - stat.BaseValue);
                     }
                 }
-                int floorXP = Leveler.GetXPForLevel(FrankenCorpse.Level);
-                int ceilingXP = Leveler.GetXPForLevel(FrankenCorpse.Level + 1);
-                FrankenCorpse.GetStat("XP").BaseValue = Stat.RandomCosmetic(floorXP, ceilingXP);
             }
+            return AssignStatsFromStatistics(FrankenCorpse, PastLife.Stats, Override, StatAdjustments);
+        }
+        public static bool AssignStatsFromBlueprint(
+            GameObject FrankenCorpse,
+            GameObjectBlueprint SourceBlueprint,
+            bool Override = true,
+            Dictionary<string, int> StatAdjustments = null)
+        {
+            return AssignStatsFromStatistics(FrankenCorpse, SourceBlueprint.Stats, Override, StatAdjustments);
         }
 
         public static void AssignPartsFromBlueprint(
@@ -159,14 +230,44 @@ namespace XRL.World.Parts
             }
         }
 
-        public static void AssignMutationsFromBlueprint(
+        public static bool AssignMutationsFromPastLife(
+            Mutations FrankenMutations,
+            UD_FleshGolems_PastLife PastLife,
+            Predicate<BaseMutation> Exclude = null)
+        {
+            bool any = false;
+            if (FrankenMutations == null || PastLife == null || PastLife.MutationLevels.IsNullOrEmpty())
+            {
+                return any;
+            }
+            foreach ((string mutationName, int level) in PastLife.MutationLevels)
+            {
+                if (MutationFactory.GetMutationEntryByName(mutationName) is MutationEntry mutationEntry
+                    && mutationEntry.Instance is BaseMutation baseMutation)
+                {
+                    if (Exclude != null && Exclude(baseMutation))
+                    {
+                        continue;
+                    }
+                    if (baseMutation.CapOverride == -1)
+                    {
+                        baseMutation.CapOverride = level;
+                    }
+                    FrankenMutations.AddMutation(baseMutation, level);
+                    any = true;
+                }
+            }
+            return any;
+        }
+        public static bool AssignMutationsFromBlueprint(
             Mutations FrankenMutations,
             GameObjectBlueprint SourceBlueprint,
             Predicate<BaseMutation> Exclude = null)
         {
+            bool any = false;
             if (FrankenMutations == null || SourceBlueprint == null || SourceBlueprint.Mutations.IsNullOrEmpty())
             {
-                return;
+                return any;
             }
             foreach (GamePartBlueprint sourceMutationBlueprint in SourceBlueprint.Mutations.Values)
             {
@@ -180,7 +281,7 @@ namespace XRL.World.Parts
                 if (mutationType == null)
                 {
                     MetricsManager.LogError("Unknown mutation " + mutationNamespace);
-                    return;
+                    return any;
                 }
                 if ((sourceMutationBlueprint.Reflector?.GetNewInstance() ?? Activator.CreateInstance(mutationType)) is not BaseMutation baseMutation)
                 {
@@ -203,16 +304,45 @@ namespace XRL.World.Parts
                     baseMutation.CapOverride = baseMutation.Level;
                 }
                 FrankenMutations.AddMutation(baseMutation, baseMutation.Level);
+                any = true;
             }
+            return any;
         }
-        public static void AssignSkillsFromBlueprint(
+
+        public static bool AssignSkillsFromPastLife(
+            Skills FrankenSkills,
+            UD_FleshGolems_PastLife PastLife,
+            Predicate<BaseSkill> Exclude = null)
+        {
+            bool any = false;
+            if (FrankenSkills == null || PastLife == null || PastLife.Skills.IsNullOrEmpty())
+            {
+                return any;
+            }
+            foreach (string skillName in PastLife.Skills)
+            {
+                if (SkillFactory.Factory.GetSkillIfExists(skillName) is SkillEntry skillEntry
+                    && (BaseSkill)skillEntry.Instance is BaseSkill skillPart)
+                {
+                    if (Exclude != null && Exclude(skillPart))
+                    {
+                        continue;
+                    }
+                    any = FrankenSkills.AddSkill(skillPart) || any;
+                }
+            }
+            return any;
+        }
+
+        public static bool AssignSkillsFromBlueprint(
             Skills FrankenSkills,
             GameObjectBlueprint SourceBlueprint,
             Predicate<BaseSkill> Exclude = null)
         {
+            bool any = false;
             if (FrankenSkills == null || SourceBlueprint == null || SourceBlueprint.Skills.IsNullOrEmpty())
             {
-                return;
+                return any;
             }
             foreach (GamePartBlueprint sourceSkillBlueprint in SourceBlueprint.Skills.Values)
             {
@@ -226,7 +356,7 @@ namespace XRL.World.Parts
                 if (skillType == null)
                 {
                     MetricsManager.LogError("Unknown skill " + skillNamespace);
-                    return;
+                    return any;
                 }
                 if ((sourceSkillBlueprint.Reflector?.GetNewInstance() ?? Activator.CreateInstance(skillType)) is not BaseSkill baseSkill)
                 {
@@ -244,11 +374,18 @@ namespace XRL.World.Parts
                 {
                     skillBuilder.BuildPart(baseSkill, Context: "Initialization");
                 }
-                FrankenSkills.AddSkill(baseSkill);
+                any = FrankenSkills.AddSkill(baseSkill) || any;
             }
+            return any;
         }
 
-        public static bool MakeItALIVE(GameObject Corpse, ref string CreatureName, ref string SourceBlueprint, ref string CorpseDescription, GameObject SourceObject = null)
+        public static bool MakeItALIVE(
+            GameObject Corpse,
+            UD_FleshGolems_PastLife PastLife,
+            ref string CreatureName,
+            ref string SourceBlueprint,
+            ref string CorpseDescription,
+            GameObject SourceObject = null)
         {
             UnityEngine.Debug.Log("    " + nameof(MakeItALIVE) + ", " + nameof(Corpse) + ": " + Corpse?.DebugName ?? "null");
             if (Corpse is GameObject frankenCorpse)
@@ -277,14 +414,33 @@ namespace XRL.World.Parts
                 Description frankenDescription = frankenCorpse.RequirePart<Description>();
                 if (frankenDescription != null)
                 {
-                    List<string> poeticFeatures = new(frankenCorpse.GetxTag("TextFragments", "PoeticFeatures").Split(','));
-                    string firstPoeticFeature = poeticFeatures.GetRandomElement();
+                    List<string> poeticFeatures = new()
+                    {
+                        "viscera",
+                        "muck",
+                    };
+                    if (frankenCorpse?.GetxTag("TextFragments", "PoeticFeatures") is string poeticFeaturesXTag)
+                    {
+                        poeticFeatures = new(poeticFeaturesXTag.Split(','));
+                    }
+                    string firstPoeticFeature = poeticFeatures.GetRandomElement() ?? "Viscera";
                     poeticFeatures.Remove(firstPoeticFeature);
-                    string secondPoeticFeature = poeticFeatures.GetRandomElement();
+                    string secondPoeticFeature = poeticFeatures.GetRandomElement() ?? "muck";
                     poeticFeatures.Remove(secondPoeticFeature);
-                    string poeticVerb = frankenCorpse.GetxTag("TextFragments", "PoeticVerbs").Split(',').GetRandomElement();
-                    string poeticAdjective = frankenCorpse.GetxTag("TextFragments", "PoeticAdjectives").Split(',').GetRandomElement();
-                    List<string> poeticNoises = new(frankenCorpse.GetxTag("TextFragments", "PoeticnNoises").Split(','));
+
+                    string poeticVerb = frankenCorpse?.GetxTag("TextFragments", "PoeticVerbs")?.Split(',')?.GetRandomElement() ?? "squirming";
+
+                    string poeticAdjective = frankenCorpse?.GetxTag("TextFragments", "PoeticAdjectives")?.Split(',')?.GetRandomElement() ?? "wet";
+
+                    List<string> poeticNoises = new()
+                    {
+                        "gurgles",
+                        "slurps",
+                    };
+                    if (frankenCorpse?.GetxTag("TextFragments", "PoeticnNoises") is string poeticNoisesXTag)
+                    {
+                        poeticFeatures = new(poeticNoisesXTag.Split(','));
+                    }
                     string firstPoeticNoise = poeticNoises.GetRandomElement();
                     poeticNoises.Remove(firstPoeticNoise);
                     string secondPoeticNoise = poeticNoises.GetRandomElement();
@@ -378,9 +534,31 @@ namespace XRL.World.Parts
                                 && partExclusionsList.Contains(p.Name));
                     }
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
+                    AssignStatsFromPastLifeWithFactor(frankenCorpse, PastLife, PhysicalAdjustmentFactor: 1.2f, MentalAdjustmentFactor: 0.75f);
+
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
+
                     AssignMutationsFromBlueprint(frankenMutations, sourceBlueprint);
+                    AssignMutationsFromPastLife(frankenMutations, PastLife);
+
                     AssignSkillsFromBlueprint(frankenSkills, sourceBlueprint);
+                    AssignSkillsFromPastLife(frankenSkills, PastLife);
+
+                    if (frankenCorpse.TryGetPart(out Leveler frankenLeveler))
+                    {
+                        if (int.TryParse(frankenCorpse.GetPropertyOrTag("UD_FleshGolems_SkipLevelsOnReanimate", "0"), out int SkipLevelsOnReanimate)
+                            && SkipLevelsOnReanimate < 1)
+                        {
+                            frankenLeveler.LevelUp();
+                            if (Stat.RollCached("1d2") == 1)
+                            {
+                                frankenLeveler.LevelUp();
+                            }
+                        }
+                        int floorXP = Leveler.GetXPForLevel(frankenCorpse.Level);
+                        int ceilingXP = Leveler.GetXPForLevel(frankenCorpse.Level + 1);
+                        frankenCorpse.GetStat("XP").BaseValue = Stat.RandomCosmetic(floorXP, ceilingXP);
+                    }
 
                     if (sourceBlueprint.Tags.ContainsKey("Species"))
                     {
@@ -392,6 +570,37 @@ namespace XRL.World.Parts
                         if (sourceBlueprint.TryGetPartParameter(nameof(Brain), nameof(Brain.Wanders), out bool sourceBrainWanders))
                         {
                             frankenBrain.Wanders = sourceBrainWanders;
+                        }
+                        if (!UD_FleshGolems_Reanimated.IsGameRunning
+                            && PastLife?.Brain is Brain pastBrain)
+                        {
+                            frankenCorpse.Brain.Allegiance ??= new();
+                            frankenCorpse.Brain.Allegiance.Clear();
+                            frankenCorpse.Brain.Allegiance.Add("Newly Sentient Beings", 75);
+                            foreach ((string faction, int rep) in pastBrain.Allegiance)
+                            {
+                                if (!pastBrain.Allegiance.ContainsKey(faction))
+                                {
+                                    frankenCorpse.Brain.Allegiance.Add(faction, rep);
+                                }
+                                else
+                                {
+                                    frankenCorpse.Brain.Allegiance[faction] += rep;
+                                }
+                            }
+                            frankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
+                            frankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
+
+                            frankenCorpse.Brain.PartyLeader = pastBrain.PartyLeader;
+                            frankenCorpse.Brain.PartyMembers = pastBrain.PartyMembers;
+
+                            frankenCorpse.Brain.Opinions = pastBrain.Opinions;
+
+                            frankenBrain.Wanders = pastBrain.Wanders;
+                            frankenBrain.WallWalker = pastBrain.WallWalker;
+                            frankenBrain.HostileWalkRadius = pastBrain.HostileWalkRadius;
+
+                            frankenBrain.Mobile = pastBrain.Mobile;
                         }
                     }
 
@@ -441,6 +650,10 @@ namespace XRL.World.Parts
                             if (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_CorpseDescription") is string sourceCorpseDescription)
                             {
                                 sourceDescription = sourceCorpseDescription;
+                            }
+                            if (PastLife != null && !PastLife.Description.IsNullOrEmpty())
+                            {
+                                sourceDescription = PastLife.Description;
                             }
                             if (sourceBlueprintDisplayName.Contains("[") || sourceBlueprintDisplayName.Contains("]"))
                             {
@@ -568,14 +781,14 @@ namespace XRL.World.Parts
                     }
                 }
 
-                if (!frankenCorpse.IsPlayer())
+                if (!frankenCorpse.IsPlayer() && frankenCorpse?.CurrentCell is Cell frankenCell)
                 {
                     bool isItemThatNotSelf(GameObject GO)
                     {
                         return GO.GetBlueprint().InheritsFrom("Item")
                             && GO != frankenCorpse;
                     }
-                    frankenCorpse.TakeObject(Event.NewGameObjectList(frankenCorpse.CurrentCell.GetObjects(isItemThatNotSelf)));
+                    frankenCorpse.TakeObject(Event.NewGameObjectList(frankenCell.GetObjects(isItemThatNotSelf)));
                     frankenCorpse.Brain?.WantToReequip();
 
                     if (frankenCorpse.TryGetPart(out GenericInventoryRestocker frankenRestocker))
@@ -614,7 +827,8 @@ namespace XRL.World.Parts
             if (!IsALIVE
                 && ParentObject == E.Object)
             {
-                IsALIVE = MakeItALIVE(E.Object, ref CreatureName, ref SourceBlueprint, ref CorpseDescription, E.Actor);
+                IsALIVE = true;
+                MakeItALIVE(E.Object, PastLife, ref CreatureName, ref SourceBlueprint, ref CorpseDescription, E.Actor);
             }
             return base.HandleEvent(E);
         }
@@ -631,6 +845,13 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(DroppedEvent E)
         {
+            if (E.Item is GameObject corpse
+                && corpse == ParentObject
+                && E.Actor is GameObject dying
+                && dying.IsDying)
+            {
+                corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(dying);
+            }
             if (AlwaysAnimate
                 && !IsALIVE
                 && ParentObject != null
