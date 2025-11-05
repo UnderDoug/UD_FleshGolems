@@ -49,11 +49,14 @@
     <part Name="Render" DisplayName="'Monger" DetailColor="R" TileColor="&amp;W" />
     <part Name="Honorifics" Primary="Mad" />
     <part Name="Corpse" CorpseChance="100" />
+    <part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" />
     <xtagGrammar Proper="true" />
     <part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger" />
     <removepart Name="HasGuards" />
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <inventoryObject Blueprint="CyberneticsCreditWedge3" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" Number="1-2"/>
+    <inventoryobject Blueprint="Di-Thermo Beam" Number="2" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" />
   </object>
   
   <!--

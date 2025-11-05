@@ -249,10 +249,6 @@ namespace XRL.World.Parts
                     {
                         continue;
                     }
-                    if (baseMutation.CapOverride == -1)
-                    {
-                        baseMutation.CapOverride = level;
-                    }
                     FrankenMutations.AddMutation(baseMutation, level);
                     any = true;
                 }
@@ -395,8 +391,11 @@ namespace XRL.World.Parts
                 frankenCorpse.SetIntProperty("Bleeds", 1);
                 frankenCorpse.SetStringProperty("Species", corpseType);
 
+                frankenCorpse.Render.RenderLayer = 10;
+
                 string convoID = frankenCorpse.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG);
-                if (frankenCorpse.TryGetPart(out ConversationScript convo)
+                ConversationScript convo = null;
+                if (frankenCorpse.TryGetPart(out convo)
                     && (convo.ConversationID == "NewlySentientBeings" || !convoID.IsNullOrEmpty()))
                 {
                     convoID ??= "UD_FleshGolems NewlyReanimatedBeings";
@@ -704,10 +703,10 @@ namespace XRL.World.Parts
                         frankenCorpse.GetPropertyOrTag("KillerName", killer.GetReferenceDisplayName(Short: true));
                     }
 
-
                     if (sourceBlueprint.TryGetPartParameter(nameof(Physics), nameof(Physics.Weight), out int sourceWeight))
                     {
                         frankenCorpse.Physics.Weight = sourceWeight;
+                        frankenCorpse.FlushWeightCaches();
                     }
 
                     if (sourceBlueprint.TryGetPartParameter(nameof(Body), nameof(Body.Anatomy), out string sourceAnatomy))
@@ -738,7 +737,6 @@ namespace XRL.World.Parts
                         if (golemBodyBlueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.Tile), out string golemTile))
                         {
                             frankenCorpse.Render.Tile = golemTile;
-                            UnityEngine.Debug.Log(nameof(golemTile) + ": " + golemTile);
                         }
 
                         bool giganticIfNotAlready(BaseMutation BM)
@@ -768,16 +766,30 @@ namespace XRL.World.Parts
                                 regenerationMutation.ChangeLevel(10);
                             }
                         }
-
+                        string nightVisionMutaitonName = "Night Vision";
                         string darkVisionMutationName = "Dark Vision";
-                        if (frankenMutations.GetMutationByName(darkVisionMutationName) is not BaseMutation darkVisionMutation)
+                        MutationEntry nightVisionEntry = MutationFactory.GetMutationEntryByName(nightVisionMutaitonName);
+                        MutationEntry darkVisionEntry = MutationFactory.GetMutationEntryByName(darkVisionMutationName);
+                        if (!frankenMutations.HasMutation(nightVisionEntry.Class) && !frankenMutations.HasMutation(darkVisionEntry.Class))
                         {
-                            darkVisionMutation = MutationFactory.GetMutationEntryByName(darkVisionMutationName)?.CreateInstance();
+                            if (darkVisionEntry.Instance is BaseMutation darkVisionMutation)
+                            {
+                                if (darkVisionMutation.CapOverride == -1)
+                                {
+                                    darkVisionMutation.CapOverride = 8;
+                                }
+                                frankenMutations.AddMutation(darkVisionMutation, 8);
+                            }
                         }
-                        if (darkVisionMutation != null)
-                        {
-                            frankenMutations.AddMutation(darkVisionMutation, 12);
-                        }
+                    }
+                }
+
+                if (!UD_FleshGolems_Reanimated.IsGameRunning)
+                {
+                    if (PastLife?.ConversationScript is ConversationScript pastConversation)
+                    {
+                        frankenCorpse.RemovePart<ConversationScript>();
+                        frankenCorpse.AddPart(pastConversation);
                     }
                 }
 

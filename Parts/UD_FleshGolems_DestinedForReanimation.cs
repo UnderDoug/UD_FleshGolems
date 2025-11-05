@@ -371,38 +371,24 @@ namespace XRL.World.Parts
                 && BuiltToBeReanimated
                 && ParentObject is GameObject soonToBeCorpse)
             {
-                if (soonToBeCorpse.Blueprint.IsPlayerBlueprint()
-                    && !HaveFakedDeath)
+                UnityEngine.Debug.Log(
+                    nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(EnvironmentalUpdateEvent) + ", " +
+                    nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
+                    nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL));
+
+                Attempted = true;
+                if ((soonToBeCorpse.Blueprint.IsPlayerBlueprint() || soonToBeCorpse.IsPlayer())
+                    && !HaveFakedDeath
+                    && UD_FleshGolems_Reanimated.TryProduceCorpse(soonToBeCorpse, out Corpse))
                 {
-                    Attempted = true;
-
                     UnityEngine.Debug.Log(
-                        nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(EnvironmentalUpdateEvent) + ", " +
-                        nameof(soonToBeCorpse) + ": " + soonToBeCorpse?.DebugName ?? null + ", " +
-                        nameof(Corpse) + ": " + Corpse?.DebugName ?? null);
-
-                    HaveFakedDeath = FakeRandomDeath();
-
-                    Corpse.SetIntProperty("UD_FleshGolems_SkipLevelsOnReanimate", 1);
-
-                    Corpse.RequirePart<Inventory>();
-                    Metamorphosis.TransferInventory(soonToBeCorpse, Corpse);
-
-                    ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
-                    The.Game.Player.SetBody(Corpse);
-
-                    soonToBeCorpse.MakeInactive();
-                    Corpse.MakeActive();
+                        nameof(UD_FleshGolems.Extensions.IsPlayerBlueprint) + ": " + soonToBeCorpse.Blueprint.IsPlayerBlueprint() + ", " +
+                        nameof(soonToBeCorpse.IsPlayer) + ": " + soonToBeCorpse.IsPlayer());
+                    UD_FleshGolems_Reanimated.ReplacePlayerWithCorpse(out HaveFakedDeath, Corpse);
                 }
                 else
                 if (!soonToBeCorpse.IsPlayer())
                 {
-                    Attempted = true;
-                    UnityEngine.Debug.Log(
-                        nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(EnvironmentalUpdateEvent) + ", " +
-                        nameof(soonToBeCorpse) + ": " + soonToBeCorpse?.DebugName ?? null + ", " +
-                        nameof(Corpse) + ": " + Corpse?.DebugName ?? null);
-
                     ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
                 }
             }
@@ -412,23 +398,27 @@ namespace XRL.World.Parts
         {
             bool goAhead = true || UD_FleshGolems_Reanimated.IsGameRunning;
             if (goAhead
+                && !Attempted
                 && BuiltToBeReanimated
-                && ParentObject == E.Object
+                && ParentObject is GameObject soonToBeCorpse
+                && soonToBeCorpse == E.Object
                 && Corpse is GameObject soonToBeCreature)
             {
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(BeforeObjectCreatedEvent) + ", " +
-                    nameof(E.Object) + ": " + E.Object?.DebugName ?? null + ", " +
-                    nameof(soonToBeCreature) + ": " + soonToBeCreature?.DebugName ?? null);
+                    nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
+                    nameof(soonToBeCreature) + ": " + (soonToBeCreature?.DebugName ?? NULL));
 
                 bool reanimated = false;
                 if (soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
                 {
-                    if (!ParentObject.Blueprint.IsPlayerBlueprint())
+                    if (!soonToBeCorpse.IsPlayer()
+                        && !soonToBeCorpse.Blueprint.IsPlayerBlueprint())
                     {
                         reanimated = reanimationHelper.Animate();
+                        E.ReplacementObject = soonToBeCreature;
+                        Attempted = true;
                     }
-                    E.ReplacementObject = soonToBeCreature;
                 }
                 UnityEngine.Debug.Log("    [" + (reanimated ? TICK : CROSS) + "] " + (reanimated ? "Success" : "Fail") + "!");
             }

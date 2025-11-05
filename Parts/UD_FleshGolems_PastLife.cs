@@ -21,6 +21,7 @@ namespace XRL.World.Parts
         public Brain Brain;
         public Gender Gender;
         public PronounSet PronounSet;
+        public ConversationScript ConversationScript;
 
         public Dictionary<string, Statistic> Stats;
         public string Species;
@@ -50,6 +51,7 @@ namespace XRL.World.Parts
             Brain = null;
             Gender = null;
             PronounSet = null;
+            ConversationScript = null;
 
             Stats = null;
             Species = null;
@@ -68,12 +70,6 @@ namespace XRL.World.Parts
             Titles = null;
             Epithets = null;
             Honorifics = null;
-        }
-
-        public override void Initialize()
-        {
-            base.Initialize();
-            Initialize(ParentObject);
         }
 
         public void Initialize(GameObject PastLife)
@@ -107,6 +103,8 @@ namespace XRL.World.Parts
             {
                 PronounSet = new(pastPronouns);
             }
+            ConversationScript = PastLife?.GetPart<ConversationScript>();
+
             Stats = new(PastLife?.Statistics);
             Species = PastLife?.GetSpecies();
             Genotype = PastLife?.GetGenotype();
