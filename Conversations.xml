@@ -315,14 +315,16 @@
            ModIntState="UD_FleshGolems_Jofo_TimesGreeted,1">
       <text Priority="1">
         Reh, reh! Am Jofo Qudwufo, ref-{{emote|*retch*}} ...renemit snaphjaf! Yoo... yoo not-{{emote|*hock*}} eh.. hmm...
+        
         See yoo... Fruf! Seen seen?? {{emote|*snap-snap*}} d... Mad 'Monger?!
       </text>
-    </start>
+    </start> 
     
     <start ID="PostGreeting" Inherits="AlwaysHaveChoices"
            ModIntState="UD_FleshGolems_Jofo_TimesGreeted,1">
       <text Priority="1">
         Reh, reh! Am Jofo Qudwufo, ref-{{emote|*retch*}} ...renemit snaphjaf! Yoo... yoo not-{{emote|*hock*}} eh.. hmm... 
+        
         See yoo... Fruf! Seen seen?? {{emote|*snap-snap*}} d... Mad 'Monger?!
       </text>
     </start>
