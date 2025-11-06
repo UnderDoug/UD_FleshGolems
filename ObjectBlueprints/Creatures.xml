@@ -2,10 +2,10 @@
 <objects>
   
   <object Name="Creature" Load="Merge">
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" Priority="10" />
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" Priority="10" />
   </object>
   <object Name="ActiveFungus" Load="Merge">
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" Priority="10" />
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" Priority="10" />
   </object>
   
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
