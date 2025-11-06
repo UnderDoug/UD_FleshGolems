@@ -14,7 +14,6 @@ namespace XRL.World.Parts
     public class UD_FleshGolems_ReanimatedCorpse : IScribedPart
     {
         public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolems_reanimated|reanimated}}";
-        public const int ICON_COLOR_PRIORITY = 100;
 
         [SerializeField]
         private string SourceID;
@@ -34,6 +33,13 @@ namespace XRL.World.Parts
 
         public Dictionary<string, int> BleedLiquidPortions;
 
+        public static List<string> PartsInNeedOfRemovalWhenAnimated => new()
+        {
+            nameof(Food),
+            nameof(Butcherable),
+            nameof(Harvestable),
+        };
+
         public UD_FleshGolems_ReanimatedCorpse()
         {
             BleedLiquid = null;
@@ -42,8 +48,13 @@ namespace XRL.World.Parts
 
         public override void Attach()
         {
-            base.Attach();
             AttemptToSuffer();
+            ParentObject.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject.GetBlueprint()));
+            foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
+            {
+                ParentObject.RemovePart(partToRemove);
+            }
+            base.Attach();
         }
 
         public override bool SameAs(IPart p)
@@ -196,15 +207,6 @@ namespace XRL.World.Parts
                 corpseObject.SetStringProperty("UD_FleshGolems_CorpseDescription", reanimationHelper.SourceBlueprint);
             }
             return base.HandleEvent(E);
-        }
-        public override bool Render(RenderEvent E)
-        {
-            if (ParentObject.IsPlayerLed())
-            {
-                _ = ParentObject.Render;
-                E.ApplyColors("&r", "w", ICON_COLOR_PRIORITY, ICON_COLOR_PRIORITY);
-            }
-            return base.Render(E);
         }
     }
 }

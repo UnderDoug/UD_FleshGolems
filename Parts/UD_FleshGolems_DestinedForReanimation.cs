@@ -297,7 +297,7 @@ namespace XRL.World.Parts
                         }
                         bestMatch ??= dropItem;
                     }
-                    if (Dying.GetSpecies() == dropItem.Blueprint.Replace(" Corpse", ""))
+                    if (Dying.GetSpecies() == dropItem.Blueprint.Replace(" Corpse", "").Replace("UD_FleshGolems ", ""))
                     {
                         if (secondBestMatch != null)
                         {

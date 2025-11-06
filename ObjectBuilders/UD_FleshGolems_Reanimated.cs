@@ -159,9 +159,10 @@ namespace XRL.World.ObjectBuilders
                             ImplantRemovedEvent.Send(Creature, part.Cybernetics, part);
                         }
                     }
-                    if (list != null)
+                    if (list != null
+                         && corpse.TryRequirePart(out CyberneticsButcherableCybernetic butcherableCybernetics))
                     {
-                        corpse.AddPart(new CyberneticsButcherableCybernetic(list));
+                        butcherableCybernetics.Cybernetics.AddRange(list);
                         corpse.RemovePart<Food>();
                     }
                 }

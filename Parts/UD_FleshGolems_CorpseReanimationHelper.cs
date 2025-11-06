@@ -488,34 +488,6 @@ namespace XRL.World.Parts
             return anyImplanted;
         }
 
-        public static bool EmbedButcherableCyberneticsFromCorpseProperty(GameObject FrankenCorpse)
-        {
-            bool any = false;
-            if (FrankenCorpse != null
-                && FrankenCorpse.GetPropertyOrTag(nameof(CyberneticsButcherableCybernetic)) is string cyberneticsList
-                && FrankenCorpse.TryRequirePart(out CyberneticsButcherableCybernetic butcherableCybernetic))
-            {
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(EmbedButcherableCyberneticsFromCorpseProperty) + ", " +
-                    nameof(FrankenCorpse) + ": " + (FrankenCorpse?.DebugName ?? Const.NULL));
-                butcherableCybernetic.Cybernetics ??= new();
-
-                if (!cyberneticsList.IsNullOrEmpty())
-                {
-                    foreach (string cyberneticBlueprint in cyberneticsList.CachedCommaExpansion())
-                    {
-                        UnityEngine.Debug.Log("    " + nameof(cyberneticBlueprint) + ": " + cyberneticBlueprint);
-                        if (GameObject.Create(cyberneticBlueprint) is GameObject cyberneticObject)
-                        {
-                            butcherableCybernetic.Cybernetics.Add(cyberneticObject);
-                            any = true;
-                        }
-                    }
-                }
-            }
-            return any;
-        }
-
         public static bool ProcessMoveToDeathCell(GameObject corpse, UD_FleshGolems_PastLife PastLife)
         {
             return PastLife == null
@@ -546,14 +518,18 @@ namespace XRL.World.Parts
             UnityEngine.Debug.Log("    " + nameof(MakeItALIVE) + ", " + nameof(Corpse) + ": " + Corpse?.DebugName ?? "null");
             if (Corpse is GameObject frankenCorpse)
             {
-                string corpseType = frankenCorpse.Blueprint.Replace(" Corpse", "");
+                string corpseType = frankenCorpse.Blueprint.Replace(" Corpse", "").Replace("UD_FleshGolems ", "");
                 frankenCorpse.SetIntProperty("NoAnimatedNamePrefix", 1);
                 frankenCorpse.SetIntProperty("Bleeds", 1);
                 frankenCorpse.SetStringProperty("Species", corpseType);
 
                 frankenCorpse.Render.RenderLayer = 10;
 
-                EmbedButcherableCyberneticsFromCorpseProperty(frankenCorpse);
+                if (frankenCorpse.GetPropertyOrTag(nameof(CyberneticsButcherableCybernetic)) is string butcherableCyberneticsProp
+                    && butcherableCyberneticsProp != null)
+                {
+                    UD_FleshGolems_HasCyberneticsButcherableCybernetic.EmbedButcherableCyberneticsList(frankenCorpse, butcherableCyberneticsProp);
+                }
 
                 string convoID = frankenCorpse.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG);
                 if (frankenCorpse.TryGetPart(out ConversationScript convo)
@@ -1093,7 +1069,6 @@ namespace XRL.World.Parts
                 && dying.IsDying)
             {
                 corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(dying);
-                EmbedButcherableCyberneticsFromCorpseProperty(corpse);
             }
             if (AlwaysAnimate
                 && !IsALIVE

@@ -16,6 +16,8 @@
       PoeticAdjectives="wet,moist,meaty"
       PoeticnNoises="gurgles,slurps,squelches" />
     <tag Name="AnimatedSkills" Value="CookingAndGathering,CookingAndGathering_Butchery,Persuasion_Intimidate,Multiweapon_Fighting,ShortBlades,Axes,Cudgels,LongBlades" />
+    <tag Name="UD_FleshGolems LimbType" Value="*"/>
+    <tag Name="UD_FleshGolems CyberneticsSlot" Value="*"/>
   </object>
   
   <object Name="Robot Corpse" Load="Merge">
@@ -30,13 +32,13 @@
       PoeticnNoises="sizzles,whirs,sputters" />
   </object>
   
-  <object Name="PlantCorpseHeroics">
+  <object Name="UD_FleshGolems PlantCorpseHeroics">
     <tag Name="HeroNameTitleDescriptor" Value="Wilted,Composted,Blighted" />
     <tag Name="HeroNameTitleAdmirers" Value="Gardeners,Arborists" />
     <tag Name="BaseObject" Value="*noinherit" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
-  <object Name="Plant Corpse" Inherits="Corpse">
+  <object Name="UD_FleshGolems Plant Corpse" Inherits="Corpse">
     <part Name="Render" DisplayName="Plant Corpse" Tile="items/sw_splat1.bmp"
           TileColor="&amp;g" DetailColor="w" RenderString="%"
           ColorString="&amp;g" RenderLayer="5" />
@@ -54,7 +56,7 @@
       PoeticnNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
-  <object Name="Bush Corpse" Inherits="Plant Corpse">
+  <object Name="UD_FleshGolems Bush Corpse" Inherits="Plant Corpse">
     <part Name="Render" DisplayName="Bush Corpse" />
     <xtagTextFragments
       Skin="fibres"
@@ -64,7 +66,7 @@
       PoeticnNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
-  <object Name="Cactus Corpse" Inherits="Plant Corpse">
+  <object Name="UD_FleshGolems Cactus Corpse" Inherits="Plant Corpse">
     <part Name="Render" DisplayName="Cactus Corpse" DetailColor="M" />
     <xtagTextFragments
       Skin="fibres"
@@ -74,7 +76,7 @@
       PoeticnNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
-  <object Name="Flower Corpse" Inherits="Plant Corpse">
+  <object Name="UD_FleshGolems Flower Corpse" Inherits="Plant Corpse">
     <part Name="Render" DisplayName="Flower Corpse" />
     <part Name="Physics" Weight="5" />
     <xtagTextFragments
@@ -85,7 +87,7 @@
       PoeticnNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
-  <object Name="Vine Corpse" Inherits="Plant Corpse">
+  <object Name="UD_FleshGolems Vine Corpse" Inherits="Plant Corpse">
     <part Name="Render" DisplayName="Vine Corpse" DetailColor="r" />
     <mixin Name="PlantCorpseHeroics" />
     <part Name="Physics" Weight="5" />
@@ -97,7 +99,7 @@
       PoeticnNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
-  <object Name="Tree Corpse" Inherits="Plant Corpse">
+  <object Name="UD_FleshGolems Tree Corpse" Inherits="UD_FleshGolems Plant Corpse">
     <part Name="Render" DisplayName="Tree Corpse" />
     <part Name="Food" Message="The material is soft and slimy." />
     <part Name="Physics" Weight="250" />
@@ -111,7 +113,7 @@
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
-  <object Name="Fungus Corpse" Inherits="Corpse">
+  <object Name="UD_FleshGolems Fungus Corpse" Inherits="Corpse">
     <part Name="Render" DisplayName="Fungus Corpse" Tile="items/sw_splat1.bmp"
           TileColor="&amp;w" DetailColor="m" RenderString="%"
           ColorString="&amp;g" RenderLayer="5" />
@@ -128,6 +130,236 @@
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
       PoeticnNoises="gurgles,slurps,squelches" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <!--
+  
+  
+  
+  -->
+  <!-- Base/Random -->
+  <object Name="UD_FleshGolems Corpse WithCybernetics" Inherits="Corpse">
+    <removepart Name="Food" />
+    <removetag Name="AggregatedIngredient" />
+    <part Name="DisplayNameAdjectives" Adjectives="{{implanted|implanted}}" />
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="*" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Body WithCybernetics" Inherits="UD_FleshGolems Corpse WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Body" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Back WithCybernetics" Inherits="UD_FleshGolems Corpse WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Back" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics" Inherits="GenericLimb">
+    <part Name="Render" DisplayName="severed *" />
+    <tag Name="UD_FleshGolems LimbType" Value="*"/>
+    <tag Name="UD_FleshGolems CyberneticsSlot" Value="*"/>
+    <part Name="DisplayNameAdjectives" Adjectives="{{implanted|implanted}}" />
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="*" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="BaseItem" Value="*noinherit" />
+    <removepart Name="Food" />
+    <removetag Name="AggregatedIngredient" />
+  </object>
+  <object Name="UD_FleshGolems GenericArm WithCybernetics" Inherits="UD_FleshGolems GenericLimb WithCybernetics">
+    <part Name="Render" DisplayName="severed arm" />
+    <tag Name="UD_FleshGolems LimbType" Value="Arm"/>
+    <tag Name="UD_FleshGolems CyberneticsSlot" Value="Arm"/>
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Arm" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLeg WithCybernetics" Inherits="UD_FleshGolems GenericLimb WithCybernetics">
+    <part Name="Render" DisplayName="severed leg" />
+    <tag Name="UD_FleshGolems LimbType" Value="Leg"/>
+    <tag Name="UD_FleshGolems CyberneticsSlot" Value="Feet"/>
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Feet" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericHand WithCybernetics" Inherits="UD_FleshGolems GenericLimb WithCybernetics">
+    <part Name="Render" DisplayName="severed hand" />
+    <tag Name="UD_FleshGolems LimbType" Value="Hand"/>
+    <tag Name="UD_FleshGolems CyberneticsSlot" Value="Hands"/>
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Hands" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericHead WithCybernetics" Inherits="UD_FleshGolems GenericLimb WithCybernetics">
+    <part Name="Render" DisplayName="severed head" />
+    <tag Name="UD_FleshGolems LimbType" Value="Head"/>
+    <tag Name="UD_FleshGolems CyberneticsSlot" Value="Head"/>
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Head" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericFace WithCybernetics" Inherits="UD_FleshGolems GenericLimb WithCybernetics ">
+    <part Name="Render" DisplayName="severed face" />
+    <tag Name="UD_FleshGolems LimbType" Value="Face"/>
+    <tag Name="UD_FleshGolems CyberneticsSlot" Value="Face"/>
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Face" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <!-- 2LP -->
+  <object Name="UD_FleshGolems Corpse WithCybernetics 2LP" Inherits="UD_FleshGolems Corpse WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="*,2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Body WithCybernetics 2LP" Inherits="UD_FleshGolems Body WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Body,2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Back WithCybernetics 2LP" Inherits="UD_FleshGolems Back WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Back,2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics 2LP" Inherits="UD_FleshGolems GenericLimb WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="*,2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericArm WithCybernetics 2LP" Inherits="UD_FleshGolems GenericArm WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Arm,2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLeg WithCybernetics 2LP" Inherits="UD_FleshGolems GenericLeg WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Feet,2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericHand WithCybernetics 2LP" Inherits="UD_FleshGolems GenericHand WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Hands,2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericHead WithCybernetics 2LP" Inherits="UD_FleshGolems GenericHead WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Head,2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericFace WithCybernetics 2LP" Inherits="UD_FleshGolems GenericFace WithCybernetics ">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Face,2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <!-- 4LP -->
+  <object Name="UD_FleshGolems Corpse WithCybernetics 4LP" Inherits="UD_FleshGolems Corpse WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="*,4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Body WithCybernetics 4LP" Inherits="UD_FleshGolems Body WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Body,4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Back WithCybernetics 4LP" Inherits="UD_FleshGolems Back WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Back,4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics 4LP" Inherits="UD_FleshGolems GenericLimb WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="*,4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericArm WithCybernetics 4LP" Inherits="UD_FleshGolems GenericArm WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Arm,4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLeg WithCybernetics 4LP" Inherits="UD_FleshGolems GenericLeg WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Feet,4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericHand WithCybernetics 4LP" Inherits="UD_FleshGolems GenericHand WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Hands,4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericHead WithCybernetics 4LP" Inherits="UD_FleshGolems GenericHead WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Head,4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericFace WithCybernetics 4LP" Inherits="UD_FleshGolems GenericFace WithCybernetics ">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="Face,4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+
+  <!-- Tables -->
+  <object Name="UD_FleshGolems Corpse WithCybernetics FromZoneTier" Inherits="UD_FleshGolems Corpse WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics{zonetier}" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier" Inherits="UD_FleshGolems GenericLimb WithCybernetics">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics{zonetier}" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics Cybernetics1" Inherits="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Table="Cybernetics1" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Corpse WithCybernetics Cybernetics1" Inherits="UD_FleshGolems Corpse WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics1" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <object Name="UD_FleshGolems Corpse WithCybernetics Cybernetics2" Inherits="UD_FleshGolems Corpse WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics Cybernetics2" Inherits="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Table="Cybernetics2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems Corpse WithCybernetics Cybernetics3" Inherits="UD_FleshGolems Corpse WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics3" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics Cybernetics3" Inherits="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Table="Cybernetics3" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems Corpse WithCybernetics Cybernetics4" Inherits="UD_FleshGolems Corpse WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics Cybernetics4" Inherits="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Table="Cybernetics4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems Corpse WithCybernetics Cybernetics5" Inherits="UD_FleshGolems Corpse WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics5" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics Cybernetics5" Inherits="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Table="Cybernetics5" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems Corpse WithCybernetics Cybernetics6" Inherits="UD_FleshGolems Corpse WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics6" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics Cybernetics6" Inherits="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Table="Cybernetics6" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems Corpse WithCybernetics Cybernetics7" Inherits="UD_FleshGolems Corpse WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics7" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics Cybernetics7" Inherits="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Table="Cybernetics7" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems Corpse WithCybernetics Cybernetics8" Inherits="UD_FleshGolems Corpse WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimbAroundCost="" Table="Cybernetics8" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems GenericLimb WithCybernetics Cybernetics8" Inherits="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier">
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Table="Cybernetics8" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   

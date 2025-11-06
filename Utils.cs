@@ -75,7 +75,7 @@ namespace UD_FleshGolems
                 }
                 else
                 {
-                    return TextFilters.Weird(output);
+                    return TextFilters.Weird(Context.Parameters[0]);
                 }
             }
             return output;
