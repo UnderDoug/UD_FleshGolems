@@ -57,11 +57,28 @@ namespace UD_FleshGolems
         [VariableReplacer]
         public static string ud_weird(DelegateContext Context)
         {
+            string output = null;
             if (!Context.Parameters.IsNullOrEmpty())
             {
-                return TextFilters.Weird(Context.Parameters[0]);
+                if (Context.Parameters.Count > 1)
+                {
+                    output = "{{" + Context.Parameters[0] + "|";
+                    for (int i = 1; i < Context.Parameters.Count; i++)
+                    {
+                        if (i > 1)
+                        {
+                            output += " ";
+                        }
+                        output += TextFilters.Weird(Context.Parameters[i]);
+                    }
+                    output += "}}";
+                }
+                else
+                {
+                    return TextFilters.Weird(output);
+                }
             }
-            return null;
+            return output;
         }
     }
 }

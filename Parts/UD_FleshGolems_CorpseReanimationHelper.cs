@@ -13,6 +13,9 @@ using XRL.World.Quests.GolemQuest;
 using XRL.World.Skills;
 using XRL.World.AI;
 
+using UD_FleshGolems;
+using Genkit;
+
 namespace XRL.World.Parts
 {
     [Serializable]
@@ -54,6 +57,8 @@ namespace XRL.World.Parts
 
         public string CorpseDescription;
 
+        private List<int> FailedToRegisterEvents;
+
         public UD_FleshGolems_CorpseReanimationHelper()
         {
             IsALIVE = false;
@@ -61,6 +66,7 @@ namespace XRL.World.Parts
             CreatureName = null;
             SourceBlueprint = null;
             CorpseDescription = null;
+            FailedToRegisterEvents = new();
         }
 
         public override bool AllowStaticRegistration()
@@ -375,6 +381,160 @@ namespace XRL.World.Parts
             return any;
         }
 
+        public static bool ImplantCyberneticsFromAttachedParts(GameObject FrankenCorpse)
+        {
+            bool anyImplanted = false;
+            if (FrankenCorpse.Body is Body frankenBody)
+            {
+                if (FrankenCorpse.TryGetPart(out CyberneticsHasRandomImplants sourceRandomImplants))
+                {
+                    if (sourceRandomImplants.ImplantChance.RollCached().in100())
+                    {
+                        int attempts = 0;
+                        int maxAttempts = 30;
+                        int atLeastLicensePoints = sourceRandomImplants.LicensesAtLeast.RollCached();
+                        int availableLicensePoints = FrankenCorpse.GetIntProperty("CyberneticsLicenses");
+                        int spentLicensePoints = 0;
+                        string implantTable = sourceRandomImplants.ImplantTable;
+                        if (availableLicensePoints < atLeastLicensePoints)
+                        {
+                            FrankenCorpse.SetIntProperty("CyberneticsLicenses", atLeastLicensePoints);
+                        }
+                        else
+                        {
+                            atLeastLicensePoints = availableLicensePoints;
+                        }
+                        while (++attempts <= maxAttempts && spentLicensePoints < atLeastLicensePoints)
+                        {
+                            string possibleImplantBlueprintName = PopulationManager.RollOneFrom(implantTable).Blueprint;
+                            if (possibleImplantBlueprintName == null)
+                            {
+                                MetricsManager.LogError("got null blueprint from " + sourceRandomImplants.ImplantTable);
+                                continue;
+                            }
+                            if (!GameObjectFactory.Factory.Blueprints.TryGetValue(possibleImplantBlueprintName, out var possibleImplantBlueprint))
+                            {
+                                MetricsManager.LogError("got invalid blueprint \"" + possibleImplantBlueprintName + "\" from " + implantTable);
+                                continue;
+                            }
+                            if (!possibleImplantBlueprint.TryGetPartParameter(nameof(CyberneticsBaseItem), nameof(CyberneticsBaseItem.Slots), out string slotTypes))
+                            {
+                                MetricsManager.LogError("Weird blueprint in random cybernetics table: " + possibleImplantBlueprintName + " from table " + implantTable);
+                                continue;
+                            }
+
+                            List<string> slotTypesList = new(slotTypes?.Split(','));
+                            slotTypesList.ShuffleInPlace();
+
+                            if (GameObject.Create(possibleImplantBlueprintName) is GameObject cyberneticObject)
+                            {
+                                if (!cyberneticObject.TryGetPart(out CyberneticsBaseItem cyberneticsBaseItem))
+                                {
+                                    cyberneticObject?.Obliterate();
+                                }
+                                else
+                                {
+                                    foreach (string requiredType in slotTypesList)
+                                    {
+                                        List<BodyPart> bodyPartsList = frankenBody.GetPart(requiredType);
+                                        bodyPartsList.ShuffleInPlace();
+                                        foreach (BodyPart implantTargetBodyPart in bodyPartsList)
+                                        {
+                                            if (implantTargetBodyPart == null || implantTargetBodyPart._Cybernetics != null)
+                                            {
+                                                continue;
+                                            }
+                                            if (atLeastLicensePoints - spentLicensePoints >= cyberneticsBaseItem.Cost)
+                                            {
+                                                spentLicensePoints += cyberneticsBaseItem.Cost;
+                                                implantTargetBodyPart.Implant(cyberneticObject);
+                                                anyImplanted = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                if (frankenBody.FindCybernetics(cyberneticObject) is not BodyPart implantedLimb)
+                                {
+                                    cyberneticObject?.Obliterate();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (FrankenCorpse.TryGetPart(out CyberneticsHasImplants sourceImplants))
+                {
+                    List<string> implantsAtLocationList = new(sourceImplants.Implants.Split(','));
+
+                    foreach (string implantBlueprintLocation in implantsAtLocationList)
+                    {
+                        string[] implantAtLocation = implantBlueprintLocation.Split('@');
+                        if (GameObject.Create(implantAtLocation[0]) is GameObject implantObject)
+                        {
+                            if (frankenBody.GetPartByNameWithoutCybernetics(implantAtLocation[1]) is BodyPart bodyPartWithoutImplant)
+                            {
+                                bodyPartWithoutImplant.Implant(implantObject);
+                                anyImplanted = true;
+                            }
+                            else
+                            {
+                                implantObject?.Obliterate();
+                            }
+                        }
+                    }
+                }
+            }
+            return anyImplanted;
+        }
+
+        public static bool EmbedButcherableCyberneticsFromCorpseProperty(GameObject FrankenCorpse)
+        {
+            bool any = false;
+            if (FrankenCorpse != null
+                && FrankenCorpse.GetPropertyOrTag(nameof(CyberneticsButcherableCybernetic)) is string cyberneticsList
+                && FrankenCorpse.TryRequirePart(out CyberneticsButcherableCybernetic butcherableCybernetic))
+            {
+                UnityEngine.Debug.Log(
+                    nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(EmbedButcherableCyberneticsFromCorpseProperty) + ", " +
+                    nameof(FrankenCorpse) + ": " + (FrankenCorpse?.DebugName ?? Const.NULL));
+                butcherableCybernetic.Cybernetics ??= new();
+
+                if (!cyberneticsList.IsNullOrEmpty())
+                {
+                    foreach (string cyberneticBlueprint in cyberneticsList.CachedCommaExpansion())
+                    {
+                        UnityEngine.Debug.Log("    " + nameof(cyberneticBlueprint) + ": " + cyberneticBlueprint);
+                        if (GameObject.Create(cyberneticBlueprint) is GameObject cyberneticObject)
+                        {
+                            butcherableCybernetic.Cybernetics.Add(cyberneticObject);
+                            any = true;
+                        }
+                    }
+                }
+            }
+            return any;
+        }
+
+        public static bool ProcessMoveToDeathCell(GameObject corpse, UD_FleshGolems_PastLife PastLife)
+        {
+            return PastLife == null
+                || (corpse != null
+                    && PastLife?.DeathAddress is (string deathZone, Location2D deathLocation)
+                    && deathZone == corpse.CurrentZone?.ZoneID
+                    && deathLocation != corpse.CurrentCell.Location
+                    && corpse.Physics is Physics corpsePhysics
+                    && corpsePhysics.ProcessTargetedMove(
+                        TargetCell: corpse.CurrentZone.GetCell(deathLocation),
+                        Type: "DirectMove",
+                        PreEvent: "BeforeDirectMove",
+                        PostEvent: "AfterDirectMove",
+                        EnergyCost: 0,
+                        System: true,
+                        IgnoreCombat: true,
+                        IgnoreGravity: true));
+        }
+
         public static bool MakeItALIVE(
             GameObject Corpse,
             UD_FleshGolems_PastLife PastLife,
@@ -393,9 +553,10 @@ namespace XRL.World.Parts
 
                 frankenCorpse.Render.RenderLayer = 10;
 
+                EmbedButcherableCyberneticsFromCorpseProperty(frankenCorpse);
+
                 string convoID = frankenCorpse.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG);
-                ConversationScript convo = null;
-                if (frankenCorpse.TryGetPart(out convo)
+                if (frankenCorpse.TryGetPart(out ConversationScript convo)
                     && (convo.ConversationID == "NewlySentientBeings" || !convoID.IsNullOrEmpty()))
                 {
                     convoID ??= "UD_FleshGolems NewlyReanimatedBeings";
@@ -476,52 +637,88 @@ namespace XRL.World.Parts
                 {
                     frankenCorpse.SetStringProperty("Genotype", frankenGenotype);
                 }
-                if (frankenCorpse.TryGetPart(out CyberneticsButcherableCybernetic butcherableCybernetics)
-                    && frankenCorpse.Body is Body frankenBody)
+                bool installedCybernetics = false;
+                string cyberneticsLicenses = "CyberneticsLicenses";
+                string cyberneticsLicensesFree = "FreeCyberneticsLicenses";
+                if (frankenCorpse.Body is Body frankenBody)
                 {
-                    string cyberneticsLicenses = "CyberneticsLicenses";
-                    string cyberneticsLicensesFree = "FreeCyberneticsLicenses";
-                    int startingLicenses = Stat.RollCached("2d2-1");
-
-                    frankenCorpse.SetIntProperty(cyberneticsLicenses, startingLicenses);
-                    frankenCorpse.SetIntProperty(cyberneticsLicensesFree, startingLicenses);
-
-                    List<GameObject> butcherableCyberneticsList = Event.NewGameObjectList(butcherableCybernetics.Cybernetics);
-                    foreach (GameObject butcherableCybernetic in butcherableCyberneticsList)
+                    if (frankenCorpse.TryGetPart(out CyberneticsButcherableCybernetic butcherableCybernetics))
                     {
-                        if (butcherableCybernetic.TryGetPart(out CyberneticsBaseItem butcherableCyberneticBasePart)
-                            && butcherableCyberneticBasePart.Slots is string slotsString)
+                        int startingLicenses = Stat.RollCached("2d2-1");
+
+                        frankenCorpse.SetIntProperty(cyberneticsLicenses, startingLicenses);
+                        frankenCorpse.SetIntProperty(cyberneticsLicensesFree, startingLicenses);
+
+                        List<GameObject> butcherableCyberneticsList = Event.NewGameObjectList(butcherableCybernetics.Cybernetics);
+                        foreach (GameObject butcherableCybernetic in butcherableCyberneticsList)
                         {
-                            int cyberneticsCost = butcherableCyberneticBasePart.Cost;
-                            frankenCorpse.ModIntProperty(cyberneticsLicenses, cyberneticsCost);
-                            frankenCorpse.ModIntProperty(cyberneticsLicensesFree, cyberneticsCost);
-
-                            List<string> slotsList = slotsString.CachedCommaExpansion();
-                            slotsList.ShuffleInPlace();
-                            foreach (string slot in slotsList)
+                            if (butcherableCybernetic.TryGetPart(out CyberneticsBaseItem butcherableCyberneticBasePart)
+                                && butcherableCyberneticBasePart.Slots is string slotsString)
                             {
-                                List<BodyPart> bodyParts = frankenBody.GetPart(slot);
-                                bodyParts.ShuffleInPlace();
+                                int cyberneticsCost = butcherableCyberneticBasePart.Cost;
+                                frankenCorpse.ModIntProperty(cyberneticsLicenses, cyberneticsCost);
+                                frankenCorpse.ModIntProperty(cyberneticsLicensesFree, cyberneticsCost);
 
-                                foreach (BodyPart bodyPart in bodyParts)
+                                List<string> slotsList = slotsString.CachedCommaExpansion();
+                                slotsList.ShuffleInPlace();
+                                foreach (string slot in slotsList)
                                 {
-                                    if (bodyPart.CanReceiveCyberneticImplant()
-                                        && !bodyPart.HasInstalledCybernetics())
+                                    List<BodyPart> bodyParts = frankenBody.GetPart(slot);
+                                    bodyParts.ShuffleInPlace();
+
+                                    foreach (BodyPart bodyPart in bodyParts)
                                     {
-                                        bodyPart.Implant(butcherableCybernetic);
-                                        break;
+                                        if (bodyPart.CanReceiveCyberneticImplant()
+                                            && !bodyPart.HasInstalledCybernetics())
+                                        {
+                                            bodyPart.Implant(butcherableCybernetic);
+                                            break;
+                                        }
                                     }
+                                    butcherableCybernetics.Cybernetics.Remove(butcherableCybernetic);
                                 }
-                                butcherableCybernetics.Cybernetics.Remove(butcherableCybernetic);
                             }
                         }
+                        frankenCorpse.RemovePart(butcherableCybernetics);
+                        installedCybernetics = true;
                     }
-                    frankenCorpse.RemovePart(butcherableCybernetics);
-                }
+                    else
+                    if (PastLife != null && !PastLife.InstalledCybernetics.IsNullOrEmpty())
+                    {
+                        foreach ((string cyberneticID, string bodyPartType) in PastLife.InstalledCybernetics)
+                        {
+                            if (GameObject.FindByID(cyberneticID) is GameObject pastCyberneticObject
+                                && pastCyberneticObject.TryRemoveFromContext())
+                            {
+                                if (pastCyberneticObject.TryGetPart(out CyberneticsBaseItem butcherableCyberneticBasePart))
+                                {
+                                    int cyberneticsCost = butcherableCyberneticBasePart.Cost;
+                                    frankenCorpse.ModIntProperty(cyberneticsLicenses, cyberneticsCost);
+                                    frankenCorpse.ModIntProperty(cyberneticsLicensesFree, cyberneticsCost);
 
+                                    List<BodyPart> bodyParts = frankenBody.GetPart(bodyPartType);
+                                    bodyParts.ShuffleInPlace();
+
+                                    foreach (BodyPart bodyPart in bodyParts)
+                                    {
+                                        if (bodyPart.CanReceiveCyberneticImplant()
+                                            && !bodyPart.HasInstalledCybernetics())
+                                        {
+                                            bodyPart.Implant(pastCyberneticObject);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        installedCybernetics = true;
+                    }
+                }
+                
                 Mutations frankenMutations = frankenCorpse.RequirePart<Mutations>();
                 Skills frankenSkills = frankenCorpse.RequirePart<Skills>();
 
+                bool excludedFromDynamicEncounters = false;
                 if (GameObjectFactory.Factory.GetBlueprintIfExists(sourceBlueprintName) is GameObjectBlueprint sourceBlueprint)
                 {
                     bool isProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
@@ -534,6 +731,10 @@ namespace XRL.World.Parts
                     }
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
                     AssignStatsFromPastLifeWithFactor(frankenCorpse, PastLife, PhysicalAdjustmentFactor: 1.2f, MentalAdjustmentFactor: 0.75f);
+                    if (frankenCorpse.GetStat("Hitpoints") is Statistic frankenHitpoints)
+                    {
+                        frankenHitpoints.BaseValue = Math.Max(Stat.RollCached("4d3+5"), frankenHitpoints.BaseValue);
+                    }
 
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
 
@@ -543,15 +744,26 @@ namespace XRL.World.Parts
                     AssignSkillsFromBlueprint(frankenSkills, sourceBlueprint);
                     AssignSkillsFromPastLife(frankenSkills, PastLife);
 
+                    excludedFromDynamicEncounters = PastLife != null && PastLife.Tags.ContainsKey("ExcludeFromDynamicEncounters");
+
+                    frankenBody = frankenCorpse.Body;
+                    if (frankenBody != null)
+                    {
+                        if (!installedCybernetics)
+                        {
+                            ImplantCyberneticsFromAttachedParts(frankenCorpse);
+                        }
+                    }
+
                     if (frankenCorpse.TryGetPart(out Leveler frankenLeveler))
                     {
                         if (int.TryParse(frankenCorpse.GetPropertyOrTag("UD_FleshGolems_SkipLevelsOnReanimate", "0"), out int SkipLevelsOnReanimate)
                             && SkipLevelsOnReanimate < 1)
                         {
-                            frankenLeveler.LevelUp();
+                            frankenLeveler?.LevelUp();
                             if (Stat.RollCached("1d2") == 1)
                             {
-                                frankenLeveler.LevelUp();
+                                frankenLeveler?.LevelUp();
                             }
                         }
                         int floorXP = Leveler.GetXPForLevel(frankenCorpse.Level);
@@ -570,7 +782,7 @@ namespace XRL.World.Parts
                         {
                             frankenBrain.Wanders = sourceBrainWanders;
                         }
-                        if (!UD_FleshGolems_Reanimated.IsGameRunning
+                        if ((!UD_FleshGolems_Reanimated.IsGameRunning || excludedFromDynamicEncounters)
                             && PastLife?.Brain is Brain pastBrain)
                         {
                             frankenCorpse.Brain.Allegiance ??= new();
@@ -784,7 +996,7 @@ namespace XRL.World.Parts
                     }
                 }
 
-                if (!UD_FleshGolems_Reanimated.IsGameRunning)
+                if (!UD_FleshGolems_Reanimated.IsGameRunning || excludedFromDynamicEncounters)
                 {
                     if (PastLife?.ConversationScript is ConversationScript pastConversation)
                     {
@@ -810,9 +1022,10 @@ namespace XRL.World.Parts
                     }
                 }
 
-                UD_FleshGolems_ReanimatedCorpse reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
-                reanimatedCorpse.SourceObject = SourceObject;
-
+                if (frankenCorpse != null && frankenCorpse.TryRequirePart(out UD_FleshGolems_ReanimatedCorpse reanimatedCorpse))
+                {
+                    reanimatedCorpse.SourceObject = SourceObject;
+                }
                 return true;
             }
             return false;
@@ -821,12 +1034,28 @@ namespace XRL.World.Parts
         public override void Register(GameObject Object, IEventRegistrar Registrar)
         {
             base.Register(Object, Registrar);
-
-            Registrar.Register(DroppedEvent.ID, EventOrder.EXTREMELY_EARLY);
+            try
+            {
+                Registrar?.Register(DroppedEvent.ID, EventOrder.EXTREMELY_EARLY);
+            }
+            catch (Exception x)
+            {
+                MetricsManager.LogException(nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(Register), x, "game_mod_exception");
+            }
+            finally
+            {
+                if (ParentObject == null
+                    || ParentObject.RegisteredEvents == null
+                    || !ParentObject.RegisteredEvents.ContainsKey(DroppedEvent.ID))
+                {
+                    FailedToRegisterEvents.Add(DroppedEvent.ID);
+                }
+            }
         }
         public override bool WantEvent(int ID, int Cascade)
         {
             return base.WantEvent(ID, Cascade)
+                || (FailedToRegisterEvents.Contains(DroppedEvent.ID) && ID == DroppedEvent.ID)
                 || ID == AnimateEvent.ID
                 || ID == EnvironmentalUpdateEvent.ID;
         }
@@ -848,9 +1077,10 @@ namespace XRL.World.Parts
         {
             if (AlwaysAnimate
                 && !IsALIVE
-                && ParentObject != null
+                && ParentObject is GameObject corpse
                 && Animate())
             {
+                ProcessMoveToDeathCell(corpse, PastLife);
                 return true;
             }
             return base.HandleEvent(E);
@@ -863,6 +1093,7 @@ namespace XRL.World.Parts
                 && dying.IsDying)
             {
                 corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(dying);
+                EmbedButcherableCyberneticsFromCorpseProperty(corpse);
             }
             if (AlwaysAnimate
                 && !IsALIVE

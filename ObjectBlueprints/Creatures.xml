@@ -2,7 +2,10 @@
 <objects>
   
   <object Name="Creature" Load="Merge">
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" />
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" Priority="10" />
+  </object>
+  <object Name="ActiveFungus" Load="Merge">
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" Priority="10" />
   </object>
   
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
@@ -13,6 +16,7 @@
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <stat Name="Hitpoints" sValue="17d3+4" />
     <mutation Name="Regeneration" Level="10" />
+    <!--part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" /-->
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <!--part Name="Render" DisplayName="Jofo Qudwufo" />
@@ -27,12 +31,14 @@
     <property Name="UD_FleshGolems_CreatureProperName" Value="Jofo Qudwufo" />
     <property Name="SourceBlueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
     <part Name="Brain" Hostile="false" />
+    <stat Name="Energy" ShortName="EN" Min="-100000" Max="100000" Value="0" />
     <tag Name="UD_FleshGolems_NoReanimatedNamePrefix" Value="1" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
     <tag Name="UD_FleshGolems_ReanimatedConversationID" Value="UD_FleshGolems Jofo Qudwufo" />
     <tag Name="UD_FleshGolems_ReanimatedEpithets" Value=", {{UD_FleshGolems_reanimated|reanimated}} snapjaw" />
     <tag Name="PetResponse" Value="=subject.possessive= matted fur is slick with the grime of death.,Your hand squelches against =subject.possessive= disturbingly infirm scalp.,=subject.subjective= =subject.verb:stare:afterpronoun= seemingly through you but is nonetheless happy with the attention (probably; it's hard to tell...),What can only be described as a faint hacking cough can be heard from deep with =subject.possessive= mass." />
-    <part Name="Pettable" UseFactionForFeelingFloor="Player"  />
+    <part Name="Pettable" UseFactionForFeelingFloor="Player" />
+    <property Name="CyberneticsButcherableCybernetic" Cybernetics="BiologicalIndexer,PalladiumElectrodeposits,RapidReleaseFingerFlexors" />
     <tag Name="UD_FleshGolems_Reanimated_PartExclusions" Value="Pettable" />
     <tag Name="Pet"/>
     <tag Name="PreferChatToPet"/>
@@ -47,7 +53,8 @@
   
   <object Name="UD_FleshGolems Mad Monger" Inherits="Gutsmonger">
     <part Name="Render" DisplayName="'Monger" DetailColor="R" TileColor="&amp;W" />
-    <part Name="Honorifics" Primary="Mad" />
+    <part Name="Description" Short="A frantic slip of a =subject.personTerm= =subject.verb:flitter= agitatedly between the several foci of =subject.possessive= attention. Were it not for =subject.possessive= palid countenance, one might have assumed the vigor of youth kept =subject.objective= so spry, though =subject.possessive= poorly state appears, perhaps a bit... unnatural. =subject.Subjective= =subject.verb:wear:afterpronoun= =subject.possessive= affect of general disgust in much the same way as =subject.subjective= =subject.verb:wear:afterpronoun= =subject.possessive= chem-vest: seemingly out of habit, and perhaps a misplaced sense of self-import." />
+    <part Name="Honorifics" Primary="The Mad" />
     <part Name="Corpse" CorpseChance="100" />
     <part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" />
     <xtagGrammar Proper="true" />
@@ -55,6 +62,7 @@
     <removepart Name="HasGuards" />
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <intproperty Name="CyberneticRejectionSyndromeModifier" Value="100" />
     <inventoryObject Blueprint="CyberneticsCreditWedge3" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" Number="1-2"/>
     <inventoryobject Blueprint="Di-Thermo Beam" Number="2" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" />
   </object>
@@ -108,5 +116,161 @@
   <object Name="SapientMutatedFungus" Load="Merge">
     <part Name="Corpse" CorpseChance="20" />
   </object>
+
+  <!-- Flesh Golem natural weapons -->
+  <!--object Name="Metachrome Weapon" Inherits="NaturalWeapon">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} weapon" />
+    <part Name="MeleeWeapon" Slot="" HitBonus="10" PenBonus="0" MaxStrengthBonus="1000" Stat="Strength" />
+    <part Name="ModGigantic" />
+    <tag Name="ModGiganticNoDisplayName" />
+  </object>
+  <object Name="Metachrome Cudgel" Inherits="Metachrome Weapon">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} cudgel" />
+    <part Name="MeleeWeapon" BaseDamage="4d6" Skill="Cudgel" />
+  </object>
+  <object Name="Metachrome Axe" Inherits="Metachrome Weapon">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} axe" />
+    <part Name="MeleeWeapon" BaseDamage="1d8+8" Skill="Axe" />
+  </object>
+  <object Name="Metachrome LongBlades" Inherits="Metachrome Weapon">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} long blade" />
+    <part Name="MeleeWeapon" BaseDamage="2d12" Skill="LongBlades" />
+  </object>
+  <object Name="Metachrome ShortBlades" Inherits="Metachrome Weapon">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} dagger" />
+    <part Name="MeleeWeapon" BaseDamage="1d12+5" Skill="ShortBlades" />
+  </object-->
+
+  <!-- Flesh Golem natural weapons - hand >
+  <object Name="Metachrome Hand Cudgel" Inherits="Metachrome Cudgel">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} mitt" Tile="Creatures/natural-weapon-fist.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Hand" />
+  </object>
+  <object Name="Metachrome Hand Axe" Inherits="Metachrome Axe">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} spade" Tile="Creatures/natural-weapon-drill.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Hand" />
+  </object>
+  <object Name="Metachrome Hand LongBlades" Inherits="Metachrome LongBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} blade" Tile="Items/sw_longblade_10.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Hand" />
+  </object>
+  <object Name="Metachrome Hand ShortBlades" Inherits="Metachrome ShortBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} point" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Hand" />
+  </object-->
+  <!-- Flesh Golem natural weapons - face >
+  <object Name="Metachrome Face Cudgel" Inherits="Metachrome Cudgel">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} molars" />
+    <part Name="MeleeWeapon" Slot="Face" />
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Metachrome Face Axe" Inherits="Metachrome Axe">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} trines" />
+    <part Name="MeleeWeapon" Slot="Face" />
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Metachrome Face LongBlades" Inherits="Metachrome LongBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} tusks" />
+    <part Name="MeleeWeapon" Slot="Face" />
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Metachrome Face ShortBlades" Inherits="Metachrome ShortBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} fangs" />
+    <part Name="MeleeWeapon" Slot="Face" />
+    <tag Name="Gender" Value="plural" />
+  </object-->
+  <!-- Flesh Golem natural weapons - head >
+  <object Name="Metachrome Head Cudgel" Inherits="Metachrome Cudgel">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} bulb" />
+    <part Name="MeleeWeapon" Slot="Head" />
+  </object>
+  <object Name="Metachrome Head Axe" Inherits="Metachrome Axe">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} ridge" />
+    <part Name="MeleeWeapon" Slot="Head" />
+  </object>
+  <object Name="Metachrome Head LongBlades" Inherits="Metachrome LongBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} prow" />
+    <part Name="MeleeWeapon" Slot="Head" />
+  </object>
+  <object Name="Metachrome Head ShortBlades" Inherits="Metachrome ShortBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} horn" />
+    <part Name="MeleeWeapon" Slot="Head" />
+  </object-->
+  <!-- Flesh Golem natural weapons - foot >
+  <object Name="Metachrome Foot Cudgel" Inherits="Metachrome Cudgel">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} corm" />
+    <part Name="MeleeWeapon" Slot="Foot" />
+  </object>
+  <object Name="Metachrome Foot Axe" Inherits="Metachrome Axe">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} spade" />
+    <part Name="MeleeWeapon" Slot="Foot" />
+  </object>
+  <object Name="Metachrome Foot LongBlades" Inherits="Metachrome LongBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} blade" />
+    <part Name="MeleeWeapon" Slot="Foot" />
+  </object>
+  <object Name="Metachrome Foot ShortBlades" Inherits="Metachrome ShortBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} point" />
+    <part Name="MeleeWeapon" Slot="Foot" />
+  </object-->
+  <!-- Flesh Golem natural weapons - arm >
+  <object Name="Metachrome Arm Cudgel" Inherits="Metachrome Cudgel">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} discs" />
+    <part Name="MeleeWeapon" Slot="Arm" />
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Metachrome Arm Axe" Inherits="Metachrome Axe">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} ridges" />
+    <part Name="MeleeWeapon" Slot="Arm" />
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Metachrome Arm LongBlade" Inherits="Metachrome LongBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} scales" />
+    <part Name="MeleeWeapon" Slot="Arm" />
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Metachrome Arm ShortBlade" Inherits="Metachrome ShortBlades">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} thorns" Tile="Creatures/natural-weapon-thorns.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Arm" />
+    <tag Name="Gender" Value="plural" />
+  </object-->
+  <!-- Flesh Golem natural weapons - body >
+  <object Name="Metachrome Body Cudgel" Inherits="Metachrome Cudgel">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Body" />
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Metachrome Body Axe" Inherits="Metachrome Axe">
+    <part Name="Render" DisplayName="ridged {{metachrome|metachrome}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Body" />
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Metachrome Body LongBlades" Inherits="Metachrome LongBlades">
+    <part Name="Render" DisplayName="bladed {{metachrome|metachrome}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Body" />
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Metachrome Body ShortBlades" Inherits="Metachrome ShortBlades">
+    <part Name="Render" DisplayName="pointed {{metachrome|metachrome}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Body" />
+    <tag Name="Gender" Value="plural" />
+  </object-->
+  <!-- Flesh Golem natural weapons - tail >
+  <object Name="Metachrome Tail Cudgel" Inherits="Metachrome Cudgel">
+    <part Name="Render" DisplayName="{{metachrome|metachrome}} tail" Tile="Creatures/natural-weapon-tail.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Tail" />
+  </object>
+  <object Name="Metachrome Tail Axe" Inherits="Metachrome Axe">
+    <part Name="Render" DisplayName="ridged {{metachrome|metachrome}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Tail" />
+  </object>
+  <object Name="Metachrome Tail LongBlades" Inherits="Metachrome LongBlades">
+    <part Name="Render" DisplayName="bladed {{metachrome|metachrome}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Tail" />
+  </object>
+  <object Name="Metachrome Tail ShortBlades" Inherits="Metachrome ShortBlades">
+    <part Name="Render" DisplayName="pointed {{metachrome|metachrome}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+    <part Name="MeleeWeapon" Slot="Tail" />
+  </object-->
   
 </objects>

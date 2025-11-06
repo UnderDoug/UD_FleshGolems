@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Text;
 
 using XRL;
+using XRL.Core;
+using XRL.Rules;
 using XRL.World;
 using XRL.World.Capabilities;
 using XRL.World.Parts;
-using XRL.Rules;
+using XRL.World.Conversations;
 
 using SerializeField = UnityEngine.SerializeField;
-using XRL.Core;
-using XRL.World.Conversations;
 
 namespace XRL.World.Effects
 {

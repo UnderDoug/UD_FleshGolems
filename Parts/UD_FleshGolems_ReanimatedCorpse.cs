@@ -111,11 +111,6 @@ namespace XRL.World.Parts
             return false;
         }
 
-        public override void Register(GameObject Object, IEventRegistrar Registrar)
-        {
-            Registrar.Register("Regenera");
-            base.Register(Object, Registrar);
-        }
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)

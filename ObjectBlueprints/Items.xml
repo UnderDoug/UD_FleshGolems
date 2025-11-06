@@ -120,7 +120,7 @@
     <removetag Name="Meat" />
     <part Name="Physics" Weight="10" />
     <tag Name="HeroNameTitleDescriptor" Value="Decayed,Barren,Blighted" />
-    <tag Name="HeroNameTitleClientele" Value="Builders,Cowards,Defenders,Roofs,the Assailed,the Stalwart" />
+    <tag Name="HeroNameTitleAdmirers" Value="Gardeners,MYcologists,The Last of Us" />
     <part Name="Food" Message="The material is soft and slimy." />
     <xtagTextFragments
       Skin="mycelia"

@@ -19,6 +19,7 @@ using XRL.World.Parts;
 using XRL.World.Parts.Mutation;
 
 using UD_FleshGolems;
+using System.Linq;
 
 namespace XRL.World.ObjectBuilders
 {
@@ -27,7 +28,22 @@ namespace XRL.World.ObjectBuilders
     public class UD_FleshGolems_Reanimated : IObjectBuilder
     {
         public static bool IsGameRunning => The.Game != null && The.Game.Running;
-        public static bool HAsWorldGenerated => IsGameRunning && The.Game.Running;
+        public static bool HasWorldGenerated => IsGameRunning && The.Game.Running;
+
+        public static List<string> PartsThatNeedDelayedReanimation => new()
+        {
+            nameof(ReplaceObject),
+            nameof(ConvertSpawner),
+            nameof(CherubimSpawner),
+        };
+        public static List<string> BlueprintsThatNeedDelayedReanimation => new()
+        {
+            "BaseCherubimSpawn",
+        };
+        public static List<string> PropertiesAndTagsIndicatingNeedDelayedReanimation => new()
+        {
+            "AlternateCreatureType",
+        };
 
         public override void Initialize()
         {
@@ -38,9 +54,17 @@ namespace XRL.World.ObjectBuilders
             Unkill(Object, out _, Context);
         }
 
+        public static bool CreatureNeedsDelayedReanimation(GameObject Creature)
+        {
+            return PartsThatNeedDelayedReanimation.Any(s => Creature.HasPart(s))
+                || BlueprintsThatNeedDelayedReanimation.Any(s => Creature.GetBlueprint().InheritsFrom(s))
+                || PropertiesAndTagsIndicatingNeedDelayedReanimation.Any(s => Creature.HasPropertyOrTag(s));
+        }
+
         public static GameObject ProduceCorpse(GameObject Creature,
             bool ForImmediateReanimation = true,
-            bool OverridePastLife = true)
+            bool OverridePastLife = true,
+            bool PreemptivelyGiveEnergy = true)
         {
             GameObject corpse = null;
             try
@@ -145,6 +169,19 @@ namespace XRL.World.ObjectBuilders
                 {
                     corpse.RemovePart<UD_FleshGolems_PastLife>();
                 }
+                if (corpse.TryRequirePart(out UD_FleshGolems_PastLife pastLife))
+                {
+                    if (Creature.TryGetPart(out UD_FleshGolems_PastLife prevPastLife)
+                        && prevPastLife.Init && prevPastLife.IsCorpse)
+                    {
+                        corpse.RemovePart(pastLife);
+                        pastLife = corpse.AddPart(prevPastLife);
+                    }
+                    else
+                    {
+                        pastLife.Initialize(Creature);
+                    }
+                }
                 corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(Creature);
                 if (ForImmediateReanimation)
                 {
@@ -159,6 +196,32 @@ namespace XRL.World.ObjectBuilders
                     destinedForReanimation.Corpse = corpse;
                     destinedForReanimation.BuiltToBeReanimated = true;
                     corpseReanimationHelper.AlwaysAnimate = true;
+                    if (PartsThatNeedDelayedReanimation.Any(s => Creature.HasPart(s)))
+                    {
+                        destinedForReanimation.DelayTillZoneBuild = true;
+                    }
+                }
+                if (PreemptivelyGiveEnergy)
+                {
+                    corpse.Statistics ??= new();
+                    string energyStatName = "Energy";
+                    Statistic energyStat = null;
+                    if (GameObjectFactory.Factory.GetBlueprintIfExists(nameof(Creature)) is var baseCreatureBlueprint)
+                    {
+                        if (!baseCreatureBlueprint.Stats.IsNullOrEmpty()
+                            && baseCreatureBlueprint.Stats.ContainsKey(energyStatName))
+                        {
+                            energyStat = new(baseCreatureBlueprint.Stats[energyStatName])
+                            {
+                                Owner = corpse,
+                            };
+                        }
+                    }
+                    else
+                    {
+                        energyStat = new(energyStatName, -100000, 100000, 0, corpse);
+                    }
+                    corpse.Statistics.TryAdd(energyStatName, energyStat);
                 }
             }
             catch (Exception x)
@@ -184,7 +247,7 @@ namespace XRL.World.ObjectBuilders
             {
                 soonToBeCreature.RequirePart<Inventory>();
                 soonToBeCorpse.RequirePart<Inventory>();
-                Metamorphosis.TransferInventory(soonToBeCorpse, soonToBeCreature, bTagLastEquipped: false);
+                Metamorphosis.TransferInventory(soonToBeCorpse, soonToBeCreature);
                 transferred = true;
             }
             catch (Exception x)
@@ -231,31 +294,44 @@ namespace XRL.World.ObjectBuilders
         }
 
         public static bool ReplacePlayerWithCorpse(
+            GameObject Player,
+            bool FakeDeath,
             out bool FakedDeath,
+            IDeathEvent DeathEvent = null,
             GameObject Corpse = null,
             bool ForImmediateReanimation = true,
             bool OverridePastLife = true)
         {
             FakedDeath = false;
-            GameObject Creature = The.Player;
-            if (Corpse == null && !TryProduceCorpse(Creature, out Corpse, ForImmediateReanimation, OverridePastLife))
+            Player ??= The.Player;
+            if (Player == null || (Corpse == null && !TryProduceCorpse(Player, out Corpse, ForImmediateReanimation, OverridePastLife)))
             {
                 return false;
             }
-            if (!TryTransferInventoryToCorpse(Creature, Corpse))
+            if (!TryTransferInventoryToCorpse(Player, Corpse))
             {
                 return false;
             }
             bool replaced = false;
             try
             {
-                FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(Creature);
+                if (FakeDeath)
+                {
+                    if (DeathEvent == null)
+                    {
+                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(Player);
+                    }
+                    else
+                    {
+                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(Player, DeathEvent, DoAchievement: true);
+                    }
+                }
                 Corpse.SetIntProperty("UD_FleshGolems_SkipLevelsOnReanimate", 1);
 
-                ReplaceInContextEvent.Send(Creature, Corpse);
+                ReplaceInContextEvent.Send(Player, Corpse);
                 The.Game.Player.SetBody(Corpse);
 
-                Creature.MakeInactive();
+                Player.MakeInactive();
                 Corpse.MakeActive();
                 replaced = true;
             }
@@ -267,11 +343,14 @@ namespace XRL.World.ObjectBuilders
             return replaced;
         }
         public static bool ReplacePlayerWithCorpse(
+            GameObject Player,
+            bool FakeDeath = true,
+            IDeathEvent DeathEvent = null,
             GameObject Corpse = null,
             bool ForImmediateReanimation = true,
             bool OverridePastLife = true)
         {
-            return ReplacePlayerWithCorpse(out _, Corpse, ForImmediateReanimation, OverridePastLife);
+            return ReplacePlayerWithCorpse(Player, FakeDeath, out _, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
         }
 
         [WishCommand("UD_FleshGolems reanimated")]
@@ -314,7 +393,7 @@ namespace XRL.World.ObjectBuilders
                 else
                 if (Blueprint == null && false)
                 {
-                    if (soonToBeCreature == null && !ReplacePlayerWithCorpse(soonToBeCreature))
+                    if (soonToBeCreature == null && !ReplacePlayerWithCorpse(soonToBeCorpse, true, null, soonToBeCreature))
                     {
                         Popup.Show("Something terrible has happened (not really, it just failed).\n\nCheck Player.log for errors.");
                         return false;
