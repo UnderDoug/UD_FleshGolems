@@ -20,6 +20,9 @@ namespace XRL.World.Effects
     {
         public const string ENDLESSLY_SUFFERING = "{{UD_FleshGolems_reanimated|endlessly suffering}}";
 
+        public static int BASE_SMEAR_CHANCE => 5;
+        public static int BASE_SPATTER_CHANCE => 2;
+
         [SerializeField]
         private string SourceID;
 
@@ -38,7 +41,7 @@ namespace XRL.World.Effects
 
         public int ChanceToDamage;
         public int ChanceToSmear;
-        public int ChanceToSplatter;
+        public int ChanceToSpatter;
 
         private int CurrentTier;
 
@@ -47,8 +50,8 @@ namespace XRL.World.Effects
             SourceObject = null;
             Damage = "1";
             ChanceToDamage = 10;
-            ChanceToSmear = 50;
-            ChanceToSplatter = 10;
+            ChanceToSmear = BASE_SMEAR_CHANCE;
+            ChanceToSpatter = BASE_SPATTER_CHANCE;
 
             DisplayName = ENDLESSLY_SUFFERING;
             Duration = 1;
@@ -79,7 +82,7 @@ namespace XRL.World.Effects
         {
             this.Damage = Damage;
             this.ChanceToSmear = ChanceToSmear;
-            this.ChanceToSplatter = ChanceToSplatter;
+            this.ChanceToSpatter = ChanceToSplatter;
 
             this.Duration = Duration;
         }
@@ -91,33 +94,27 @@ namespace XRL.World.Effects
             if (Tier >= 7)
             {
                 Damage = "3-4";
-                ChanceToSmear = 75;
-                ChanceToSplatter = 30;
             }
             else
             if (Tier >= 5)
             {
                 Damage = "2-3";
-                ChanceToSmear = 70;
-                ChanceToSplatter = 25;
             }
             else
             if (Tier >= 3)
             {
                 Damage = "1-2";
-                ChanceToSmear = 60;
-                ChanceToSplatter = 20;
             }
             else
             if (Tier >= 1)
             {
                 Damage = "1d3-2";
-                ChanceToSmear = 50;
-                ChanceToSplatter = 10;
             }
             ChanceToDamage = 10 * (1 + Math.Max(1, Tier));
+            ChanceToSmear *= Tier;
+            ChanceToSpatter *= Tier;
 
-            if (CurrentTier != 0 && Tier > CurrentTier)
+            if (CurrentTier > 0 && Tier > CurrentTier)
             {
                 WorsenedMessage(Object);
             }
@@ -233,7 +230,7 @@ namespace XRL.World.Effects
                     }
                 }
             }
-            if (!inLiquid && ChanceToSplatter.in100())
+            if (!inLiquid && ChanceToSpatter.in100())
             {
                 if (GameObject.Create("BloodSplash") is GameObject bloodySplashObject)
                 {
@@ -243,7 +240,7 @@ namespace XRL.World.Effects
                         suferrerCell.AddObject(bloodySplashObject);
                         if (tookDamage)
                         {
-                            DidX("spatter", "blood everywhere", "!");
+                            DidX("spatter", "viscous gunk everywhere", "!");
                         }
                     }
                     else

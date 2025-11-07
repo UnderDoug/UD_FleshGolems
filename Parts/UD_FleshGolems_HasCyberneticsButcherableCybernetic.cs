@@ -5,12 +5,17 @@ using System.Text;
 using Qud.API;
 
 using UD_FleshGolems;
+using static UD_FleshGolems.Const;
+
+using XRL.World.Anatomy;
 
 namespace XRL.World.Parts
 {
     [Serializable]
     public class UD_FleshGolems_HasCyberneticsButcherableCybernetic : IScribedPart
     {
+        public static List<string> Wildcards => new() { "*", "any", "Any", "ANY" };
+
         public string Cybernetics;
 
         public string Table;
@@ -23,9 +28,11 @@ namespace XRL.World.Parts
 
         public string ForLimbAroundCost;
 
-        public int? ForLimbAroundCosCount;
+        public int? ForLimbAroundCostCount;
 
         public int Count;
+
+        public bool UseImplantedAdjectiveIfImplanted;
 
         public UD_FleshGolems_HasCyberneticsButcherableCybernetic()
         {
@@ -38,9 +45,11 @@ namespace XRL.World.Parts
             ForLimbCount = null;
 
             ForLimbAroundCost = null;
-            ForLimbAroundCosCount = null;
+            ForLimbAroundCostCount = null;
 
             Count = 1;
+
+            UseImplantedAdjectiveIfImplanted = true;
         }
 
         public UD_FleshGolems_HasCyberneticsButcherableCybernetic(string ForLimbAroundCostOrJustLimb)
@@ -49,7 +58,7 @@ namespace XRL.World.Parts
             if (ForLimbAroundCostOrJustLimb.Contains(','))
             {
                 ForLimbAroundCost = ForLimbAroundCostOrJustLimb;
-                ForLimbAroundCosCount = Count;
+                ForLimbAroundCostCount = Count;
             }
             else
             {
@@ -65,11 +74,20 @@ namespace XRL.World.Parts
 
         public static bool IsBlueprintForLimb(GameObjectBlueprint b, string Limb) =>
             b.TryGetPartParameter(nameof(CyberneticsBaseItem), nameof(CyberneticsBaseItem.Slots), out string slots)
-            && (slots.Contains(Limb) || Limb == "*" || Limb.ToLower() == "any");
+            && (slots.Contains(Limb) || Wildcards.Contains(Limb));
         public static bool IsBlueprintForLimbAroundCost(GameObjectBlueprint b, string Limb, int Cost) =>
             IsBlueprintForLimb(b, Limb)
             && b.TryGetPartParameter(nameof(CyberneticsBaseItem), nameof(CyberneticsBaseItem.Cost), out int cost)
             && Math.Abs(cost - Cost) < 3;
+
+        public static void SanitizeLimbType(string ForLimb, out string SafeLimb, List<string> Wildcards = null)
+        {
+            SafeLimb = ForLimb;
+            if (ForLimb.IsNullOrEmpty() || Anatomies.GetBodyPartType(ForLimb) == null || (!Wildcards.IsNullOrEmpty() && Wildcards.Contains(ForLimb)))
+            {
+                SafeLimb = Anatomies.BodyPartTypeList.GetRandomElement().Type;
+            }
+        }
 
         public static bool TryGetButcherableCyberneticPart(GameObject Corpse, out CyberneticsButcherableCybernetic ButcherableCyberneticPart)
         {
@@ -89,6 +107,12 @@ namespace XRL.World.Parts
             any = EmbedButcherableCyberneticsTable() || any;
             any = EmbedButcherableCyberneticsForLimb() || any;
             any = EmbedButcherableCyberneticsForLimbAroundCost() || any;
+
+            if (any && UseImplantedAdjectiveIfImplanted)
+            {
+                var cyberneticsHasRandomImplants = new CyberneticsHasRandomImplants();
+                ParentObject.RequirePart<DisplayNameAdjectives>().AddAdjective(cyberneticsHasRandomImplants.Adjective);
+            }
 
             return any;
         }
@@ -118,6 +142,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
+                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }
@@ -168,6 +193,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
+                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }
@@ -193,6 +219,7 @@ namespace XRL.World.Parts
 
                 if (ForLimb.IsNullOrEmpty())
                 {
+                    SanitizeLimbType(ForLimb, out ForLimb, Wildcards);
                     for (int i = 0; i < Count; i++)
                     {
                         if (GameObject.Create(EncountersAPI.GetAnItemBlueprint(b => IsBlueprintForLimb(b, ForLimb))) is GameObject cybernticObject)
@@ -215,6 +242,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
+                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }
@@ -234,6 +262,8 @@ namespace XRL.World.Parts
                 string[] forLimbAroundCost = ForLimbAroundCost.Split(',');
                 string forLimb = forLimbAroundCost[0];
                 bool parsed = int.TryParse(forLimbAroundCost[1], out int aroundCost);
+
+                SanitizeLimbType(forLimb, out forLimb, Wildcards);
 
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsForLimb) + ", " +
@@ -269,12 +299,13 @@ namespace XRL.World.Parts
                         }
                     }
                 }
+                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }
         public bool EmbedButcherableCyberneticsForLimbAroundCost()
         {
-            return EmbedButcherableCyberneticsForLimbAroundCost(ParentObject, ForLimbAroundCost, ForLimbAroundCosCount ?? Count);
+            return EmbedButcherableCyberneticsForLimbAroundCost(ParentObject, ForLimbAroundCost, ForLimbAroundCostCount ?? Count);
         }
 
         public override bool WantEvent(int ID, int Cascade)

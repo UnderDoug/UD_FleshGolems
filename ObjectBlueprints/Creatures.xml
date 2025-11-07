@@ -2,10 +2,10 @@
 <objects>
   
   <object Name="Creature" Load="Merge">
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" Priority="10" />
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" />
   </object>
   <object Name="ActiveFungus" Load="Merge">
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" Priority="10" />
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" />
   </object>
   
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
@@ -38,7 +38,7 @@
     <tag Name="UD_FleshGolems_ReanimatedEpithets" Value=", {{UD_FleshGolems_reanimated|reanimated}} snapjaw" />
     <tag Name="PetResponse" Value="=subject.possessive= matted fur is slick with the grime of death.,Your hand squelches against =subject.possessive= disturbingly infirm scalp.,=subject.subjective= =subject.verb:stare:afterpronoun= seemingly through you but is nonetheless happy with the attention (probably; it's hard to tell...),What can only be described as a faint hacking cough can be heard from deep with =subject.possessive= mass." />
     <part Name="Pettable" UseFactionForFeelingFloor="Player" />
-    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic"
+    <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" UseImplantedAdjectiveIfImplanted="false"
           Cybernetics="BiologicalIndexer,PalladiumElectrodeposits,RapidReleaseFingerFlexors" />
     <tag Name="UD_FleshGolems_Reanimated_PartExclusions" Value="Pettable" />
     <tag Name="Pet"/>
@@ -57,6 +57,7 @@
     <part Name="Description" Short="A frantic slip of a =subject.personTerm= =subject.verb:flitter= agitatedly between the several foci of =subject.possessive= attention. Were it not for =subject.possessive= palid countenance, one might have assumed the vigor of youth kept =subject.objective= so spry, though =subject.possessive= poorly state appears, perhaps a bit... unnatural. =subject.Subjective= =subject.verb:wear:afterpronoun= =subject.possessive= affect of general disgust in much the same way as =subject.subjective= =subject.verb:wear:afterpronoun= =subject.possessive= chem-vest: seemingly out of habit, and perhaps a misplaced sense of self-import." />
     <part Name="Honorifics" Primary="The Mad" />
     <part Name="Corpse" CorpseChance="100" />
+    <part Name="GenericInventoryRestocker" Table="UD_FleshGolems Mad Monger Stock Table" Chance="85" />
     <part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" />
     <xtagGrammar Proper="true" />
     <part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger" />
@@ -64,8 +65,9 @@
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <intproperty Name="CyberneticRejectionSyndromeModifier" Value="100" />
-    <inventoryObject Blueprint="CyberneticsCreditWedge3" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" Number="1-2"/>
+    <inventoryobject Blueprint="CyberneticsCreditWedge3" Number="1-2" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" />
     <inventoryobject Blueprint="Di-Thermo Beam" Number="2" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" />
+    <inventoryobject Blueprint="Plastifer Chem Vest" Number="2" IntProperties="AlwaysEquipAsArmor:1,WontSell:1" />
   </object>
   
   <!--

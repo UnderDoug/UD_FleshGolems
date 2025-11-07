@@ -107,6 +107,18 @@
       <table Weight="1" Name="UD_FleshGolems Mad Monger AnyCost" />
     </group>
   </population>
+
+  <population Name="UD_FleshGolems Mad Monger Stock Table">
+    <group Name="" Style="pickeach" >
+      <table Name="GutsmongerInventory" Number="1" />
+      <table Name="UD_FleshGolems Mad Monger 2LP" Number="4d2-3" />
+      <table Name="UD_FleshGolems Mad Monger 4LP" Number="2d2-1" />
+      <table Name="UD_FleshGolems Mad Monger AnyCost" Chance="50" Number="1d2" />
+      <table Name="UD_FleshGolems Mad Monger Tier {zonetier}" Number="5-7" />
+      <table Name="UD_FleshGolems Mad Monger Tier 7" Chance="3" Number="1" />
+      <table Name="UD_FleshGolems Mad Monger Tier 8" Chance="1" Number="1" />
+    </group>
+  </population>
   
   <!--
   

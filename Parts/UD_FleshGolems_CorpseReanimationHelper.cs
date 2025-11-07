@@ -694,6 +694,15 @@ namespace XRL.World.Parts
                 Mutations frankenMutations = frankenCorpse.RequirePart<Mutations>();
                 Skills frankenSkills = frankenCorpse.RequirePart<Skills>();
 
+                if (frankenCorpse.GetBlueprint().Tags.ContainsKey(nameof(Gender)))
+                {
+                    frankenCorpse.SetGender(frankenCorpse.GetBlueprint().Tags[nameof(Gender)]);
+                }
+                if (frankenCorpse.GetBlueprint().Tags.ContainsKey(nameof(PronounSet)))
+                {
+                    frankenCorpse.SetPronounSet(frankenCorpse.GetBlueprint().Tags[nameof(PronounSet)]);
+                }
+
                 bool excludedFromDynamicEncounters = false;
                 if (GameObjectFactory.Factory.GetBlueprintIfExists(sourceBlueprintName) is GameObjectBlueprint sourceBlueprint)
                 {
@@ -709,7 +718,11 @@ namespace XRL.World.Parts
                     AssignStatsFromPastLifeWithFactor(frankenCorpse, PastLife, PhysicalAdjustmentFactor: 1.2f, MentalAdjustmentFactor: 0.75f);
                     if (frankenCorpse.GetStat("Hitpoints") is Statistic frankenHitpoints)
                     {
-                        frankenHitpoints.BaseValue = Math.Max(Stat.RollCached("4d3+5"), frankenHitpoints.BaseValue);
+                        int minHitpoints = Stat.RollCached("4d3+5");
+                        UnityEngine.Debug.Log("        " + nameof(frankenHitpoints) + " " + nameof(minHitpoints) + ": " + minHitpoints);
+                        frankenHitpoints.BaseValue = Math.Max(minHitpoints, frankenHitpoints.BaseValue);
+                        frankenHitpoints.Penalty = 0;
+                        UnityEngine.Debug.Log("        " + nameof(frankenHitpoints) + ": " + frankenHitpoints.Value + "/" + frankenHitpoints.BaseValue);
                     }
 
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
