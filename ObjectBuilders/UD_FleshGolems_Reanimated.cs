@@ -28,7 +28,7 @@ namespace XRL.World.ObjectBuilders
     public class UD_FleshGolems_Reanimated : IObjectBuilder
     {
         public static bool IsGameRunning => The.Game != null && The.Game.Running;
-        public static bool HasWorldGenerated => IsGameRunning && The.Game.Running;
+        public static bool HasWorldGenerated => IsGameRunning && The.Player != null;
 
         public static List<string> PartsThatNeedDelayedReanimation => new()
         {
@@ -262,7 +262,7 @@ namespace XRL.World.ObjectBuilders
         public static bool Unkill(GameObject Creature, out GameObject Corpse, string Context = null)
         {
             Corpse = null;
-            if (!IsGameRunning)
+            if (!HasWorldGenerated)
             {
                 // return false;
             }

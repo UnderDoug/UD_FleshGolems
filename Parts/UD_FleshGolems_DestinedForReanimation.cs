@@ -435,7 +435,7 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
         {
-            bool goAhead = true || UD_FleshGolems_Reanimated.IsGameRunning;
+            bool goAhead = true || UD_FleshGolems_Reanimated.HasWorldGenerated;
             if (goAhead
                 && !Attempted
                 && BuiltToBeReanimated
@@ -466,7 +466,7 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(BeforeZoneBuiltEvent E)
         {
-            bool goAhead = true || UD_FleshGolems_Reanimated.IsGameRunning;
+            bool goAhead = true || UD_FleshGolems_Reanimated.HasWorldGenerated;
             if (goAhead
                 && !Attempted
                 && BuiltToBeReanimated

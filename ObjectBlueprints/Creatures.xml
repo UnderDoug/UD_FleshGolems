@@ -29,6 +29,7 @@
           Tile="Creatures/sw_golem_snapjaw.png" -->
     <property Name="CreatureName" Value="Jofo Qudwufo" />
     <property Name="UD_FleshGolems_CreatureProperName" Value="Jofo Qudwufo" />
+    <property Name="UD_FleshGolems_PastLife_Blueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
     <property Name="SourceBlueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
     <part Name="Brain" Hostile="false" />
     <stat Name="Energy" ShortName="EN" Min="-100000" Max="100000" Value="0" />

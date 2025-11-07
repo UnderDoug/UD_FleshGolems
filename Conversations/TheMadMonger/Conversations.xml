@@ -44,24 +44,58 @@
         <part Name="Trade" />
       </choice>
 
-      <choice ID="AskWhyMeMeat" Target="AnswerWhyYouMeat" IfNotLastChoice="AskWhyMeMeat">
-        <text IfHavePart="Esper" Priority="1">
-          Why do you call me grey meat?
+      <choice ID="AskWhatYouWorkOn" Target="AnswerWhatIWorkOn" IfNotLastChoice="AskWhatYouWorkOn"
+              SetBooleanState="UD_FleshGolems_Monger_AnswerWhatIWorkOn,true">
+        <text IfNotHaveState="UD_FleshGolems_Monger_AnswerWhatIWorkOn">
+          What is the nature of your work here?
         </text>
-        <text IfTruekin="True" Priority="1">
+        <text IfTestState="UD_FleshGolems_Monger_AnswerWhatIWorkOn">
+          What work are you doing here, again?
+        </text>
+      </choice>
+
+      <choice ID="AskWhyYouRaiseDead" Target="AnswerWhyIRaiseDead" IfNotLastChoice="AskWhyYouRaiseDead"
+              SetBooleanState="UD_FleshGolems_Monger_AnswerWhyIRaiseDead,true">
+        <text IfNotHaveState="UD_FleshGolems_Monger_AnswerWhyIRaiseDead">
+          What does that have to do with raising the dead?
+        </text>
+        <text IfTestState="UD_FleshGolems_Monger_AnswerWhyIRaiseDead">
+          Remind me why you're raising the dead?
+        </text>
+      </choice>
+
+      <choice ID="AskWhyMeMeat" Target="AnswerWhyYouMeat" IfNotLastChoice="AskWhyMeMeat"
+          IfTestState="UD_FleshGolems_Monger_MeatCounter>=6">
+        <text IfTrueKin="True" Priority="1">
           Why do you call me rare meat?
         </text>
         <text IfHavePart="Chimera" Priority="1">
           Why do you call me prime meat?
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          Why do you call me grey meat?
         </text>
         <text>
           Why do you call me meat?
         </text>
       </choice>
 
-      <choice ID="AskWhatYouWorkOn" Target="AnswerWhatIWorkOn" IfNotLastChoice="AskWhatYouWorkOn">
+      <choice ID="SayYouLookSick" Target="ReactINOTSICK" IfNotLastChoice="SayYouLookSick" IfTrueKin="False"
+          IfTestState="UD_FleshGolems_Monger_MeatCounter>=3">
+        <text IfHavePart="Chimera" Priority="1">
+          You move like wounded prey.
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          I sense that your entire form, both body and mind, is wreathed in chaos.
+        </text>
         <text>
-          What are you doing with that mess?
+          Are you alright? You look sickly.
+        </text>
+      </choice>
+      <choice ID="GoadYouLookSick" Target="ReactINOTSICK_TK" IfTrueKin="True"
+          IfTestState="UD_FleshGolems_Monger_MeatCounter>=3">
+        <text Priority="1">
+          Not taking to the implants well?
         </text>
       </choice>
 
@@ -131,8 +165,12 @@
       <choice UseID="GoEnd" />
     </node>
     
-    <node ID="AlwaysHaveChoices" Inherits="BaseSequence">
+    <node ID="AlwaysHaveChoices" Inherits="BaseSequence"
+          ModIntState="UD_FleshGolems_Monger_MeatCounter,1">
       <choice UseID="AskWhatYouWorkOn" />
+      <choice UseID="AskWhyYouRaiseDead" />
+      <choice UseID="SayYouLookSick" />
+      <choice UseID="GoadYouLookSick" />
       <choice UseID="AskWhyMeMeat" />
       <!-- put entries above here; order matters -->
       <choice UseID="GoPostGreeting" />
@@ -301,6 +339,118 @@
       </text>
     </node>
     
+    <node ID="AnswerWhatIWorkOn" Inherits="AlwaysHaveChoices">
+      <text IfTrueKin="true" Priority="1">
+        The nature of my work?....What a finely uttered question, the aim of my work is simple "aristocrat" to make your kind obsolete, to develop a new line of cybernetics.
+
+        One that isn't locked behind 1000 year old protocols, one that doesn't require a disgusting immutable genome to safety interface. Your days as the sole beings able to cleanly integrate with Chrome are at an end.
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        The nature of my work? it is simple Prime meat, my aim is to develop a new line of cybernetics, one capable of being implanted even by those with radically unstable biology.
+
+        Can you imagine it, an augmentation underneath each of your many appendages all making you stronger, faster, more efficient.........
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        The nature of my work? My, you are actually capable of using your mind for something beyond killing others, I applaud the restraint and truly unfathomable cognitive complexity it must have taken to ask such an insightful question.
+
+        If you must know, I wish to create a new line of implants that do not cause sickness upon implantation. Perhaps you'd be interested? After all, it's not as though your hyper-active brain actually confers even a modicum of intellect.
+
+        Cranial augmentation may be your only hope. Lest you languish in idiocy like everyone else who isn't me.
+      </text>
+      <text>
+        The nature of my work? It is simple meat, I wish to create a new line of cybernetic augmentations that do not reject our shared physiology.
+
+        Imagine it now meat, no longer being restricted to the random permutations of your genome, finally being able to choose your own capabilities. Is that not wonderful?
+      </text>
+    </node>
+    
+    <node ID="AnswerWhyIRaiseDead" Inherits="AlwaysHaveChoices">
+      <text IfTrueKin="true" Priority="1">
+        {{Y|Raising the dead??}}
+        
+        They're only dead to begin with while I perfect the process. Merely necessary sacrifices in the name of progress.
+
+        Besides, I owe you no explanation. Why don't you take that off-brand god-flesh, annoyingly replete with the decrepit relics of a bygone age, and leave.
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        Trial and error I'm afraid, before I can understand how to create a new line, I must ascertain exactly how and why our shared biology almost unilaterally rejects cybernetics.
+
+        It was my initial theory that deadflesh with it essentially being in a state of genetic stasis would be less likely to manifest negative effects. I've unfortunately seen little success in that endeavor.
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        Test subjects primarily. Perhaps if you continue asking questions, I'll introduce you to my research directly.
+
+        The immutable nature of your physical form, akin to those filthy augmented wretches, may have some valuable applications despite the overall uselessness of your flesh.
+      </text>
+      <text>
+        My first attempt at development. I've unfortunately gleaned little from my experiments with the reanimated dead. At least they make excellent slaves,
+
+        {{Y|Most}} of them anyways.
+      </text>
+    </node>
+    
+    <!-- Health Question -->
+    <node ID="ReactINOTSICK" Inherits="AlwaysHaveChoices">
+      <text IfTrueKin="true" Priority="1">
+        Oh go drink piss, you worthless piece of obsolete trash!!!! I'll show you who wears them better!!!
+      </text>
+      <choice GotoID="End">
+        <text>!</text>
+        <part Name="StartFight" />
+      </choice>
+      <text IfHavePart="Chimera" Priority="1">
+        What is pain besides another word for progress. With the power of my vast genius I found a way to bypass those damned restrictions on one of the many millennium-old chrome surgeons scattered throughout this land.
+
+        I however didn't anticipate that my very physiology would reject augmentation, though it's irrelevant, I will find a way, no matter how much material it takes!!
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        You figure that out all by yourself? Why don't use your nigh-omniscient extra-sensory gaze to tell me more obvious things.
+
+        The pain and instability are small prices to pay for my inevitable cybernetic ascension, though I suppose you wouldn't know the value of such a pursuit. Having a mind nearly as small as your body's capacity for mutation after all.
+      </text>
+      <text>
+        Silence meat. I, and I alone, determine what is sick and what is healthy!
+
+        My current impaired state is just the first step of my inevitable transformation into the perfect fusion of bodily permutation and cybernetic augmentation!!
+      </text>
+    </node>
+    
+    <node ID="ReactINOTSICK_TK" AllowEscape="false">
+      <text IfTrueKin="true" Priority="1">
+        Oh go drink piss, you worthless piece of obsolete trash!!!! I'll show you who wears them better!!!
+      </text>
+      <choice GotoID="End">
+        <text>
+          You could certainly try!
+        </text>
+        <part Name="StartFight" />
+      </choice>
+      <!-- if this is the first time here, you can back down. If it's not, both choices start the fight-->
+      <choice GotoID="End" IfTestState="UD_FleshGolems_Monger_ReactINOTSICK_TK_BackedDown">
+        <text>Whoa! Hold on!</text>
+        <part Name="StartFight" />
+      </choice>
+      <choice GotoID="ReactINOTSICK_TK_BackedDown" IfNotHaveState="UD_FleshGolems_Monger_ReactINOTSICK_TK_BackedDown">
+        <text>Whoa! Hold on...</text>
+      </choice>
+      <removepart Name="Trade" />
+    </node>
+    <node ID="ReactINOTSICK_TK_BackedDown" AllowEscape="false"
+          SetBooleanState="UD_FleshGolems_Monger_ReactINOTSICK_TK_BackedDown,true">
+      <text IfTrueKin="true" Priority="1">
+        {{emote|*cough*}} {{emote|*cough*}}
+
+        I'm feeling {{emote|*cough*}}... {{Y|merciful}} this time. You won't get another jab like that. Now... {{emote|*cough*}}
+
+        {{W|Piss off!}}
+      </text>
+      <choice GotoID="End">
+        <text>Sorry...</text>
+      </choice>
+      <removepart Name="Trade" />
+    </node>
+    <!-- End Health Question -->
+
     <node ID="AnswerWhyYouMeat" Inherits="AlwaysHaveChoices">
       <text IfTrueKin="true" Priority="1">
         Rare meat, yes, though rare may be a misnomer, I speak only in terms of the difficulty of finding materials like yours, not to the value that they provide; worthless meat may be a more accurate descriptor.
@@ -314,58 +464,6 @@
       <text>
         Meat, yes, would you prefer I say materials, components, resources? You are a walking sack of things I find moderately useful. Be grateful I've decided not to harvest you for the time being.
       </text>
-    </node>
-    
-    <node ID="AnswerWhatIWorkOn">
-      <!--text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" AllowEscape="false">
-        My mess?? And what of {{Y|your}} mess, meat?
-
-        How Jofo Qudwufo hasn't made actual {{UD_FleshGolem_meat|meat}} of you yet is a wonder to me.
-        
-        I'm, understandably, reticent to discuss such a... meaty endeavour, with that squelching affront to my work heaving nearby.
-      </text-->
-      <text>
-        Perchance, lesser mind, what, pray, does it {{Y|appear}} I might be doing?
-      </text>
-      <!-- choices can have their text changed on the fly on a per-node basis -->
-      <choice UseID="GoPostGreeting" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
-        <text>
-          Rightio, then! There was something else...
-        </text>
-      </choice>
-      <!--choice GotoID="IMeanIt" IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
-      <choice UseID="Trade" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" />
-      <choice UseID="GoEnd" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" />
-        <text>
-          ...
-        </text>
-      </choice-->
-    </node>
-    
-    <node ID="IMeanIt" AllowEscape="false">
-      <text>
-        Go on then...
-        
-        Get.
-      </text>
-      <choice GotoID="IReallyMeanIt">
-        <text>
-          ...
-        </text>
-      </choice>
-    </node>
-    
-    <node ID="IReallyMeanIt" AllowEscape="false">
-      <text>
-        ...
-        
-        Meat! Go!
-      </text>
-      <choice UseID="GoEnd">
-        <text>
-          {{emote|*sigh*}} ...fine.
-        </text>
-      </choice>
     </node>
     
   </conversation> 

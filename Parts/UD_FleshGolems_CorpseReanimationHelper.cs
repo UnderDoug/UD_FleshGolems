@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
+using Genkit;
 using XRL.Core;
 using XRL.Language;
 using XRL.Rules;
@@ -14,7 +15,7 @@ using XRL.World.Skills;
 using XRL.World.AI;
 
 using UD_FleshGolems;
-using Genkit;
+using static UD_FleshGolems.Const;
 
 namespace XRL.World.Parts
 {
@@ -94,6 +95,124 @@ namespace XRL.World.Parts
         public bool Animate()
         {
             return Animate(out _);
+        }
+
+        public static string FigureOutWhatBlueprintThisCorpseCameFrom(GameObject Corpse, UD_FleshGolems_PastLife PastLife = null, bool PrintCheckEvenWhenPastLife = false)
+        {
+            string blueprint = null;
+            if (PastLife?.Blueprint is string pastLifeBlueprint)
+            {
+                if (!PrintCheckEvenWhenPastLife)
+                {
+                    return pastLifeBlueprint;
+                }
+                blueprint = pastLifeBlueprint;
+            }
+            static string AppendTick(string String, bool WithSpaceAfter = true)
+            {
+                return String + "[" + TICK + "]" + (WithSpaceAfter ? " " : "");
+            }
+            static string AppendCross(string String, bool WithSpaceAfter = true)
+            {
+                return String + "[" + CROSS + "]" + (WithSpaceAfter ? " " : "");
+            }
+            string corpseDisplayNameLC = Corpse.GetReferenceDisplayName(Stripped: true, Short: true)?.ToLower();
+            string baseGameSourceBlueprintLC = Corpse.GetPropertyOrTag("SourceBlueprint")?.ToLower();
+            string corpseType = Corpse.Blueprint.Replace(" Corpse", "").Replace("UD_FleshGolems ", "");
+            string corpseSpecies = Corpse.GetStringProperty("Species", corpseType);
+            List<string> probableBlueprints = new();
+            List<string> possibleBlueprints = new();
+            List<string> fallbackBlueprints = new();
+            UnityEngine.Debug.Log(
+                "Finding Blueprints for " + (Corpse?.DebugName ?? NULL) + " | " +
+                nameof(corpseDisplayNameLC) + ": " + (corpseDisplayNameLC ?? NULL) + ", " +
+                nameof(baseGameSourceBlueprintLC) + ": " + (baseGameSourceBlueprintLC ?? NULL) + ", " +
+                nameof(corpseType) + ": " + (corpseType ?? NULL) + ", " +
+                nameof(corpseSpecies) + ": " + (corpseSpecies ?? NULL) + ", " +
+                nameof(corpseDisplayNameLC) + ": " + (corpseDisplayNameLC ?? NULL));
+            foreach (GameObjectBlueprint gameObjectBlueprint in GameObjectFactory.Factory.Blueprints.Values)
+            {
+                string blueprintName = gameObjectBlueprint.Name;
+                string blueprintNameLC = blueprintName?.ToLower() ?? "XKCD";
+                string gameObjectDisplayName = gameObjectBlueprint.DisplayName()?.Strip()?.ToLower() ?? "XKCD";
+                if (blueprintName == Corpse.Blueprint)
+                {
+                    UnityEngine.Debug.Log(AppendCross("    ") + blueprintName + " is this corpse");
+                    continue;
+                }
+                if (gameObjectBlueprint.IsBaseBlueprint())
+                {
+
+                    // UnityEngine.Debug.Log(AppendCross("    ") + blueprintName + " is base blueprint");
+                    continue;
+                }
+                if (!gameObjectBlueprint.InheritsFrom("Creature")
+                    && !gameObjectBlueprint.InheritsFrom("Fungus")
+                    && !gameObjectBlueprint.InheritsFrom("Plant")
+                    && !gameObjectBlueprint.InheritsFrom("Corpse"))
+                {
+                    // UnityEngine.Debug.Log(AppendCross("    ") + blueprintName + " is not an entity capable of dying");
+                    continue;
+                }
+                bool corpseDisplayNameContainsBlueprintDisplayName = corpseDisplayNameLC != null && corpseDisplayNameLC.Contains(gameObjectDisplayName);
+                bool corpseTaggedWithBlueprint = baseGameSourceBlueprintLC != null && baseGameSourceBlueprintLC == blueprintNameLC;
+                if (corpseDisplayNameContainsBlueprintDisplayName || corpseTaggedWithBlueprint)
+                {
+                    if (!probableBlueprints.Contains(blueprintName))
+                    {
+                        probableBlueprints.Add(blueprintName);
+                        UnityEngine.Debug.Log(AppendTick("    ") + blueprintName + " added to " + nameof(probableBlueprints) + " }{ [" +
+                            corpseDisplayNameLC + "] contains [" + gameObjectDisplayName + "] || [" + baseGameSourceBlueprintLC + "] == [" + blueprintNameLC + "]");
+                    }
+                }
+                bool corpseTypeMatchesBlueprintName = corpseType != null && corpseType.ToLower() == blueprintNameLC;
+                if (corpseTypeMatchesBlueprintName)
+                {
+                    if(!possibleBlueprints.Contains(blueprintName))
+                    {
+                        possibleBlueprints.Add(blueprintName);
+                        UnityEngine.Debug.Log(AppendTick("    ") + blueprintName + " added to " + nameof(possibleBlueprints) + " }{ [" +
+                            corpseType.ToLower() + "] == [" + blueprintNameLC + "]");
+                    }
+                }
+                bool corpseSpeciesMatchesBlueprintSpecies = corpseSpecies != null && corpseSpecies?.ToLower() == gameObjectBlueprint.GetPropertyOrTag("Species")?.ToLower();
+                if (corpseSpeciesMatchesBlueprintSpecies)
+                {
+                    if (!fallbackBlueprints.Contains(blueprintName))
+                    {
+                        fallbackBlueprints.Add(blueprintName);
+                        UnityEngine.Debug.Log(AppendTick("    ") + blueprintName + " added to " + nameof(fallbackBlueprints) + " }{ [" +
+                            corpseSpecies?.ToLower() + "] == [" + gameObjectBlueprint.GetPropertyOrTag("Species")?.ToLower() + "]");
+                    }
+                }
+            }
+
+            if (possibleBlueprints.IsNullOrEmpty())
+            {
+                possibleBlueprints.AddRange(fallbackBlueprints);
+                fallbackBlueprints.Clear();
+            }
+            if (probableBlueprints.IsNullOrEmpty())
+            {
+                probableBlueprints.AddRange(possibleBlueprints);
+            }
+
+            UnityEngine.Debug.Log("Probable Blueprints for " + Corpse.DebugName);
+            if (!probableBlueprints.IsNullOrEmpty())
+            {
+                probableBlueprints.ShuffleInPlace();
+                foreach (string probableBlueprint in probableBlueprints)
+                {
+                    UnityEngine.Debug.Log("    " + probableBlueprint);
+                }
+                blueprint ??= probableBlueprints.GetRandomElement();
+                UnityEngine.Debug.Log(nameof(blueprint) + " picked: " + blueprint);
+                return blueprint;
+            }
+
+            blueprint ??= "Trash Monk";
+            UnityEngine.Debug.Log(nameof(blueprint) + " picked: " + blueprint);
+            return blueprint;
         }
 
         public static bool AssignStatsFromStatistics(
@@ -594,10 +713,7 @@ namespace XRL.World.Parts
                             .Replace("*firstNoise*", firstPoeticNoise)
                             .Replace("*secondNoise*", secondPoeticNoise);
                 }
-                string sourceBlueprintName = frankenCorpse.GetPropertyOrTag("SourceBlueprint")
-                    ?? frankenCorpse.GetPropertyOrTag("UD_FleshGolems_OriginalCorpse")
-                    ?? frankenCorpse.GetPropertyOrTag("CorpseBlueprint", corpseType)
-                    ?? "Trash Monk";
+                string sourceBlueprintName = FigureOutWhatBlueprintThisCorpseCameFrom(frankenCorpse, PastLife, true);
                 
                 SourceBlueprint ??= sourceBlueprintName;
 
@@ -771,7 +887,7 @@ namespace XRL.World.Parts
                         {
                             frankenBrain.Wanders = sourceBrainWanders;
                         }
-                        if ((!UD_FleshGolems_Reanimated.IsGameRunning || excludedFromDynamicEncounters)
+                        if ((!UD_FleshGolems_Reanimated.HasWorldGenerated || excludedFromDynamicEncounters)
                             && PastLife?.Brain is Brain pastBrain)
                         {
                             frankenCorpse.Brain.Allegiance ??= new();
@@ -985,7 +1101,7 @@ namespace XRL.World.Parts
                     }
                 }
 
-                if (!UD_FleshGolems_Reanimated.IsGameRunning || excludedFromDynamicEncounters)
+                if (!UD_FleshGolems_Reanimated.HasWorldGenerated || excludedFromDynamicEncounters)
                 {
                     if (PastLife?.ConversationScript is ConversationScript pastConversation)
                     {
@@ -1057,6 +1173,12 @@ namespace XRL.World.Parts
             if (!IsALIVE
                 && ParentObject == E.Object)
             {
+                if (E.Object.GetPropertyOrTag("UD_FleshGolems_PastLife_Blueprint") is string pastLifeBlueprint
+                    && GameObject.CreateSample(pastLifeBlueprint) is GameObject samplePastLife)
+                {
+                    E.Object.RequirePart<UD_FleshGolems_PastLife>().Initialize(samplePastLife);
+                    samplePastLife.Obliterate();
+                }
                 IsALIVE = true;
                 MakeItALIVE(E.Object, PastLife, ref CreatureName, ref SourceBlueprint, ref CorpseDescription, E.Actor);
             }

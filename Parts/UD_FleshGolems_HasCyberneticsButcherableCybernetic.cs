@@ -8,6 +8,7 @@ using UD_FleshGolems;
 using static UD_FleshGolems.Const;
 
 using XRL.World.Anatomy;
+using System.Linq;
 
 namespace XRL.World.Parts
 {
@@ -85,7 +86,12 @@ namespace XRL.World.Parts
             SafeLimb = ForLimb;
             if (ForLimb.IsNullOrEmpty() || Anatomies.GetBodyPartType(ForLimb) == null || (!Wildcards.IsNullOrEmpty() && Wildcards.Contains(ForLimb)))
             {
-                SafeLimb = Anatomies.BodyPartTypeList.GetRandomElement().Type;
+                SafeLimb = 
+                    (from type in Anatomies.BodyPartTypeList
+                     where type.Appendage == true && type.Plural == false
+                     select type)
+                     .GetRandomElement()
+                     .FinalType;
             }
         }
 
