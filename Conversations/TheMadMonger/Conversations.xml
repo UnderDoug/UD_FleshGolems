@@ -23,7 +23,7 @@
         </text>
       </choice>
 
-      <choice ID="GoPostGreeting" Target="PostGreeting" IfNotLastChoice="GoPostGreeting">
+      <choice ID="GoPostGreeting" Target="PostGreeting" IfNotCurrentNodeID="Greeting,PostGreeting">
         <text>There was something else...</text>
         <part Name="Tag">{{K|[start over]}}</part>
       </choice>
@@ -55,6 +55,7 @@
       </choice>
 
       <choice ID="AskWhyYouRaiseDead" Target="AnswerWhyIRaiseDead" IfNotLastChoice="AskWhyYouRaiseDead"
+              IfTestState="UD_FleshGolems_Monger_AnswerWhatIWorkOn"
               SetBooleanState="UD_FleshGolems_Monger_AnswerWhyIRaiseDead,true">
         <text IfNotHaveState="UD_FleshGolems_Monger_AnswerWhyIRaiseDead">
           What does that have to do with raising the dead?
@@ -64,24 +65,58 @@
         </text>
       </choice>
 
-      <choice ID="AskWhyMeMeat" Target="AnswerWhyYouMeat" IfNotLastChoice="AskWhyMeMeat"
-          IfTestState="UD_FleshGolems_Monger_MeatCounter>=6">
+      <choice ID="AskYouNeedHelp" Target="AnswerINeedHelp" IfNotHaveQuest="You Raise Me Up"
+              IfTestState="UD_FleshGolems_Monger_AnswerWhyIRaiseDead">
         <text IfTrueKin="True" Priority="1">
-          Why do you call me rare meat?
+          Is there anything I can do to assist your work?
         </text>
         <text IfHavePart="Chimera" Priority="1">
-          Why do you call me prime meat?
+          Is there anything I can do to help?
         </text>
         <text IfHavePart="Esper" Priority="1">
-          Why do you call me grey meat?
+          Is there something I can do to help you?
         </text>
         <text>
-          Why do you call me meat?
+          Do you have any work for me?
         </text>
       </choice>
 
-      <choice ID="SayYouLookSick" Target="ReactINOTSICK" IfNotLastChoice="SayYouLookSick" IfTrueKin="False"
-          IfTestState="UD_FleshGolems_Monger_MeatCounter>=3">
+      <choice ID="SayMeHelp" Target="ReactThenHelp"
+              StartQuest="You Raise Me Up">
+        <text IfTrueKin="True" Priority="1">
+          I will do as you ask.
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          I will do this for you.
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          I will do this for you.
+        </text>
+        <text>
+          I will complete this task.
+        </text>
+      </choice>
+
+      <choice ID="SayMeNotHelp_TK" IfTrueKin="True" Target="ReactThenNotHelp">
+        <text>No, I will not do this.</text>
+      </choice>
+      <choice ID="SayMeNotHelp_CH" IfHavePart="Chimera" Target="ReactThenNotHelp">
+        <text>No I will not do this for you.</text>
+      </choice>
+      <choice ID="SayMeNotHelp_ESP" IfHavePart="Esper" Target="ReactThenForceHelp_ESP">
+        <text>I refuse this task.</text>
+        <!-- Leads to fight threat -->
+      </choice>
+      <choice ID="SayMeNotHelp_M" Target="ReactThenForceHelp_M"
+              IfNotTrueKin="true" IfHaveAnyMorphotype="false">
+        <text>This isn't the job for me.</text>
+        <!-- Leads to fight threat -->
+      </choice>
+
+      <!--choice GotoID="ActiveQuest" IfHaveQuest="If, Then, Else" IfNotFinishedQuestStep="If, Then, Else~Reunite Tau with Her Chime">Explain once more what I must do with Tau's chime.</choice-->
+
+      <choice ID="SayYouLookSick" Target="ReactINOTSICK" IfNotLastChoice="SayYouLookSick" IfNotTrueKin="true"
+          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 3">
         <text IfHavePart="Chimera" Priority="1">
           You move like wounded prey.
         </text>
@@ -93,9 +128,25 @@
         </text>
       </choice>
       <choice ID="GoadYouLookSick" Target="ReactINOTSICK_TK" IfTrueKin="True"
-          IfTestState="UD_FleshGolems_Monger_MeatCounter>=3">
+          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 3">
         <text Priority="1">
           Not taking to the implants well?
+        </text>
+      </choice>
+
+      <choice ID="AskWhyMeMeat" Target="AnswerWhyYouMeat" IfNotLastChoice="AskWhyMeMeat"
+          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 6">
+        <text IfTrueKin="True" Priority="1">
+          Why do you call me rare meat?
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          Why do you call me prime meat?
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          Why do you call me grey meat?
+        </text>
+        <text>
+          Why do you call me meat?
         </text>
       </choice>
 
@@ -167,8 +218,12 @@
     
     <node ID="AlwaysHaveChoices" Inherits="BaseSequence"
           ModIntState="UD_FleshGolems_Monger_MeatCounter,1">
+      <!-- soft-sequence into quest. -->
       <choice UseID="AskWhatYouWorkOn" />
       <choice UseID="AskWhyYouRaiseDead" />
+      <!-- quest choices (sequences handled by respective nodes) -->
+      <choice UseID="AskYouNeedHelp" />
+      <!-- end quest choices -->
       <choice UseID="SayYouLookSick" />
       <choice UseID="GoadYouLookSick" />
       <choice UseID="AskWhyMeMeat" />
@@ -351,14 +406,14 @@
         Can you imagine it, an augmentation underneath each of your many appendages all making you stronger, faster, more efficient.........
       </text>
       <text IfHavePart="Esper" Priority="1">
-        The nature of my work? My, you are actually capable of using your mind for something beyond killing others, I applaud the restraint and truly unfathomable cognitive complexity it must have taken to ask such an insightful question.
+        The nature of my work? My, you are actually capable of using your mind for something beyond killing others. I applaud the restraint and truly unfathomable cognitive complexity it must have taken to ask such an insightful question.
 
         If you must know, I wish to create a new line of implants that do not cause sickness upon implantation. Perhaps you'd be interested? After all, it's not as though your hyper-active brain actually confers even a modicum of intellect.
 
         Cranial augmentation may be your only hope. Lest you languish in idiocy like everyone else who isn't me.
       </text>
       <text>
-        The nature of my work? It is simple meat, I wish to create a new line of cybernetic augmentations that do not reject our shared physiology.
+        The nature of my work? It is simple, meat: I wish to create a new line of cybernetic augmentations that do not reject our shared physiology.
 
         Imagine it now meat, no longer being restricted to the random permutations of your genome, finally being able to choose your own capabilities. Is that not wonderful?
       </text>
@@ -389,15 +444,115 @@
       </text>
     </node>
     
-    <!-- Health Question -->
-    <node ID="ReactINOTSICK" Inherits="AlwaysHaveChoices">
+    <node ID="AnswerINeedHelp" Inherits="BaseSequence">
       <text IfTrueKin="true" Priority="1">
-        Oh go drink piss, you worthless piece of obsolete trash!!!! I'll show you who wears them better!!!
+        The walking relic wants to help me replace it, how grand. Very well rare meat, there is actually something you could do to assist.
+
+        My current experimentation with forcibly installing cybernetic augments into walking corpses has yielded little fruit, with a few exceptions, nearly all of the corpses I tested rapidly dissolved into viscera.
+
+        However, certain corpses took longer to lose integrity than others, I would like you to gather some of these 'implant-tolerant' cadavers.
+
+        I need the most resistant material available for my next round of experiments. I require 3 corpses out of this list, (random creature list of 10 goes here), find these creatures, kill them and then bring me what remains.
+
+        I will provide you with a suitable reward upon completion of this task.
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        Why yes there is, prime meat. Your gargantuan form should be well-suited to this task.
+
+        My current experimentation with forcibly augmenting walking corpses has largely failed.
+        Barring a small number of exceptions, nearly every live corpse I augmented rapidly dissolved into paste.
+
+        While every attempt did eventually end in abject failure, a tiny minority of corpses survived longer than the others before liquefying.
+
+        I would like you to bring me some of these implant-tolerant cadavers. I am going to change my approach and require the most resistant material available
+
+        I require three corpses out of this list, (list of 10 random creatures goes here) find the appropriate creatures, kill them and bring me what is left.
+
+        I will provide you with a suitable reward upon completion of this task.
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        Would you look at that, your middling physic powers have finally done something useful. Why yes, I do need help.
+
+        My current line of experimentation has a hit a wall more resilient than the cage of your winged-predators' master.
+
+        Nearly every single corpse I have tried to augment has instantly dissolved into paste, I wish to try a new approach and require additional material to do so.
+
+        This list contains a series of creatures which through previous experiments I've found are slightly more resistant to the liquefying effects of augmentation, I would like you to locate three of these creatures, kill them and then bring the rotting husks to me for testing.
+
+        Upon completion of this task, I will provide you with a suitable reward.
+      </text>
+      <text>
+        If by 'work' you mean making revolutionary strides in the field of cybernetics then yes, I have work for you meat.
+
+        I know you are mediocrity made form so I'll try to keep this simple. I need more material for my experiments, all my previous attempts to augment reanimated corpses has ended in failure.
+
+        I require stronger material, this list contains a total number of 10 possible targets. I need you to retrieve the corpses of 3. How you do so is irrelevant, all that matters is that I have the meat I require.
+
+        Once you have completed this paltry task I will grant you a suitable reward.
+      </text>
+      <choice UseID="SayMeHelp" />
+      <choice UseID="SayMeNotHelp_TK" />
+      <choice UseID="SayMeNotHelp_CH" />
+      <choice UseID="SayMeNotHelp_ESP" />
+      <choice UseID="SayMeNotHelp_M" />
+    </node>
+    
+    <node ID="ReactThenNotHelp">
+      <text IfTrueKin="true" Priority="1">
+        Then why are you still here? Go pollute somewhere else with your foul presence!
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        You may be prime meat, but that doesn't make you any less my subordinate.
+
+        Do as I ask or it will no longer be a choice.
       </text>
       <choice GotoID="End">
-        <text>!</text>
+        <text IfTrueKin="true" Priority="1">
+          ...
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          Rude...
+        </text>
+      </choice>
+    </node>
+    
+    <node ID="ReactThenForceHelp_ESP" AllowEscape="false">
+      <text>
+        If that's the case why don't you take a seat on my nearby vivisection table, your usefulness to me as an intact being has expired!!!!
+      </text>
+      <choice UseID="SayMeHelp">
+        <text Priority="2">
+          Fine. Okay... But what do I get out of it?
+        </text>
+      </choice>
+      <choice GotoID="End">
+        <text>
+          {{emote|*This is me concentrating you to death*}}
+        </text>
+        <part Name="StartFight" />
+        <!-- (also activates nearby norm core) -->
+      </choice>
+    </node>
+    
+    <node ID="ReactThenForceHelp_M" AllowEscape="false">
+      <text>
+        If that's the case then your usefulness to me as a traditionally living creature has come to a close, any resistance will be met with pain upon pain.
+      </text>
+      <choice UseID="SayMeHelp">
+        <text Priority="2">
+          Fine. Okay... But what do I get out of it?
+        </text>
+      </choice>
+      <choice GotoID="End">
+        <text>
+          Throw hands!
+        </text>
         <part Name="StartFight" />
       </choice>
+    </node>
+    
+    <!-- Health Question -->
+    <node ID="ReactINOTSICK" Inherits="AlwaysHaveChoices">
       <text IfHavePart="Chimera" Priority="1">
         What is pain besides another word for progress. With the power of my vast genius I found a way to bypass those damned restrictions on one of the many millennium-old chrome surgeons scattered throughout this land.
 

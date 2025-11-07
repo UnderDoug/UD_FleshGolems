@@ -2,10 +2,10 @@
 <objects>
   
   <object Name="Creature" Load="Merge">
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" />
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" />
   </object>
   <object Name="ActiveFungus" Load="Merge">
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="15000" />
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" />
   </object>
   
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
@@ -16,6 +16,9 @@
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <stat Name="Hitpoints" sValue="17d3+4" />
     <mutation Name="Regeneration" Level="10" />
+    <tag Name="PronounSet" Value="xe/xem/xyr/xyrs/xemself" />
+    <property Name="Story" Value="UD_FleshGolems Jofo Qudwufo" />
+    <part Name="ConversationScript" ConversationID="UD_FleshGolems Jofo Qudwufo" />
     <!--part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" /-->
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
@@ -57,7 +60,7 @@
     <part Name="Render" DisplayName="'Monger" DetailColor="R" TileColor="&amp;W" />
     <part Name="Description" Short="A frantic slip of a =subject.personTerm= =subject.verb:flitter= agitatedly between the several foci of =subject.possessive= attention. Were it not for =subject.possessive= palid countenance, one might have assumed the vigor of youth kept =subject.objective= so spry, though =subject.possessive= poorly state appears, perhaps a bit... unnatural. =subject.Subjective= =subject.verb:wear:afterpronoun= =subject.possessive= affect of general disgust in much the same way as =subject.subjective= =subject.verb:wear:afterpronoun= =subject.possessive= chem-vest: seemingly out of habit, and perhaps a misplaced sense of self-import." />
     <part Name="Honorifics" Primary="The Mad" />
-    <part Name="Corpse" CorpseChance="100" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Mad Monger Corpse" CorpseChance="100" />
     <part Name="GenericInventoryRestocker" Table="UD_FleshGolems Mad Monger Stock Table" Chance="85" />
     <part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" />
     <xtagGrammar Proper="true" />
@@ -69,6 +72,16 @@
     <inventoryobject Blueprint="CyberneticsCreditWedge3" Number="1-2" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" />
     <inventoryobject Blueprint="Di-Thermo Beam" Number="2" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" />
     <inventoryobject Blueprint="Plastifer Chem Vest" Number="2" IntProperties="AlwaysEquipAsArmor:1,WontSell:1" />
+  </object>
+  
+  <object Name="UD_FleshGolems Mad Monger Corpse" Inherits="Human Corpse">
+    <!--part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger Corpse" /-->
+  </object>
+  
+  <object Name="UD_FleshGolems Mad Monger True Kin Corpse" Inherits="Human Corpse">
+    <!-- part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger True Corpse" /-->
+    <tag Name="Genotype" Value="True Kin" />
+    <tag Name="NonMutant" />
   </object>
   
   <!--
