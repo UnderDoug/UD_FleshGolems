@@ -128,7 +128,6 @@
     </node>
 
     <node ID="BaseSequence">
-      <choice UseID="Trade" />
       <choice UseID="GoEnd" />
     </node>
     
@@ -137,6 +136,7 @@
       <choice UseID="AskWhyMeMeat" />
       <!-- put entries above here; order matters -->
       <choice UseID="GoPostGreeting" />
+      <choice UseID="Trade" />
     </node>
 
     <!-- 
@@ -171,7 +171,7 @@
 
 
   # Sequence Node:
-  - Doesn't inherit at all, so it needs the relevant choices added in .
+  - Inherits="BaseSequence" means it will always have the "exit conversation" option, but will need each choice in the sequence added.
   - Should have the first "choice" of the sequence in both <node ID="choices"> and <node ID="AlwaysHaveChoices">
   - Last "choice" should return (probably) to <choice UseID="GoPostGreeting" />
 
