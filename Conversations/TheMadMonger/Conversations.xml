@@ -44,7 +44,7 @@
         <part Name="Trade" />
       </choice>
 
-      <choice ID="GoDiatribe" Target="Diatribe" IfNotLastChoice="GoDiatribe">
+      <choice ID="AskWhyMeMeat" Target="AnswerWhyYouMeat" IfNotLastChoice="AskWhyMeMeat">
         <text IfHavePart="Esper" Priority="1">
           Why do you call me grey meat?
         </text>
@@ -59,43 +59,192 @@
         </text>
       </choice>
 
-      <choice ID="WhatYouDoing" Target="WhatImDoing" IfNotLastChoice="WhatYouDoing">
+      <choice ID="AskWhatYouWorkOn" Target="AnswerWhatIWorkOn" IfNotLastChoice="AskWhatYouWorkOn">
         <text>
           What are you doing with that mess?
         </text>
       </choice>
 
       <!--
-      
-      this is an example of a choice that changes the game state
-       - when we've complimented the MadMong, the game records that we've done so and the text of the choice changes to reflect that
-      
-      <choice ID="GoLookingFly" Target="ReactLookingFly"
-              SetBooleanState="UD_FleshGolems_Complimented_MadMong,true">
-        <text IfNotHaveState="UD_FleshGolems_Complimented_MadMong">Looking fly, there, MadMong! Anyone ever tell you that?</text>
-        <text IfTestState="UD_FleshGolems_Complimented_MadMong">Looking fly, as always, MadMong!</text>
+  ####################################
+  ### Choice Templates
+  ####################################
+  
+    # Note: Fully replace [Something] with whatever the thing is: [Something] -> TheThing
+    # Note2: use a comment anywhere special behavior should be included, I'll see what I can do.
+    # Note3: copy/paste liberally to avoid errors.
+  
+  
+    # Regular Choice:
+    - ID and Target are the same except the prefixed "verb" helps to distinguish between the choice and its target.
+    - IfNotLastChoice="Ask[WhatTheQuestionWas]" ensures it won't show up in <node ID="Answer[WhatTheQuestionWas]">
+    - Should have a corresponding <node ID="Answer[WhatTheQuestionWas]">, and have an entry in <node ID="AlwaysHaveChoices">
+  
+      <choice ID="Ask[WhatTheQuestionWas]" Target="Answer[WhatTheQuestionWas]" IfNotLastChoice="Ask[WhatTheQuestionWas]">
+        <text IfTrueKin="true" Priority="1">
+          Am I a true kin?!
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          Am I a chimera?!
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          Am I an esper?!
+        </text>
+        <text>
+          Am I not really speacial at all?!
+        </text>
       </choice>
       
       
-      this is an example of a choice that is only available when some other condition is met
-       - if the game has a record that we've complimented the MadMong, then we get an additional choice to ask them if we're being ignored
-       - the text of the choice can also be conditionally controlled like above
+    # State Changing Conditional Choice:
+    - Sets a "state" when picked.
+    - Has different <text> based on same condition.
+    - Conditions inside <choice [here]> affect the entire choice.
+    - Conditions inside <text [here]> affect only that piece of text.
+    - See BaseGameConversationConditions.md for full set of conditions.
+    - use SetBooleanState="UD_FleshGolems_[WhatWasSaid],true" to set a simple true/false
+      - Name of set state: UD_FleshGolems_[WhatWasSaid]
+      - Value to set to: true
+      - Check with IfTestState="UD_FleshGolems_[WhatWasSaid]" or IfNotHaveState="UD_FleshGolems_[WhatWasSaid]"
       
-      <choice ID="GoDidYouHearMe" Target="ReactDidYouHearMe" IfTestState="UD_FleshGolems_Complimented_MadMong">
-        <text>MadMong, are you ignoring me?</text>
+      <choice ID="Say[WhatToSay]" Target="React[WhatWasSaid]"
+              SetBooleanState="UD_FleshGolems_[WhatWasSaid],true">
+        <text IfNotHaveState="UD_FleshGolems_[WhatWasSaid]">I said a thing!</text>
+        <text IfTestState="UD_FleshGolems_[WhatWasSaid]">I am saying a thing, again!</text>
+      </choice>
+      
+      
+    # Conditional Choice:
+    - Choice is only available when UD_FleshGolems_[WhatWasSaid] tests true.
+    - Conditions inside <choice [here]> affect the entire choice.
+    - Conditions inside <text [here]> affect only that piece of text.
+    - See BaseGameConversationConditions.md for full set of conditions.
+      
+      <choice ID="Ask[AQuestion]" Target="Respond[AQuestion]" IfTestState="UD_FleshGolems_[WhatWasSaid]">
+        <text>Questioned?</text>
       </choice>
       
       -->
     </node>
 
-    <node ID="AlwaysHaveChoices" >
-      <choice UseID="WhatYouDoing" />
-      <choice UseID="GoDiatribe" />
+    <node ID="BaseSequence">
+      <choice UseID="Trade" />
+      <choice UseID="GoEnd" />
+    </node>
+    
+    <node ID="AlwaysHaveChoices" Inherits="BaseSequence">
+      <choice UseID="AskWhatYouWorkOn" />
+      <choice UseID="AskWhyMeMeat" />
+      <!-- put entries above here; order matters -->
       <choice UseID="GoPostGreeting" />
+    </node>
+
+    <!-- 
+####################################
+### Templates
+####################################
+  
+  # Note: Fully replace [Something] with whatever the thing is: [Something] -> TheThing
+  # Note2: use a comment anywhere special behavior should be included, I'll see what I can do.
+  # Note3: copy/paste liberally to avoid errors.
+  
+  
+  # Regular Node:
+  - Inherits="AlwaysHaveChoices" means it will always have the choices available from the inherited node.
+  - Should have a corresponding "choice" in both <node ID="choices"> and <node ID="AlwaysHaveChoices">
+  - These are sort of one-and-done snippets that can be re-asked later and take a single node to answer.
+    
+    <node ID="Answer[WhatTheQuestionWas]" Inherits="AlwaysHaveChoices">
+      <text IfTrueKin="true" Priority="1">
+        You are a true kin!
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        You are a chimera!
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        You are an esper!
+      </text>
+      <text>
+        You are not really speacial at all!
+      </text>
+    </node>
+
+
+  # Sequence Node:
+  - Doesn't inherit at all, so it needs the relevant choices added in .
+  - Should have the first "choice" of the sequence in both <node ID="choices"> and <node ID="AlwaysHaveChoices">
+  - Last "choice" should return (probably) to <choice UseID="GoPostGreeting" />
+
+    <node ID="Answer[StepInSequence]">
+      <text IfTrueKin="true" Priority="1">
+        You are a true kin!
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        You are a chimera!
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        You are an esper!
+      </text>
+      <text>
+        You are not really speacial at all!
+      </text>
+      
+      <choice ID="Ask[NextStepInSequence]" Target="Answer[NextStepInSequence]">
+        <text IfTrueKin="true" Priority="1">
+          I am a true kin!
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          I am a chimera!
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          I am an esper!
+        </text>
+        <text>
+          I am not really speacial at all!
+        </text>
+      </choice>
       <choice UseID="Trade" />
       <choice UseID="GoEnd" />
     </node>
 
+
+  # Special, "no escape" Node:
+  - Doesn't inherit at all, so it needs the relevant choices added in.
+  - It can't be escaped from, so it should be used for nodes that require a decision _right_now_
+  - can be chained similar to the above to have an inescapable sequence.
+  - Corresponding "choice" shoul
+
+    <node ID="Answer[SpecialScenario]" AllowEscape="false">
+      <text IfTrueKin="true" Priority="1">
+        You are a true kin!
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        You are a chimera!
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        You are an esper!
+      </text>
+      <text>
+        You are not really speacial at all!
+      </text>
+      
+      <choice ID="Say[NextSpecialScenario]" Target="Respond[NextSpecialScenario]" >
+        <text IfTrueKin="true" Priority="1">
+          I am a true kin!
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          I am a chimera!
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          I am an esper!
+        </text>
+        <text>
+          I am not really speacial at all!
+        </text>
+      </choice>
+    </node>
+    -->
+    
     <!-- 
     
     Actual convo starts here
@@ -134,10 +283,6 @@
         Would you kindly lay upon this table here, I assure you that it is entirly safe.~
         Would you like to purchase something, meat?
       </text>
-      <!--choice UseID="WhatYouDoing" />
-      <choice UseID="GoDiatribe" />
-      <choice UseID="Trade" />
-      <choice UseID="GoEnd" /-->
     </start>
     
     <!-- Returning directly to the start feels strange, so the below acts as a landing node for the "there was something else" choice -->
@@ -154,13 +299,9 @@
       <text>
         Out with it then, meat.
       </text>
-      <!--choice UseID="WhatYouDoing" />
-      <choice UseID="GoDiatribe"/>
-      <choice UseID="Trade" />
-      <choice UseID="GoEnd" /-->
     </node>
     
-    <node ID="Diatribe" Inherits="AlwaysHaveChoices">
+    <node ID="AnswerWhyYouMeat" Inherits="AlwaysHaveChoices">
       <text IfTrueKin="true" Priority="1">
         Rare meat, yes, though rare may be a misnomer, I speak only in terms of the difficulty of finding materials like yours, not to the value that they provide; worthless meat may be a more accurate descriptor.
       </text>
@@ -173,17 +314,16 @@
       <text>
         Meat, yes, would you prefer I say materials, components, resources? You are a walking sack of things I find moderately useful. Be grateful I've decided not to harvest you for the time being.
       </text>
-      <!--choice UseID="GoEnd" /-->
     </node>
     
-    <node ID="WhatImDoing">
-      <text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" AllowEscape="false">
+    <node ID="AnswerWhatIWorkOn">
+      <!--text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" AllowEscape="false">
         My mess?? And what of {{Y|your}} mess, meat?
 
         How Jofo Qudwufo hasn't made actual {{UD_FleshGolem_meat|meat}} of you yet is a wonder to me.
         
         I'm, understandably, reticent to discuss such a... meaty endeavour, with that squelching affront to my work heaving nearby.
-      </text>
+      </text-->
       <text>
         Perchance, lesser mind, what, pray, does it {{Y|appear}} I might be doing?
       </text>
@@ -193,13 +333,13 @@
           Rightio, then! There was something else...
         </text>
       </choice>
-      <choice GotoID="IMeanIt" IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
+      <!--choice GotoID="IMeanIt" IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
       <choice UseID="Trade" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" />
       <choice UseID="GoEnd" IfNotHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2" />
         <text>
           ...
         </text>
-      </choice>
+      </choice-->
     </node>
     
     <node ID="IMeanIt" AllowEscape="false">
