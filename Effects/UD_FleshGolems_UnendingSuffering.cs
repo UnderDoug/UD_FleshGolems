@@ -43,6 +43,7 @@ namespace XRL.World.Effects
         public int ChanceToSmear;
         public int ChanceToSpatter;
 
+        [SerializeField]
         private int CurrentTier;
 
         public UD_FleshGolems_UnendingSuffering()
@@ -188,8 +189,9 @@ namespace XRL.World.Effects
                 .AddObject(Object)
                 .ToString();
 
+            int chanceToDamage = !Object.CurrentCell.OnWorldMap() ? ChanceToDamage : (int)Math.Max(1, (ChanceToDamage * 0.01);
             bool tookDamage = false;
-            if (ChanceToDamage.in100())
+            if (chanceToDamage.in100())
             {
                 tookDamage = Object.TakeDamage(
                     Amount: Damage.RollCached(),

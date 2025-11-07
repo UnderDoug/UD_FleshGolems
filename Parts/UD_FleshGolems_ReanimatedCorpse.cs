@@ -121,7 +121,6 @@ namespace XRL.World.Parts
             }
             return false;
         }
-
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)

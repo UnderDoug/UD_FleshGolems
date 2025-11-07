@@ -906,12 +906,14 @@ namespace XRL.World.Parts
                             }
                             frankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
                             frankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
+                            if (!frankenCorpse.HasPropertyOrTag("StartingPet") && !frankenCorpse.HasPropertyOrTag("Pet"))
+                            {
+                                frankenCorpse.Brain.PartyLeader = pastBrain.PartyLeader;
+                                frankenCorpse.Brain.PartyMembers = pastBrain.PartyMembers;
 
-                            frankenCorpse.Brain.PartyLeader = pastBrain.PartyLeader;
-                            frankenCorpse.Brain.PartyMembers = pastBrain.PartyMembers;
+                                frankenCorpse.Brain.Opinions = pastBrain.Opinions;
 
-                            frankenCorpse.Brain.Opinions = pastBrain.Opinions;
-
+                            }
                             frankenBrain.Wanders = pastBrain.Wanders;
                             frankenBrain.WallWalker = pastBrain.WallWalker;
                             frankenBrain.HostileWalkRadius = pastBrain.HostileWalkRadius;
@@ -1067,7 +1069,7 @@ namespace XRL.World.Parts
                     }
                     if (frankenMutations != null)
                     {
-                        bool giveRegen = false;
+                        bool giveRegen = true;
                         if (giveRegen
                             && MutationFactory.GetMutationEntryByName("Regeneration").Class is string regenerationMutationClass)
                         {
@@ -1076,11 +1078,11 @@ namespace XRL.World.Parts
                                 frankenMutations.AddMutation(regenerationMutationClass, Level: 10);
                                 regenerationMutation = frankenMutations.GetMutation(regenerationMutationClass);
                             }
-                            regenerationMutation.CapOverride = 10;
+                            regenerationMutation.CapOverride = 5;
 
-                            if (regenerationMutation.Level < 10)
+                            if (regenerationMutation.Level < 5)
                             {
-                                regenerationMutation.ChangeLevel(10);
+                                regenerationMutation.ChangeLevel(5);
                             }
                         }
                         string nightVisionMutaitonName = "Night Vision";

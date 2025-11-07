@@ -404,6 +404,8 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(EnvironmentalUpdateEvent E)
         {
+
+
             if (!Attempted
                 && BuiltToBeReanimated
                 && !DelayTillZoneBuild
