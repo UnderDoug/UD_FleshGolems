@@ -45,5 +45,21 @@ namespace UD_FleshGolems
         {
             return @char.ToString().ThisManyTimes(Times);
         }
+
+        public static void TryAdd<T>(this ICollection<T> Collection, T Item)
+        {
+            if (!Collection.Contains(Item))
+            {
+                Collection.Add(Item);
+            }
+        }
+
+        public static T GetRandomElementCosmetic<T>(this IEnumerable<T> Enumerable, Predicate<T> Exclude)
+            where T : class
+        {
+            List<T> filteredList = new(Enumerable);
+            filteredList.RemoveAll(m => Exclude != null && Exclude(m));
+            return filteredList.GetRandomElementCosmetic();
+        }
     }
 }

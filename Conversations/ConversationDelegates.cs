@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 using XRL;
@@ -7,6 +8,7 @@ using XRL.UI;
 using XRL.World;
 using XRL.World.Conversations;
 using XRL.World.Effects;
+using XRL.World.Parts;
 
 namespace UD_FleshGolems
 {
@@ -57,6 +59,14 @@ namespace UD_FleshGolems
             return The.Game.GetIntGameState(new string(State1)) > The.Game.GetIntGameState(new string(State2));
         }
 
+        [ConversationDelegate(Inverse = false)]
+        public static bool IfHaveAnyMorphotype(DelegateContext Context)
+        {
+            bool haveMorphotype = Context.Target.TryGetPart(out Mutations mutations)
+                && mutations.ActiveMutationList.Any(m => m.GetMutationEntry().Category.Name == "Morphotypes");
+            return Context.Value.EqualsNoCase("true") == haveMorphotype;
+        }
+
         //
         // Actions
         // 
@@ -83,7 +93,6 @@ namespace UD_FleshGolems
                 int matchValue = The.Game.GetIntGameState(new string(MatchThisOne));
                 The.Game.SetIntGameState(new string(MakeThisState), matchValue);
             }
-
         }
     }
 }

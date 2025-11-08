@@ -51,7 +51,7 @@ namespace XRL.World.ObjectBuilders
 
         public override void Apply(GameObject Object, string Context = null)
         {
-            Unkill(Object, out _, Context);
+            Unkill(Object, Context);
         }
 
         public static bool CreatureNeedsDelayedReanimation(GameObject Creature)
@@ -99,7 +99,7 @@ namespace XRL.World.ObjectBuilders
 
                     corpseBlueprintName = corpseBlueprint?.Name ?? fallbackCorpse;
                 }
-                if ((corpse = GameObject.Create(corpseBlueprintName)) == null)
+                if ((corpse = GameObject.Create(corpseBlueprintName, Context: nameof(UD_FleshGolems_PastLife))) == null)
                 {
                     return null;
                 }
@@ -292,6 +292,10 @@ namespace XRL.World.ObjectBuilders
                 }
             }
             return true;
+        }
+        public static bool Unkill(GameObject Creature, string Context = null)
+        {
+            return Unkill(Creature, out _, Context);
         }
 
         public static bool ReplacePlayerWithCorpse(

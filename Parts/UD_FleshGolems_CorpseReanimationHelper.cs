@@ -48,6 +48,11 @@ namespace XRL.World.Parts
             nameof(EyelessKingCrabSkuttle1),
         };
 
+        public static List<string> BlueprintsToSkipCheckingForCorpses => new()
+        {
+            "OrPet",
+        };
+
         public bool IsALIVE;
 
         public bool AlwaysAnimate;
@@ -130,8 +135,17 @@ namespace XRL.World.Parts
                 nameof(corpseType) + ": " + (corpseType ?? NULL) + ", " +
                 nameof(corpseSpecies) + ": " + (corpseSpecies ?? NULL) + ", " +
                 nameof(corpseDisplayNameLC) + ": " + (corpseDisplayNameLC ?? NULL));
-            foreach (GameObjectBlueprint gameObjectBlueprint in GameObjectFactory.Factory.Blueprints.Values)
+            List<GameObjectBlueprint> blueprintsToCheck = new(GameObjectFactory.Factory.Blueprints.Values);
+            blueprintsToCheck.ShuffleInPlace();
+            int maxChecks = 2500;
+            int checkCounter = 0;
+            UnityEngine.Debug.Log("Checking " + maxChecks + "/" + blueprintsToCheck.Count);
+            foreach (GameObjectBlueprint gameObjectBlueprint in blueprintsToCheck)
             {
+                if (++checkCounter > maxChecks)
+                {
+                    break;
+                }
                 string blueprintName = gameObjectBlueprint.Name;
                 string blueprintNameLC = blueprintName?.ToLower() ?? "XKCD";
                 string gameObjectDisplayName = gameObjectBlueprint.DisplayName()?.Strip()?.ToLower() ?? "XKCD";
@@ -149,9 +163,15 @@ namespace XRL.World.Parts
                 if (!gameObjectBlueprint.InheritsFrom("Creature")
                     && !gameObjectBlueprint.InheritsFrom("Fungus")
                     && !gameObjectBlueprint.InheritsFrom("Plant")
-                    && !gameObjectBlueprint.InheritsFrom("Corpse"))
+                    && !gameObjectBlueprint.InheritsFrom("Corpse")
+                    && !gameObjectBlueprint.InheritsFrom("Robot"))
                 {
                     // UnityEngine.Debug.Log(AppendCross("    ") + blueprintName + " is not an entity capable of dying");
+                    continue;
+                }
+                if (BlueprintsToSkipCheckingForCorpses.Contains(gameObjectBlueprint.Name))
+                {
+                    // UnityEngine.Debug.Log(AppendCross("    ") + blueprintName + " is definitely not the correct one.");
                     continue;
                 }
                 bool corpseDisplayNameContainsBlueprintDisplayName = corpseDisplayNameLC != null && corpseDisplayNameLC.Contains(gameObjectDisplayName);
@@ -626,6 +646,49 @@ namespace XRL.World.Parts
                         IgnoreGravity: true));
         }
 
+        public static IEnumerable<GameObjectBlueprint> GetRaggedNaturalWeapons(Predicate<GameObjectBlueprint> Filter = null)
+        {
+            foreach (GameObjectBlueprint bp in GameObjectFactory.Factory.GetBlueprintsInheritingFrom("UD_FleshGolems Ragged Weapon"))
+            {
+                if (bp.IsBaseBlueprint() || (Filter != null && !Filter(bp)))
+                {
+                    continue;
+                }
+                yield return bp;
+            }
+        }
+        public static bool MeleeWeaponSlotAndSkillMatchesBlueprint(GameObjectBlueprint GameObjectBlueprint, MeleeWeapon MeleeWeapon)
+        {
+            return MeleeWeaponSlotMatchesBlueprint(GameObjectBlueprint, MeleeWeapon)
+                && MeleeWeaponSkillMatchesBlueprint(GameObjectBlueprint, MeleeWeapon);
+        }
+        public static bool MeleeWeaponSlotMatchesBlueprint(GameObjectBlueprint GameObjectBlueprint, string Slot)
+        {
+            if (!GameObjectBlueprint.TryGetPartParameter(nameof(Parts.MeleeWeapon), nameof(Parts.MeleeWeapon.Slot), out string blueprintMeleeWeaponSlot)
+                || Slot != blueprintMeleeWeaponSlot)
+            {
+                return false;
+            }
+            return true;
+        }
+        public static bool MeleeWeaponSlotMatchesBlueprint(GameObjectBlueprint GameObjectBlueprint, MeleeWeapon MeleeWeapon)
+        {
+            return MeleeWeaponSlotMatchesBlueprint(GameObjectBlueprint, MeleeWeapon.Slot);
+        }
+        public static bool MeleeWeaponSkillMatchesBlueprint(GameObjectBlueprint GameObjectBlueprint, string Skill)
+        {
+            if (!GameObjectBlueprint.TryGetPartParameter(nameof(Parts.MeleeWeapon), nameof(Parts.MeleeWeapon.Skill), out string blueprintMeleeWeaponSkill)
+                || Skill != blueprintMeleeWeaponSkill)
+            {
+                return false;
+            }
+            return true;
+        }
+        public static bool MeleeWeaponSkillMatchesBlueprint(GameObjectBlueprint GameObjectBlueprint, MeleeWeapon MeleeWeapon)
+        {
+            return MeleeWeaponSkillMatchesBlueprint(GameObjectBlueprint, MeleeWeapon.Skill);
+        }
+
         public static bool MakeItALIVE(
             GameObject Corpse,
             UD_FleshGolems_PastLife PastLife,
@@ -637,6 +700,8 @@ namespace XRL.World.Parts
             UnityEngine.Debug.Log("    " + nameof(MakeItALIVE) + ", " + nameof(Corpse) + ": " + Corpse?.DebugName ?? "null");
             if (Corpse is GameObject frankenCorpse)
             {
+                bool wasPlayer = PastLife != null && PastLife.WasPlayer;
+
                 string corpseType = frankenCorpse.Blueprint.Replace(" Corpse", "").Replace("UD_FleshGolems ", "");
                 frankenCorpse.SetIntProperty("NoAnimatedNamePrefix", 1);
                 frankenCorpse.SetIntProperty("Bleeds", 1);
@@ -880,17 +945,19 @@ namespace XRL.World.Parts
                     {
                         frankenCorpse.SetStringProperty("Species", sourceBlueprint.Tags["Species"]);
                     }
-
-                    if (frankenCorpse.Brain is Brain frankenBrain)
+                    Brain frankenBrain = frankenCorpse.Brain;
+                    if (frankenBrain != null
+                        && PastLife?.Brain is Brain pastBrain)
                     {
                         if (sourceBlueprint.TryGetPartParameter(nameof(Brain), nameof(Brain.Wanders), out bool sourceBrainWanders))
                         {
                             frankenBrain.Wanders = sourceBrainWanders;
                         }
-                        if ((!UD_FleshGolems_Reanimated.HasWorldGenerated || excludedFromDynamicEncounters)
-                            && PastLife?.Brain is Brain pastBrain)
+                        frankenCorpse.Brain.Allegiance ??= new();
+                        frankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
+                        frankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
+                        if ((!UD_FleshGolems_Reanimated.HasWorldGenerated || excludedFromDynamicEncounters))
                         {
-                            frankenCorpse.Brain.Allegiance ??= new();
                             frankenCorpse.Brain.Allegiance.Clear();
                             frankenCorpse.Brain.Allegiance.Add("Newly Sentient Beings", 75);
                             foreach ((string faction, int rep) in pastBrain.Allegiance)
@@ -904,20 +971,20 @@ namespace XRL.World.Parts
                                     frankenCorpse.Brain.Allegiance[faction] += rep;
                                 }
                             }
-                            frankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
-                            frankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
+                            if (!frankenCorpse.HasPropertyOrTag("StartingPet") && !frankenCorpse.HasPropertyOrTag("Pet"))
+                            {
+                                frankenCorpse.Brain.PartyLeader = pastBrain.PartyLeader;
+                                frankenCorpse.Brain.PartyMembers = pastBrain.PartyMembers;
 
-                            frankenCorpse.Brain.PartyLeader = pastBrain.PartyLeader;
-                            frankenCorpse.Brain.PartyMembers = pastBrain.PartyMembers;
+                                frankenCorpse.Brain.Opinions = pastBrain.Opinions;
 
-                            frankenCorpse.Brain.Opinions = pastBrain.Opinions;
-
-                            frankenBrain.Wanders = pastBrain.Wanders;
-                            frankenBrain.WallWalker = pastBrain.WallWalker;
-                            frankenBrain.HostileWalkRadius = pastBrain.HostileWalkRadius;
-
-                            frankenBrain.Mobile = pastBrain.Mobile;
+                            }
                         }
+                        frankenBrain.Wanders = pastBrain.Wanders;
+                        frankenBrain.WallWalker = pastBrain.WallWalker;
+                        frankenBrain.HostileWalkRadius = pastBrain.HostileWalkRadius;
+
+                        frankenBrain.Mobile = pastBrain.Mobile;
                     }
 
                     if (sourceBlueprint.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG) is string sourceCreatureConvoID
@@ -952,6 +1019,7 @@ namespace XRL.World.Parts
                             {
                                 sourceCreatureName = sampleSourceObject.GetReferenceDisplayName(Short: true);
                             }
+                            sampleSourceObject?.Obliterate();
                         }
                         if (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_CreatureProperName") is string frankenCorpseProperName)
                         {
@@ -1065,9 +1133,62 @@ namespace XRL.World.Parts
                         AssignMutationsFromBlueprint(frankenMutations, golemBodyBlueprint, Exclude: giganticIfNotAlready);
                         AssignSkillsFromBlueprint(frankenSkills, golemBodyBlueprint);
                     }
+                    bool wantDoRequip = false;
+                    if (sourceBlueprint.Inventory != null)
+                    {
+                        foreach (InventoryObject inventoryObject in sourceBlueprint.Inventory)
+                        {
+                            if (GameObjectFactory.Factory.GetBlueprintIfExists(inventoryObject.Blueprint) is GameObjectBlueprint inventoryObjectBlueprint
+                                && inventoryObjectBlueprint.IsNatural())
+                            {
+                                if (GameObject.CreateSample(inventoryObjectBlueprint.Name) is GameObject sampleNaturalGear
+                                    && sampleNaturalGear.EquipAsDefaultBehavior())
+                                {
+                                    if (sampleNaturalGear.TryGetPart(out MeleeWeapon mw)
+                                        && !mw.IsImprovisedWeapon()
+                                        && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotAndSkillMatchesBlueprint(bp, mw))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
+                                        && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject
+                                        && frankenCorpse.ReceiveObject(raggedWeaponObject))
+                                    {
+                                        wantDoRequip = true;
+                                    }
+                                    sampleNaturalGear?.Obliterate();
+                                }
+                            }
+                        }
+                    }
+                    foreach (BodyPart frankenLimb in frankenBody.LoopParts())
+                    {
+                        if (frankenLimb.DefaultBehavior is GameObject frankenNaturalGear
+                            && frankenNaturalGear.GetBlueprint() is GameObjectBlueprint frankenNaturalGearBlueprint
+                            && !frankenNaturalGearBlueprint.InheritsFrom("UD_FleshGolems Ragged Weapon"))
+                        {
+                            if (frankenNaturalGear.TryGetPart(out MeleeWeapon mw)
+                                && !mw.IsImprovisedWeapon()
+                                && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotAndSkillMatchesBlueprint(bp, mw))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
+                                && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject)
+                            {
+                                frankenNaturalGear.Obliterate();
+                                frankenLimb.DefaultBehavior = raggedWeaponObject;
+                                frankenLimb.DefaultBehaviorBlueprint = raggedWeaponBlueprintName;
+                            }
+                        }
+                        else
+                        if (20.in100()
+                            && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotMatchesBlueprint(bp, frankenLimb.Type))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
+                            && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject)
+                        {
+                            frankenLimb.DefaultBehavior = raggedWeaponObject;
+                            frankenLimb.DefaultBehaviorBlueprint = raggedWeaponBlueprintName;
+                        }
+                    }
+                    if (wantDoRequip)
+                    {
+                        frankenBrain?.WantToReequip();
+                    }
                     if (frankenMutations != null)
                     {
-                        bool giveRegen = false;
+                        bool giveRegen = true;
                         if (giveRegen
                             && MutationFactory.GetMutationEntryByName("Regeneration").Class is string regenerationMutationClass)
                         {
@@ -1076,11 +1197,11 @@ namespace XRL.World.Parts
                                 frankenMutations.AddMutation(regenerationMutationClass, Level: 10);
                                 regenerationMutation = frankenMutations.GetMutation(regenerationMutationClass);
                             }
-                            regenerationMutation.CapOverride = 10;
+                            regenerationMutation.CapOverride = 5;
 
-                            if (regenerationMutation.Level < 10)
+                            if (regenerationMutation.Level < 5)
                             {
-                                regenerationMutation.ChangeLevel(10);
+                                regenerationMutation.ChangeLevel(5);
                             }
                         }
                         string nightVisionMutaitonName = "Night Vision";
@@ -1177,7 +1298,7 @@ namespace XRL.World.Parts
                     && GameObject.CreateSample(pastLifeBlueprint) is GameObject samplePastLife)
                 {
                     E.Object.RequirePart<UD_FleshGolems_PastLife>().Initialize(samplePastLife);
-                    samplePastLife.Obliterate();
+                    samplePastLife?.Obliterate();
                 }
                 IsALIVE = true;
                 MakeItALIVE(E.Object, PastLife, ref CreatureName, ref SourceBlueprint, ref CorpseDescription, E.Actor);

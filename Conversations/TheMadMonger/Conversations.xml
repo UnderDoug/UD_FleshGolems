@@ -82,7 +82,7 @@
       </choice>
 
       <choice ID="SayMeHelp" Target="ReactThenHelp"
-              StartQuest="You Raise Me Up">
+              Execute="XRL.World.QuestManagers.UD_FleshGolems_CorpseQuestSystem:StartQuest">
         <text IfTrueKin="True" Priority="1">
           I will do as you ask.
         </text>
@@ -95,6 +95,7 @@
         <text>
           I will complete this task.
         </text>
+        <part Name="Tag">{{W|[start quest]}}</part>
       </choice>
 
       <choice ID="SayMeNotHelp_TK" IfTrueKin="True" Target="ReactThenNotHelp">
@@ -111,6 +112,7 @@
               IfNotTrueKin="true" IfHaveAnyMorphotype="false">
         <text>This isn't the job for me.</text>
         <!-- Leads to fight threat -->
+        <part Name="Tag">{{W|[refuse quest]}}</part>
       </choice>
 
       <!--choice GotoID="ActiveQuest" IfHaveQuest="If, Then, Else" IfNotFinishedQuestStep="If, Then, Else~Reunite Tau with Her Chime">Explain once more what I must do with Tau's chime.</choice-->
@@ -495,6 +497,24 @@
       <choice UseID="SayMeNotHelp_CH" />
       <choice UseID="SayMeNotHelp_ESP" />
       <choice UseID="SayMeNotHelp_M" />
+    </node>
+    
+    <node ID="ReactThenHelp" AllowEscape="false">
+      <text IfTrueKin="true" Priority="1">
+        Then get to it rare meat, the future irrelevance of your wretched people lies in your annoyingly stable hands.
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        Thank you prime meat, please try to complete this task as quickly as you are able, the future waits for no one, not even meat as physically formidable as yourself.
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        Thank you grey meat, despite the utter inadequacy of your intellect, at the very least you see the value in obeying your better.
+      </text>
+      <text>
+        Well then get to it meat, it's not like you have anything better to do.
+      </text>
+      <choice GotoID="End">
+        <text>I'll get to it then!</text>
+      </choice>
     </node>
     
     <node ID="ReactThenNotHelp">

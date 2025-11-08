@@ -14,6 +14,7 @@ using UD_FleshGolems;
 using HarmonyLib;
 using XRL.Wish;
 using XRL.UI;
+using XRL.Language;
 
 namespace XRL.World.Parts
 {
@@ -24,6 +25,8 @@ namespace XRL.World.Parts
         public bool Init { get; protected set; }
         public bool IsCorpse => (GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint)?.InheritsFrom("Corpse")).GetValueOrDefault();
 
+        public bool WasPlayer;
+
         public int TimesReanimated;
 
         public string Blueprint;
@@ -31,6 +34,7 @@ namespace XRL.World.Parts
         public Render PastRender;
         public string Description;
 
+        [NonSerialized]
         public (string DeathZone, Location2D DeathLocation) DeathAddress;
 
         [NonSerialized]
@@ -58,7 +62,7 @@ namespace XRL.World.Parts
         public Dictionary<string, string> _Property;
         public Dictionary<string, int> _IntProperty;
 
-        public EffectRack _Effects;
+        public List<KeyValuePair<string, int>> Effects;
 
         public Titles Titles;
         public Epithets Epithets;
@@ -67,6 +71,8 @@ namespace XRL.World.Parts
         public UD_FleshGolems_PastLife()
         {
             Init = false;
+
+            WasPlayer = false;
 
             TimesReanimated = 0;
 
@@ -95,7 +101,7 @@ namespace XRL.World.Parts
             _Property = null;
             _IntProperty = null;
 
-            _Effects = null;
+            Effects = null;
 
             Titles = null;
             Epithets = null;
@@ -118,6 +124,7 @@ namespace XRL.World.Parts
             {
                 try
                 {
+                    WasPlayer = PastLife != null && PastLife.Blueprint.IsPlayerBlueprint();
                     Blueprint = PastLife?.Blueprint;
                     if (GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint).InheritsFrom("Corpse"))
                     {
@@ -217,10 +224,10 @@ namespace XRL.World.Parts
 
                     if (PastLife != null && !PastLife._Effects.IsNullOrEmpty())
                     {
-                        _Effects = new();
+                        Effects = new();
                         foreach (Effect pastEffect in PastLife._Effects)
                         {
-                            _Effects.Add(pastEffect.DeepCopy(ParentObject));
+                            Effects.Add(new(pastEffect.ClassName, pastEffect.Duration));
                         }
                     }
 
@@ -270,7 +277,7 @@ namespace XRL.World.Parts
                 _Property = PrevPastLife._Property;
                 _IntProperty = PrevPastLife._IntProperty;
 
-                _Effects = PrevPastLife._Effects;
+                Effects = PrevPastLife.Effects;
 
                 Titles = PrevPastLife.Titles;
                 Epithets = PrevPastLife.Epithets;
@@ -335,10 +342,10 @@ namespace XRL.World.Parts
                 if (Brain != null)
                 {
                     debugLog("bools", null, 1);
-                    Traverse branWalk = new(Brain);
-                    foreach (string field in branWalk.Fields() ?? new())
+                    Traverse brainWalk = new(Brain);
+                    foreach (string field in brainWalk.Fields() ?? new())
                     {
-                        string fieldValue = branWalk.Field(field).GetValue().ToString();
+                        string fieldValue = brainWalk?.Field(field)?.GetValue()?.ToString();
                         debugLog(field, fieldValue ?? "??", 2);
                     }
                 }
@@ -387,10 +394,10 @@ namespace XRL.World.Parts
                     debugLog(name, value, 1);
                 }
 
-                debugLog(nameof(_Effects), _Effects?.Count);
-                foreach (Effect effect in _Effects ?? new())
+                debugLog(nameof(Effects), Effects?.Count);
+                foreach ((string effectName, int effectDuration) in Effects ?? new())
                 {
-                    debugLog(effect.ClassName, effect.Duration, 1);
+                    debugLog(effectName + ",  duration" , effectDuration, 1);
                 }
 
                 debugLog(nameof(Titles), Titles);
@@ -441,7 +448,12 @@ namespace XRL.World.Parts
             Stats = new(statCount);
             for (int i = 0; i < statCount; i++)
             {
-                Stats.TryAdd(Reader.ReadOptimizedString(), Statistic.Load(Reader, Basis));
+                string statName = Reader.ReadOptimizedString();
+                Statistic statistic = Statistic.Load(Reader, Basis);
+                if (statistic != null)
+                {
+                    Stats.TryAdd(statName, statistic);
+                }
             }
         }
 
@@ -469,6 +481,9 @@ namespace XRL.World.Parts
                     ShortDisplayNames: true) is GameObject pickedObject)
             {
                 pickedObject?.GetPart<UD_FleshGolems_PastLife>().DebugOutput();
+                Popup.Show(
+                    "debug output for " + Grammar.MakePossessive(pickedObject.ShortDisplayNameSingleStripped) + " " +
+                    nameof(UD_FleshGolems_PastLife));
             }
             else
             {

@@ -7,6 +7,13 @@ namespace UD_FleshGolems
     public static class Options
     {
         // General Settings
-        [OptionFlag] public static bool ExampleOption;
+        [OptionFlag] public static int SpecialReanimatedBuilderBaseChanceOneIn;
+        [OptionFlag] public static int SpecialReanimatedBuilderChanceOneInMulti;
+
+        [OptionFlag] public static int SpecialCorpseAnimatedBuilderBaseChanceOneIn;
+        [OptionFlag] public static int SpecialCorpseAnimatedBuilderChanceOneInMulti;
+
+        public static int SpecialReanimatedBuilderChanceOneIn => SpecialReanimatedBuilderBaseChanceOneIn * SpecialReanimatedBuilderChanceOneInMulti;
+        public static int SpecialCorpseAnimatedBuilderChanceOneIn => SpecialCorpseAnimatedBuilderBaseChanceOneIn * SpecialCorpseAnimatedBuilderChanceOneInMulti;
     }
 }
