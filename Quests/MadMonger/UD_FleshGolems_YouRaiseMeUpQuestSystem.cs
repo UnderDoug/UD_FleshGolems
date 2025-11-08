@@ -5,17 +5,18 @@ using XRL;
 using XRL.Rules;
 using XRL.UI;
 using XRL.World;
+using XRL.World.QuestManagers;
 
-namespace XRL.World.QuestManagers
+namespace XRL.World.Quests
 {
     [Serializable]
-    public class UD_FleshGolems_YouRaiseMeUpSystem : IQuestSystem
+    public class UD_FleshGolems_YouRaiseMeUpQuestSystem : IQuestSystem
     {
         public const string MongerQuestID = "You Raise Me Up";
 
         public static UD_FleshGolems_CorpseQuestSystem CorpseQuestSystem = The.Game.GetSystem<UD_FleshGolems_CorpseQuestSystem>();
 
-        public UD_FleshGolems_YouRaiseMeUpSystem()
+        public UD_FleshGolems_YouRaiseMeUpQuestSystem()
         {
             QuestID = MongerQuestID;
         }

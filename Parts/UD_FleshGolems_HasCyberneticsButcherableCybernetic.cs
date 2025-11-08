@@ -126,7 +126,7 @@ namespace XRL.World.Parts
             string Base = null,
             Predicate<GameObjectBlueprint> Filter = null)
         {
-            return GameObject.Create(GetCreatureBlueprintFromSpec(Blueprint, Type, Tag, Base, Filter));
+            return GameObject.CreateSample(GetCreatureBlueprintFromSpec(Blueprint, Type, Tag, Base, Filter).Name);
         }
 
         public static bool TryGetButcherableCyberneticPart(GameObject Corpse, out CyberneticsButcherableCybernetic ButcherableCyberneticPart)

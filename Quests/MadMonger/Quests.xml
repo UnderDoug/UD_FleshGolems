@@ -1,15 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <quests>
 
-  <quest Name="You Raise Me Up" Level="20" System="UD_FleshGolems_YouRaiseMeUpSystem"
-         Factions="Kyakukya,Wardens" Reputation="100"
-         Hagiograph="O grace! =name= recovered a shard of black glass from a teeming jungle and returned it to the mechanical goat whose circuitry it powers."
-         HagiographCategory="FindsObject"
-         Gospel="While wandering in the jungle near Kyakukya, =name= dreamed =player.subjective= orbited a darkling star and in its vast accretion disk piled the building blocks of self. From then on, =name= kept a starless, triangular prism on =player.possessive= person.">
-
-    <step Name="Find some questionable materials" XP="1000">
-      <text>Who'd want to meet meat, anyway?.</text>
-    </step>
+  <quest Name="You Raise Me Up" Level="20" System="UD_FleshGolems_YouRaiseMeUpQuestSystem"
+         Factions="Newly Sentient Beings" Reputation="250"
+         Accomplishment="Conspiring with a &quot;scientist&quot; most mad, you broke &quot;important&quot; scientfic discovery into the nature of life and death."
+         Hagiograph="Blessed be, for eternity, the name =name=, who revolutionized sience as it was known to all denizens of Qud! With the aid of =player.possessive= loyal servant, =name= discovered the secrets of life and death, an achievement thought impossible even by the saads of old!"
+         HagiographCategory="DoesSomethingRad"
+         Gospel="While wandering in the jungle near Bethesda Susa, =name= came upon a man of inquiry and together they pondered the secrets of life and death. From then on, =name= kept a different outlook on what it means to be alive on =player.possessive= person.">
 
     <step Name="Don't be nervous" XP="1000">
       <text>Find a phial of thinking liquid.</text>

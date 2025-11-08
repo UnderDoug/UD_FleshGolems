@@ -234,7 +234,8 @@ namespace XRL.World.Parts
                 }
                 string reason = CheckpointingSystem.deathIcons.Keys.GetRandomElement();
                 bool accidental = Stat.RollCached("1d2") == 1;
-                return FakeDeath(
+
+                bool deathFaked = FakeDeath(
                     Dying: Dying,
                     Killer: killer,
                     Weapon: weapon,
@@ -243,6 +244,12 @@ namespace XRL.World.Parts
                     Reason: reason,
                     ThirdPersonReason: reason,
                     DoAchievement: DoAchievement);
+
+                killer?.Obliterate();
+                weapon?.Obliterate();
+                projectile?.Obliterate();
+
+                return deathFaked;
             }
             finally
             {
@@ -404,8 +411,6 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(EnvironmentalUpdateEvent E)
         {
-
-
             if (!Attempted
                 && BuiltToBeReanimated
                 && !DelayTillZoneBuild

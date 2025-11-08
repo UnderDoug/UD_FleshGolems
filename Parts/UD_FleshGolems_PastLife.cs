@@ -25,6 +25,8 @@ namespace XRL.World.Parts
         public bool Init { get; protected set; }
         public bool IsCorpse => (GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint)?.InheritsFrom("Corpse")).GetValueOrDefault();
 
+        public bool WasPlayer;
+
         public int TimesReanimated;
 
         public string Blueprint;
@@ -32,6 +34,7 @@ namespace XRL.World.Parts
         public Render PastRender;
         public string Description;
 
+        [NonSerialized]
         public (string DeathZone, Location2D DeathLocation) DeathAddress;
 
         [NonSerialized]
@@ -68,6 +71,8 @@ namespace XRL.World.Parts
         public UD_FleshGolems_PastLife()
         {
             Init = false;
+
+            WasPlayer = false;
 
             TimesReanimated = 0;
 
@@ -119,6 +124,7 @@ namespace XRL.World.Parts
             {
                 try
                 {
+                    WasPlayer = PastLife != null && PastLife.Blueprint.IsPlayerBlueprint();
                     Blueprint = PastLife?.Blueprint;
                     if (GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint).InheritsFrom("Corpse"))
                     {
@@ -442,7 +448,12 @@ namespace XRL.World.Parts
             Stats = new(statCount);
             for (int i = 0; i < statCount; i++)
             {
-                Stats.TryAdd(Reader.ReadOptimizedString(), Statistic.Load(Reader, Basis));
+                string statName = Reader.ReadOptimizedString();
+                Statistic statistic = Statistic.Load(Reader, Basis);
+                if (statistic != null)
+                {
+                    Stats.TryAdd(statName, statistic);
+                }
             }
         }
 

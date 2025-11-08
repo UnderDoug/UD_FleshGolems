@@ -2,10 +2,12 @@
 <objects>
   
   <object Name="Creature" Load="Merge">
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" />
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="8000" />
+    <builder Name="UD_FleshGolems_OptionallyReanimated" ChanceOneIn="1" />
   </object>
   <object Name="ActiveFungus" Load="Merge">
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" />
+    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="8000" />
+    <builder Name="UD_FleshGolems_OptionallyReanimated" ChanceOneIn="1" />
   </object>
   
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
@@ -89,6 +91,10 @@
     Bestowing corpses!
   
   -->
+  <object Name="Robot" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Robot Corpse" CorpseChance="0" />
+  </object>
+  
   <object Name="ActivePlant" Load="Merge">
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Plant Corpse" CorpseChance="0" />
   </object>
@@ -135,159 +141,163 @@
   </object>
 
   <!-- Flesh Golem natural weapons -->
-  <!--object Name="Metachrome Weapon" Inherits="NaturalWeapon">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} weapon" />
-    <part Name="MeleeWeapon" Slot="" HitBonus="10" PenBonus="0" MaxStrengthBonus="1000" Stat="Strength" />
-    <part Name="ModGigantic" />
-    <tag Name="ModGiganticNoDisplayName" />
+  <object Name="UD_FleshGolems Ragged Weapon" Inherits="NaturalWeapon">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} weapon" />
+    <part Name="MeleeWeapon" Slot="" HitBonus="10" PenBonus="0" MaxStrengthBonus="999" Stat="Strength" />
+    <part Name="UD_FleshGolems_SetDefaultBehaviorBlueprintWhenDefaultBehavior" />
+    <tag Name="BaseObject" Value="*noinherit" />
   </object>
-  <object Name="Metachrome Cudgel" Inherits="Metachrome Weapon">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} cudgel" />
+  <object Name="UD_FleshGolems Ragged Cudgel" Inherits="UD_FleshGolems Ragged Weapon">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} cudgel" />
     <part Name="MeleeWeapon" BaseDamage="4d6" Skill="Cudgel" />
+    <tag Name="BaseObject" Value="*noinherit" />
   </object>
-  <object Name="Metachrome Axe" Inherits="Metachrome Weapon">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} axe" />
+  <object Name="UD_FleshGolems Ragged Axe" Inherits="UD_FleshGolems Ragged Weapon">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} axe" />
     <part Name="MeleeWeapon" BaseDamage="1d8+8" Skill="Axe" />
+    <tag Name="BaseObject" Value="*noinherit" />
   </object>
-  <object Name="Metachrome LongBlades" Inherits="Metachrome Weapon">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} long blade" />
+  <object Name="UD_FleshGolems Ragged LongBlades" Inherits="UD_FleshGolems Ragged Weapon">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} long blade" />
     <part Name="MeleeWeapon" BaseDamage="2d12" Skill="LongBlades" />
+    <tag Name="BaseObject" Value="*noinherit" />
   </object>
-  <object Name="Metachrome ShortBlades" Inherits="Metachrome Weapon">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} dagger" />
+  <object Name="UD_FleshGolems Ragged ShortBlades" Inherits="UD_FleshGolems Ragged Weapon">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} dagger" />
     <part Name="MeleeWeapon" BaseDamage="1d12+5" Skill="ShortBlades" />
-  </object-->
+    <tag Name="BaseObject" Value="*noinherit" />
+  </object>
 
-  <!-- Flesh Golem natural weapons - hand >
-  <object Name="Metachrome Hand Cudgel" Inherits="Metachrome Cudgel">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} mitt" Tile="Creatures/natural-weapon-fist.bmp" ColorString="&amp;C" />
+  <!-- Flesh Golem natural weapons - hand -->
+  <object Name="UD_FleshGolems Ragged Hand Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} mitt" Tile="Creatures/natural-weapon-fist.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
-  <object Name="Metachrome Hand Axe" Inherits="Metachrome Axe">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} spade" Tile="Creatures/natural-weapon-drill.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Hand Axe" Inherits="UD_FleshGolems Ragged Axe">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} spade" Tile="Creatures/natural-weapon-drill.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
-  <object Name="Metachrome Hand LongBlades" Inherits="Metachrome LongBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} blade" Tile="Items/sw_longblade_10.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Hand LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} blade" Tile="Items/sw_longblade_10.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
-  <object Name="Metachrome Hand ShortBlades" Inherits="Metachrome ShortBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} point" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Hand ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} point" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Hand" />
-  </object-->
-  <!-- Flesh Golem natural weapons - face >
-  <object Name="Metachrome Face Cudgel" Inherits="Metachrome Cudgel">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} molars" />
+  </object>
+  <!-- Flesh Golem natural weapons - face -->
+  <object Name="UD_FleshGolems Ragged Face Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} molars" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
   </object>
-  <object Name="Metachrome Face Axe" Inherits="Metachrome Axe">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} trines" />
+  <object Name="UD_FleshGolems Ragged Face Axe" Inherits="UD_FleshGolems Ragged Axe">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} trines" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
   </object>
-  <object Name="Metachrome Face LongBlades" Inherits="Metachrome LongBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} tusks" />
+  <object Name="UD_FleshGolems Ragged Face LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} tusks" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
   </object>
-  <object Name="Metachrome Face ShortBlades" Inherits="Metachrome ShortBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} fangs" />
+  <object Name="UD_FleshGolems Ragged Face ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} fangs" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
-  </object-->
-  <!-- Flesh Golem natural weapons - head >
-  <object Name="Metachrome Head Cudgel" Inherits="Metachrome Cudgel">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} bulb" />
+  </object>
+  <!-- Flesh Golem natural weapons - head -->
+  <object Name="UD_FleshGolems Ragged Head Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} bulb" />
     <part Name="MeleeWeapon" Slot="Head" />
   </object>
-  <object Name="Metachrome Head Axe" Inherits="Metachrome Axe">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} ridge" />
+  <object Name="UD_FleshGolems Ragged Head Axe" Inherits="UD_FleshGolems Ragged Axe">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} ridge" />
     <part Name="MeleeWeapon" Slot="Head" />
   </object>
-  <object Name="Metachrome Head LongBlades" Inherits="Metachrome LongBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} prow" />
+  <object Name="UD_FleshGolems Ragged Head LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} prow" />
     <part Name="MeleeWeapon" Slot="Head" />
   </object>
-  <object Name="Metachrome Head ShortBlades" Inherits="Metachrome ShortBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} horn" />
+  <object Name="UD_FleshGolems Ragged Head ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} horn" />
     <part Name="MeleeWeapon" Slot="Head" />
-  </object-->
-  <!-- Flesh Golem natural weapons - foot >
-  <object Name="Metachrome Foot Cudgel" Inherits="Metachrome Cudgel">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} corm" />
+  </object>
+  <!-- Flesh Golem natural weapons - foot -->
+  <object Name="UD_FleshGolems Ragged Foot Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} corm" />
     <part Name="MeleeWeapon" Slot="Foot" />
   </object>
-  <object Name="Metachrome Foot Axe" Inherits="Metachrome Axe">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} spade" />
+  <object Name="UD_FleshGolems Ragged Foot Axe" Inherits="UD_FleshGolems Ragged Axe">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} spade" />
     <part Name="MeleeWeapon" Slot="Foot" />
   </object>
-  <object Name="Metachrome Foot LongBlades" Inherits="Metachrome LongBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} blade" />
+  <object Name="UD_FleshGolems Ragged Foot LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} blade" />
     <part Name="MeleeWeapon" Slot="Foot" />
   </object>
-  <object Name="Metachrome Foot ShortBlades" Inherits="Metachrome ShortBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} point" />
+  <object Name="UD_FleshGolems Ragged Foot ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} point" />
     <part Name="MeleeWeapon" Slot="Foot" />
-  </object-->
-  <!-- Flesh Golem natural weapons - arm >
-  <object Name="Metachrome Arm Cudgel" Inherits="Metachrome Cudgel">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} discs" />
+  </object>
+  <!-- Flesh Golem natural weapons - arm -->
+  <object Name="UD_FleshGolems Ragged Arm Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} discs" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
   </object>
-  <object Name="Metachrome Arm Axe" Inherits="Metachrome Axe">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} ridges" />
+  <object Name="UD_FleshGolems Ragged Arm Axe" Inherits="UD_FleshGolems Ragged Axe">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} ridges" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
   </object>
-  <object Name="Metachrome Arm LongBlade" Inherits="Metachrome LongBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} scales" />
+  <object Name="UD_FleshGolems Ragged Arm LongBlade" Inherits="UD_FleshGolems Ragged LongBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} scales" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
   </object>
-  <object Name="Metachrome Arm ShortBlade" Inherits="Metachrome ShortBlades">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} thorns" Tile="Creatures/natural-weapon-thorns.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Arm ShortBlade" Inherits="UD_FleshGolems Ragged ShortBlades">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} thorns" Tile="Creatures/natural-weapon-thorns.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
-  </object-->
-  <!-- Flesh Golem natural weapons - body >
-  <object Name="Metachrome Body Cudgel" Inherits="Metachrome Cudgel">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+  </object>
+  <!-- Flesh Golem natural weapons - body -->
+  <object Name="UD_FleshGolems Ragged Body Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
-  <object Name="Metachrome Body Axe" Inherits="Metachrome Axe">
-    <part Name="Render" DisplayName="ridged {{metachrome|metachrome}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Body Axe" Inherits="UD_FleshGolems Ragged Axe">
+    <part Name="Render" DisplayName="ridged {{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
-  <object Name="Metachrome Body LongBlades" Inherits="Metachrome LongBlades">
-    <part Name="Render" DisplayName="bladed {{metachrome|metachrome}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Body LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
+    <part Name="Render" DisplayName="bladed {{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
-  <object Name="Metachrome Body ShortBlades" Inherits="Metachrome ShortBlades">
-    <part Name="Render" DisplayName="pointed {{metachrome|metachrome}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Body ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
+    <part Name="Render" DisplayName="pointed {{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
-  </object-->
-  <!-- Flesh Golem natural weapons - tail >
-  <object Name="Metachrome Tail Cudgel" Inherits="Metachrome Cudgel">
-    <part Name="Render" DisplayName="{{metachrome|metachrome}} tail" Tile="Creatures/natural-weapon-tail.bmp" ColorString="&amp;C" />
+  </object>
+  <!-- Flesh Golem natural weapons - tail -->
+  <object Name="UD_FleshGolems Ragged Tail Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-tail.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
-  <object Name="Metachrome Tail Axe" Inherits="Metachrome Axe">
-    <part Name="Render" DisplayName="ridged {{metachrome|metachrome}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Tail Axe" Inherits="UD_FleshGolems Ragged Axe">
+    <part Name="Render" DisplayName="ridged {{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
-  <object Name="Metachrome Tail LongBlades" Inherits="Metachrome LongBlades">
-    <part Name="Render" DisplayName="bladed {{metachrome|metachrome}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Tail LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
+    <part Name="Render" DisplayName="bladed {{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
-  <object Name="Metachrome Tail ShortBlades" Inherits="Metachrome ShortBlades">
-    <part Name="Render" DisplayName="pointed {{metachrome|metachrome}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+  <object Name="UD_FleshGolems Ragged Tail ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
+    <part Name="Render" DisplayName="pointed {{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
     <part Name="MeleeWeapon" Slot="Tail" />
-  </object-->
+  </object>
   
 </objects>
