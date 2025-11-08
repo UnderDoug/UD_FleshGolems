@@ -189,7 +189,7 @@ namespace XRL.World.Effects
                 .AddObject(Object)
                 .ToString();
 
-            int chanceToDamage = !Object.CurrentCell.OnWorldMap() ? ChanceToDamage : (int)Math.Max(1, (ChanceToDamage * 0.01);
+            int chanceToDamage = !Object.CurrentCell.OnWorldMap() ? ChanceToDamage : (int)Math.Max(1, ChanceToDamage * 0.01);
             bool tookDamage = false;
             if (chanceToDamage.in100())
             {
