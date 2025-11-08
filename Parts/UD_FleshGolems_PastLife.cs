@@ -417,11 +417,14 @@ namespace XRL.World.Parts
             Writer.WriteOptimized(DeathAddress.DeathZone);
             Writer.Write(DeathAddress.DeathLocation);
 
-            Brain?.Write(Basis, Writer);
+            Brain ??= new();
+            Brain.Write(Basis, Writer);
 
-            Gender?.Save(Writer);
+            Gender ??= new();
+            Gender.Save(Writer);
 
-            PronounSet?.Save(Writer);
+            PronounSet ??= new();
+            PronounSet.Save(Writer);
 
             Writer.WriteOptimized(Stats.Count);
             foreach ((string statName, Statistic stat) in Stats)

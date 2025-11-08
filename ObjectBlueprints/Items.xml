@@ -147,6 +147,8 @@
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <removetag Name="Animatable" />
     <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+    <part Name="Commerce" Value="220" />
+    <removetag Name="Tier" />
   </object>
   <object Name="UD_FleshGolems Corpse WithCybernetics 2" Inherits="UD_FleshGolems Corpse WithCybernetics">
     <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Count="1d3" />
@@ -178,6 +180,8 @@
     <part Name="UD_FleshGolems_BecomeRandomLimb" TypesOneOf="Arm,Hand,Leg,Foot,Head,Face" Count="1" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="BaseItem" Value="*noinherit" />
+    <part Name="Commerce" Value="220" />
+    <removetag Name="Tier" />
   </object>
   
   <!-- Base/Random (True Kin) -->
@@ -212,6 +216,8 @@
   <object Name="UD_FleshGolems Corpse WithCybernetics FromZoneTier" Inherits="UD_FleshGolems Corpse WithCybernetics">
     <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" ForLimb="" Table="Cybernetics{zonetier}" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <part Name="Commerce" Value="220" />
+    <removetag Name="Tier" />
   </object>
   <object Name="UD_FleshGolems GenericLimb WithCybernetics FromZoneTier" Inherits="UD_FleshGolems GenericLimb BaseWithCybernetics">
     <part Name="UD_FleshGolems_BecomeRandomLimb" CyberneticsForLimb="" CyberneticsTable="Cybernetics{zonetier}" />

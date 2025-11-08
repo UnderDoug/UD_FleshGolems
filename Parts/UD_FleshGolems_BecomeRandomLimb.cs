@@ -240,6 +240,7 @@ namespace XRL.World.Parts
                     }
                     if (hasCybernetics)
                     {
+                        severedLimbObject.RequirePart<Commerce>().Value = 180;
                         E.ReplacementObject = severedLimbObject;
                     }
                     else
