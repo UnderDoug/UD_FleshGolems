@@ -129,7 +129,7 @@ namespace XRL.World.Parts
                 type ??= ParentObject.GetPropertyOrTag("UD_FleshGolems LimbType");
 
                 SanitizeLimbType(type, out type, Wildcards);
-
+                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_BecomeRandomLimb) + "." + nameof(BeforeObjectCreatedEvent) + ", " +
                     nameof(E.Object) + ": " + (E.Object?.DebugName ?? NULL) + ", " +
@@ -137,15 +137,17 @@ namespace XRL.World.Parts
                     nameof(@base) + ": " + (@base ?? NULL) + ", " +
                     nameof(tag) + ": " + (tag ?? NULL) + ", " +
                     nameof(type) + ": " + (type ?? NULL));
-
+                */
                 string tableSlotType = null;
                 string tableBlueprint = null;
                 if (!CyberneticsTable.IsNullOrEmpty())
                 {
                     string processedTable = CyberneticsTable.Replace("~#~", Stat.RollCached("1d8").ToString());
+                    /*
                     UnityEngine.Debug.Log(
                         "    " + nameof(CyberneticsTable) + ": " + (CyberneticsTable ?? NULL) + ", " +
                         nameof(processedTable) + ": " + processedTable);
+                    */
                     for (int i = 0; i < 10; i++)
                     {
                         PopulationResult cyberneticsPopulationResult = PopulationManager.RollOneFrom(processedTable);
@@ -154,10 +156,11 @@ namespace XRL.World.Parts
                             && cyberneticsBlueprint.TryGetPartParameter(nameof(CyberneticsBaseItem), nameof(CyberneticsBaseItem.Slots), out string tableCyberneticSlots)
                             && CyberneticsSlotsContainsSeverableLimbType(tableCyberneticSlots))
                         {
+                            /*
                             UnityEngine.Debug.Log(
                                 "    " + "    [" + i + "] population result: " + (cyberneticsPopulationResult.Blueprint ?? "null") + ", " +
                                 nameof(tableCyberneticSlots) + ": " + tableCyberneticSlots);
-
+                            */
                             if (tableCyberneticSlots.Contains(','))
                             {
                                 foreach (string slotType in tableCyberneticSlots.Split(',').ShuffleInPlace())
@@ -180,10 +183,12 @@ namespace XRL.World.Parts
                         }
                     }
                     bool good = !tableSlotType.IsNullOrEmpty();
+                    /*
                     UnityEngine.Debug.Log(
                         "    " + "    [" + (good ? TICK : CROSS) + "] " + (good ? "Success" : "Fail") + "!" +
                         " " + nameof(tableSlotType) + ": " + tableSlotType + ", " + 
                         " " + nameof(tableBlueprint) + ": " + tableBlueprint);
+                    */
                 }
                 if (!tableSlotType.IsNullOrEmpty())
                 {

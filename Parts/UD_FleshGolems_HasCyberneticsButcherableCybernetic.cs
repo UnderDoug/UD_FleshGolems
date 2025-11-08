@@ -162,11 +162,12 @@ namespace XRL.World.Parts
             bool any = false;
             if (TryGetButcherableCyberneticPart(Corpse, out CyberneticsButcherableCybernetic butcherableCybernetic))
             {
+                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsList) + ", " +
                     nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
                     nameof(Cybernetics) + ": \"" + Cybernetics + "\"");
-
+                */
                 butcherableCybernetic.Cybernetics ??= new();
 
                 if (!Cybernetics.IsNullOrEmpty())
@@ -181,7 +182,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
-                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
+                // UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }
@@ -198,12 +199,13 @@ namespace XRL.World.Parts
             bool any = false;
             if (TryGetButcherableCyberneticPart(Corpse, out CyberneticsButcherableCybernetic butcherableCybernetic))
             {
+                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsTable) + ", " +
                     nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
                     nameof(Table) + ": \"" + Table + "\"" + ", " +
                     nameof(rolledCount) + ": " + rolledCount);
-
+                */
                 butcherableCybernetic.Cybernetics ??= new();
 
                 if (!Table.IsNullOrEmpty())
@@ -241,7 +243,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
-                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
+                // UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }
@@ -258,12 +260,13 @@ namespace XRL.World.Parts
             bool any = false;
             if (TryGetButcherableCyberneticPart(Corpse, out CyberneticsButcherableCybernetic butcherableCybernetic))
             {
+                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsForLimb) + ", " +
                     nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
                     nameof(ForLimb) + ": \"" + (ForLimb ?? NULL)+ "\"" + ", " +
                     nameof(rolledCount) + ": " + rolledCount);
-
+                */
                 butcherableCybernetic.Cybernetics ??= new();
 
                 if (!ForLimb.IsNullOrEmpty())
@@ -291,7 +294,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
-                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
+                // UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }
