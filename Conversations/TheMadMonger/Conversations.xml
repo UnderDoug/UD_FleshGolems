@@ -65,7 +65,7 @@
         </text>
       </choice>
 
-      <choice ID="AskYouNeedHelp" Target="AnswerINeedHelp" IfNotHaveQuest="You Raise Me Up"
+      <choice ID="AskYouNeedHelp" Target="AnswerINeedHelp" IfNotHaveQuest="Find 3 Questionable Materials (for Science)"
               IfTestState="UD_FleshGolems_Monger_AnswerWhyIRaiseDead">
         <text IfTrueKin="True" Priority="1">
           Is there anything I can do to assist your work?
@@ -98,6 +98,24 @@
         <part Name="Tag">{{W|[start quest]}}</part>
       </choice>
 
+      <choice ID="SayMeHaveCorpses" Target="ReactYouHaveCorpses"
+              IfNotHaveQuest="Find 3 Questionable Materials (for Science)"
+              IfHaveQuestProperty="Completable~true">
+        <text IfTrueKin="True" Priority="1">
+          I will do as you ask.
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          I will do this for you.
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          I will do this for you.
+        </text>
+        <text>
+          I will complete this task.
+        </text>
+        <part Name="Tag">{{W|[start quest]}}</part>
+      </choice>
+
       <choice ID="SayMeNotHelp_TK" IfTrueKin="True" Target="ReactThenNotHelp">
         <text>No, I will not do this.</text>
       </choice>
@@ -113,6 +131,36 @@
         <text>This isn't the job for me.</text>
         <!-- Leads to fight threat -->
         <part Name="Tag">{{W|[refuse quest]}}</part>
+      </choice>
+
+      <choice ID="SayQuestLeg1Ongoing" Target="RespondQuestLeg1Ongoing" >
+        <text IfTrueKin="true" Priority="1">
+          Not yet.
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          The hunt has been slow.
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          No.
+        </text>
+        <text>
+          I’m still working on it
+        </text>
+      </choice>
+
+      <choice ID="SayQuestLeg1Complete" Target="RespondQuestLeg1Complete" >
+        <text IfTrueKin="true" Priority="1">
+          Yes, with no small amount of effort.
+        </text>
+        <text IfHavePart="Chimera" Priority="1">
+          The hunt was long, but successful.
+        </text>
+        <text IfHavePart="Esper" Priority="1">
+          Yes, only required me to traverse half of Qud...
+        </text>
+        <text>
+          Yes.
+        </text>
       </choice>
 
       <!--choice GotoID="ActiveQuest" IfHaveQuest="If, Then, Else" IfNotFinishedQuestStep="If, Then, Else~Reunite Tau with Her Chime">Explain once more what I must do with Tau's chime.</choice-->
@@ -378,6 +426,27 @@
         Would you kindly lay upon this table here, I assure you that it is entirly safe.~
         Would you like to purchase something, meat?
       </text>
+    </start>
+    
+    <start ID="QuestLeg1Started" Inherits="AlwaysHaveChoices" Priority="2"
+           IfHaveQuest="Find 3 Questionable Materials (for Science)">
+      <text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
+        Dare I ask whether or not that insatiable affront you seem intent on keeping around has consumed all the corpses I require?
+      </text>
+      <text IfTrueKin="true" Priority="1">
+        Have you found the corpses I require?
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        Have you tracked down the creatures I need, prime meat?
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        Have you divined the location of and obtained the materials I require grey meat?
+      </text>
+      <text>
+        Have you completed I task I have entrusted you with meat?
+      </text>
+      <choice UseID="SayQuestLeg1Ongoing" />
+      <choice UseID="SayQuestLeg1Complete" />
     </start>
     
     <!-- Returning directly to the start feels strange, so the below acts as a landing node for the "there was something else" choice -->

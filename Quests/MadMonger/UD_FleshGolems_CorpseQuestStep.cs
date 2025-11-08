@@ -20,6 +20,7 @@ namespace XRL.World.QuestManagers
 
             public bool IsSpecies => !Type.IsNullOrEmpty() && Type == "Species";
             public bool IsBase => !Type.IsNullOrEmpty() && Type == "Base";
+            public bool IsFaction => !Type.IsNullOrEmpty() && Type == "Faction";
             public bool IsAny => !Type.IsNullOrEmpty() && Type == "Any";
 
             private CorpseItem()
@@ -46,6 +47,12 @@ namespace XRL.World.QuestManagers
                 if (IsBase
                     && IsCorpse(CorpseObject)
                     && CorpseObject.GetBlueprint().InheritsFrom(Value))
+                {
+                    return true;
+                }
+                if (IsFaction
+                    && IsCorpse(CorpseObject)
+                    && GetAllCorpsesOfFaction(Value).Contains(CorpseObject.Blueprint))
                 {
                     return true;
                 }
