@@ -36,6 +36,7 @@ namespace XRL.World.QuestManagers
         public static List<string> SpeciesExclusions => new()
         {
             "robot",
+            "mecha",
             "*",
             "[",
             "]",
@@ -96,12 +97,18 @@ namespace XRL.World.QuestManagers
                     && !speciesList.Contains(species)
                     && !species.ToLower().StartsWith("base"))
                 {
+                    bool skip = false;
                     foreach (string exclusion in SpeciesExclusions)
                     {
-                        if (species.ToLower().Contains(exclusion))
+                        if (species.ToLower().Contains(exclusion.ToLower()))
                         {
-                            continue;
+                            skip = true;
+                            break;
                         }
+                    }
+                    if (skip)
+                    {
+                        continue;
                     }
                     speciesList.Add(species);
                     yield return species;
@@ -239,7 +246,7 @@ namespace XRL.World.QuestManagers
             string species = AllSpecies.GetRandomElementCosmetic(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
-                Name = "Find a " + species.Capitalize() + " Corpse",
+                Name = "Find " + Grammar.A(species.Capitalize()) + " Corpse",
                 Text = "\"Acquire\" a corpse from any member of the " + species.ToLower() + " species...",
                 Corpse = new("Species", species)
             };
@@ -254,7 +261,7 @@ namespace XRL.World.QuestManagers
             string baseBlueprint = AllBaseCorpses.GetRandomElementCosmetic(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
-                Name = "Find a " + baseBlueprint.Capitalize(),
+                Name = "Find " + Grammar.A(baseBlueprint.Capitalize()),
                 Text = "\"Acquire\" any kind of " + baseBlueprint.ToLower() + "...",
                 Corpse = new("Base", baseBlueprint)
             };

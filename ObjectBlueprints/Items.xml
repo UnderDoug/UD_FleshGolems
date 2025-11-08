@@ -175,7 +175,7 @@
     <part Name="Render" DisplayName="nondescript limb" />
     <removepart Name="Food" />
     <removetag Name="AggregatedIngredient" />
-    <part Name="UD_FleshGolems_BecomeRandomLimb" TagsOneOf="Organic" TypesOneOf="Arm,Hand,Leg,Foot,Head,Face" Count="1" />
+    <part Name="UD_FleshGolems_BecomeRandomLimb" TypesOneOf="Arm,Hand,Leg,Foot,Head,Face" Count="1" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="BaseItem" Value="*noinherit" />
   </object>
