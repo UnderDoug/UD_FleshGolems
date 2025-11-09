@@ -117,8 +117,25 @@
   
   <!--
   
-  
+  Quest Tables
   
   -->
+
+  <population Name="UD_FleshGolems_Corpse_BaseRewards">
+    <group Name="Rewards" Style="pickeach">
+      <object Blueprint="CyberneticsCreditWedge3" />
+      <object Blueprint="NectarTonic" />
+      <object Blueprint="UbernostrumTonic" />
+      <object Blueprint="Pocketed Lab Coat" />
+      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso 3" />
+      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso 3" />
+      <table Name="UD_FleshGolems Mad Monger Tier 7" />
+      <table Name="UD_FleshGolems Mad Monger Tier 7" />
+      <table Name="UD_FleshGolems Mad Monger Tier 8" />
+      <table Name="UD_FleshGolems Mad Monger Tier 8" />
+      <table Name="Cybernetics5" />
+      <table Name="Cybernetics6" />
+    </group>
+  </population>
   
 </populations>

@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using ConsoleLib.Console;
 
@@ -19,7 +20,7 @@ using XRL.World.Parts;
 using XRL.World.Parts.Mutation;
 
 using UD_FleshGolems;
-using System.Linq;
+using static UD_FleshGolems.Const;
 
 namespace XRL.World.ObjectBuilders
 {
@@ -235,7 +236,8 @@ namespace XRL.World.ObjectBuilders
             bool ForImmediateReanimation = true,
             bool OverridePastLife = true)
         {
-            return (Corpse = ProduceCorpse(Creature, ForImmediateReanimation, OverridePastLife)) != null;
+            Corpse = ProduceCorpse(Creature, ForImmediateReanimation, OverridePastLife);
+            return Corpse != null;
         }
 
         public static bool TryTransferInventoryToCorpse(GameObject soonToBeCorpse, GameObject soonToBeCreature)
@@ -245,7 +247,10 @@ namespace XRL.World.ObjectBuilders
             {
                 soonToBeCreature.RequirePart<Inventory>();
                 soonToBeCorpse.RequirePart<Inventory>();
-                Metamorphosis.TransferInventory(soonToBeCorpse, soonToBeCreature);
+                UnityEngine.Debug.Log(
+                    nameof(soonToBeCorpse) + ": " + (soonToBeCorpse.DebugName ?? NULL) + ", " +
+                    nameof(soonToBeCreature) + ": " + (soonToBeCreature.DebugName ?? NULL));
+                Metamorphosis.TransferInventory(soonToBeCorpse, soonToBeCreature, soonToBeCorpse.IsPlayer());
                 transferred = true;
             }
             catch (Exception x)
@@ -282,7 +287,7 @@ namespace XRL.World.ObjectBuilders
 
             if (Creature.IsPlayer())
             {
-                if (Corpse == null && !ReplacePlayerWithCorpse(Corpse))
+                if (Corpse == null || !ReplacePlayerWithCorpse(Creature, Corpse: Corpse))
                 {
                     Popup.Show("Something terrible has happened (not really, it just failed).\n\nCheck Player.log for errors.");
                     return false;
@@ -312,6 +317,8 @@ namespace XRL.World.ObjectBuilders
             }
             if (!TryTransferInventoryToCorpse(Player, Corpse))
             {
+                MetricsManager.LogModError(Utils.ThisMod, 
+                    "Failed to " + nameof(ReplacePlayerWithCorpse) + " due to failure of " + nameof(TryTransferInventoryToCorpse));
                 return false;
             }
             bool replaced = false;
@@ -371,7 +378,7 @@ namespace XRL.World.ObjectBuilders
                     // "Last chance to back out.\n\n" +
                     // "If you meant to reanimate something else," +
                     "Reanimating the player by wish is currently broken.\n\n" +
-                    "If you meant to reanimate something else," +
+                    "If you meant to reanimate something else, " +
                     "make this wish again but include a blueprint.") == DialogResult.No)
                 {
                     return false;
@@ -388,14 +395,14 @@ namespace XRL.World.ObjectBuilders
                 if (!soonToBeCreature.HasPart<AnimatedObject>()
                     && soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper corpseReanimationHelper))
                 {
-                    // corpseReanimationHelper.AlwaysAnimate = true;
+                    corpseReanimationHelper.AlwaysAnimate = true;
                 }
                 if (Blueprint != null)
                 {
                     The.PlayerCell.getClosestEmptyCell().AddObject(soonToBeCreature);
                 }
                 else
-                if (Blueprint == null && false)
+                if (Blueprint == null)
                 {
                     if (soonToBeCreature == null && !ReplacePlayerWithCorpse(soonToBeCorpse, true, null, soonToBeCreature))
                     {

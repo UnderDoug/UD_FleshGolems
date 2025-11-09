@@ -67,14 +67,14 @@ namespace UD_FleshGolems
             return Context.Value.EqualsNoCase("true") == haveMorphotype;
         }
 
-        [ConversationDelegate(Inverse = false)]
+        [ConversationDelegate]
         public static bool IfHaveUnfinishedQuestPropertyValue(DelegateContext Context)
         {
             Context.Value.Split('`', out var questIDProperty, out var value);
             questIDProperty.Split('~', out var questID, out var propertyName);
             return The.Game.Quests.TryGetValue(questID, out Quest quest)
                 && quest.GetProperty(propertyName) is var property
-                && property == value;
+                && property.EqualsNoCase(value);
         }
 
         //

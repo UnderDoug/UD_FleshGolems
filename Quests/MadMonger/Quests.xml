@@ -11,11 +11,11 @@
 
     <step Name="I'm dead serious!" XP="1500"
          ID="UD_FleshGolems I'm dead serious!">
-      <text>Find 3 Questionable Materials (for Science)</text>
+      <text>Find 3 questionable materials (for Science)</text>
       <!-- Handled by UD_FleshGolems_CorpseQuestSystem -->
     </step>
 
-    <step Name="Don't be nervous!" XP="1000"
+    <step Name="Don't be nervous!" XP="1000" Hidden="true"
          ID="UD_FleshGolems Don't be nervous!">
       <text>Bring a phial of thinking liquid to the Mad 'Monger.</text>
       <!-- Need 1 Brain Brine -->

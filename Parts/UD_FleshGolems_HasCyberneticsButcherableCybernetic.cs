@@ -96,12 +96,12 @@ namespace XRL.World.Parts
             {
                 return false;
             }
-            if (Type != null 
+            /* if (Type != null 
                 && GameObjectBlueprint.TryGetPartParameter(nameof(Body), nameof(Body.Anatomy), out string anatomyName)
-                && !Anatomies.GetAnatomy(anatomyName).Contains(Anatomies.GetBodyPartType(Type)))
+                && !Anatomies.GetAnatomy(anatomyName).Parts.Any(p => p.Type.Type == Type))
             {
                 return false;
-            }
+            }*/
             if (Tag != null && !GameObjectBlueprint.Tags.ContainsKey(Tag))
             {
                 return false;
@@ -384,9 +384,18 @@ namespace XRL.World.Parts
         {
             return base.WantEvent(ID, Cascade)
                 || ID == EnvironmentalUpdateEvent.ID
+                || ID == TakenEvent.ID
                 || ID == AfterObjectCreatedEvent.ID;
         }
         public override bool HandleEvent(EnvironmentalUpdateEvent E)
+        {
+            if (!KeepOnFail && MarkedForOblivion)
+            {
+                ParentObject.Obliterate();
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(TakenEvent E)
         {
             if (!KeepOnFail && MarkedForOblivion)
             {
@@ -400,16 +409,19 @@ namespace XRL.World.Parts
             {
                 if (EmbedButcherableCybernetics())
                 {
+                    GameObjectBlueprint randomCreatureBlueprint = GetCreatureBlueprintFromSpec(Tag: "UD_FleshGolems_NonRobot", Base: Base);
+                    randomCreatureBlueprint ??= EncountersAPI.GetACreatureBlueprintModel(bp => bp.HasTagOrProperty("UD_FleshGolems_NonRobot") && Base == null || bp.InheritsFrom(Base));
+                    if (randomCreatureBlueprint != null
+                        && ParentObject.Render is Render render)
+                    {
+                        render.DisplayName = render.DisplayName.Replace(" ", " " + randomCreatureBlueprint.DisplayName() + " ");
+                    }
                     if (UseImplantedAdjectiveIfImplanted)
                     {
                         var cyberneticsHasRandomImplants = new CyberneticsHasRandomImplants();
                         E.Object.RequirePart<DisplayNameAdjectives>().AddAdjective(cyberneticsHasRandomImplants.Adjective);
                     }
                     ParentObject.RemovePart<Food>();
-                    if (GetCreatureBlueprintFromSpec(Base: Base) is GameObjectBlueprint randomCreatureBlueprint)
-                    {
-                        ParentObject.Render.DisplayName.Replace(" ", " " + randomCreatureBlueprint.DisplayName() + " ");
-                    }
                     AdjustCommerceValue(Commerce, BlurValueAmount, BlurValueMargin);
                 }
                 else

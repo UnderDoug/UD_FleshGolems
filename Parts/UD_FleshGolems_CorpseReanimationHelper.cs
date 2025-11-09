@@ -130,7 +130,7 @@ namespace XRL.World.Parts
                 nameof(corpseDisplayNameLC) + ": " + (corpseDisplayNameLC ?? NULL));
             List<GameObjectBlueprint> blueprintsToCheck = new(GameObjectFactory.Factory.Blueprints.Values);
             blueprintsToCheck.ShuffleInPlace();
-            int maxChecks = 2500;
+            int maxChecks = int.MaxValue; // 2500;
             int checkCounter = 0;
             UnityEngine.Debug.Log("Checking " + maxChecks + "/" + blueprintsToCheck.Count);
             foreach (GameObjectBlueprint gameObjectBlueprint in blueprintsToCheck)
@@ -770,7 +770,7 @@ namespace XRL.World.Parts
                             .Replace("*firstNoise*", firstPoeticNoise)
                             .Replace("*secondNoise*", secondPoeticNoise);
                 }
-                string sourceBlueprintName = FigureOutWhatBlueprintThisCorpseCameFrom(frankenCorpse, PastLife, true);
+                string sourceBlueprintName = FigureOutWhatBlueprintThisCorpseCameFrom(frankenCorpse, PastLife);
                 
                 SourceBlueprint ??= sourceBlueprintName;
 

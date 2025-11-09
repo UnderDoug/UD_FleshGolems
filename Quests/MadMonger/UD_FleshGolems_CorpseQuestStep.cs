@@ -77,7 +77,7 @@ namespace XRL.World.QuestManagers
                     ?.GetRandomElementCosmetic(),
 
                 CorpseTaxonomy.Base =>
-                    GetAllBaseCorpse(bp => bp.InheritsFrom(Value))
+                    GetAllCorpsesOfBase(Value)
                     ?.GetRandomElementCosmetic(),
 
                 CorpseTaxonomy.Faction =>

@@ -69,5 +69,53 @@ namespace UD_FleshGolems
             Commerce.Value *= adjustmentFactor;
             return Commerce;
         }
+
+        public static IEnumerable<string> GetPartNames(this GameObject Object)
+        {
+            foreach (IPart part in Object.PartsList)
+            {
+                yield return part.Name;
+            }
+        }
+
+        public static bool OverlapsWith<T>(this IEnumerable<T> Enumerable1, IEnumerable<T> Enumerable2)
+        {
+            foreach (T item1 in Enumerable1)
+            {
+                foreach (T item2 in Enumerable2)
+                {
+                    if (item1.Equals(item2))
+                    {
+                        return true;
+                    }    
+                }
+            }
+            return false;
+        }
+
+        public static bool ContainsAll<T>(this ICollection<T> Collection1, ICollection<T> Collection2)
+        {
+            int matches = 0;
+            int targetMatches = Collection2.Count;
+            if (targetMatches > Collection1.Count)
+            {
+                return false;
+            }
+            foreach (T item2 in Collection2)
+            {
+                foreach (T item1 in Collection1)
+                {
+                    if (item1.Equals(item2))
+                    {
+                        matches++;
+                        if (targetMatches == matches)
+                        {
+                            break;
+                        }
+                    }    
+                }
+            }
+            return targetMatches >= matches;
+        }
     }
 }

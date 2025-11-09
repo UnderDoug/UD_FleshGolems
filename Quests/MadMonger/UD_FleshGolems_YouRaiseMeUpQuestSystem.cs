@@ -5,6 +5,7 @@ using XRL;
 using XRL.Rules;
 using XRL.UI;
 using XRL.World;
+using XRL.World.Conversations.Parts;
 using XRL.World.QuestManagers;
 
 namespace XRL.World.Quests
@@ -55,11 +56,19 @@ namespace XRL.World.Quests
         {
             if (E.Quest == Quest
                 && E.Step is QuestStep thisStep
-                && QuestSteps.Contains(thisStep)
-                && QuestSteps[^1] != thisStep
-                && QuestSteps[QuestSteps.IndexOf(E.Step) + 1] is QuestStep nextStep)
+                && QuestSteps.Contains(thisStep))
             {
-                nextStep.Hidden = false;
+                if (thisStep.ID == StepIDs[0]
+                    && The.Game.Quests.TryGetValue(CorpseQuestSystem.QuestID, out Quest corpseQuest))
+                {
+                    corpseQuest.Finish();
+                }
+                if (QuestSteps[^1] != thisStep
+                    && QuestSteps[QuestSteps.IndexOf(E.Step) + 1] is QuestStep nextStep)
+                {
+
+                    nextStep.Hidden = false;
+                }
             }
             return base.HandleEvent(E);
         }

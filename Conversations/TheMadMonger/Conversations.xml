@@ -65,7 +65,9 @@
         </text>
       </choice>
 
-      <choice ID="AskYouNeedHelp" Target="AnswerINeedHelp" IfNotHaveQuest="Find 3 Questionable Materials (for Science)"
+      <choice ID="AskYouNeedHelp" Target="AnswerINeedHelp"
+              IfNotFinishedQuest="UD_FleshGolems You Raise Me Up"
+              IfNotHaveQuest="UD_FleshGolems You Raise Me Up"
               IfTestState="UD_FleshGolems_Monger_AnswerWhyIRaiseDead">
         <text IfTrueKin="True" Priority="1">
           Is there anything I can do to assist your work?
@@ -130,8 +132,7 @@
       </choice>
 
       <choice ID="SayQuestLeg1Complete" Target="RespondQuestLeg1Complete"
-              IfHaveQuest="UD_FleshGolems Find 3 Questionable Materials (for Science)"
-              IfHaveQuestProperty="UD_FleshGolems Find 3 Questionable Materials (for Science)~Completable`true">
+              IfHaveUnfinishedQuestPropertyValue="UD_FleshGolems Find 3 Questionable Materials (for Science)~Completable`true">
         <text IfTrueKin="true" Priority="1">
           Yes, with no small amount of effort.
         </text>
@@ -142,8 +143,13 @@
           Yes, only required me to traverse half of Qud...
         </text>
         <text>
-          Yes.
+          Yes, I have your &quot;materials&quot;.
         </text>
+        <part Name="Tag">{{W|[complete quest step]}}</part>
+        <part Name="UD_FleshGolems_TakeItemsWithPart"
+              Amount="all"
+              Parts="UD_FleshGolems_CorpseQuestHelperPart" />
+        <part Name="QuestHandler" QuestID="UD_FleshGolems You Raise Me Up" StepID="UD_FleshGolems I'm dead serious!" Action="Step" />
       </choice>
 
       <!--choice GotoID="ActiveQuest" IfHaveQuest="If, Then, Else" IfNotFinishedQuestStep="If, Then, Else~Reunite Tau with Her Chime">Explain once more what I must do with Tau's chime.</choice-->
@@ -245,12 +251,17 @@
       -->
     </node>
 
-    <node ID="BaseSequence">
+    <node ID="BaseSequence"
+          ModIntState="UD_FleshGolems_Monger_MeatCounter,1">
       <choice UseID="GoEnd" />
     </node>
+
+    <node ID="SoftSequence" Inherits="BaseSequence">
+      <choice UseID="GoPostGreeting" Ordinal="350" />
+      <choice UseID="Trade" Ordinal="400" />
+    </node>
     
-    <node ID="AlwaysHaveChoices" Inherits="BaseSequence"
-          ModIntState="UD_FleshGolems_Monger_MeatCounter,1">
+    <node ID="AlwaysHaveChoices" Inherits="BaseSequence">
       <!-- soft-sequence into quest. -->
       <choice UseID="AskWhatYouWorkOn" />
       <choice UseID="AskWhyYouRaiseDead" />
@@ -261,8 +272,7 @@
       <choice UseID="GoadYouLookSick" />
       <choice UseID="AskWhyMeMeat" />
       <!-- put entries above here; order matters -->
-      <choice UseID="GoPostGreeting" />
-      <choice UseID="Trade" />
+      <choice UseID="Trade" Ordinal="400" />
     </node>
 
     <!-- 
@@ -420,14 +430,14 @@
         The beast speaks.
       </text>
       <text IfHavePart="Esper" Priority="1">
-        As a gray worm in my ear, I'm sure.
+        As a grey worm in my ear, I'm sure.
       </text>
       <text>
         Out with it then, meat.
       </text>
     </node>
     
-    <node ID="AnswerWhatIWorkOn" Inherits="AlwaysHaveChoices">
+    <node ID="AnswerWhatIWorkOn" Inherits="SoftSequence">
       <text IfTrueKin="true" Priority="1">
         The nature of my work?....What a finely uttered question, the aim of my work is simple "aristocrat" to make your kind obsolete, to develop a new line of cybernetics.
 
@@ -450,9 +460,10 @@
 
         Imagine it now meat, no longer being restricted to the random permutations of your genome, finally being able to choose your own capabilities. Is that not wonderful?
       </text>
+      <choice UseID="AskWhyYouRaiseDead" />
     </node>
     
-    <node ID="AnswerWhyIRaiseDead" Inherits="AlwaysHaveChoices">
+    <node ID="AnswerWhyIRaiseDead" Inherits="SoftSequence">
       <text IfTrueKin="true" Priority="1">
         {{Y|Raising the dead??}}
         
@@ -475,10 +486,11 @@
 
         {{Y|Most}} of them anyways.
       </text>
+      <choice UseID="AskYouNeedHelp" />
     </node>
 
     <!-- Health Question -->
-    <node ID="ReactINOTSICK" Inherits="AlwaysHaveChoices">
+    <node ID="ReactINOTSICK" Inherits="SoftSequence">
       <text IfHavePart="Chimera" Priority="1">
         What is pain besides another word for progress. With the power of my vast genius I found a way to bypass those damned restrictions on one of the many millennium-old chrome surgeons scattered throughout this land.
 
@@ -532,7 +544,7 @@
     </node>
     <!-- End Health Question -->
 
-    <node ID="AnswerWhyYouMeat" Inherits="AlwaysHaveChoices">
+    <node ID="AnswerWhyYouMeat" Inherits="SoftSequence">
       <text IfTrueKin="true" Priority="1">
         Rare meat, yes, though rare may be a misnomer, I speak only in terms of the difficulty of finding materials like yours, not to the value that they provide; worthless meat may be a more accurate descriptor.
       </text>
@@ -550,7 +562,7 @@
     <!-- Quest Dialogue -->
 
     <!-- Start Quest -->
-    <node ID="AnswerINeedHelp" Inherits="BaseSequence">
+    <node ID="AnswerINeedHelp" Inherits="SoftSequence">
       <text IfTrueKin="true" Priority="1">
         The walking relic wants to help me replace it, how grand. Very well rare meat, there is actually something you could do to assist.
 
@@ -693,11 +705,11 @@
       <text>
         Have you completed I task I have entrusted you with meat?
       </text>
-      <choice UseID="SayQuestLeg1Ongoing" />
       <choice UseID="SayQuestLeg1Complete" />
+      <choice UseID="SayQuestLeg1Ongoing" />
     </start>
     
-    <node ID="RespondQuestLeg1Ongoing" Inherits="AlwaysHaveChoices">
+    <node ID="RespondQuestLeg1Ongoing" Inherits="SoftSequence">
       <text IfTrueKin="true" Priority="1">
         Well then what are you doing here rare meat, get back out there!
 
@@ -718,6 +730,56 @@
 
         Regardless, failure to complete this task will result in vivisection, keep that in mind, meat.
       </text>
+    </node>
+    
+    <node ID="RespondQuestLeg1Complete" AllowEscape="false">
+      <text IfTrueKin="true" Priority="1">
+        Thank you rare meat, now that the base materials have been gathered, I require two more pieces to begin my next round of experimentation.
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        Thank you prime meat, with your successful hunt I can move on to the next stage, though before doing so I require two further components.
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        Upset that you had to utilize your {{Y|physical capabilities}} for once?
+      </text>
+      <text>
+        Well done meat, I am pleased with your successful completion of this task, your value to me has moved from annoyingly mediocre to ever-so-slightly above that.
+      </text>
+      <part Name="ReceiveItem" Pick="true" Table="UD_FleshGolems_Corpse_BaseRewards" Identify="All" />
+      <choice GotoID="UnderConstruction">
+        <text>
+          You mentioned some addtional tasks?
+        </text>
+      </choice>
+    </node>
+    
+    <node ID="UnderConstruction" Inherits="BaseSequence">
+      <text IfTrueKin="true" Priority="1">
+        Unfortunately for you, rare meat, that's all the run-around I've got for the time being.
+        
+        I do, however, have big plans in the works, so check back some time.
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        Unfortunately for you, prime meat, that's all the run-around I've got for the time being.
+        
+        I do, however, have big plans in the works, so check back some time.
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        Unfortunately for you, grey meat, that's all the run-around I've got for the time being.
+
+        I do, however, have big plans in the works, so check back some time.
+      </text>
+      <text>
+        Unfortunately for you, meat, that's all the run-around I've got for the time being.
+
+        I do, however, have big plans in the works, so check back some time.
+      </text>
+      <choice UseID="GoPostGreeting">
+        <text Priority="4">
+          Oh! How exciting. I'll check back in later, then.
+        </text>
+        <removepart Name="Tag" />
+      </choice>
     </node>
     
   </conversation> 
