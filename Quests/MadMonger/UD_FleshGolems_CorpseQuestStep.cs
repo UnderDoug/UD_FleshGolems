@@ -15,54 +15,77 @@ namespace XRL.World.QuestManagers
         [Serializable]
         public class CorpseItem : IComposite
         {
-            public string Type;
+            public enum CorpseTaxonomy : int
+            {
+                Empty = -1,
+                Any = 0,
+                Species = 1,
+                Base = 2,
+                Faction = 3,
+            }
+
+            public CorpseTaxonomy Taxonomy;
             public string Value;
 
-            public bool IsSpecies => !Type.IsNullOrEmpty() && Type == "Species";
-            public bool IsBase => !Type.IsNullOrEmpty() && Type == "Base";
-            public bool IsFaction => !Type.IsNullOrEmpty() && Type == "Faction";
-            public bool IsAny => !Type.IsNullOrEmpty() && Type == "Any";
+            public bool IsAny => Taxonomy == CorpseTaxonomy.Any;
+            public bool IsSpecies => Taxonomy == CorpseTaxonomy.Species;
+            public bool IsBase => Taxonomy == CorpseTaxonomy.Base;
+            public bool IsFaction => Taxonomy == CorpseTaxonomy.Faction;
 
             private CorpseItem()
             {
-                Type = null;
+                Taxonomy = CorpseTaxonomy.Empty;
                 Value = null;
             }
 
-            public CorpseItem(string Type, string Value)
+            public CorpseItem(CorpseTaxonomy Taxonomy, string Value)
                 : this()
             {
-                this.Type = Type;
+                this.Taxonomy = Taxonomy;
                 this.Value = Value;
             }
 
-            public bool CorpseCompletesThisStep(GameObject CorpseObject)
+            public bool CorpseCompletesThisStep(GameObject CorpseObject) => Taxonomy switch
             {
-                if (IsSpecies
-                    && IsCorpse(CorpseObject)
-                    && GetAllCorpsesOfSpecies(Value).Contains(CorpseObject.Blueprint))
-                {
-                    return true;
-                }
-                if (IsBase
-                    && IsCorpse(CorpseObject)
-                    && CorpseObject.GetBlueprint().InheritsFrom(Value))
-                {
-                    return true;
-                }
-                if (IsFaction
-                    && IsCorpse(CorpseObject)
-                    && GetAllCorpsesOfFaction(Value).Contains(CorpseObject.Blueprint))
-                {
-                    return true;
-                }
-                if (IsAny
-                    && IsCorpse(CorpseObject))
-                {
-                    return true;
-                }
-                return false;
-            }
+                CorpseTaxonomy.Any =>
+                    IsCorpse(CorpseObject),
+
+                CorpseTaxonomy.Species =>
+                    IsCorpse(CorpseObject)
+                    && GetAllCorpsesOfSpecies(Value).Contains(CorpseObject.Blueprint),
+
+                CorpseTaxonomy.Base =>
+                    IsCorpse(CorpseObject)
+                    && CorpseObject.GetBlueprint().InheritsFrom(Value),
+
+                CorpseTaxonomy.Faction =>
+                    IsCorpse(CorpseObject)
+                    && GetAllCorpsesOfFaction(Value).Contains(CorpseObject.Blueprint),
+
+                _ => false,
+            };
+
+            public string GetACorpseForThisStep() => Taxonomy switch
+            {
+                CorpseTaxonomy.Any =>
+                    GameObjectFactory.Factory
+                    ?.GetBlueprintsInheritingFrom("Corpse")
+                    ?.GetRandomElementCosmetic(bp => !bp.IsBaseBlueprint()).Name,
+
+                CorpseTaxonomy.Species =>
+                    GetAllCorpsesOfSpecies(Value)
+                    ?.GetRandomElementCosmetic(),
+
+                CorpseTaxonomy.Base =>
+                    GetAllBaseCorpse(bp => bp.InheritsFrom(Value))
+                    ?.GetRandomElementCosmetic(),
+
+                CorpseTaxonomy.Faction =>
+                    GetAllCorpsesOfFaction(Value)
+                    ?.GetRandomElementCosmetic(),
+
+                _ => null,
+            };
         }
 
         private UD_FleshGolems_CorpseQuestSystem ParentSystem;
@@ -92,9 +115,33 @@ namespace XRL.World.QuestManagers
             this.ParentSystem = ParentSystem;
         }
 
-        public void FinishStep()
+        public bool FinishStep()
         {
-            Finished = true;
+            if (!Finished)
+            {
+                Finished = true;
+                if (!Name.IsNullOrEmpty() 
+                    && ParentSystem?.Quest?.StepsByID[Name] is QuestStep thisStep)
+                {
+                    thisStep.Finished = true;
+                }
+                return true;
+            }
+            return false;
+        }
+        public bool UnfinishStep()
+        {
+            if (Finished)
+            {
+                Finished = false;
+                if (!Name.IsNullOrEmpty()
+                    && ParentSystem?.Quest?.StepsByID[Name] is QuestStep thisStep)
+                {
+                    thisStep.Finished = false;
+                }
+                return true;
+            }
+            return false;
         }
 
         public void Write(SerializationWriter Writer)

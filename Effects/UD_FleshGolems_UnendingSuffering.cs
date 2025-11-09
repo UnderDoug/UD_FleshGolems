@@ -298,7 +298,7 @@ namespace XRL.World.Effects
         }
         public override bool HandleEvent(PhysicalContactEvent E)
         {
-            E.Actor.MakeBloodstained(E.Object.GetBleedLiquid(), Stat.RollCached("1d2"));
+            E.Actor.MakeBloody(E.Object.GetBleedLiquid(), Stat.RollCached("2d2-2"));
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(AfterLevelGainedEvent E)

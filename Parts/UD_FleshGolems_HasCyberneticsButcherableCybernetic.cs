@@ -27,6 +27,9 @@ namespace XRL.World.Parts
         public string Count;
 
         public bool UseImplantedAdjectiveIfImplanted;
+        public double Commerce;
+        public int BlurValueAmount;
+        public double BlurValueMargin;
 
         public bool KeepOnFail;
         private bool MarkedForOblivion;
@@ -42,6 +45,9 @@ namespace XRL.World.Parts
             Count = "1";
 
             UseImplantedAdjectiveIfImplanted = true;
+            Commerce = -1.0;
+            BlurValueAmount = 0;
+            BlurValueMargin = 0.0;
 
             KeepOnFail = true;
             MarkedForOblivion = false;
@@ -117,7 +123,7 @@ namespace XRL.World.Parts
             string Base = null,
             Predicate<GameObjectBlueprint> Filter = null)
         {
-            return EncountersAPI.GetABlueprintModel(BP => BlueprintMatchesSpec(BP, Blueprint, Type, Tag, Base, Filter));
+            return EncountersAPI.GetACreatureBlueprintModel(BP => BlueprintMatchesSpec(BP, Blueprint, Type, Tag, Base, Filter));
         }
         public static GameObject GetCreatureFromSpec(
             string Blueprint = null,
@@ -139,7 +145,19 @@ namespace XRL.World.Parts
             ButcherableCyberneticPart = Corpse.RequirePart<CyberneticsButcherableCybernetic>();
             return true;
         }
-
+        public static bool EmbedCyberneticWithSuccessChance(
+            CyberneticsButcherableCybernetic ButcherableCyberneticPart,
+            GameObject CyberneticObject,
+            int SuccessChance)
+        {
+            ButcherableCyberneticPart.Cybernetics.Add(CyberneticObject);
+            if (ButcherableCyberneticPart.Cybernetics.Contains(CyberneticObject))
+            {
+                ButcherableCyberneticPart.BaseSuccessChance = SuccessChance;
+                return true;
+            }
+            return false;
+        }
         public bool EmbedButcherableCybernetics()
         {
             bool any = false;
@@ -175,11 +193,10 @@ namespace XRL.World.Parts
                 {
                     foreach (string cyberneticBlueprint in Cybernetics.CachedCommaExpansion())
                     {
-                        UnityEngine.Debug.Log("    " + nameof(cyberneticBlueprint) + ": " + cyberneticBlueprint);
+                        // UnityEngine.Debug.Log("    " + nameof(cyberneticBlueprint) + ": " + cyberneticBlueprint);
                         if (GameObject.Create(cyberneticBlueprint) is GameObject cyberneticObject)
                         {
-                            butcherableCybernetic.Cybernetics.Add(cyberneticObject);
-                            any = true;
+                            any = EmbedCyberneticWithSuccessChance(butcherableCybernetic, cyberneticObject, 100);
                         }
                     }
                 }
@@ -216,7 +233,7 @@ namespace XRL.World.Parts
 
                     if (processTable)
                     {
-                        UnityEngine.Debug.Log(nameof(processTable) + ": \"" + processTable + "\"");
+                        // UnityEngine.Debug.Log(nameof(processTable) + ": \"" + processTable + "\"");
                     }
 
                     int maxAtempts = 5;
@@ -224,20 +241,19 @@ namespace XRL.World.Parts
                     {
                         for (int j = 0; j < maxAtempts; j++)
                         {
-                            if (PopulationManager.CreateOneFrom(processedTable) is GameObject cybernticObject)
+                            if (PopulationManager.CreateOneFrom(processedTable) is GameObject cyberneticObject)
                             {
-                                if (!cybernticObject.TryGetPart(out CyberneticsBaseItem cyberneticsBaseItem))
+                                if (!cyberneticObject.TryGetPart(out CyberneticsBaseItem cyberneticsBaseItem))
                                 {
                                     MetricsManager.LogModError(
                                         mod: Utils.ThisMod,
                                         Message: nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + " " +
-                                            "pulled non-cybernetic " + (cybernticObject?.DebugName ?? NULL) + " from table " + Table);
-                                    cybernticObject.Obliterate();
+                                            "pulled non-cybernetic " + (cyberneticObject?.DebugName ?? NULL) + " from table " + Table);
+                                    cyberneticObject.Obliterate();
                                 }
                                 else
                                 {
-                                    butcherableCybernetic.Cybernetics.Add(cybernticObject);
-                                    any = true;
+                                    any = EmbedCyberneticWithSuccessChance(butcherableCybernetic, cyberneticObject, 100);
                                     break;
                                 }
                             }
@@ -275,21 +291,20 @@ namespace XRL.World.Parts
                     SanitizeLimbType(ForLimb, out ForLimb, Wildcards);
                     for (int i = 0; i < rolledCount; i++)
                     {
-                        if (GameObject.Create(EncountersAPI.GetAnItemBlueprint(b => IsBlueprintForLimb(b, ForLimb))) is GameObject cybernticObject)
+                        if (GameObject.Create(EncountersAPI.GetAnItemBlueprint(b => IsBlueprintForLimb(b, ForLimb))) is GameObject cyberneticObject)
                         {
-                            if (!cybernticObject.TryGetPart(out CyberneticsBaseItem cyberneticsBaseItem))
+                            if (!cyberneticObject.TryGetPart(out CyberneticsBaseItem cyberneticsBaseItem))
                             {
                                 MetricsManager.LogModError(
                                     mod: Utils.ThisMod,
                                     Message: nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + " " +
-                                        "pulled non-cybernetic " + (cybernticObject?.DebugName ?? Const.NULL) + " " +
+                                        "pulled non-cybernetic " + (cyberneticObject?.DebugName ?? NULL) + " " +
                                         nameof(ForLimb) + " " + ForLimb);
-                                cybernticObject.Obliterate();
+                                cyberneticObject.Obliterate();
                             }
                             else
                             {
-                                butcherableCybernetic.Cybernetics.Add(cybernticObject);
-                                any = true;
+                                any = EmbedCyberneticWithSuccessChance(butcherableCybernetic, cyberneticObject, 100);
                                 break;
                             }
                         }
@@ -302,6 +317,67 @@ namespace XRL.World.Parts
         public bool EmbedButcherableCyberneticsForLimb()
         {
             return EmbedButcherableCyberneticsForLimb(ParentObject, ForLimb, Count);
+        }
+
+        public static bool SetCommerceValue(GameObject Corpse, double Commerce)
+        {
+            if (Commerce > -1.0)
+            {
+                Corpse.RequirePart<Commerce>().Value = Commerce;
+                return true;
+            }
+            return false;
+        }
+        public bool SetCommerceValue(double Commerce)
+        {
+            return SetCommerceValue(ParentObject, Commerce);
+        }
+        public static void BlurValue(GameObject Corpse, int BlurValueAmount)
+        {
+            if (Corpse.RequirePart<Commerce>() is var corpseCommerce)
+            {
+                if (BlurValueAmount > 0)
+                {
+                    corpseCommerce.BlurValue(BlurValueAmount);
+                }
+            }
+        }
+        public void BlurValue(int BlurValueAmount)
+        {
+            BlurValue(ParentObject, BlurValueAmount);
+        }
+        public static void BlurValue(GameObject Corpse, double BlurValueMargin)
+        {
+            if (Corpse.RequirePart<Commerce>() is var corpseCommerce)
+            {
+                if (BlurValueMargin > 0.0)
+                {
+                    corpseCommerce.BlurValue(BlurValueMargin);
+                }
+            }
+        }
+        public void BlurValue(double BlurValueMargin)
+        {
+            BlurValue(ParentObject, BlurValueMargin);
+        }
+        public static void BlurValue(GameObject Corpse, int BlurValueAmount, double BlurValueMargin)
+        {
+            BlurValue(Corpse, BlurValueAmount);
+            BlurValue(Corpse, BlurValueMargin);
+        }
+        public void BlurValue(int BlurValueAmount, double BlurValueMargin)
+        {
+            BlurValue(BlurValueAmount);
+            BlurValue(BlurValueMargin);
+        }
+        public static void AdjustCommerceValue(GameObject Corpse, double Commerce, int BlurValueAmount, double BlurValueMargin)
+        {
+            SetCommerceValue(Corpse, Commerce);
+            BlurValue(Corpse, BlurValueAmount, BlurValueMargin);
+        }
+        public void AdjustCommerceValue(double Commerce, int BlurValueAmount, double BlurValueMargin)
+        {
+            AdjustCommerceValue(ParentObject, Commerce, BlurValueAmount, BlurValueMargin);
         }
 
         public override bool WantEvent(int ID, int Cascade)
@@ -334,6 +410,7 @@ namespace XRL.World.Parts
                     {
                         ParentObject.Render.DisplayName.Replace(" ", " " + randomCreatureBlueprint.DisplayName() + " ");
                     }
+                    AdjustCommerceValue(Commerce, BlurValueAmount, BlurValueMargin);
                 }
                 else
                 {

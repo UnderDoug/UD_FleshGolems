@@ -107,11 +107,11 @@
       <table Name="GutsmongerInventory" Number="1" />
       <table Name="UD_FleshGolems Mad Monger Tier {zonetier}" Number="4-5" />
       <table Name="UD_FleshGolems Mad Monger Tier Random" Number="4-5" />
-      <table Name="UD_FleshGolems Mad Monger Tier 7" Chance="10" Number="0-2" />
-      <table Name="UD_FleshGolems Mad Monger Tier 8" Chance="5" Number="0-2" />
-      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso" Number="0-2" />
-      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso 2" Chance="15" Number="0-2" />
-      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso 3" Chance="5" Number="0-2" />
+      <table Name="UD_FleshGolems Mad Monger Tier 7" Chance="10,5,1" Number="0-2" />
+      <table Name="UD_FleshGolems Mad Monger Tier 8" Chance="5,1" Number="0-2" />
+      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso" Chance="100,75,25,5,5" Number="0-2" />
+      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso 2" Chance="15,5,1" Number="0-2" />
+      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso 3" Chance="5,1" Number="0-2" />
     </group>
   </population>
   

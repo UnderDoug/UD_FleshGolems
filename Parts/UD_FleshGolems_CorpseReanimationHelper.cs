@@ -713,8 +713,7 @@ namespace XRL.World.Parts
                     && (convo.ConversationID == "NewlySentientBeings" || !convoID.IsNullOrEmpty()))
                 {
                     convoID ??= "UD_FleshGolems NewlyReanimatedBeings";
-                    frankenCorpse.RemovePart(convo);
-                    convo = frankenCorpse.AddPart(new ConversationScript(convoID));
+                    convo.ConversationID = convoID;
                 }
 
                 Epithets frankenEpithets = null;
@@ -983,8 +982,7 @@ namespace XRL.World.Parts
                     if (sourceBlueprint.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG) is string sourceCreatureConvoID
                         && convo != null)
                     {
-                        frankenCorpse.RemovePart(convo);
-                        convo = frankenCorpse.AddPart(new ConversationScript(convoID));
+                        convo.ConversationID = sourceCreatureConvoID;
                     }
 
                     if (sourceBlueprint.GetPropertyOrTag(REANIMATED_EPITHETS_TAG) is string sourceCreatureEpithets)
@@ -1217,10 +1215,9 @@ namespace XRL.World.Parts
 
                 if (!UD_FleshGolems_Reanimated.HasWorldGenerated || excludedFromDynamicEncounters)
                 {
-                    if (PastLife?.ConversationScript is ConversationScript pastConversation)
+                    if (PastLife?.ConversationScriptID is string pastConversationID)
                     {
-                        frankenCorpse.RemovePart<ConversationScript>();
-                        frankenCorpse.AddPart(pastConversation);
+                        convo.ConversationID = pastConversationID;
                     }
                 }
 

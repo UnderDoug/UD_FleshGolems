@@ -81,7 +81,7 @@
         </text>
       </choice>
 
-      <choice ID="SayMeHelp" Target="ReactThenHelp" StartQuest="You Raise Me Up">
+      <choice ID="SayMeHelp" Target="ReactThenHelp" StartQuest="UD_FleshGolems You Raise Me Up">
         <text IfTrueKin="True" Priority="1">
           I will do as you ask.
         </text>
@@ -130,8 +130,8 @@
       </choice>
 
       <choice ID="SayQuestLeg1Complete" Target="RespondQuestLeg1Complete"
-              IfHaveQuest="Find 3 Questionable Materials (for Science)"
-              IfHaveQuestProperty="Completable~true">
+              IfHaveQuest="UD_FleshGolems Find 3 Questionable Materials (for Science)"
+              IfHaveQuestProperty="UD_FleshGolems Find 3 Questionable Materials (for Science)~Completable`true">
         <text IfTrueKin="true" Priority="1">
           Yes, with no small amount of effort.
         </text>
@@ -149,7 +149,7 @@
       <!--choice GotoID="ActiveQuest" IfHaveQuest="If, Then, Else" IfNotFinishedQuestStep="If, Then, Else~Reunite Tau with Her Chime">Explain once more what I must do with Tau's chime.</choice-->
 
       <choice ID="SayYouLookSick" Target="ReactINOTSICK" IfNotLastChoice="SayYouLookSick" IfNotTrueKin="true"
-          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 3">
+          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 5">
         <text IfHavePart="Chimera" Priority="1">
           You move like wounded prey.
         </text>
@@ -161,14 +161,14 @@
         </text>
       </choice>
       <choice ID="GoadYouLookSick" Target="ReactINOTSICK_TK" IfTrueKin="True"
-          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 3">
+          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 5">
         <text Priority="1">
           Not taking to the implants well?
         </text>
       </choice>
 
       <choice ID="AskWhyMeMeat" Target="AnswerWhyYouMeat" IfNotLastChoice="AskWhyMeMeat"
-          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 6">
+          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 9">
         <text IfTrueKin="True" Priority="1">
           Why do you call me rare meat?
         </text>
@@ -676,8 +676,8 @@
     </node>
     <!-- Quest Started -->
 
-    <start ID="QuestLeg1Started" Inherits="AlwaysHaveChoices" Priority="2"
-           IfHaveQuest="Find 3 Questionable Materials (for Science)">
+    <start ID="QuestLeg1Started" Priority="2" Inherits="BaseSequence"
+           IfHaveQuest="UD_FleshGolems Find 3 Questionable Materials (for Science)">
       <text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
         Dare I ask whether or not that insatiable affront you seem intent on keeping around has consumed all the corpses I require?
       </text>
@@ -696,6 +696,29 @@
       <choice UseID="SayQuestLeg1Ongoing" />
       <choice UseID="SayQuestLeg1Complete" />
     </start>
+    
+    <node ID="RespondQuestLeg1Ongoing" Inherits="AlwaysHaveChoices">
+      <text IfTrueKin="true" Priority="1">
+        Well then what are you doing here rare meat, get back out there!
+
+        The obsolescence of your people must not be delayed any further.
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        I see, perhaps prime meat isn’t an accurate descriptor for you.
+
+        Get back out there or I may have to start reconsidering the terms of our arrangement
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        What’s the problem, is the mediocre Esper   hesitant to kill fellow prey?
+
+        No matter, this is the task I have contracted you to complete, failure to comply will result in severe punishment.
+      </text>
+      <text>
+        Work faster!! While you may lack any truly distinguishing characteristics, I trust that this task is simple enough for someone of your middling potential to accomplish.
+
+        Regardless, failure to complete this task will result in vivisection, keep that in mind, meat.
+      </text>
+    </node>
     
   </conversation> 
 </conversations>

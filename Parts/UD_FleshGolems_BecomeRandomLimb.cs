@@ -50,6 +50,9 @@ namespace XRL.World.Parts
         public string Count;
 
         public bool UseImplantedAdjectiveIfImplanted;
+        public double Commerce;
+        public int BlurValueAmount;
+        public double BlurValueMargin;
 
         public bool KeepOnFail;
         private bool MarkedForOblivion;
@@ -70,6 +73,9 @@ namespace XRL.World.Parts
             Count = "1";
 
             UseImplantedAdjectiveIfImplanted = true;
+            Commerce = -1.0;
+            BlurValueAmount = 0;
+            BlurValueMargin = 0.0;
 
             KeepOnFail = false;
             MarkedForOblivion = false;
@@ -102,9 +108,18 @@ namespace XRL.World.Parts
 
         public override bool WantEvent(int ID, int Cascade) => base.WantEvent(ID, Cascade)
             || ID == EnvironmentalUpdateEvent.ID
+            || ID == TakenEvent.ID
             || ID == AfterObjectCreatedEvent.ID;
 
         public override bool HandleEvent(EnvironmentalUpdateEvent E)
+        {
+            if (!KeepOnFail && MarkedForOblivion)
+            {
+                ParentObject.Obliterate();
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(TakenEvent E)
         {
             if (!KeepOnFail && MarkedForOblivion)
             {
@@ -240,7 +255,7 @@ namespace XRL.World.Parts
                     }
                     if (hasCybernetics)
                     {
-                        severedLimbObject.RequirePart<Commerce>().Value = 180;
+                        AdjustCommerceValue(severedLimbObject, Commerce, BlurValueAmount, BlurValueMargin);
                         E.ReplacementObject = severedLimbObject;
                     }
                     else

@@ -46,7 +46,7 @@ namespace XRL.World.Parts
         [NonSerialized]
         public PronounSet PronounSet;
 
-        public ConversationScript ConversationScript;
+        public string ConversationScriptID;
 
         [NonSerialized]
         public Dictionary<string, Statistic> Stats;
@@ -86,7 +86,7 @@ namespace XRL.World.Parts
             Brain = null;
             Gender = null;
             PronounSet = null;
-            ConversationScript = null;
+            ConversationScriptID = null;
 
             Stats = null;
             Species = null;
@@ -182,7 +182,7 @@ namespace XRL.World.Parts
                     {
                         PronounSet = new(pastPronouns);
                     }
-                    ConversationScript = PastLife?.GetPart<ConversationScript>();
+                    ConversationScriptID = PastLife?.GetPart<ConversationScript>()?.ConversationID;
 
                     Stats = new(PastLife?.Statistics);
                     Species = PastLife?.GetSpecies();
@@ -262,7 +262,7 @@ namespace XRL.World.Parts
                 Brain = PrevPastLife.Brain;
                 Gender = PrevPastLife.Gender;
                 PronounSet = PrevPastLife.PronounSet;
-                ConversationScript = PrevPastLife.ConversationScript;
+                ConversationScriptID = PrevPastLife.ConversationScriptID;
 
                 Stats = PrevPastLife.Stats;
                 Species = PrevPastLife.Species;
@@ -351,7 +351,7 @@ namespace XRL.World.Parts
                 }
                 debugLog(nameof(Gender), Gender);
                 debugLog(nameof(PronounSet), PronounSet);
-                debugLog(nameof(ConversationScript), ConversationScript?.ConversationID);
+                debugLog(nameof(ConversationScriptID), ConversationScriptID);
 
                 debugLog(nameof(Stats), Stats?.Count);
                 foreach ((string statName, Statistic stat) in Stats ?? new())

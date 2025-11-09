@@ -4,10 +4,14 @@
   <object Name="Creature" Load="Merge">
     <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="8000" />
     <builder Name="UD_FleshGolems_OptionallyReanimated" ChanceOneIn="1" />
+    <tag Name="UD_FleshGolems_NonRobot" />
   </object>
   <object Name="ActiveFungus" Load="Merge">
     <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="8000" />
     <builder Name="UD_FleshGolems_OptionallyReanimated" ChanceOneIn="1" />
+  </object>
+  <object Name="Robot" Load="Merge">
+    <removetag Name="UD_FleshGolems_NonRobot" />
   </object>
   
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
@@ -21,17 +25,11 @@
     <tag Name="PronounSet" Value="xe/xem/xyr/xyrs/xemself" />
     <property Name="Story" Value="UD_FleshGolems Jofo Qudwufo" />
     <part Name="ConversationScript" ConversationID="UD_FleshGolems Jofo Qudwufo" />
-    <!--part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" /-->
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
-    <!--part Name="Render" DisplayName="Jofo Qudwufo" />
-    <xtagGrammar Proper="true" />
-    <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="1" /-->
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
     <part Name="Render" DetailColor="w" TileColor="&amp;r"
           DisplayName="the corpse of Jofo Qudwufo" />
-    <!--  RenderString="w" ColorString="&amp;r"
-          Tile="Creatures/sw_golem_snapjaw.png" -->
     <property Name="CreatureName" Value="Jofo Qudwufo" />
     <property Name="UD_FleshGolems_CreatureProperName" Value="Jofo Qudwufo" />
     <property Name="UD_FleshGolems_PastLife_Blueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
@@ -74,6 +72,7 @@
     <inventoryobject Blueprint="CyberneticsCreditWedge3" Number="1-2" IntProperties="WontSell:1" />
     <inventoryobject Blueprint="Di-Thermo Beam" Number="2" IntProperties="AlwaysEquipAsWeapon:1" />
     <inventoryobject Blueprint="Pocketed Lab Coat" Number="1" IntProperties="AlwaysEquipAsArmor:1" />
+    <inventoryobject Blueprint="Nuclear Cell" Number="2" IntProperties="WontSell:1" />
     <property Name="WontSell" Value="Di-Thermo Beam,Pocketed Lab Coat" />
   </object>
   
