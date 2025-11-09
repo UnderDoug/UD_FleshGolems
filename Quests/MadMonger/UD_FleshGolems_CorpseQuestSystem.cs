@@ -41,6 +41,7 @@ namespace XRL.World.QuestManagers
         public static List<string> SpeciesExclusions => new()
         {
             "robot",
+            "mecha",
             "*",
             "[",
             "]",

@@ -13,7 +13,7 @@
               IfStateGreaterThanState="UD_FleshGolems_Jofo_TimesGreeted,UD_FleshGolems_Jofo_TimesOfferedHelp" Priority="3">
           Let's keep looking, =refname=.
         </text>
-        <text IfTestState="UD_FleshGolems_AskedJofo_HelpFindMadMonger" Priority="2">Let's start looking, =refname=.</text>
+        <text IfTestState="UD_FleshGolems_AskedJofo_HelpFindMadMonger" Priority="2">Let's look for the Mad 'Monger, =refname=.</text>
         <text IfTestState="UD_FleshGolems_AskedJofo_WhereMadMonger" Priority="1">Live and drink, =refname=.</text>
         <text>Live and drink.</text>
       </choice>

@@ -11,6 +11,7 @@ using XRL.World.Parts;
 using XRL.World.Conversations;
 
 using SerializeField = UnityEngine.SerializeField;
+using XRL.World.ObjectBuilders;
 
 namespace XRL.World.Effects
 {
@@ -172,14 +173,20 @@ namespace XRL.World.Effects
 
         public virtual void StartMessage(GameObject Object)
         {
-            Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
-            DidX(Verb: "begin", Extra: DisplayNameStripped, EndMark: "!", ColorAsBadFor: Object);
+            if (UD_FleshGolems_Reanimated.HasWorldGenerated)
+            {
+                Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
+                DidX(Verb: "begin", Extra: DisplayNameStripped, EndMark: "!", ColorAsBadFor: Object);
+            }
         }
 
         public virtual void WorsenedMessage(GameObject Object)
         {
-            Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
-            DidX(Verb: "start", Extra: DisplayNameStripped + " even worse", EndMark: "!", ColorAsBadFor: Object);
+            if (UD_FleshGolems_Reanimated.HasWorldGenerated)
+            {
+                Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
+                DidX(Verb: "start", Extra: DisplayNameStripped + " even worse", EndMark: "!", ColorAsBadFor: Object);
+            }
         }
 
         public void Suffer()

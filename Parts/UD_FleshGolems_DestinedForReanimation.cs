@@ -416,19 +416,22 @@ namespace XRL.World.Parts
                 && !DelayTillZoneBuild
                 && ParentObject is GameObject soonToBeCorpse)
             {
+                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(EnvironmentalUpdateEvent) + ", " +
                     nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
                     nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL));
-
+                */
                 if ((soonToBeCorpse.Blueprint.IsPlayerBlueprint() || soonToBeCorpse.IsPlayer())
                     && !HaveFakedDeath
                     && UD_FleshGolems_Reanimated.TryProduceCorpse(soonToBeCorpse, out Corpse))
                 {
+                    /*
                     UnityEngine.Debug.Log(
                         nameof(The) + "." + nameof(The.Player) + ": " + (The.Player?.DebugName ?? NULL) + ", " +
                         nameof(UD_FleshGolems.Extensions.IsPlayerBlueprint) + ": " + soonToBeCorpse.Blueprint.IsPlayerBlueprint() + ", " +
                         nameof(soonToBeCorpse.IsPlayer) + ": " + soonToBeCorpse.IsPlayer());
+                    */
                     soonToBeCorpse.RegisterPartEvent(this, "GameStart");
                 }
                 else
@@ -451,11 +454,12 @@ namespace XRL.World.Parts
                 && soonToBeCorpse == E.Object
                 && Corpse is GameObject soonToBeCreature)
             {
+                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(BeforeObjectCreatedEvent) + ", " +
                     nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
                     nameof(soonToBeCreature) + ": " + (soonToBeCreature?.DebugName ?? NULL));
-
+                */
                 bool reanimated = false;
                 if (soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
                 {
@@ -467,7 +471,7 @@ namespace XRL.World.Parts
                         Attempted = true;
                     }
                 }
-                UnityEngine.Debug.Log("    [" + (reanimated ? TICK : CROSS) + "] " + (reanimated ? "Success" : "Fail") + "!");
+                // UnityEngine.Debug.Log("    [" + (reanimated ? TICK : CROSS) + "] " + (reanimated ? "Success" : "Fail") + "!");
             }
             return base.HandleEvent(E);
         }
@@ -486,15 +490,16 @@ namespace XRL.World.Parts
                 && Corpse is GameObject soonToBeCreature
                 && soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
             {
+                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(BeforeZoneBuiltEvent) + ", " +
                     nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
                     nameof(soonToBeCreature) + ": " + (soonToBeCreature?.DebugName ?? NULL));
-
+                */
                 bool reanimated = reanimationHelper.Animate();
                 ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
                 Attempted = true;
-                UnityEngine.Debug.Log("    [" + (reanimated ? TICK : CROSS) + "] " + (reanimated ? "Success" : "Fail") + "!");
+                // UnityEngine.Debug.Log("    [" + (reanimated ? TICK : CROSS) + "] " + (reanimated ? "Success" : "Fail") + "!");
             }
             return base.HandleEvent(E);
         }

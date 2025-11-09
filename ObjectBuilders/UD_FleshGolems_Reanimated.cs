@@ -367,8 +367,10 @@ namespace XRL.World.ObjectBuilders
             if (Blueprint == null)
             {
                 if (Popup.ShowYesNo(
-                    "This {{Y|probably}} won't end your run. " +
-                    "Last chance to back out.\n\n" +
+                    // "This {{Y|probably}} won't end your run. " +
+                    // "Last chance to back out.\n\n" +
+                    // "If you meant to reanimate something else," +
+                    "Reanimating the player by wish is currently broken.\n\n" +
                     "If you meant to reanimate something else," +
                     "make this wish again but include a blueprint.") == DialogResult.No)
                 {
