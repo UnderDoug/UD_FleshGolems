@@ -81,26 +81,7 @@
         </text>
       </choice>
 
-      <choice ID="SayMeHelp" Target="ReactThenHelp"
-              Execute="XRL.World.QuestManagers.UD_FleshGolems_CorpseQuestSystem:StartQuest">
-        <text IfTrueKin="True" Priority="1">
-          I will do as you ask.
-        </text>
-        <text IfHavePart="Chimera" Priority="1">
-          I will do this for you.
-        </text>
-        <text IfHavePart="Esper" Priority="1">
-          I will do this for you.
-        </text>
-        <text>
-          I will complete this task.
-        </text>
-        <part Name="Tag">{{W|[start quest]}}</part>
-      </choice>
-
-      <choice ID="SayMeHaveCorpses" Target="ReactYouHaveCorpses"
-              IfNotHaveQuest="Find 3 Questionable Materials (for Science)"
-              IfHaveQuestProperty="Completable~true">
+      <choice ID="SayMeHelp" Target="ReactThenHelp" StartQuest="You Raise Me Up">
         <text IfTrueKin="True" Priority="1">
           I will do as you ask.
         </text>
@@ -130,7 +111,7 @@
               IfNotTrueKin="true" IfHaveAnyMorphotype="false">
         <text>This isn't the job for me.</text>
         <!-- Leads to fight threat -->
-        <part Name="Tag">{{W|[refuse quest]}}</part>
+        <!--part Name="Tag">{{W|[refuse quest]}}</part-->
       </choice>
 
       <choice ID="SayQuestLeg1Ongoing" Target="RespondQuestLeg1Ongoing" >
@@ -148,7 +129,9 @@
         </text>
       </choice>
 
-      <choice ID="SayQuestLeg1Complete" Target="RespondQuestLeg1Complete" >
+      <choice ID="SayQuestLeg1Complete" Target="RespondQuestLeg1Complete"
+              IfHaveQuest="Find 3 Questionable Materials (for Science)"
+              IfHaveQuestProperty="Completable~true">
         <text IfTrueKin="true" Priority="1">
           Yes, with no small amount of effort.
         </text>
@@ -428,27 +411,6 @@
       </text>
     </start>
     
-    <start ID="QuestLeg1Started" Inherits="AlwaysHaveChoices" Priority="2"
-           IfHaveQuest="Find 3 Questionable Materials (for Science)">
-      <text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
-        Dare I ask whether or not that insatiable affront you seem intent on keeping around has consumed all the corpses I require?
-      </text>
-      <text IfTrueKin="true" Priority="1">
-        Have you found the corpses I require?
-      </text>
-      <text IfHavePart="Chimera" Priority="1">
-        Have you tracked down the creatures I need, prime meat?
-      </text>
-      <text IfHavePart="Esper" Priority="1">
-        Have you divined the location of and obtained the materials I require grey meat?
-      </text>
-      <text>
-        Have you completed I task I have entrusted you with meat?
-      </text>
-      <choice UseID="SayQuestLeg1Ongoing" />
-      <choice UseID="SayQuestLeg1Complete" />
-    </start>
-    
     <!-- Returning directly to the start feels strange, so the below acts as a landing node for the "there was something else" choice -->
     <node ID="PostGreeting" Inherits="AlwaysHaveChoices">
       <text IfTrueKin="true" Priority="1">
@@ -514,7 +476,80 @@
         {{Y|Most}} of them anyways.
       </text>
     </node>
+
+    <!-- Health Question -->
+    <node ID="ReactINOTSICK" Inherits="AlwaysHaveChoices">
+      <text IfHavePart="Chimera" Priority="1">
+        What is pain besides another word for progress. With the power of my vast genius I found a way to bypass those damned restrictions on one of the many millennium-old chrome surgeons scattered throughout this land.
+
+        I however didn't anticipate that my very physiology would reject augmentation, though it's irrelevant, I will find a way, no matter how much material it takes!!
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        You figure that out all by yourself? Why don't use your nigh-omniscient extra-sensory gaze to tell me more obvious things.
+
+        The pain and instability are small prices to pay for my inevitable cybernetic ascension, though I suppose you wouldn't know the value of such a pursuit. Having a mind nearly as small as your body's capacity for mutation after all.
+      </text>
+      <text>
+        Silence meat. I, and I alone, determine what is sick and what is healthy!
+
+        My current impaired state is just the first step of my inevitable transformation into the perfect fusion of bodily permutation and cybernetic augmentation!!
+      </text>
+    </node>
+
+    <node ID="ReactINOTSICK_TK" AllowEscape="false">
+      <text IfTrueKin="true" Priority="1">
+        Oh go drink piss, you worthless piece of obsolete trash!!!! I'll show you who wears them better!!!
+      </text>
+      <choice GotoID="End">
+        <text>
+          You could certainly try!
+        </text>
+        <part Name="StartFight" />
+      </choice>
+      <!-- if this is the first time here, you can back down. If it's not, both choices start the fight-->
+      <choice GotoID="End" IfTestState="UD_FleshGolems_Monger_ReactINOTSICK_TK_BackedDown">
+        <text>Whoa! Hold on!</text>
+        <part Name="StartFight" />
+      </choice>
+      <choice GotoID="ReactINOTSICK_TK_BackedDown" IfNotHaveState="UD_FleshGolems_Monger_ReactINOTSICK_TK_BackedDown">
+        <text>Whoa! Hold on...</text>
+      </choice>
+      <removepart Name="Trade" />
+    </node>
+    <node ID="ReactINOTSICK_TK_BackedDown" AllowEscape="false"
+          SetBooleanState="UD_FleshGolems_Monger_ReactINOTSICK_TK_BackedDown,true">
+      <text IfTrueKin="true" Priority="1">
+        {{emote|*cough*}} {{emote|*cough*}}
+
+        I'm feeling {{emote|*cough*}}... {{Y|merciful}} this time. You won't get another jab like that. Now... {{emote|*cough*}}
+
+        {{W|Piss off!}}
+      </text>
+      <choice GotoID="End">
+        <text>Sorry...</text>
+      </choice>
+      <removepart Name="Trade" />
+    </node>
+    <!-- End Health Question -->
+
+    <node ID="AnswerWhyYouMeat" Inherits="AlwaysHaveChoices">
+      <text IfTrueKin="true" Priority="1">
+        Rare meat, yes, though rare may be a misnomer, I speak only in terms of the difficulty of finding materials like yours, not to the value that they provide; worthless meat may be a more accurate descriptor.
+      </text>
+      <text IfHavePart="Chimera" Priority="1">
+        Prime meat, yes, for your body is as ever-changing and adapting as my unfathomablely vast intellect, so much room for error too, so much excess material. You are the height of usefulness to me.
+      </text>
+      <text IfHavePart="Esper" Priority="1">
+        Grey meat, yes, for only your brain is of interest to me. The rest of you is as immutable as the form of those worthless and yet tantalizingly metal-laced animals who strut around as though they are the children of gods.
+      </text>
+      <text>
+        Meat, yes, would you prefer I say materials, components, resources? You are a walking sack of things I find moderately useful. Be grateful I've decided not to harvest you for the time being.
+      </text>
+    </node>
     
+    <!-- Quest Dialogue -->
+
+    <!-- Start Quest -->
     <node ID="AnswerINeedHelp" Inherits="BaseSequence">
       <text IfTrueKin="true" Priority="1">
         The walking relic wants to help me replace it, how grand. Very well rare meat, there is actually something you could do to assist.
@@ -639,76 +674,28 @@
         <part Name="StartFight" />
       </choice>
     </node>
-    
-    <!-- Health Question -->
-    <node ID="ReactINOTSICK" Inherits="AlwaysHaveChoices">
-      <text IfHavePart="Chimera" Priority="1">
-        What is pain besides another word for progress. With the power of my vast genius I found a way to bypass those damned restrictions on one of the many millennium-old chrome surgeons scattered throughout this land.
+    <!-- Quest Started -->
 
-        I however didn't anticipate that my very physiology would reject augmentation, though it's irrelevant, I will find a way, no matter how much material it takes!!
+    <start ID="QuestLeg1Started" Inherits="AlwaysHaveChoices" Priority="2"
+           IfHaveQuest="Find 3 Questionable Materials (for Science)">
+      <text IfHaveCompanionWithBlueprint="UD_FleshGolems Jofo Qudwufo" Priority="2">
+        Dare I ask whether or not that insatiable affront you seem intent on keeping around has consumed all the corpses I require?
       </text>
-      <text IfHavePart="Esper" Priority="1">
-        You figure that out all by yourself? Why don't use your nigh-omniscient extra-sensory gaze to tell me more obvious things.
-
-        The pain and instability are small prices to pay for my inevitable cybernetic ascension, though I suppose you wouldn't know the value of such a pursuit. Having a mind nearly as small as your body's capacity for mutation after all.
-      </text>
-      <text>
-        Silence meat. I, and I alone, determine what is sick and what is healthy!
-
-        My current impaired state is just the first step of my inevitable transformation into the perfect fusion of bodily permutation and cybernetic augmentation!!
-      </text>
-    </node>
-    
-    <node ID="ReactINOTSICK_TK" AllowEscape="false">
       <text IfTrueKin="true" Priority="1">
-        Oh go drink piss, you worthless piece of obsolete trash!!!! I'll show you who wears them better!!!
-      </text>
-      <choice GotoID="End">
-        <text>
-          You could certainly try!
-        </text>
-        <part Name="StartFight" />
-      </choice>
-      <!-- if this is the first time here, you can back down. If it's not, both choices start the fight-->
-      <choice GotoID="End" IfTestState="UD_FleshGolems_Monger_ReactINOTSICK_TK_BackedDown">
-        <text>Whoa! Hold on!</text>
-        <part Name="StartFight" />
-      </choice>
-      <choice GotoID="ReactINOTSICK_TK_BackedDown" IfNotHaveState="UD_FleshGolems_Monger_ReactINOTSICK_TK_BackedDown">
-        <text>Whoa! Hold on...</text>
-      </choice>
-      <removepart Name="Trade" />
-    </node>
-    <node ID="ReactINOTSICK_TK_BackedDown" AllowEscape="false"
-          SetBooleanState="UD_FleshGolems_Monger_ReactINOTSICK_TK_BackedDown,true">
-      <text IfTrueKin="true" Priority="1">
-        {{emote|*cough*}} {{emote|*cough*}}
-
-        I'm feeling {{emote|*cough*}}... {{Y|merciful}} this time. You won't get another jab like that. Now... {{emote|*cough*}}
-
-        {{W|Piss off!}}
-      </text>
-      <choice GotoID="End">
-        <text>Sorry...</text>
-      </choice>
-      <removepart Name="Trade" />
-    </node>
-    <!-- End Health Question -->
-
-    <node ID="AnswerWhyYouMeat" Inherits="AlwaysHaveChoices">
-      <text IfTrueKin="true" Priority="1">
-        Rare meat, yes, though rare may be a misnomer, I speak only in terms of the difficulty of finding materials like yours, not to the value that they provide; worthless meat may be a more accurate descriptor.
+        Have you found the corpses I require?
       </text>
       <text IfHavePart="Chimera" Priority="1">
-        Prime meat, yes, for your body is as ever-changing and adapting as my unfathomablely vast intellect, so much room for error too, so much excess material. You are the height of usefulness to me.
+        Have you tracked down the creatures I need, prime meat?
       </text>
       <text IfHavePart="Esper" Priority="1">
-        Grey meat, yes, for only your brain is of interest to me. The rest of you is as immutable as the form of those worthless and yet tantalizingly metal-laced animals who strut around as though they are the children of gods.
+        Have you divined the location of and obtained the materials I require grey meat?
       </text>
       <text>
-        Meat, yes, would you prefer I say materials, components, resources? You are a walking sack of things I find moderately useful. Be grateful I've decided not to harvest you for the time being.
+        Have you completed I task I have entrusted you with meat?
       </text>
-    </node>
+      <choice UseID="SayQuestLeg1Ongoing" />
+      <choice UseID="SayQuestLeg1Complete" />
+    </start>
     
   </conversation> 
 </conversations>

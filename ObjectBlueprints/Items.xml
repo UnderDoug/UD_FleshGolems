@@ -175,7 +175,7 @@
     <part Name="Render" DisplayName="nondescript limb" />
     <removepart Name="Food" />
     <removetag Name="AggregatedIngredient" />
-    <part Name="UD_FleshGolems_BecomeRandomLimb" TagsOneOf="Organic" TypesOneOf="Arm,Hand,Leg,Foot,Head,Face" Count="1" />
+    <part Name="UD_FleshGolems_BecomeRandomLimb" TypesOneOf="Arm,Hand,Leg,Foot,Head,Face" Count="1" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="BaseItem" Value="*noinherit" />
   </object>
@@ -388,6 +388,21 @@
   <object Name="UD_FleshGolems GenericLimb WithCybernetics TK Cybernetics8" Inherits="UD_FleshGolems GenericLimb WithCybernetics Cybernetics8">
     <part Name="UD_FleshGolems_BecomeRandomLimb" BasesOneOf="BaseTrueKin" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <!--
+  
+  General Items
+  
+  -->
+  <object Name="Pocketed Lab Coat" Inherits="Plastifer Chem Vest">
+    <part Name="Armor" Ego="1" CarryBonus="5" />
+    <part Name="Render" DisplayName="pocketed {{Y|lab c{{r|o}}at}}" ColorString="&amp;Y" TileColor="&amp;r" DetailColor="Y" />
+    <part Name="Commerce" Value="850" />
+    <part Name="Description" Short="Woven fabric, white-bleached and stained with chemicals, creates a barrier between its wearer and the physical dangers of their profession. By cosmic need for balance or merely pure happenstance, this protection is offset by a relentless hubris seemingly instilled in anyone who makes it a habit drape it over their shoulders." />
+    <part Name="Physics" Weight="15" />
+    <part Name="Examiner" Complexity="5" />
+    <tag Name="Tier" Value="5" />
   </object>
   
 </objects>

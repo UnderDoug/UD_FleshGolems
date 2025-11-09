@@ -39,25 +39,19 @@ namespace XRL.World.Quests
 
         public override bool HandleEvent(ZoneActivatedEvent E)
         {
-            if (E.Zone.X == 1 && E.Zone.Y == 1 && E.Zone.Z == 10 && E.Zone.GetTerrainObject()?.Blueprint == "TerrainFungalCenter")
-            {
-                The.Game.FinishQuestStep("Pax Klanq, I Presume?", "Seek the Heart of the Rainbow");
-            }
+            
             return base.HandleEvent(E);
         }
 
         public override bool HandleEvent(AfterConsumeEvent E)
         {
-            if (E.Ingest && E.Object.Blueprint == "Godshroom Cap")
-            {
-                The.Game.FinishQuestStep("Pax Klanq, I Presume?", "Eat the God's Flesh");
-            }
+            
             return base.HandleEvent(E);
         }
 
         public override GameObject GetInfluencer()
         {
-            return GameObject.FindByBlueprint("Pax Klanq");
+            return GameObject.FindByBlueprint("UD_FleshGolems Mad Monger");
         }
     }
 }

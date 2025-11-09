@@ -12,11 +12,13 @@ using XRL.World;
 using XRL.World.Parts;
 using XRL.World.Quests;
 using XRL.Language;
+using XRL.Wish;
 
 using CorpseItem =  XRL.World.QuestManagers.UD_FleshGolems_CorpseQuestStep.CorpseItem;
 
 using UD_FleshGolems;
-using XRL.Wish;
+using static UD_FleshGolems.Const;
+using static UD_FleshGolems.Utils;
 
 namespace XRL.World.QuestManagers
 {
@@ -43,6 +45,12 @@ namespace XRL.World.QuestManagers
             "[",
             "]",
             "mech",
+        };
+
+        public static List<string> FactionExclusions => new()
+        {
+            "robots",
+            "trolls",
         };
 
         public static List<string> FindVerbs => new()
@@ -81,12 +89,14 @@ namespace XRL.World.QuestManagers
 
 
         public static List<string> AllBaseCorpses => new(GetAllBaseCorpse());
-
         public static List<string> AllSpecies => new(GetAllSpecies(SpeciesIsNotExcluded));
+        public static List<string> AllFactions => new(GetFactionsWithMembersWhoDropCorpses());
 
         public string MyQuestID;
 
         public Quest ParentQuest;
+
+        public QuestStep ParentQuestStep => (ParentQuest == null || ParentQuest.StepsByID.IsNullOrEmpty()) ? null : ParentQuest.StepsByID["I'm dead serious!"];
 
         public List<UD_FleshGolems_CorpseQuestStep> Steps;
 
@@ -103,6 +113,7 @@ namespace XRL.World.QuestManagers
         {
             MyQuestID = null;
             ParentQuest = null;
+
             Steps = new();
 
             PlayerAdvisedCompletable = false;
@@ -205,11 +216,33 @@ namespace XRL.World.QuestManagers
             List<string> corpseBlueprintList = new();
             foreach (GameObjectBlueprint bp in GameObjectFactory.Factory.GetFactionMembers(Faction, SkipExclude: true, ReadOnly: true))
             {
-                if (bp.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string corpseBleprint)
+                if (bp.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseChance), out int corpseChance)
+                    && corpseChance > 0
+                    && bp.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string corpseBleprint)
                     && !corpseBlueprintList.Contains(corpseBleprint))
                 {
                     corpseBlueprintList.Add(corpseBleprint);
                     yield return corpseBleprint;
+                }
+            }
+        }
+        public static IEnumerable<string> GetFactionsWithMembersWhoDropCorpses()
+        {
+            foreach (string factionName in Factions.GetFactionNames())
+            {
+                bool anyDroppableCorpse = false;
+                foreach (GameObjectBlueprint bp in GameObjectFactory.Factory.GetFactionMembers(factionName, SkipExclude: true, ReadOnly: true))
+                {
+                    if (bp.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseChance), out int corpseChance)
+                        && corpseChance > 0)
+                    {
+                        anyDroppableCorpse = true;
+                        break;
+                    }
+                }
+                if (anyDroppableCorpse && !FactionExclusions.Contains(factionName))
+                {
+                    yield return factionName;
                 }
             }
         }
@@ -306,7 +339,7 @@ namespace XRL.World.QuestManagers
             string species = AllSpecies.GetRandomElementCosmetic(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
-                Name = "Find a " + species.Capitalize() + " Corpse",
+                Name = "Find " + Grammar.A(species.Capitalize()) + " Corpse",
                 Text = "\"Acquire\" a corpse from any member of the " + species.ToLower() + " species...",
                 Corpse = new("Species", species)
             };
@@ -321,13 +354,29 @@ namespace XRL.World.QuestManagers
             string baseBlueprint = AllBaseCorpses.GetRandomElementCosmetic(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
-                Name = "Find a " + baseBlueprint.Capitalize(),
+                Name = "Find " + Grammar.A(baseBlueprint.Capitalize()),
                 Text = "\"Acquire\" any kind of " + baseBlueprint.ToLower() + "...",
                 Corpse = new("Base", baseBlueprint)
             };
             return questStep;
         }
         public UD_FleshGolems_CorpseQuestStep CreateABaseCorpseQuestStep()
+        {
+            return CreateABaseCorpseQuestStep(Steps, this);
+        }
+        public static UD_FleshGolems_CorpseQuestStep CreateAFactionCorpseQuestStep(List<UD_FleshGolems_CorpseQuestStep> Steps, UD_FleshGolems_CorpseQuestSystem ParentSystem)
+        {
+            string factionName = AllFactions.GetRandomElementCosmetic(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
+            string factionDisplayName = Factions.Get(factionName).DisplayName;
+            UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
+            {
+                Name = "Find " + Grammar.A(Grammar.MakeTitleCase(factionDisplayName)) + " Corpse",
+                Text = "\"Acquire\" any kind of " + factionDisplayName.ToLower() + "...",
+                Corpse = new("Faction", factionName)
+            };
+            return questStep;
+        }
+        public UD_FleshGolems_CorpseQuestStep CreateAFactionCorpseQuestStep()
         {
             return CreateABaseCorpseQuestStep(Steps, this);
         }
@@ -382,10 +431,11 @@ namespace XRL.World.QuestManagers
                 }
                 else
                 {
-                    corpseQuestStep = (questStepRoll % 2) switch
+                    corpseQuestStep = (questStepRoll % 3) switch
                     {
                         0 => CreateASpeciesCorpseQuestStep(),
-                        _ => CreateABaseCorpseQuestStep(),
+                        1 => CreateABaseCorpseQuestStep(),
+                        _ => CreateAFactionCorpseQuestStep(),
                     };
                 }
                 debugLog(nameof(corpseQuestStep), corpseQuestStep.Name, 1);
@@ -484,7 +534,7 @@ namespace XRL.World.QuestManagers
             {
                 Game.TryGetQuest(UD_FleshGolems_YouRaiseMeUpQuestSystem.MongerQuestID, out ParentQuest);
             }
-            ParentQuest?.FinishStep(ParentQuest.StepsByID[QuestName]);
+            ParentQuest?.FinishStep(ParentQuestStep);
             base.Finish();
         }
         public override void Register(XRLGame Game, IEventRegistrar Registrar)
@@ -499,10 +549,12 @@ namespace XRL.World.QuestManagers
 
         public override bool HandleEvent(ZoneActivatedEvent E)
         {
+            /*
             if (E.Zone.X == 1 && E.Zone.Y == 1 && E.Zone.Z == 10 && E.Zone.GetTerrainObject()?.Blueprint == "TerrainFungalCenter")
             {
                 The.Game.FinishQuestStep("Pax Klanq, I Presume?", "Seek the Heart of the Rainbow");
             }
+            */
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(TookEvent E)
@@ -522,12 +574,46 @@ namespace XRL.World.QuestManagers
         [WishCommand(Command = "UD_FleshGolems debug quest species")]
         public static void DebugQuestSpecies_Wish()
         {
+            UnityEngine.Debug.Log("All species (included or not)...");
             foreach (string species in GetAllSpecies())
-            /*
-            UnityEngine.Debug.Log(
-                "    " + nameof(CyberneticsTable) + ": " + (CyberneticsTable ?? NULL) + ", " +
-                nameof(processedTable) + ": " + processedTable);
-            */
+            {
+                UnityEngine.Debug.Log(AppendYehNah("    ", SpeciesIsNotExcluded(species)) + species);
+            }
+        }
+        [WishCommand(Command = "UD_FleshGolems debug quest species corpses")]
+        public static void DebugQuestSpeciesCorpses_Wish()
+        {
+            if (Popup.PickOption("pick which species", Options: AllSpecies) is int pickedOption)
+            {
+                UnityEngine.Debug.Log("All " + AllSpecies[pickedOption] + " corpses...");
+                foreach (string corpse in GetAllCorpsesOfSpecies(AllSpecies[pickedOption]))
+                {
+                    UnityEngine.Debug.Log("    " + corpse);
+                }
+            }
+        }
+
+        [WishCommand(Command = "UD_FleshGolems debug quest base")]
+        public static void DebugQuestBases_Wish()
+        {
+            UnityEngine.Debug.Log("All Base Corpse blueprints...");
+            foreach (string baseCorpse in GetAllBaseCorpse())
+            {
+                UnityEngine.Debug.Log("    " + baseCorpse);
+            }
+        }
+        [WishCommand(Command = "UD_FleshGolems debug quest faction corpses")]
+        public static void DebugQuestFactionCorpses_Wish()
+        {
+            List<string> factionNames = new(Factions.GetFactionNames());
+            if (Popup.PickOption("pick which faction", Options: Factions.GetFactionNames()) is int pickedOption)
+            {
+                UnityEngine.Debug.Log("All " + factionNames[pickedOption] + " corpses...");
+                foreach (string corpse in GetAllCorpsesOfSpecies(factionNames[pickedOption]))
+                {
+                    UnityEngine.Debug.Log("    " + corpse);
+                }
+            }
         }
     }
 }

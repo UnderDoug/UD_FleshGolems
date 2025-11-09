@@ -17,7 +17,7 @@ namespace UD_FleshGolems
     [HasCallAfterGameLoaded]
     public static class Startup
     {
-        [GameBasedStaticCache]
+        [GameBasedStaticCache( CreateInstance = false )]
         [ModSensitiveStaticCache]
         public static string _PlayerBlueprint = null;
 

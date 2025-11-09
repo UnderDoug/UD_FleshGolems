@@ -136,7 +136,8 @@ namespace XRL.World.Parts
             {
                 return false;
             }
-            return Corpse.TryRequirePart(out  ButcherableCyberneticPart);
+            ButcherableCyberneticPart = Corpse.RequirePart<CyberneticsButcherableCybernetic>();
+            return true;
         }
 
         public bool EmbedButcherableCybernetics()

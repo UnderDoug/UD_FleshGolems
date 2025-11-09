@@ -80,5 +80,18 @@ namespace UD_FleshGolems
             }
             return output;
         }
+
+        public static string AppendTick(string String, bool WithSpaceAfter = true)
+        {
+            return String + "[" + TICK + "]" + (WithSpaceAfter ? " " : "");
+        }
+        public static string AppendCross(string String, bool WithSpaceAfter = true)
+        {
+            return String + "[" + CROSS + "]" + (WithSpaceAfter ? " " : "");
+        }
+        public static string AppendYehNah(string String, bool Yeh, bool WithSpaceAfter = true)
+        {
+            return String + "[" + (Yeh ? TICK : CROSS) + "]" + (WithSpaceAfter ? " " : "");
+        }
     }
 }

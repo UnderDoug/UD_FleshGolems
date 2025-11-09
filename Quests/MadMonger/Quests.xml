@@ -8,20 +8,31 @@
          HagiographCategory="DoesSomethingRad"
          Gospel="While wandering in the jungle near Bethesda Susa, =name= came upon a man of inquiry and together they pondered the secrets of life and death. From then on, =name= kept a different outlook on what it means to be alive on =player.possessive= person.">
 
-    <step Name="Don't be nervous" XP="1000">
+    <step Name="I'm dead serious!" XP="0">
+      <text>Gather some &quot;unconventional&quot; materials for The Mad 'Monger.</text>
+      <!-- Handled by UD_FleshGolems_CorpseQuestSystem -->
+    </step>
+
+    <step Name="Don't be nervous!" XP="1000">
       <text>Find a phial of thinking liquid.</text>
+      <!-- Need 1 Brain Brine -->
     </step>
 
     <step Name="A real fixer-upper!" XP="1000">
       <text>Repair the broken equipment.</text>
+      <!-- Fix the 2 broken Electrothings and the broken Medical Bed -->
     </step>
 
+    <!-- Mad Monger places himself onto the med bed with the corpses and the brain brine -->
+    
     <step Name="You must construct additional pylons" XP="1000">
       <text>Any sufficient amount of power will do, though.</text>
+      <!-- bring enough nuclear cells or higher to achieve a mecha-core worth of power or be capable of massive electrical damage -->
     </step>
 
     <step Name="Flip the switch!" XP="3250">
       <text>Let the sparks fly.</text>
+      <!-- either flip the nearby switch deal enough electrical damage in one go to break both Electrothings and the Medical Bed -->
     </step>
 
   </quest>

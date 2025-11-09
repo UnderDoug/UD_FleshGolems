@@ -16,6 +16,7 @@ using XRL.World.AI;
 
 using UD_FleshGolems;
 using static UD_FleshGolems.Const;
+using static UD_FleshGolems.Utils;
 
 namespace XRL.World.Parts
 {
@@ -112,14 +113,6 @@ namespace XRL.World.Parts
                     return pastLifeBlueprint;
                 }
                 blueprint = pastLifeBlueprint;
-            }
-            static string AppendTick(string String, bool WithSpaceAfter = true)
-            {
-                return String + "[" + TICK + "]" + (WithSpaceAfter ? " " : "");
-            }
-            static string AppendCross(string String, bool WithSpaceAfter = true)
-            {
-                return String + "[" + CROSS + "]" + (WithSpaceAfter ? " " : "");
             }
             string corpseDisplayNameLC = Corpse.GetReferenceDisplayName(Stripped: true, Short: true)?.ToLower();
             string baseGameSourceBlueprintLC = Corpse.GetPropertyOrTag("SourceBlueprint")?.ToLower();
@@ -1248,8 +1241,9 @@ namespace XRL.World.Parts
                     }
                 }
 
-                if (frankenCorpse != null && frankenCorpse.TryRequirePart(out UD_FleshGolems_ReanimatedCorpse reanimatedCorpse))
+                if (frankenCorpse != null)
                 {
+                    var reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
                     reanimatedCorpse.SourceObject = SourceObject;
                 }
                 return true;

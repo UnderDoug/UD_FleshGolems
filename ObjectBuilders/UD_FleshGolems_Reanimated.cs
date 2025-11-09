@@ -159,9 +159,9 @@ namespace XRL.World.ObjectBuilders
                             ImplantRemovedEvent.Send(Creature, part.Cybernetics, part);
                         }
                     }
-                    if (list != null
-                         && corpse.TryRequirePart(out CyberneticsButcherableCybernetic butcherableCybernetics))
+                    if (list != null)
                     {
+                        var butcherableCybernetics = corpse.RequirePart<CyberneticsButcherableCybernetic>();
                         butcherableCybernetics.Cybernetics.AddRange(list);
                         corpse.RemovePart<Food>();
                     }
@@ -170,39 +170,36 @@ namespace XRL.World.ObjectBuilders
                 {
                     corpse.RemovePart<UD_FleshGolems_PastLife>();
                 }
-                if (corpse.TryRequirePart(out UD_FleshGolems_PastLife pastLife))
+
+                var pastLife = corpse.RequirePart<UD_FleshGolems_PastLife>();
+
+                if (Creature.TryGetPart(out UD_FleshGolems_PastLife prevPastLife)
+                    && prevPastLife.Init && prevPastLife.IsCorpse)
                 {
-                    if (Creature.TryGetPart(out UD_FleshGolems_PastLife prevPastLife)
-                        && prevPastLife.Init && prevPastLife.IsCorpse)
-                    {
-                        corpse.RemovePart(pastLife);
-                        pastLife = corpse.AddPart(prevPastLife);
-                    }
-                    else
-                    {
-                        pastLife.Initialize(Creature);
-                    }
+                    corpse.RemovePart(pastLife);
+                    pastLife = corpse.AddPart(prevPastLife);
                 }
+                else
+                {
+                    pastLife.Initialize(Creature);
+                }
+
                 corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(Creature);
                 if (ForImmediateReanimation)
                 {
-                    if (!Creature.TryRequirePart(out UD_FleshGolems_DestinedForReanimation destinedForReanimation))
-                    {
-                        throw new InvalidOperationException("Failed to " + nameof(UD_FleshGolems.Extensions.TryRequirePart) + "<" + nameof(UD_FleshGolems_DestinedForReanimation) + ">");
-                    }
-                    if (!corpse.TryRequirePart(out UD_FleshGolems_CorpseReanimationHelper corpseReanimationHelper))
-                    {
-                        throw new InvalidOperationException("Failed to " + nameof(UD_FleshGolems.Extensions.TryRequirePart) + "<" + nameof(UD_FleshGolems_CorpseReanimationHelper) + ">");
-                    }
+                    var corpseReanimationHelper = corpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>();
+                    corpseReanimationHelper.AlwaysAnimate = true;
+
+                    var destinedForReanimation = Creature.RequirePart<UD_FleshGolems_DestinedForReanimation>();
                     destinedForReanimation.Corpse = corpse;
                     destinedForReanimation.BuiltToBeReanimated = true;
-                    corpseReanimationHelper.AlwaysAnimate = true;
                     if (PartsThatNeedDelayedReanimation.Any(s => Creature.HasPart(s)))
                     {
                         destinedForReanimation.DelayTillZoneBuild = true;
                     }
                 }
-                if (PreemptivelyGiveEnergy)
+
+                if (PreemptivelyGiveEnergy) // fixes cases where corpses are being added to the action queue before they've been animated.
                 {
                     corpse.Statistics ??= new();
                     string energyStatName = "Energy";

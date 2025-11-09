@@ -60,8 +60,8 @@
   
   <object Name="UD_FleshGolems Mad Monger" Inherits="Gutsmonger">
     <part Name="Render" DisplayName="'Monger" DetailColor="R" TileColor="&amp;W" />
-    <part Name="Description" Short="A frantic slip of a =subject.personTerm= =subject.verb:flitter= agitatedly between the several foci of =subject.possessive= attention. Were it not for =subject.possessive= palid countenance, one might have assumed the vigor of youth kept =subject.objective= so spry, though =subject.possessive= poorly state appears, perhaps a bit... unnatural. =subject.Subjective= =subject.verb:wear:afterpronoun= =subject.possessive= affect of general disgust in much the same way as =subject.subjective= =subject.verb:wear:afterpronoun= =subject.possessive= chem-vest: seemingly out of habit, and perhaps a misplaced sense of self-import." />
-    <part Name="Honorifics" Primary="The Mad" />
+    <part Name="Description" Short="A frantic slip of a =subject.personTerm= =subject.verb:flitter= agitatedly between the several foci of =subject.possessive= attention. Were it not for =subject.possessive= palid countenance, one might have assumed the vigor of youth kept =subject.objective= so spry, though =subject.possessive= poorly state appears, perhaps a bit... unnatural. =subject.Subjective= =subject.verb:wear:afterpronoun= =subject.possessive= affect of general disgust in much the same way as =subject.subjective= =subject.verb:wear:afterpronoun= =subject.possessive= lab coat: seemingly out of habit, and perhaps a misplaced sense of self-import." />
+    <part Name="Honorifics" Primary="the Mad" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Mad Monger Corpse" CorpseChance="100" />
     <part Name="GenericInventoryRestocker" Table="UD_FleshGolems Mad Monger Stock Table" Chance="85" />
     <part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" />
@@ -71,9 +71,10 @@
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <intproperty Name="CyberneticRejectionSyndromeModifier" Value="100" />
-    <inventoryobject Blueprint="CyberneticsCreditWedge3" Number="1-2" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" />
-    <inventoryobject Blueprint="Di-Thermo Beam" Number="2" IntProperties="AlwaysEquipAsWeapon:1,WontSell:1" />
-    <inventoryobject Blueprint="Plastifer Chem Vest" Number="2" IntProperties="AlwaysEquipAsArmor:1,WontSell:1" />
+    <inventoryobject Blueprint="CyberneticsCreditWedge3" Number="1-2" IntProperties="WontSell:1" />
+    <inventoryobject Blueprint="Di-Thermo Beam" Number="2" IntProperties="AlwaysEquipAsWeapon:1" />
+    <inventoryobject Blueprint="Pocketed Lab Coat" Number="1" IntProperties="AlwaysEquipAsArmor:1" />
+    <property Name="WontSell" Value="Di-Thermo Beam,Pocketed Lab Coat" />
   </object>
   
   <object Name="UD_FleshGolems Mad Monger Corpse" Inherits="Human Corpse">
