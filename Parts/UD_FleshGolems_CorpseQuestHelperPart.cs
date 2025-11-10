@@ -4,11 +4,25 @@ using System.Text;
 
 using XRL.World;
 using XRL.Liquids;
+using UD_FleshGolems;
 
 namespace XRL.World.Parts
 {
     public  class UD_FleshGolems_CorpseQuestHelperPart : IScribedPart
     {
+        private bool _MarkedForCollection;
+        public bool MarkedForCollection
+        {
+            get => _MarkedForCollection;
+            set
+            {
+                ParentObject
+                    ?.SetWontSell(value)
+                    ?.SetImportant(value);
+                _MarkedForCollection = value;
+            }
+        }
+
         public bool Primed;
 
         public bool IsCorpse => ParentObject != null
@@ -28,6 +42,7 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_CorpseQuestHelperPart()
         {
+            MarkedForCollection = false;
             Primed = false;
         }
 

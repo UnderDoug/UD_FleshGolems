@@ -241,7 +241,7 @@ namespace XRL.World.Parts
                 deathMessage = deathMessage.Replace("You died.", "");
                 deathIcon = deathIcons[deathCategory];
             }
-            if (DoFakeMessage)
+            if (DoFakeMessage && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
             {
                 Popup.ShowSpace(
                     Message: deathMessage,
@@ -266,7 +266,7 @@ namespace XRL.World.Parts
             {
                 deathReason = deathReason[0].ToString().ToLower() + deathReason.Substring(1);
             }
-            if (DoJournal && !deathReason.IsNullOrEmpty() && The.Player != null)
+            if (DoJournal && !deathReason.IsNullOrEmpty() && The.Player != null && Dying.IsPlayer())
             {
                 // Died
                 JournalAPI.AddAccomplishment(
@@ -282,7 +282,7 @@ namespace XRL.World.Parts
                     gospelText: "=Name= just, sorta... woke back up from dying...");
             }
 
-            if (DoAchievement)
+            if (DoAchievement && Dying.IsPlayer())
             {
                 Achievement.DIE.Unlock();
             }

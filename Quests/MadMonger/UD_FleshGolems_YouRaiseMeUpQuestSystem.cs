@@ -54,7 +54,7 @@ namespace XRL.World.Quests
 
         public override bool HandleEvent(QuestStepFinishedEvent E)
         {
-            // UnityEngine.Debug.Log(E.Quest + ", " + E.Step.ID + " Finished");
+            UnityEngine.Debug.Log(E.Quest + ", " + E.Step.ID + " Finished");
             if (E.Quest == Quest
                 && E.Step is QuestStep thisStep
                 && QuestSteps.Contains(thisStep))

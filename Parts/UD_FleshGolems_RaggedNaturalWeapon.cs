@@ -12,6 +12,9 @@ namespace XRL.World.Parts
         public static string Adjective => "{{UD_FleshGolems_ragged|ragged}}";
 
         [SerializeField]
+        private bool DisplayNameAdjusted;
+        
+        [SerializeField]
         private string WielderID;
 
         private GameObject _Wielder;
@@ -30,6 +33,9 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_RaggedNaturalWeapon()
         {
+            DisplayNameAdjusted = false;
+            WielderID = null;
+            _Wielder = null;
             Description = null;
         }
 
@@ -57,47 +63,11 @@ namespace XRL.World.Parts
             if (ParentObject.TryGetPart(out Description descriptionPart)
                 && Wielder != null || this.Wielder != null)
             {
-
-                List<string> poeticFeatures = new()
-                {
-                    "viscera",
-                    "muck",
-                };
-                if (Wielder?.GetxTag("TextFragments", "PoeticFeatures") is string poeticFeaturesXTag)
-                {
-                    poeticFeatures = new(poeticFeaturesXTag.Split(','));
-                }
-                string firstPoeticFeature = poeticFeatures.GetRandomElement() ?? "Viscera";
-                poeticFeatures.Remove(firstPoeticFeature);
-                string secondPoeticFeature = poeticFeatures.GetRandomElement() ?? "muck";
-                poeticFeatures.Remove(secondPoeticFeature);
-
-                string poeticVerb = Wielder?.GetxTag("TextFragments", "PoeticVerbs")?.Split(',')?.GetRandomElement() ?? "squirming";
-
-                string poeticAdjective = Wielder?.GetxTag("TextFragments", "PoeticAdjectives")?.Split(',')?.GetRandomElement() ?? "wet";
-
-                List<string> poeticNoises = new()
-                    {
-                        "gurgles",
-                        "slurps",
-                    };
-                if (Wielder?.GetxTag("TextFragments", "PoeticnNoises") is string poeticNoisesXTag)
-                {
-                    poeticFeatures = new(poeticNoisesXTag.Split(','));
-                }
-                string firstPoeticNoise = poeticNoises.GetRandomElement();
-                poeticNoises.Remove(firstPoeticNoise);
-                string secondPoeticNoise = poeticNoises.GetRandomElement();
-                poeticFeatures.Remove(secondPoeticNoise);
-
-                Description = descriptionPart._Short
-                    .Replace("*FirstFeature*", firstPoeticFeature.Capitalize())
-                    .Replace("*secondFeature*", secondPoeticFeature)
-                    .Replace("*verbing*", poeticVerb)
-                    .Replace("*Adjective*", poeticAdjective.Capitalize())
-                    .Replace("*firstNoise*", firstPoeticNoise)
-                    .Replace("*secondNoise*", secondPoeticNoise);
+                Description = descriptionPart._Short.StartReplace().AddObject(Wielder).ToString();
+                UnityEngine.Debug.Log(descriptionPart._Short.StartReplace().AddObject(Wielder).ToString());
+                UnityEngine.Debug.Log(Description);
                 descriptionPart._Short = Description;
+                UnityEngine.Debug.Log(descriptionPart._Short);
             }
         }
 
@@ -109,12 +79,23 @@ namespace XRL.World.Parts
         {
             if ((E.Understood() || E.AsIfKnown) && !E.Object.HasProperName)
             {
+                if (!DisplayNameAdjusted
+                    && ParentObject.Render is Render render
+                    && render.DisplayName.Contains("ragged "))
+                {
+                    render.DisplayName = render.DisplayName.Replace("ragged ", "");
+                    DisplayNameAdjusted = true;
+                }
                 E.AddAdjective(Adjective);
             }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
+            if (Description.IsNullOrEmpty() && Wielder != null)
+            {
+                ProcessDescriptionElements(Wielder);
+            }
             return base.HandleEvent(E);
         }
     }

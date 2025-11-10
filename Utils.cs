@@ -12,6 +12,7 @@ using XRL.CharacterBuilds.Qud;
 
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
+using XRL.World;
 
 namespace UD_FleshGolems
 {
@@ -76,6 +77,25 @@ namespace UD_FleshGolems
                 else
                 {
                     return TextFilters.Weird(Context.Parameters[0]);
+                }
+            }
+            return output;
+        }
+
+        [VariableObjectReplacer]
+        public static string UD_xTag(DelegateContext Context)
+        {
+            string output = null;
+            if (!Context.Parameters.IsNullOrEmpty()
+                && Context.Parameters.Count > 1
+                && Context.Target is GameObject target
+                && target.GetxTag(Context.Parameters[0], Context.Parameters[1]) is string xtag
+                && xtag.CachedCommaExpansion().GetRandomElementCosmetic() is string tagValue)
+            {
+                output = tagValue;
+                if (Context.Capitalize)
+                {
+                    output = tagValue.Capitalize();
                 }
             }
             return output;

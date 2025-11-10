@@ -117,5 +117,11 @@ namespace UD_FleshGolems
             }
             return targetMatches >= matches;
         }
+
+        public static GameObject SetWontSell(this GameObject Item, bool WontSell)
+        {
+            Item.SetIntProperty(nameof(WontSell), WontSell ? 1 : 0, RemoveIfZero: true);
+            return Item;
+        }
     }
 }

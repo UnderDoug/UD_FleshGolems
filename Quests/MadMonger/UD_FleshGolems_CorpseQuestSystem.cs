@@ -466,8 +466,17 @@ namespace XRL.World.QuestManagers
             return false;
         }
 
+        static bool IsCorpseWithQuestHelperPart(GameObject GO)
+            => GO.GetBlueprint().InheritsFrom("Corpse")
+            && GO.HasPart<UD_FleshGolems_CorpseQuestHelperPart>();
+
         public static bool CheckItem(UD_FleshGolems_CorpseQuestSystem CorpseQuestSystem, GameObject Item, bool Unfinish = false)
         {
+            if (Item.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
+                && corpseQuestHelperPart.MarkedForCollection)
+            {
+                return false;
+            }
             foreach (UD_FleshGolems_CorpseQuestStep finishableQuestStep in CorpseQuestSystem?.GetQuestStepsMatchingCorpse(Item))
             {
                 if (!Unfinish)
@@ -510,20 +519,27 @@ namespace XRL.World.QuestManagers
 
         public void ProcessEvent(IActOnItemEvent E, bool Unfinish = false)
         {
-            if (E.Item is GameObject item
-                && CheckItem(item, Unfinish))
+            if (E.Item is GameObject item)
             {
-                if (!Unfinish)
+                if (item.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
+                    && corpseQuestHelperPart.MarkedForCollection)
                 {
-                    item.RequirePart<UD_FleshGolems_CorpseQuestHelperPart>();
-                    item.RegisterEvent(this, DroppedEvent.ID, Serialize: true);
-                    item.RegisterEvent(this, TakenEvent.ID, Serialize: true);
+                    return;
                 }
-                else
+                if (CheckItem(item, Unfinish))
                 {
-                    item.RemovePart<UD_FleshGolems_CorpseQuestHelperPart>();
-                    item.UnregisterEvent(this, DroppedEvent.ID);
-                    item.UnregisterEvent(this, TakenEvent.ID);
+                    if (!Unfinish)
+                    {
+                        item.RequirePart<UD_FleshGolems_CorpseQuestHelperPart>();
+                        item.RegisterEvent(this, DroppedEvent.ID, Serialize: true);
+                        item.RegisterEvent(this, TakenEvent.ID, Serialize: true);
+                    }
+                    else
+                    {
+                        item.RemovePart<UD_FleshGolems_CorpseQuestHelperPart>();
+                        item.UnregisterEvent(this, DroppedEvent.ID);
+                        item.UnregisterEvent(this, TakenEvent.ID);
+                    }
                 }
             }
         }
@@ -595,30 +611,61 @@ namespace XRL.World.QuestManagers
             {
                 Game.TryGetQuest(UD_FleshGolems_YouRaiseMeUpQuestSystem.MongerQuestID, out ParentQuest);
             }
-            ParentQuest?.FinishStep(ParentQuestStep);
+            if (ParentQuest != null && !ParentQuest.IsStepFinished(ParentQuestStep.ID))
+            {
+                ParentQuest.FinishStep(ParentQuestStep);
+            }
             base.Finish();
         }
 
+        // Game Events
         public override void Register(XRLGame Game, IEventRegistrar Registrar)
         {
-            Registrar.Register(ZoneActivatedEvent.ID);
+            Registrar.Register(QuestFinishedEvent.ID);
+        }
+        public override bool HandleEvent(QuestFinishedEvent E)
+        {
+            if (E.Quest == Quest
+                && !Quest.Finished)
+            {
+                if (GetInfluencer() is GameObject influencer
+                    && Player.CurrentZone == influencer?.CurrentZone
+                    && Player.CurrentCell.GetAdjacentCells().Contains(influencer.CurrentCell))
+                {
+                    int giveCount = 0;
+                    List<GameObject> corpseItems = Event.NewGameObjectList(Player.GetInventory(IsCorpseWithQuestHelperPart));
+                    foreach (GameObject corpse in corpseItems)
+                    {
+                        if (corpse.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart questHelperPart))
+                        {
+                            questHelperPart.MarkedForCollection = true;
+                            if (questHelperPart.MarkedForCollection
+                                && !influencer.ReceiveObject(corpse, Context: "Quest"))
+                            {
+                                Popup.ShowFail("You cannot give " + corpse.t() + " to " + influencer.t() + "!");
+                                Player.ReceiveObject(corpse);
+                                continue;
+                            }
+                            foreach(UD_FleshGolems_CorpseQuestStep questStep in GetQuestStepsMatchingCorpse(corpse))
+                            {
+                                questStep.MarkHandedIn();
+                            }
+                            giveCount++;
+                        }
+                    }
+                    if (giveCount < RequiredToComplete)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return base.HandleEvent(E);
         }
 
+        // Player Events
         public override void RegisterPlayer(GameObject Player, IEventRegistrar Registrar)
         {
             Registrar.Register(TookEvent.ID);
-            // Registrar.Register("PerformDrop");
-        }
-
-        public override bool HandleEvent(ZoneActivatedEvent E)
-        {
-            /*
-            if (E.Zone.X == 1 && E.Zone.Y == 1 && E.Zone.Z == 10 && E.Zone.GetTerrainObject()?.Blueprint == "TerrainFungalCenter")
-            {
-                The.Game.FinishQuestStep("Pax Klanq, I Presume?", "Seek the Heart of the Rainbow");
-            }
-            */
-            return base.HandleEvent(E);
         }
         public override bool HandleEvent(TookEvent E)
         {

@@ -68,12 +68,18 @@ namespace XRL.World.QuestManagers
                 _ => false,
             };
 
+            static bool ExceptExclusedCorpses(GameObjectBlueprint bp)
+            {
+                return !bp.IsBaseBlueprint()
+                    && !bp.IsExcludedFromDynamicEncounters();
+            }
+
             public string GetACorpseForThisStep() => Taxonomy switch
             {
                 CorpseTaxonomy.Any =>
                     GameObjectFactory.Factory
                     ?.GetBlueprintsInheritingFrom("Corpse")
-                    ?.GetRandomElementCosmetic(bp => !bp.IsBaseBlueprint()).Name,
+                    ?.GetRandomElementCosmetic(ExceptExclusedCorpses).Name,
 
                 CorpseTaxonomy.Species =>
                     GetAllCorpsesOfSpecies(Value)
@@ -146,6 +152,9 @@ namespace XRL.World.QuestManagers
 
         public bool Finished;
 
+        [SerializeField]
+        private bool HandedIn;
+
         private UD_FleshGolems_CorpseQuestStep()
         {
             Name = null;
@@ -153,12 +162,19 @@ namespace XRL.World.QuestManagers
             Corpse = null;
             Item = null;
             Finished = false;
+            HandedIn = false;
         }
 
         public UD_FleshGolems_CorpseQuestStep(UD_FleshGolems_CorpseQuestSystem ParentSystem)
             : this()
         {
             this.ParentSystem = ParentSystem;
+        }
+
+        public void MarkHandedIn()
+        {
+            FinishStep();
+            HandedIn = true;
         }
 
         public string GenerateStepText()
@@ -183,7 +199,7 @@ namespace XRL.World.QuestManagers
                     return entries
                         .GetRandomElementCosmetic()
                         .Replace(ReplaceFind, FindVerbs.GetRandomElementCosmetic())
-                        .Replace(ReplaceType, Corpse.Value);
+                        .Replace(ReplaceType, Corpse.Value.Replace(" Corpse", ""));
 
                 case CorpseTaxonomy.Faction:
                     entries.AddRange(FactionCorpseQuestText);
@@ -222,7 +238,7 @@ namespace XRL.World.QuestManagers
         }
         public bool UnfinishStep()
         {
-            if (Finished)
+            if (Finished && !HandedIn)
             {
                 Finished = false;
                 if (!Name.IsNullOrEmpty()
