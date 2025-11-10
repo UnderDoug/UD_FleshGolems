@@ -877,6 +877,18 @@ namespace XRL.World.Parts
                 Mutations frankenMutations = frankenCorpse.RequirePart<Mutations>();
                 Skills frankenSkills = frankenCorpse.RequirePart<Skills>();
 
+                if (wasPlayer)
+                {
+                    if (!frankenCorpse.HasSkill(nameof(Survival_Camp)))
+                    {
+                        frankenSkills.AddSkill(nameof(Survival_Camp));
+                    }
+                    if (!frankenCorpse.HasSkill(nameof(Tactics_Run)))
+                    {
+                        frankenSkills.AddSkill(nameof(Tactics_Run));
+                    }
+                }
+
                 if (frankenCorpse.GetBlueprint().Tags.ContainsKey(nameof(Gender)))
                 {
                     frankenCorpse.SetGender(frankenCorpse.GetBlueprint().Tags[nameof(Gender)]);

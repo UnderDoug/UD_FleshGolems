@@ -78,12 +78,14 @@
   
   <object Name="UD_FleshGolems Mad Monger Corpse" Inherits="Human Corpse">
     <!--part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger Corpse" /-->
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
   <object Name="UD_FleshGolems Mad Monger True Kin Corpse" Inherits="Human Corpse">
     <!-- part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger True Corpse" /-->
     <tag Name="Genotype" Value="True Kin" />
     <tag Name="NonMutant" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
   <!--
@@ -142,7 +144,9 @@
 
   <!-- Flesh Golem natural weapons -->
   <object Name="UD_FleshGolems Ragged Weapon" Inherits="NaturalWeapon">
-    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} weapon" />
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} weapon"
+          TileColor="&amp;r" DetailColor="w" ColorString="&amp;r"/>
+    <part Name="RandomColors" DetailColor="w,K,R," />
     <part Name="MeleeWeapon" Slot="" HitBonus="10" PenBonus="0" MaxStrengthBonus="999" Stat="Strength" />
     <part Name="UD_FleshGolems_SetDefaultBehaviorBlueprintWhenDefaultBehavior" />
     <tag Name="BaseObject" Value="*noinherit" />
@@ -170,19 +174,19 @@
 
   <!-- Flesh Golem natural weapons - hand -->
   <object Name="UD_FleshGolems Ragged Hand Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} mitt" Tile="Creatures/natural-weapon-fist.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} mitt" Tile="Creatures/natural-weapon-fist.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
   <object Name="UD_FleshGolems Ragged Hand Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} spade" Tile="Creatures/natural-weapon-drill.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} spade" Tile="Creatures/natural-weapon-drill.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
   <object Name="UD_FleshGolems Ragged Hand LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} blade" Tile="Items/sw_longblade_10.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} blade" Tile="Items/sw_longblade_10.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
   <object Name="UD_FleshGolems Ragged Hand ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} point" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} point" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
   <!-- Flesh Golem natural weapons - face -->
@@ -257,46 +261,46 @@
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Arm ShortBlade" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} thorns" Tile="Creatures/natural-weapon-thorns.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} thorns" Tile="Creatures/natural-weapon-thorns.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
   </object>
   <!-- Flesh Golem natural weapons - body -->
   <object Name="UD_FleshGolems Ragged Body Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Body Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="ridged {{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="ridged {{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Body LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="bladed {{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="bladed {{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Body ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="pointed {{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="pointed {{UD_FleshGolems_ragged|ragged}} bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
   <!-- Flesh Golem natural weapons - tail -->
   <object Name="UD_FleshGolems Ragged Tail Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-tail.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
   <object Name="UD_FleshGolems Ragged Tail Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="ridged {{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="ridged {{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
   <object Name="UD_FleshGolems Ragged Tail LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="bladed {{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="bladed {{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
   <object Name="UD_FleshGolems Ragged Tail ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="pointed {{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;C" />
+    <part Name="Render" DisplayName="pointed {{UD_FleshGolems_ragged|ragged}} tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
   
