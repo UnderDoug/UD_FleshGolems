@@ -146,7 +146,7 @@
   <object Name="UD_FleshGolems Ragged Weapon" Inherits="NaturalWeapon">
     <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} weapon"
           TileColor="&amp;r" DetailColor="w" ColorString="&amp;r"/>
-    <part Name="RandomColors" DetailColor="w,K,R," />
+    <part Name="RandomColors" DetailColor="w,K,R" />
     <part Name="MeleeWeapon" Slot="" HitBonus="10" PenBonus="0" MaxStrengthBonus="999" Stat="Strength" />
     <part Name="UD_FleshGolems_SetDefaultBehaviorBlueprintWhenDefaultBehavior" />
     <tag Name="BaseObject" Value="*noinherit" />
