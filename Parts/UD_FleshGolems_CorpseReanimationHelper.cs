@@ -1060,7 +1060,8 @@ namespace XRL.World.Parts
                             {
                                 whoTheyWere = Grammar.A(whoTheyWere);
                             }
-                            frankenDescription._Short += "\n\n" + "In life, this mess was " + whoTheyWere + ":\n" + sourceDescription;
+
+                            frankenDescription._Short += "\n\n" + "In life, this mess was " + (wasPlayer ? "you." : (whoTheyWere + ":\n" + sourceDescription));
                         }
                         if (!sourceCreatureName.IsNullOrEmpty())
                         {

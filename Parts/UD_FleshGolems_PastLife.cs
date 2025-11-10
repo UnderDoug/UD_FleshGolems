@@ -41,8 +41,12 @@ namespace XRL.World.Parts
         public Brain Brain;
 
         [NonSerialized]
+        public string GenderName;
+        [NonSerialized]
         public Gender Gender;
 
+        [NonSerialized]
+        public string PronounSetName;
         [NonSerialized]
         public PronounSet PronounSet;
 
@@ -84,7 +88,9 @@ namespace XRL.World.Parts
             DeathAddress = (null, null);
 
             Brain = null;
+            GenderName = null;
             Gender = null;
+            PronounSetName = null;
             PronounSet = null;
             ConversationScriptID = null;
 
@@ -173,11 +179,13 @@ namespace XRL.World.Parts
                             }
                         }
                     }
+                    GenderName = PastLife?.GenderName;
                     Gender = new(PastLife?.GetGender(AsIfKnown: true));
                     if (PastLife?.GetGender(AsIfKnown: true) is Gender pastGender)
                     {
                         Gender = new(pastGender);
                     }
+                    PronounSetName = PastLife?.PronounSetName;
                     if (PastLife?.GetPronounSet() is PronounSet pastPronouns)
                     {
                         PronounSet = new(pastPronouns);
@@ -415,51 +423,46 @@ namespace XRL.World.Parts
             base.Write(Basis, Writer);
 
             Writer.WriteOptimized(DeathAddress.DeathZone);
-            Writer.Write(DeathAddress.DeathLocation);
+            Writer.WriteOptimized(DeathAddress.DeathLocation.X);
+            Writer.WriteOptimized(DeathAddress.DeathLocation.Y);
 
             Brain ??= new();
-            Brain.Write(Basis, Writer);
+            Save(Brain, Writer);
 
-            Gender ??= new();
-            Gender.Save(Writer);
+            Writer.WriteOptimized(Gender?.Name);
+            Writer.WriteOptimized(PronounSet?.Name);
 
-            PronounSet ??= new();
-            PronounSet.Save(Writer);
-
-            Writer.WriteOptimized(Stats.Count);
-            foreach ((string statName, Statistic stat) in Stats)
+            Writer.Write(Stats.Count);
+            foreach ((string _, Statistic stat) in Stats)
             {
-                Writer.WriteOptimized(statName);
                 stat.Save(Writer);
             }
         }
-
         public override void Read(GameObject Basis, SerializationReader Reader)
         {
             base.Read(Basis, Reader);
 
-            DeathAddress = new(Reader.ReadOptimizedString(), Reader.ReadLocation2D());
+            DeathAddress = new(Reader.ReadOptimizedString(), new(Reader.ReadOptimizedInt32(), Reader.ReadOptimizedInt32()));
 
-            Brain ??= new();
-            Brain.Read(Basis, Reader);
+            Brain = Load(Basis, Reader) as Brain;
 
-            Gender ??= new();
-            Gender = Gender.Load(Reader);
+            GenderName = Reader.ReadOptimizedString();
 
-            PronounSet ??= new();
-            PronounSet = PronounSet.Load(Reader);
+            PronounSetName = Reader.ReadOptimizedString();
 
-            int statCount = Reader.ReadOptimizedInt32();
+            int statCount = Reader.ReadInt32();
             Stats = new(statCount);
             for (int i = 0; i < statCount; i++)
             {
-                string statName = Reader.ReadOptimizedString();
                 Statistic statistic = Statistic.Load(Reader, Basis);
-                if (statistic != null)
-                {
-                    Stats.TryAdd(statName, statistic);
-                }
+                Stats.TryAdd(statistic.Name, statistic);
             }
+        }
+        public override void FinalizeRead(SerializationReader Reader)
+        {
+            base.FinalizeRead(Reader);
+            Gender = new(GenderName);
+            PronounSet = PronounSet.Get(PronounSetName);
         }
 
         [WishCommand("UD_FleshGolems debug PastLife")]
