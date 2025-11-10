@@ -28,7 +28,7 @@ There will be more steps to the Mad 'Monger's quest in the future, we just ran a
 ## Through Play
 
 ### Corpse Animated Spawn Chance
-Corpses can jsut spawn animated, including after something is killed.
+Corpses can just spawn animated, including after something is killed.
 
 ### Spray-A-Brain & Nano-Neuro Animator
 Corpses can be animated in much the same way as other animatable objects. Corspes you reanimate can be recruited for reputation without having to water ritual them.
@@ -36,4 +36,4 @@ Corpses can be animated in much the same way as other animatable objects. Corspe
 ### Find The Mad 'Monger
 Trade secrets to find the location of the Mad 'Monger, a self-aggrandizing misanthrope with more than a whole chip on his shoulder, who needs your help procuring some strange materials for the "science" he's doing.
 
-He's also a traditional gutsmonger who restocks and sells cybernetics but also pulls from an additional table with Limb-Loot™ Boxes®! These special limbs are implanted with a random cybernetic that can be butchered from them.
+He's also a traditional gutsmonger who restocks and sells cybernetics but also pulls from an additional table with Limb-Lootâ„¢ BoxesÂ®! These special limbs are implanted with a random cybernetic that can be butchered from them.
