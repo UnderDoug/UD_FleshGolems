@@ -84,10 +84,10 @@ namespace XRL.World.Parts
         public bool Animate(out GameObject FrankenCorpse)
         {
             FrankenCorpse = null;
-            UnityEngine.Debug.Log(nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(Animate));
+            // UnityEngine.Debug.Log(nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(Animate));
             if (!ParentObject.HasPart<AnimatedObject>())
             {
-                UnityEngine.Debug.Log("    " + nameof(ParentObject) + " not " + nameof(AnimatedObject));
+                // UnityEngine.Debug.Log("    " + nameof(ParentObject) + " not " + nameof(AnimatedObject));
                 AnimateObject.Animate(ParentObject);
 
                 if (ParentObject.HasPart<AnimatedObject>())
