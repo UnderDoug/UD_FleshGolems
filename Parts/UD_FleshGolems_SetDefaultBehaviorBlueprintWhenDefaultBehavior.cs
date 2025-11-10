@@ -29,6 +29,11 @@ namespace XRL.World.Parts
                 && bodyPart.DefaultBehaviorBlueprint != item.Blueprint)
             {
                 bodyPart.DefaultBehaviorBlueprint = item.Blueprint;
+                if (item.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedNaturalWeapon))
+                {
+                    raggedNaturalWeapon.Wielder = E.Actor;
+                    raggedNaturalWeapon.ProcessDescriptionElements(E.Actor);
+                }
                 Assigned = bodyPart.DefaultBehaviorBlueprint == item.Blueprint;
             }
             return base.HandleEvent(E);

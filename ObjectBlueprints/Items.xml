@@ -11,11 +11,15 @@
     <tag Name="DynamicObjectsTable:AnimatableFurniture" />
     <tag Name="BodyType" Value="Humanoid" />
     <xtagTextFragments
-      Skin="leather"
       PoeticFeatures="viscera,muck,entrails,sinew,bone"
       PoeticVerbs="squirming,wriggling,squelching"
       PoeticAdjectives="wet,moist,meaty"
       PoeticnNoises="gurgles,slurps,squelches" />
+    <xtagTextFragments
+      GrossAdjective="wet,moist,meaty"
+      Skin="leather"
+      HarshAdjective="jagged,cracked,crooked"
+      HardMaterial="bone" />
     <tag Name="AnimatedSkills" Value="CookingAndGathering,CookingAndGathering_Butchery,Persuasion_Intimidate,Multiweapon_Fighting,ShortBlades,Axe,Cudgel,LongBlades" />
     <tag Name="UD_FleshGolems LimbType" Value="*"/>
     <tag Name="UD_FleshGolems CyberneticsSlot" Value="*"/>

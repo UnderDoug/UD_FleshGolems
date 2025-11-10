@@ -22,6 +22,137 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_DestinedForReanimation : IScribedPart
     {
+        // Keys list lifted from Books' https://codeberg.org/librarianmage/EloquentDeath
+        // which you should check out for being awesome.
+        public static Dictionary<string, List<string>> DeathCategoryDeathMessages => new()
+        {
+            // Heat damage w/ NoBurn (only steam)
+            {
+                "cooked", new()
+                {
+                    "=subject.verb:was= hard-boiled",
+                    "=subject.verb:was= soft-boiled",
+                    "broiled for our sins",
+                    "=subject.verb:was= boiled",
+                    "fell in a pot of broth",
+                    "fell in a pot of stew",
+                    "didn't realize the pot had come to a boil",
+                }
+            },
+            // Heat damage w/o NoBurn
+            {
+                "immolated", new()
+                {
+                    "=subject.verb:was= scorched to death",
+                    "couldn't find a way to put yourself out",
+                    "=subject.verb:was= barbequed",
+                    "=subject.verb:was= grilled",
+                    "=subject.verb:was= more \"well-done\" than \"medium-rare\"",
+                    "had to leave the kitchen",
+                    "jumped out of the frying pan",
+                }
+            },
+            // Plasma damage
+            {
+                "plasma-burned to death", new()
+                {
+                    "=subject.verb:was= deepfried",
+                    "=subject.verb:was= fried",
+                    "looked in the wrong end of a spacer rifle",
+                    "fell into an astral forge",
+                }
+            },
+            // Cold damage
+            {
+                "frozen to death", new()
+                {
+                    "=subject.verb:was= snap frozen",
+                    "=subject.verb:was= flash frozen",
+                    "=subject.verb:was= chilled to death",
+                }
+            },
+            // Electric damage
+            {
+                "electrocuted", new()
+                {
+                    "=subject.verb:was= zapped to death",
+                    "",
+                }
+            },
+            // Thirst
+            {
+                "thirst", new()
+                {
+                    "",
+                    "",
+                }
+            },
+            // Poison damage
+            {
+                "died of poison", new()
+                {
+                    "",
+                    "",
+                }
+            },
+            // Bleeding damage
+            {
+                "bled to death", new()
+                {
+                    "",
+                    "",
+                }
+            },
+            // Metabolic damage (hulk honey)
+            {
+                "failed", new()
+                {
+                    "",
+                    "",
+                }
+            },
+            // Asphyxiation damage (osseous ash)
+            {
+                "died of asphyxiation", new()
+                {
+                    "",
+                    "",
+                }
+            },
+            // Psionic damage
+            {
+                "psychically extinguished", new()
+                {
+                    "",
+                    "",
+                }
+            },
+            // Drain damage (syphon vim)
+            {
+                "drained to extinction", new()
+                {
+                    "",
+                    "",
+                }
+            },
+            // Thorns damage
+            {
+                "pricked to death", new()
+                {
+                    "",
+                    "",
+                }
+            },
+            // Bite damage (any bite)
+            {
+                "bitten to death", new()
+                {
+                    "",
+                    "",
+                }
+            },
+        };
+
         public GameObject Corpse;
 
         public bool BuiltToBeReanimated;
@@ -90,6 +221,10 @@ namespace XRL.World.Parts
                 ThirdPersonReason: ThirdPersonReason);
 
             string deathMessage = "You died.\n\n" + (Reason ?? The.Game.DeathReason);
+            if (UI.Options.GetOptionBool("Books_EloquentDeath_EnableEloquentDeathMessage"))
+            {
+                deathMessage = deathMessage.Replace("You died.", "You became a cord in time's silly carpet.");
+            }
             string deathCategory = The.Game.DeathCategory;
             Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
             string deathMessageTitle = "";
@@ -119,7 +254,7 @@ namespace XRL.World.Parts
 
                 IRenderable playerIcon = Dying.RenderForUI();
                 Popup.ShowSpace(
-                    Message: "... and yet...\n\n=ud_nbsp:12=...You don't {{UD_FleshGolems_reanimated|relent}}.".StartReplace().ToString(),
+                    Message: "... and yet...\n\n=ud_nbsp:12=...you don't {{UD_FleshGolems_reanimated|relent}}...".StartReplace().ToString(),
                     AfterRender: deathIcon != null ? (Renderable)playerIcon : null,
                     LogMessage: true,
                     ShowContextFrame: deathIcon != null,
@@ -133,16 +268,18 @@ namespace XRL.World.Parts
             }
             if (DoJournal && !deathReason.IsNullOrEmpty() && The.Player != null)
             {
+                // Died
                 JournalAPI.AddAccomplishment(
                     text: "On the " + Calendar.GetDay() + " of " + Calendar.GetMonth() + ", " + deathReason?.Replace("!", "."),
                     muralText: "",
                     gospelText: "");
 
+                // Came back
                 JournalAPI.AddAccomplishment(
                     text: "On the " + Calendar.GetDay() + " of " + Calendar.GetMonth() + ", " +
                         "you returned from the great beyond.",
-                    muralText: "O! Fancieth way to say! Thou hatheth returned whence the thin-veil twixt living and the yonder!",
-                    gospelText: "You just, sorta... woke back up from dying...");
+                    muralText: "O! Fancieth way to say! =Name= hatheth returned whence the thin-veil twixt living and the yonder!",
+                    gospelText: "=Name= just, sorta... woke back up from dying...");
             }
 
             if (DoAchievement)

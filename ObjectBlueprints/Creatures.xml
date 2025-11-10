@@ -13,6 +13,10 @@
   <object Name="Robot" Load="Merge">
     <removetag Name="UD_FleshGolems_NonRobot" />
   </object>
+
+  <object Name="UD_FleshGolems Brain In A Jar Widget" Inherits="Widget">
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
   
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
     <part Name="Render" DisplayName="Jofo Qudwufo" />
@@ -146,6 +150,7 @@
   <object Name="UD_FleshGolems Ragged Weapon" Inherits="NaturalWeapon">
     <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} weapon"
           TileColor="&amp;r" DetailColor="w" ColorString="&amp;r"/>
+    <!--part Name="Description" Short="*GrossAdjective* *skin* is pressed taut over *harshAdjective* *hardMaterial* which protudes in several places, forming a very deadly make-shift weapon." /-->
     <part Name="RandomColors" DetailColor="w,K,R" />
     <part Name="MeleeWeapon" Slot="" HitBonus="10" PenBonus="0" MaxStrengthBonus="999" Stat="Strength" />
     <part Name="UD_FleshGolems_SetDefaultBehaviorBlueprintWhenDefaultBehavior" />
@@ -155,6 +160,7 @@
     <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} cudgel" />
     <part Name="MeleeWeapon" BaseDamage="4d6" Skill="Cudgel" />
     <tag Name="BaseObject" Value="*noinherit" />
+    <part Name="ConfuseOnHit" Chance="15" />
   </object>
   <object Name="UD_FleshGolems Ragged Axe" Inherits="UD_FleshGolems Ragged Weapon">
     <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} axe" />
@@ -165,11 +171,13 @@
     <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} long blade" />
     <part Name="MeleeWeapon" BaseDamage="2d12" Skill="LongBlades" />
     <tag Name="BaseObject" Value="*noinherit" />
+    <part Name="PoisonOnHit" Chance="15" />
   </object>
   <object Name="UD_FleshGolems Ragged ShortBlades" Inherits="UD_FleshGolems Ragged Weapon">
     <part Name="Render" DisplayName="{{UD_FleshGolems_ragged|ragged}} dagger" />
     <part Name="MeleeWeapon" BaseDamage="1d12+5" Skill="ShortBlades" />
     <tag Name="BaseObject" Value="*noinherit" />
+    <part Name="PoisonOnHit" Chance="15" />
   </object>
 
   <!-- Flesh Golem natural weapons - hand -->
