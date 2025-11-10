@@ -401,7 +401,7 @@
   -->
   <object Name="Pocketed Lab Coat" Inherits="Plastifer Chem Vest">
     <part Name="Armor" Ego="1" CarryBonus="5" />
-    <part Name="Render" DisplayName="pocketed {{Y|lab c{{r|o}}at}}" ColorString="&amp;Y" TileColor="&amp;r" DetailColor="Y" />
+    <part Name="Render" DisplayName="pocketed {{Y|lab c{{r|o}}at}}" ColorString="&amp;r" TileColor="&amp;Y" DetailColor="R" />
     <part Name="Commerce" Value="850" />
     <part Name="Description" Short="Woven fabric, white-bleached and stained with chemicals, creates a barrier between its wearer and the physical dangers of their profession. By cosmic need for balance or merely pure happenstance, this protection is offset by a relentless hubris seemingly instilled in anyone who makes it a habit drape it over their shoulders." />
     <part Name="Physics" Weight="15" />

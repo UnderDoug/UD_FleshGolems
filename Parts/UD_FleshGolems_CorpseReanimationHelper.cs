@@ -121,6 +121,7 @@ namespace XRL.World.Parts
             List<string> probableBlueprints = new();
             List<string> possibleBlueprints = new();
             List<string> fallbackBlueprints = new();
+            /*
             UnityEngine.Debug.Log(
                 "Finding Blueprints for " + (Corpse?.DebugName ?? NULL) + " | " +
                 nameof(corpseDisplayNameLC) + ": " + (corpseDisplayNameLC ?? NULL) + ", " +
@@ -128,11 +129,12 @@ namespace XRL.World.Parts
                 nameof(corpseType) + ": " + (corpseType ?? NULL) + ", " +
                 nameof(corpseSpecies) + ": " + (corpseSpecies ?? NULL) + ", " +
                 nameof(corpseDisplayNameLC) + ": " + (corpseDisplayNameLC ?? NULL));
+            */
             List<GameObjectBlueprint> blueprintsToCheck = new(GameObjectFactory.Factory.Blueprints.Values);
             blueprintsToCheck.ShuffleInPlace();
             int maxChecks = int.MaxValue; // 2500;
             int checkCounter = 0;
-            UnityEngine.Debug.Log("Checking " + maxChecks + "/" + blueprintsToCheck.Count);
+            // UnityEngine.Debug.Log("Checking " + maxChecks + "/" + blueprintsToCheck.Count);
             foreach (GameObjectBlueprint gameObjectBlueprint in blueprintsToCheck)
             {
                 if (++checkCounter > maxChecks)
@@ -144,7 +146,7 @@ namespace XRL.World.Parts
                 string gameObjectDisplayName = gameObjectBlueprint.DisplayName()?.Strip()?.ToLower() ?? "XKCD";
                 if (blueprintName == Corpse.Blueprint)
                 {
-                    UnityEngine.Debug.Log(AppendCross("    ") + blueprintName + " is this corpse");
+                    // UnityEngine.Debug.Log(AppendCross("    ") + blueprintName + " is this corpse");
                     continue;
                 }
                 if (gameObjectBlueprint.IsBaseBlueprint())
@@ -174,8 +176,10 @@ namespace XRL.World.Parts
                     if (!probableBlueprints.Contains(blueprintName))
                     {
                         probableBlueprints.Add(blueprintName);
+                        /*
                         UnityEngine.Debug.Log(AppendTick("    ") + blueprintName + " added to " + nameof(probableBlueprints) + " }{ [" +
                             corpseDisplayNameLC + "] contains [" + gameObjectDisplayName + "] || [" + baseGameSourceBlueprintLC + "] == [" + blueprintNameLC + "]");
+                        */
                     }
                 }
                 bool corpseTypeMatchesBlueprintName = corpseType != null && corpseType.ToLower() == blueprintNameLC;
@@ -184,8 +188,10 @@ namespace XRL.World.Parts
                     if(!possibleBlueprints.Contains(blueprintName))
                     {
                         possibleBlueprints.Add(blueprintName);
+                        /*
                         UnityEngine.Debug.Log(AppendTick("    ") + blueprintName + " added to " + nameof(possibleBlueprints) + " }{ [" +
                             corpseType.ToLower() + "] == [" + blueprintNameLC + "]");
+                        */
                     }
                 }
                 bool corpseSpeciesMatchesBlueprintSpecies = corpseSpecies != null && corpseSpecies?.ToLower() == gameObjectBlueprint.GetPropertyOrTag("Species")?.ToLower();
@@ -194,8 +200,10 @@ namespace XRL.World.Parts
                     if (!fallbackBlueprints.Contains(blueprintName))
                     {
                         fallbackBlueprints.Add(blueprintName);
+                        /*
                         UnityEngine.Debug.Log(AppendTick("    ") + blueprintName + " added to " + nameof(fallbackBlueprints) + " }{ [" +
                             corpseSpecies?.ToLower() + "] == [" + gameObjectBlueprint.GetPropertyOrTag("Species")?.ToLower() + "]");
+                        */
                     }
                 }
             }
@@ -210,16 +218,18 @@ namespace XRL.World.Parts
                 probableBlueprints.AddRange(possibleBlueprints);
             }
 
-            UnityEngine.Debug.Log("Probable Blueprints for " + Corpse.DebugName);
+            // UnityEngine.Debug.Log("Probable Blueprints for " + Corpse.DebugName);
             if (!probableBlueprints.IsNullOrEmpty())
             {
+                /*
                 probableBlueprints.ShuffleInPlace();
                 foreach (string probableBlueprint in probableBlueprints)
                 {
                     UnityEngine.Debug.Log("    " + probableBlueprint);
                 }
+                */
                 blueprint ??= probableBlueprints.GetRandomElement();
-                UnityEngine.Debug.Log(nameof(blueprint) + " picked: " + blueprint);
+                // UnityEngine.Debug.Log(nameof(blueprint) + " picked: " + blueprint);
                 return blueprint;
             }
 
@@ -690,7 +700,7 @@ namespace XRL.World.Parts
             ref string CorpseDescription,
             GameObject SourceObject = null)
         {
-            UnityEngine.Debug.Log("    " + nameof(MakeItALIVE) + ", " + nameof(Corpse) + ": " + Corpse?.DebugName ?? "null");
+            // UnityEngine.Debug.Log("    " + nameof(MakeItALIVE) + ", " + nameof(Corpse) + ": " + Corpse?.DebugName ?? "null");
             if (Corpse is GameObject frankenCorpse)
             {
                 bool wasPlayer = PastLife != null && PastLife.WasPlayer;
@@ -888,14 +898,17 @@ namespace XRL.World.Parts
                                 && partExclusionsList.Contains(p.Name));
                     }
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
-                    AssignStatsFromPastLifeWithFactor(frankenCorpse, PastLife, PhysicalAdjustmentFactor: 1.2f, MentalAdjustmentFactor: 0.75f);
+
+                    float physicalAdjustmentFactor = 1.2f; // wasPlayer ? 1.0f : 1.2f;
+                    float mentalAdjustmentFactor = 0.75f; // wasPlayer ? 1.0f : 0.75f;
+                    AssignStatsFromPastLifeWithFactor(frankenCorpse, PastLife, PhysicalAdjustmentFactor: physicalAdjustmentFactor, MentalAdjustmentFactor: mentalAdjustmentFactor);
                     if (frankenCorpse.GetStat("Hitpoints") is Statistic frankenHitpoints)
                     {
                         int minHitpoints = Stat.RollCached("4d3+5");
-                        UnityEngine.Debug.Log("        " + nameof(frankenHitpoints) + " " + nameof(minHitpoints) + ": " + minHitpoints);
+                        // UnityEngine.Debug.Log("        " + nameof(frankenHitpoints) + " " + nameof(minHitpoints) + ": " + minHitpoints);
                         frankenHitpoints.BaseValue = Math.Max(minHitpoints, frankenHitpoints.BaseValue);
                         frankenHitpoints.Penalty = 0;
-                        UnityEngine.Debug.Log("        " + nameof(frankenHitpoints) + ": " + frankenHitpoints.Value + "/" + frankenHitpoints.BaseValue);
+                        // UnityEngine.Debug.Log("        " + nameof(frankenHitpoints) + ": " + frankenHitpoints.Value + "/" + frankenHitpoints.BaseValue);
                     }
 
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
@@ -1278,10 +1291,11 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(AnimateEvent E)
         {
+            /*
             UnityEngine.Debug.Log(
                 nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(AnimateEvent) + ", " +
                 nameof(IsALIVE) + ": " + IsALIVE);
-
+            */
             if (!IsALIVE
                 && ParentObject == E.Object)
             {

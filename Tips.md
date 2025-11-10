@@ -13,11 +13,13 @@ It's entirely possible to play as a reanimated player in this way.
 
 ### Wishes
 `UD_FleshGolems reanimated <blueprint>` will spawn a reanimated version of whatever you specified, if it's reanimatable.
-- Leaving the blueprint out gives a warning that it would normally apply to the player, reanimating them in the process, but doesn't currently work.
+- Leaving the blueprint out _should_ make the player into a reanimated corpse, but gives you the option to back out if the intention was to specify one.
+
+`UD_FleshGolems go Mad Monger` will whisk you away to the lair of the Mad 'Monger, revealing the secret location in the process.
 
 `UD_FleshGolems Mad Monger` will spawn the Mad 'Monger, who is the main quest NPC for the mod. They'll be findable out in the world, but can be spawned in to see their thousands of words of unique dialogue.
 
-They react to the player's genotype and morphotype, so you'll need to play as all 4 of: true kin, chimera, esper, and plain-ol' mutant to get the whole picture. He won't tell any single one of them the whole story.
+The Mad 'Monger reacts to the player's genotype and morphotype, so you'll need to play as all 4 of: true kin, chimera, esper, and plain-ol' mutant to get the whole picture. He won't tell any single one of them the whole story.
 
 ## Through Play
 

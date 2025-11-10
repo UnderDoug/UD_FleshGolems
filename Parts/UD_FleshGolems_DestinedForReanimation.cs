@@ -329,8 +329,8 @@ namespace XRL.World.Parts
             {
                 return false;
             }
-            bool success = UD_FleshGolems_Reanimated.ReplacePlayerWithCorpse(
-                Player: ParentObject,
+            bool success = UD_FleshGolems_Reanimated.ReplaceCreatureWithCorpse(
+                Creature: ParentObject,
                 FakeDeath: PlayerWantsFakeDie,
                 FakedDeath: out HaveFakedDeath,
                 DeathEvent: null,
@@ -526,8 +526,8 @@ namespace XRL.World.Parts
                 && !dyingCorpse.CorpseBlueprint.IsNullOrEmpty()
                 && dying.IsPlayer()
                 && (!PlayerWantsFakeDie || !HaveFakedDeath)
-                && UD_FleshGolems_Reanimated.ReplacePlayerWithCorpse(
-                    Player: ParentObject,
+                && UD_FleshGolems_Reanimated.ReplaceCreatureWithCorpse(
+                    Creature: ParentObject,
                     FakeDeath: PlayerWantsFakeDie,
                     FakedDeath: out HaveFakedDeath,
                     DeathEvent: E,

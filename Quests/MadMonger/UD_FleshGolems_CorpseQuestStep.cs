@@ -2,10 +2,13 @@
 
 using static XRL.World.QuestManagers.UD_FleshGolems_CorpseQuestSystem;
 
+using CorpseTaxonomy = XRL.World.QuestManagers.UD_FleshGolems_CorpseQuestStep.CorpseItem.CorpseTaxonomy;
+
 using SerializeField = UnityEngine.SerializeField;
 
 using UD_FleshGolems;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace XRL.World.QuestManagers
 {
@@ -87,6 +90,49 @@ namespace XRL.World.QuestManagers
                 _ => null,
             };
         }
+        public static string ReplaceFind => "*Find*";
+        public static string ReplaceType => "*type*";
+
+        public static List<string> FindVerbs => new()
+        {
+            "Acquire",
+            "Attain",
+            "Collect",
+            "Fetch",
+            "Find",
+            "Gather",
+            "Get",
+            "Locate",
+            "Obtain",
+            "Procure",
+            "Secure",
+            "Snag",
+            "Source",
+        };
+        public static List<string> GenericCorpseQuestText => new()
+        {
+            "*Find* one of any kind of *type* corpse...",
+            "*Find* the corpse of any type of *type*...",
+            "*Find* a single *type* corpse...",
+        };
+        public static List<string> AnyCorpseQuestText => new()
+        {
+            "*Find* quite literally any kind of corpse...",
+        };
+        public static List<string> SpeciesCorpseQuestText => new()
+        {
+            "*Find* the corpse of any species of *type*...",
+            "*Find* a *type* species corpse...",
+        };
+        public static List<string> BaseCorpseQuestText => new()
+        {
+            "*Find* any *type* creature's corpse...",
+            "*Find* one of any *type* variety of corpse...",
+        };
+        public static List<string> FactionCorpseQuestText => new()
+        {
+            "*Find* a corpse from a member of the *type* faction...",
+        };
 
         private UD_FleshGolems_CorpseQuestSystem ParentSystem;
 
@@ -113,6 +159,51 @@ namespace XRL.World.QuestManagers
             : this()
         {
             this.ParentSystem = ParentSystem;
+        }
+
+        public string GenerateStepText()
+        {
+            List<string> entries = new(GenericCorpseQuestText);
+            switch (Corpse.Taxonomy)
+            {
+                case CorpseTaxonomy.Any:
+                    return AnyCorpseQuestText
+                        .GetRandomElementCosmetic()
+                        .Replace(ReplaceFind, FindVerbs.GetRandomElementCosmetic());
+
+                case CorpseTaxonomy.Species:
+                    entries.AddRange(SpeciesCorpseQuestText);
+                    return entries
+                        .GetRandomElementCosmetic()
+                        .Replace(ReplaceFind, FindVerbs.GetRandomElementCosmetic())
+                        .Replace(ReplaceType, Corpse.Value);
+
+                case CorpseTaxonomy.Base:
+                    entries.AddRange(BaseCorpseQuestText);
+                    return entries
+                        .GetRandomElementCosmetic()
+                        .Replace(ReplaceFind, FindVerbs.GetRandomElementCosmetic())
+                        .Replace(ReplaceType, Corpse.Value);
+
+                case CorpseTaxonomy.Faction:
+                    entries.AddRange(FactionCorpseQuestText);
+                    return entries
+                        .GetRandomElementCosmetic()
+                        .Replace(ReplaceFind, FindVerbs.GetRandomElementCosmetic())
+                        .Replace(ReplaceType, Corpse.Value);
+
+                default:
+                    return entries
+                        .GetRandomElementCosmetic()
+                        .Replace(ReplaceFind, FindVerbs.GetRandomElementCosmetic())
+                        .Replace(ReplaceType, Corpse.Value);
+            }
+        }
+
+        public UD_FleshGolems_CorpseQuestStep SetGeneratedStepText()
+        {
+            Text = GenerateStepText();
+            return this;
         }
 
         public bool FinishStep()

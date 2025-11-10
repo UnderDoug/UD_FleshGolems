@@ -21,6 +21,7 @@ using XRL.World.Parts.Mutation;
 
 using UD_FleshGolems;
 using static UD_FleshGolems.Const;
+using XRL.World.WorldBuilders;
 
 namespace XRL.World.ObjectBuilders
 {
@@ -247,10 +248,12 @@ namespace XRL.World.ObjectBuilders
             {
                 soonToBeCreature.RequirePart<Inventory>();
                 soonToBeCorpse.RequirePart<Inventory>();
+                /*
                 UnityEngine.Debug.Log(
                     nameof(soonToBeCorpse) + ": " + (soonToBeCorpse.DebugName ?? NULL) + ", " +
                     nameof(soonToBeCreature) + ": " + (soonToBeCreature.DebugName ?? NULL));
-                Metamorphosis.TransferInventory(soonToBeCorpse, soonToBeCreature, soonToBeCorpse.IsPlayer());
+                */
+                Metamorphosis.TransferInventory(soonToBeCorpse, soonToBeCreature);
                 transferred = true;
             }
             catch (Exception x)
@@ -272,6 +275,10 @@ namespace XRL.World.ObjectBuilders
             {
                 return false;
             }
+            if (Context == nameof(UD_FleshGolems_MadMonger_WorldBuilder))
+            {
+                return false;
+            }
             if (Creature.HasPart<UD_FleshGolems_ReanimatedCorpse>())
             {
                 return false;
@@ -287,9 +294,17 @@ namespace XRL.World.ObjectBuilders
 
             if (Creature.IsPlayer())
             {
-                if (Corpse == null || !ReplacePlayerWithCorpse(Creature, Corpse: Corpse))
+                if (Corpse == null || !ReplacePlayerWithCorpse(Corpse: Corpse))
                 {
                     Popup.Show("Something terrible has happened (not really, it just failed).\n\nCheck Player.log for errors.");
+                    return false;
+                }
+            }
+            else
+            if (HasWorldGenerated)
+            {
+                if (Corpse == null || !ReplaceCreatureWithCorpse(Creature, FakeDeath: true, Corpse: Corpse, ForImmediateReanimation: true, OverridePastLife: true))
+                {
                     return false;
                 }
             }
@@ -300,8 +315,8 @@ namespace XRL.World.ObjectBuilders
             return Unkill(Creature, out _, Context);
         }
 
-        public static bool ReplacePlayerWithCorpse(
-            GameObject Player,
+        public static bool ReplaceCreatureWithCorpse(
+            GameObject Creature,
             bool FakeDeath,
             out bool FakedDeath,
             IDeathEvent DeathEvent = null,
@@ -310,15 +325,15 @@ namespace XRL.World.ObjectBuilders
             bool OverridePastLife = true)
         {
             FakedDeath = false;
-            Player ??= The.Player;
-            if (Player == null || (Corpse == null && !TryProduceCorpse(Player, out Corpse, ForImmediateReanimation, OverridePastLife)))
+            Creature ??= The.Player;
+            if (Creature == null || (Corpse == null && !TryProduceCorpse(Creature, out Corpse, ForImmediateReanimation, OverridePastLife)))
             {
                 return false;
             }
-            if (!TryTransferInventoryToCorpse(Player, Corpse))
+            if (!TryTransferInventoryToCorpse(Creature, Corpse))
             {
                 MetricsManager.LogModError(Utils.ThisMod, 
-                    "Failed to " + nameof(ReplacePlayerWithCorpse) + " due to failure of " + nameof(TryTransferInventoryToCorpse));
+                    "Failed to " + nameof(ReplaceCreatureWithCorpse) + " due to failure of " + nameof(TryTransferInventoryToCorpse));
                 return false;
             }
             bool replaced = false;
@@ -328,30 +343,39 @@ namespace XRL.World.ObjectBuilders
                 {
                     if (DeathEvent == null)
                     {
-                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(Player);
+                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(Creature);
                     }
                     else
                     {
-                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(Player, DeathEvent, DoAchievement: true);
+                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(Creature, DeathEvent, DoAchievement: true);
                     }
                 }
-                Corpse.SetIntProperty("UD_FleshGolems_SkipLevelsOnReanimate", 1);
 
-                ReplaceInContextEvent.Send(Player, Corpse);
-                The.Game.Player.SetBody(Corpse);
+                if (Creature.IsPlayer() || Creature.Blueprint.IsPlayerBlueprint())
+                {
+                    Corpse.SetIntProperty("UD_FleshGolems_SkipLevelsOnReanimate", 1);
+                }
 
-                Player.MakeInactive();
+                ReplaceInContextEvent.Send(Creature, Corpse);
+
+                if (Creature.IsPlayer() || Creature.Blueprint.IsPlayerBlueprint())
+                {
+                    The.Game.Player.SetBody(Corpse);
+                }
+
+                Creature.MakeInactive();
                 Corpse.MakeActive();
+
                 replaced = true;
             }
             catch (Exception x)
             {
-                MetricsManager.LogException(nameof(UD_FleshGolems_Reanimated) + "." + nameof(ReplacePlayerWithCorpse), x, "game_mod_exception");
+                MetricsManager.LogException(nameof(UD_FleshGolems_Reanimated) + "." + nameof(ReplaceCreatureWithCorpse), x, "game_mod_exception");
                 replaced = false;
             }
             return replaced;
         }
-        public static bool ReplacePlayerWithCorpse(
+        public static bool ReplaceCreatureWithCorpse(
             GameObject Player,
             bool FakeDeath = true,
             IDeathEvent DeathEvent = null,
@@ -359,7 +383,26 @@ namespace XRL.World.ObjectBuilders
             bool ForImmediateReanimation = true,
             bool OverridePastLife = true)
         {
-            return ReplacePlayerWithCorpse(Player, FakeDeath, out _, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
+            return ReplaceCreatureWithCorpse(Player, FakeDeath, out _, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
+        }
+        public static bool ReplacePlayerWithCorpse(
+            bool FakeDeath,
+            out bool FakedDeath,
+            IDeathEvent DeathEvent = null,
+            GameObject Corpse = null,
+            bool ForImmediateReanimation = true,
+            bool OverridePastLife = true)
+        {
+            return ReplaceCreatureWithCorpse(The.Player, FakeDeath, out FakedDeath, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
+        }
+        public static bool ReplacePlayerWithCorpse(
+            bool FakeDeath = true,
+            IDeathEvent DeathEvent = null,
+            GameObject Corpse = null,
+            bool ForImmediateReanimation = true,
+            bool OverridePastLife = true)
+        {
+            return ReplaceCreatureWithCorpse(The.Player, FakeDeath, out _, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
         }
 
         [WishCommand("UD_FleshGolems reanimated")]
@@ -374,11 +417,11 @@ namespace XRL.World.ObjectBuilders
             if (Blueprint == null)
             {
                 if (Popup.ShowYesNo(
-                    // "This {{Y|probably}} won't end your run. " +
-                    // "Last chance to back out.\n\n" +
-                    // "If you meant to reanimate something else," +
-                    "Reanimating the player by wish is currently broken.\n\n" +
-                    "If you meant to reanimate something else, " +
+                    "This {{Y|probably}} won't end your run. " +
+                    "Last chance to back out.\n\n" +
+                    "If you meant to reanimate something else," +
+                    // "Reanimating the player by wish is currently broken.\n\n" +
+                    // "If you meant to reanimate something else, " +
                     "make this wish again but include a blueprint.") == DialogResult.No)
                 {
                     return false;
@@ -404,7 +447,7 @@ namespace XRL.World.ObjectBuilders
                 else
                 if (Blueprint == null)
                 {
-                    if (soonToBeCreature == null && !ReplacePlayerWithCorpse(soonToBeCorpse, true, null, soonToBeCreature))
+                    if (soonToBeCreature == null && !ReplaceCreatureWithCorpse(soonToBeCorpse, true, null, soonToBeCreature))
                     {
                         Popup.Show("Something terrible has happened (not really, it just failed).\n\nCheck Player.log for errors.");
                         return false;

@@ -149,13 +149,13 @@
         <part Name="UD_FleshGolems_TakeItemsWithPart"
               Amount="all"
               Parts="UD_FleshGolems_CorpseQuestHelperPart" />
-        <part Name="QuestHandler" QuestID="UD_FleshGolems You Raise Me Up" StepID="UD_FleshGolems I'm dead serious!" Action="Step" />
+        <part Name="QuestHandler" QuestID="UD_FleshGolems Find 3 Questionable Materials (for Science)" Action="Finish" />
       </choice>
 
       <!--choice GotoID="ActiveQuest" IfHaveQuest="If, Then, Else" IfNotFinishedQuestStep="If, Then, Else~Reunite Tau with Her Chime">Explain once more what I must do with Tau's chime.</choice-->
 
       <choice ID="SayYouLookSick" Target="ReactINOTSICK" IfNotLastChoice="SayYouLookSick" IfNotTrueKin="true"
-          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 5">
+          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 3">
         <text IfHavePart="Chimera" Priority="1">
           You move like wounded prey.
         </text>
@@ -167,14 +167,14 @@
         </text>
       </choice>
       <choice ID="GoadYouLookSick" Target="ReactINOTSICK_TK" IfTrueKin="True"
-          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 5">
+          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 3">
         <text Priority="1">
           Not taking to the implants well?
         </text>
       </choice>
 
       <choice ID="AskWhyMeMeat" Target="AnswerWhyYouMeat" IfNotLastChoice="AskWhyMeMeat"
-          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 9">
+          IfTestState="UD_FleshGolems_Monger_MeatCounter >= 6">
         <text IfTrueKin="True" Priority="1">
           Why do you call me rare meat?
         </text>
@@ -745,12 +745,13 @@
       <text>
         Well done meat, I am pleased with your successful completion of this task, your value to me has moved from annoyingly mediocre to ever-so-slightly above that.
       </text>
-      <part Name="ReceiveItem" Pick="true" Table="UD_FleshGolems_Corpse_BaseRewards" Identify="All" />
       <choice GotoID="UnderConstruction">
         <text>
           You mentioned some addtional tasks?
         </text>
       </choice>
+      <part Name="QuestHandler" QuestID="UD_FleshGolems You Raise Me Up" StepID="UD_FleshGolems I'm dead serious!" Action="Step" />
+      <part Name="ReceiveItem" Pick="true" Table="UD_FleshGolems_Corpse_BaseRewards" Identify="All" />
     </node>
     
     <node ID="UnderConstruction" Inherits="BaseSequence">

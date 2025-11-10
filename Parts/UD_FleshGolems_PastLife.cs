@@ -440,11 +440,13 @@ namespace XRL.World.Parts
 
             DeathAddress = new(Reader.ReadOptimizedString(), Reader.ReadLocation2D());
 
-            Brain ??= new Brain();
+            Brain ??= new();
             Brain.Read(Basis, Reader);
 
+            Gender ??= new();
             Gender = Gender.Load(Reader);
 
+            PronounSet ??= new();
             PronounSet = PronounSet.Load(Reader);
 
             int statCount = Reader.ReadOptimizedInt32();

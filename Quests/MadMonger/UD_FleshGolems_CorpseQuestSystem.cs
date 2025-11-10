@@ -54,41 +54,8 @@ namespace XRL.World.QuestManagers
         {
             "robots",
             "slimes",
+            "oozes",
             "baetyl",
-        };
-
-        public static List<string> FindVerbs => new()
-        {
-            "Acquire",
-            "Attain",
-            "Collect",
-            "Fetch",
-            "Find",
-            "Gather",
-            "Get",
-            "Locate",
-            "Obtain",
-            "Procure",
-            "Secure",
-            "Snag",
-            "Source",
-        };
-        public static List<string> GetGenericCorpseQuestText => new()
-        {
-            "*Find* one of any kind of *type* corpse...",
-            "*Find* the corpse of any type of *type*...",
-            "*Find* a single *type* corpse...",
-        };
-        public static List<string> GetSpeciesCorpseQuestText => new()
-        {
-            "*Find* the corpse of any species of *type*...",
-        };
-        public static List<string> GetBaseCorpseQuestText => new()
-        {
-            "*Find* the corpse of any species of *species*...",
-            "*Find* one of any kind of *species* corpse...",
-            "*Find* the corpse of any type of *species*...",
-            "*Find* a single *species* corpse...",
         };
 
         public static List<string> AllBaseCorpses => new(GetAllBaseCorpses());
@@ -382,11 +349,10 @@ namespace XRL.World.QuestManagers
             string species = AllSpecies.GetRandomElementCosmetic(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
-                Name = "Find " + Grammar.A(species.Capitalize()) + " Corpse",
-                Text = "*Find* a corpse from any member of the " + species.ToLower() + " species...",
-                Corpse = new(CorpseTaxonomy.Species, species)
+                Name = "Find " + Grammar.A(species.Capitalize()) + " Species Corpse",
+                Corpse = new(CorpseTaxonomy.Species, species),
             };
-            return questStep;
+            return questStep?.SetGeneratedStepText();
         }
         public UD_FleshGolems_CorpseQuestStep CreateASpeciesCorpseQuestStep()
         {
@@ -398,10 +364,9 @@ namespace XRL.World.QuestManagers
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
                 Name = "Find " + Grammar.A(baseBlueprint.Capitalize()),
-                Text = "*Find* any kind of " + baseBlueprint.ToLower() + "...",
-                Corpse = new(CorpseTaxonomy.Base, baseBlueprint)
+                Corpse = new(CorpseTaxonomy.Base, baseBlueprint),
             };
-            return questStep;
+            return questStep?.SetGeneratedStepText();
         }
         public UD_FleshGolems_CorpseQuestStep CreateABaseCorpseQuestStep()
         {
@@ -413,11 +378,10 @@ namespace XRL.World.QuestManagers
             string factionDisplayName = Factions.Get(factionName).DisplayName;
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
-                Name = "Find " + Grammar.A(Grammar.MakeTitleCase(factionDisplayName)) + " Corpse",
-                Text = "*Find* any kind of " + factionDisplayName.ToLower() + " corpse...",
-                Corpse = new(CorpseTaxonomy.Faction, factionName)
+                Name = "Find " + Grammar.A(Grammar.MakeTitleCase(factionDisplayName)) + " Faction Corpse",
+                Corpse = new(CorpseTaxonomy.Faction, factionName),
             };
-            return questStep;
+            return questStep?.SetGeneratedStepText();
         }
         public UD_FleshGolems_CorpseQuestStep CreateAFactionCorpseQuestStep()
         {
@@ -429,10 +393,9 @@ namespace XRL.World.QuestManagers
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
                 Name = "Find Any Corpse",
-                Text = "*Find* quite literally any kind of corpse...",
-                Corpse = new(CorpseTaxonomy.Any, "Any")
+                Corpse = new(CorpseTaxonomy.Any, "Any"),
             };
-            return questStep;
+            return questStep?.SetGeneratedStepText();
         }
         public UD_FleshGolems_CorpseQuestStep CreateAnAnyCorpseQuestStep()
         {
@@ -448,7 +411,7 @@ namespace XRL.World.QuestManagers
             {
                 output += ": " + Value;
             }
-            UnityEngine.Debug.Log(output);
+            // UnityEngine.Debug.Log(output);
         }
 
         public void Init()
@@ -588,7 +551,7 @@ namespace XRL.World.QuestManagers
                     Reputation = "100",
                     Finished = false,
                     Accomplishment = "Conspiring with a \"scientist\" most mad, you broke \"important\" scientfic discovery into the nature of life and death.",
-                    Hagiograph = "Forget not the bloody " + Calendar.GetDay() + " of darkest " + Calendar.GetMonth() + ", when =name= demanded of =pronoun.possessive= loyal servant, that he take the first born babe of every denizen of Bethesda Susa in recompence for the sins of the Saads of old!",
+                    Hagiograph = "Forget not the bloody " + Calendar.GetDay() + " of darkest " + Calendar.GetMonth() + ", when =name= demanded of =pronouns.possessive= loyal servant, that he take the first born babe of every denizen of Bethesda Susa in recompence for the sins of the Saads of old!",
                     HagiographCategory = "DoesSomethingRad",
                     StepsByID = new Dictionary<string, QuestStep>()
                 };
@@ -742,7 +705,8 @@ namespace XRL.World.QuestManagers
         [WishCommand(Command = "UD_FleshGolems debug quest corpses")]
         public static void DebugQuestCorpses_Wish()
         {
-            if (The.Game.GetSystem<UD_FleshGolems_CorpseQuestSystem>() is var corpseQuestSystem
+            if (The.Game.HasQuest("UD_FleshGolems You Raise Me Up")
+                && The.Game.GetSystem<UD_FleshGolems_CorpseQuestSystem>() is var corpseQuestSystem
                 && !corpseQuestSystem.Steps.IsNullOrEmpty())
             {
                 debugLog(nameof(corpseQuestSystem.ParentQuest), corpseQuestSystem.ParentQuest.ID);

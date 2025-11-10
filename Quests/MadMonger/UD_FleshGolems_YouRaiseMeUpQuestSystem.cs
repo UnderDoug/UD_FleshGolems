@@ -15,9 +15,9 @@ namespace XRL.World.Quests
     {
         public const string ModPrefix = "UD_FleshGolems ";
 
-        public const string MongerQuestID = "UD_FleshGolems You Raise Me Up";
+        public const string MongerQuestID = ModPrefix + "You Raise Me Up";
 
-        public static UD_FleshGolems_CorpseQuestSystem CorpseQuestSystem = The.Game.GetSystem<UD_FleshGolems_CorpseQuestSystem>();
+        public static UD_FleshGolems_CorpseQuestSystem CorpseQuestSystem = The.Game.RequireSystem<UD_FleshGolems_CorpseQuestSystem>();
 
         public static List<string> StepIDs => new()
         {
@@ -54,6 +54,7 @@ namespace XRL.World.Quests
 
         public override bool HandleEvent(QuestStepFinishedEvent E)
         {
+            // UnityEngine.Debug.Log(E.Quest + ", " + E.Step.ID + " Finished");
             if (E.Quest == Quest
                 && E.Step is QuestStep thisStep
                 && QuestSteps.Contains(thisStep))
