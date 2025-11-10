@@ -169,7 +169,11 @@ namespace XRL.World.Parts
                     PastRender = PastLife?.Render?.DeepCopy(ParentObject) as Render;
                     Description = PastLife?.GetPart<Description>()?._Short;
 
-                    DeathAddress = new(PastLife?.CurrentZone?.ZoneID, PastLife?.CurrentCell?.Location);
+                    if (PastLife?.CurrentCell is Cell deathCell
+                        && deathCell.ParentZone is Zone deathZone)
+                    {
+                        DeathAddress = new(deathZone.ZoneID, deathCell.Location);
+                    }
 
                     if (PastLife?.Brain is Brain pastBrain)
                     {
