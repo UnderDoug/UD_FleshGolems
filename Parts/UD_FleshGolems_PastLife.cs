@@ -15,6 +15,10 @@ using HarmonyLib;
 using XRL.Wish;
 using XRL.UI;
 using XRL.Language;
+using XRL.World.Anatomy;
+
+using SerializeField = UnityEngine.SerializeField;
+using XRL.World.ObjectBuilders;
 
 namespace XRL.World.Parts
 {
@@ -35,7 +39,6 @@ namespace XRL.World.Parts
                 X = 0;
                 Y = 0;
             }
-
             public UD_FleshGolems_DeathAddress(string DeathZone, int X, int Y)
                 : this()
             {
@@ -43,13 +46,87 @@ namespace XRL.World.Parts
                 this.X = X;
                 this.Y = Y;
             }
-
             public UD_FleshGolems_DeathAddress(string DeathZone, Location2D DeathLocation)
                 : this(DeathZone, DeathLocation.X, DeathLocation.Y)
             {
             }
 
             public Location2D GetLocation() => new(X, Y);
+
+            public ZoneRequest GetZoneRequest() => new(DeathZone);
+
+            public Cell GetCell() => The.ZoneManager?.GetZone(DeathZone)?.GetCell(X, Y);
+
+            public static explicit operator Cell(UD_FleshGolems_DeathAddress Source)
+            {
+                return Source.GetCell();
+            }
+        }
+
+        [Serializable]
+        public class UD_FleshGolems_InstalledCybernetic : IComposite
+        {
+            public string ImplantedLimbType;
+
+            [SerializeField]
+            private string CyberneticID;
+
+            private GameObject _Cybernetic;
+            public GameObject Cybernetic
+            {
+                get => _Cybernetic ??= GameObject.FindByID(CyberneticID);
+                set
+                {
+                    CyberneticID = value?.ID;
+                    _Cybernetic = value;
+                }
+            }
+
+            protected UD_FleshGolems_InstalledCybernetic()
+            {
+                ImplantedLimbType = null;
+                Cybernetic = null;
+            }
+            public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic, string ImplantedPart)
+                : this()
+            {
+                ImplantedLimbType = ImplantedPart;
+                this.Cybernetic = Cybernetic;
+            }
+            public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic, BodyPart ImplantedPart)
+                : this(Cybernetic, ImplantedPart.Type)
+            {
+            }
+            public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic, Body ImplantedBody)
+                : this(Cybernetic, ImplantedBody.FindCybernetics(Cybernetic))
+            {
+            }
+            public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic)
+                : this(Cybernetic, Cybernetic.Implantee.Body)
+            {
+            }
+            public void Deconstruct(out GameObject Cybernetic, out string ImplantedLimbType)
+            {
+                ImplantedLimbType = this.ImplantedLimbType;
+                Cybernetic = this.Cybernetic;
+            }
+            public void Deconstruct(out GameObject Cybernetic)
+            {
+                Cybernetic = this.Cybernetic;
+            }
+            public void Deconstruct(out string ImplantedLimbType)
+            {
+                ImplantedLimbType = this.ImplantedLimbType;
+            }
+
+            public static implicit operator KeyValuePair<GameObject, string>(UD_FleshGolems_InstalledCybernetic Source)
+            {
+                return new(Source.Cybernetic, Source.ImplantedLimbType);
+            }
+            public static implicit operator UD_FleshGolems_InstalledCybernetic(KeyValuePair<GameObject, string> Source)
+            {
+                return new(Source.Key, Source.Value);
+            }
         }
 
         public GameObject BrainInAJar;
@@ -63,7 +140,13 @@ namespace XRL.World.Parts
 
         public string Blueprint;
 
+        public bool ExcludeFromDynamicEncounters => (Blueprint?.GetGameObjectBlueprint()?.IsExcludedFromDynamicEncounters()).GetValueOrDefault();
+
         public string BaseDisplayName => BrainInAJar?.BaseDisplayName;
+        public Titles Titles => BrainInAJar?.GetPart<Titles>();
+        public Epithets Epithets => BrainInAJar?.GetPart<Epithets>();
+        public Honorifics Honorifics => BrainInAJar?.GetPart<Honorifics>();
+
         public Render PastRender => BrainInAJar?.Render;
 
         public string Description => BrainInAJar?.GetPart<Description>()?._Short;
@@ -72,41 +155,42 @@ namespace XRL.World.Parts
 
         public Brain Brain => BrainInAJar?.Brain;
 
-        [NonSerialized]
-        public string GenderName;
-        [NonSerialized]
-        public Gender Gender;
+        public Gender Gender => BrainInAJar?.GetGender();
 
-        [NonSerialized]
-        public string PronounSetName;
-        [NonSerialized]
-        public PronounSet PronounSet;
+        public PronounSet PronounSet => BrainInAJar?.GetPronounSet();
 
-        public string ConversationScriptID;
+        public string ConversationScriptID => BrainInAJar?.GetPart<ConversationScript>()?.ConversationID;
 
-        [NonSerialized]
-        public Dictionary<string, Statistic> Stats;
-        public string Species;
-        public string Genotype;
-        public string Subtype;
+        public Dictionary<string, Statistic> Stats => BrainInAJar?.Statistics;
 
-        public Dictionary<string, int> MutationLevels;
-        public List<string> Skills;
-        public List<KeyValuePair<string, string>> InstalledCybernetics;
+        public string Species => BrainInAJar?.GetSpecies();
+        public string Genotype => BrainInAJar?.GetGenotype();
+        public string Subtype => BrainInAJar?.GetSubtype();
 
-        public Dictionary<string, string> Tags;
-        public Dictionary<string, string> _Property;
-        public Dictionary<string, int> _IntProperty;
+        public Mutations Mutations => BrainInAJar?.GetPart<Mutations>();
 
-        public List<KeyValuePair<string, int>> Effects;
+        public Skills Skills => BrainInAJar?.GetPart<Skills>();
 
-        public Titles Titles;
-        public Epithets Epithets;
-        public Honorifics Honorifics;
+        public Dictionary<string, string> Tags => Blueprint.GetGameObjectBlueprint().Tags;
+        public Dictionary<string, string> StringProperties => BrainInAJar?._Property;
+        public Dictionary<string, int> IntProperties => BrainInAJar?._IntProperty;
+
+        public EffectRack Effects => BrainInAJar?._Effects;
+
+        public IEnumerable<UD_FleshGolems_InstalledCybernetic> InstalledCybernetics
+        {
+            get
+            {
+                foreach (GameObject installedCybernetic in BrainInAJar?.Body.GetInstalledCyberneticsReadonly())
+                {
+                    yield return new(installedCybernetic);
+                }
+            }
+        }
 
         public UD_FleshGolems_PastLife()
         {
-            BrainInAJar = GetBrainInAJar();
+            BrainInAJar = GetNewBrainInAJar();
             Init = false;
 
             TimesReanimated = 0;
@@ -114,31 +198,6 @@ namespace XRL.World.Parts
             Blueprint = null;
 
             DeathAddress = null;
-
-            GenderName = null;
-            Gender = null;
-            PronounSetName = null;
-            PronounSet = null;
-            ConversationScriptID = null;
-
-            Stats = null;
-            Species = null;
-            Genotype = null;
-            Subtype = null;
-
-            MutationLevels = null;
-            Skills = null;
-            InstalledCybernetics = null;
-
-            Tags = null;
-            _Property = null;
-            _IntProperty = null;
-
-            Effects = null;
-
-            Titles = null;
-            Epithets = null;
-            Honorifics = null;
         }
         public UD_FleshGolems_PastLife(GameObject PastLife)
             : this()
@@ -151,7 +210,7 @@ namespace XRL.World.Parts
             Initialize(PrevPastLife);
         }
 
-        private static GameObject GetBrainInAJar()
+        private static GameObject GetNewBrainInAJar()
         {
             return GameObjectFactory.Factory.CreateUnmodifiedObject("UD_FleshGolems Brain In A Jar Widget");
         }
@@ -162,7 +221,7 @@ namespace XRL.World.Parts
             {
                 try
                 {
-                    BrainInAJar ??= GetBrainInAJar();
+                    BrainInAJar ??= GetNewBrainInAJar();
                     if (BrainInAJar != null)
                     {
                         Blueprint = PastLife.Blueprint;
@@ -181,6 +240,9 @@ namespace XRL.World.Parts
                         BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Titles>());
                         BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Epithets>());
                         BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Honorifics>());
+
+                        BrainInAJar._Property = PastLife._Property;
+                        BrainInAJar._IntProperty = PastLife._IntProperty;
 
                         Render bIAJ_Render = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Render);
                         BrainInAJar.Render = bIAJ_Render;
@@ -229,6 +291,29 @@ namespace XRL.World.Parts
                             Brain.Opinions = new();
                         }
 
+                        Body bIAJ_Body = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Body);
+                        BrainInAJar.Body = bIAJ_Body;
+
+                        Corpse bIAJ_Corpse = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Corpse>());
+                        bIAJ_Corpse.CorpseBlueprint = ParentObject.Blueprint;
+                        if (bIAJ_Corpse.CorpseBlueprint.IsNullOrEmpty())
+                        {
+                            if (Blueprint
+                                .GetGameObjectBlueprint()
+                                .TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string corpseBlueprint))
+                            {
+                                bIAJ_Corpse.CorpseBlueprint = corpseBlueprint;
+                            }
+                            else
+                            if ((PastLife.GetSpecies() + " Corpse").GetGameObjectBlueprint() is GameObjectBlueprint corpseGameObjectBlueprint
+                                && corpseGameObjectBlueprint
+                                    .TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string speciesCorpseBlueprint))
+                            {
+                                bIAJ_Corpse.CorpseBlueprint = speciesCorpseBlueprint;
+                            }
+                        }
+                        bIAJ_Corpse.CorpseChance = 100;
+
                         if (!PastLife.GenderName.IsNullOrEmpty())
                         {
                             BrainInAJar.SetGender(PastLife.GenderName);
@@ -255,9 +340,6 @@ namespace XRL.World.Parts
                                 BrainInAJar.Statistics.Add(statName, newStat);
                             }
                         }
-
-                        Body bIAJ_Body = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Body);
-                        BrainInAJar.Body = bIAJ_Body;
 
                         BrainInAJar.SetSpecies(PastLife.GetSpecies());
                         BrainInAJar.SetGenotype(PastLife.GetGenotype());
@@ -288,8 +370,6 @@ namespace XRL.World.Parts
                             }
                         }
                         */
-                        BrainInAJar._Property = PastLife._Property;
-                        BrainInAJar._IntProperty = PastLife._IntProperty;
 
                         foreach (Effect pastEffect in PastLife.Effects)
                         {
@@ -347,12 +427,18 @@ namespace XRL.World.Parts
             }
             try
             {
-                debugLog(nameof(BaseDisplayName), BaseDisplayName);
-                debugLog(nameof(Blueprint), Blueprint);
-
                 debugLog(nameof(Init), Init);
+                debugLog(nameof(WasCorpse), WasCorpse);
+                debugLog(nameof(WasPlayer), WasPlayer);
 
                 debugLog(nameof(TimesReanimated), TimesReanimated);
+
+                debugLog(nameof(Blueprint), Blueprint);
+                debugLog(nameof(BaseDisplayName), BaseDisplayName);
+
+                debugLog(nameof(Titles), Titles);
+                debugLog(nameof(Epithets), Epithets);
+                debugLog(nameof(Honorifics), Honorifics);
 
                 debugLog(nameof(PastRender), PastRender);
                 debugLog(nameof(Description), Description);
@@ -388,20 +474,20 @@ namespace XRL.World.Parts
                 debugLog(nameof(Genotype), Genotype);
                 debugLog(nameof(Subtype), Subtype);
 
-                debugLog(nameof(MutationLevels), MutationLevels?.Count);
-                foreach ((string mutation, int level) in MutationLevels ?? new())
+                debugLog(nameof(Mutations), Mutations?.ActiveMutationList.Count);
+                foreach (BaseMutation mutation in Mutations?.ActiveMutationList)
                 {
-                    debugLog(mutation, level, 1);
+                    debugLog(mutation.Name, mutation.BaseLevel, 1);
                 }
-                debugLog(nameof(Skills), Skills?.Count);
-                foreach (string skill in Skills ?? new())
+                debugLog(nameof(Skills), Skills?.SkillList.Count);
+                foreach (BaseSkill baseSkill in Skills?.SkillList)
                 {
-                    debugLog(skill, null, 1);
+                    debugLog(baseSkill.Name, null, 1);
                 }
-                debugLog(nameof(InstalledCybernetics), InstalledCybernetics?.Count);
-                foreach ((string blueprint, string limb) in InstalledCybernetics ?? new())
+                debugLog(nameof(InstalledCybernetics), new List<UD_FleshGolems_InstalledCybernetic>(InstalledCybernetics)?.Count);
+                foreach ((GameObject cybernetic, string implantedLimb) in InstalledCybernetics)
                 {
-                    debugLog(blueprint, limb, 1);
+                    debugLog(implantedLimb, cybernetic.Blueprint, 1);
                 }
 
                 debugLog(nameof(Tags), Tags?.Count);
@@ -409,26 +495,22 @@ namespace XRL.World.Parts
                 {
                     debugLog(name, value, 1);
                 }
-                debugLog(nameof(_Property), _Property?.Count);
-                foreach ((string name, string value) in _Property ?? new())
+                debugLog(nameof(StringProperties), StringProperties?.Count);
+                foreach ((string name, string value) in StringProperties ?? new())
                 {
                     debugLog(name, value, 1);
                 }
-                debugLog(nameof(_IntProperty), _IntProperty?.Count);
-                foreach ((string name, int value) in _IntProperty ?? new())
+                debugLog(nameof(IntProperties), IntProperties?.Count);
+                foreach ((string name, int value) in IntProperties ?? new())
                 {
                     debugLog(name, value, 1);
                 }
 
                 debugLog(nameof(Effects), Effects?.Count);
-                foreach ((string effectName, int effectDuration) in Effects ?? new())
+                foreach (Effect Effect in Effects)
                 {
-                    debugLog(effectName + ",  duration" , effectDuration, 1);
+                    debugLog(Effect.ClassName + ",  duration" , Effect.Duration, 1);
                 }
-
-                debugLog(nameof(Titles), Titles);
-                debugLog(nameof(Epithets), Epithets);
-                debugLog(nameof(Honorifics), Honorifics);
             }
             catch (Exception x)
             {
@@ -436,40 +518,103 @@ namespace XRL.World.Parts
             }
         }
 
-        public override void Write(GameObject Basis, SerializationWriter Writer)
+        public static bool RestoreBrainFromPastLife(
+            GameObject FrankenCorpse,
+            UD_FleshGolems_PastLife PastLife,
+            bool ExcludedFromDynamicEncounters,
+            out Brain FrankenBrain)
         {
-            base.Write(Basis, Writer);
-
-            Writer.WriteOptimized(Gender?.Name);
-            Writer.WriteOptimized(PronounSet?.Name);
-
-            Writer.Write(Stats.Count);
-            foreach ((string _, Statistic stat) in Stats)
+            FrankenBrain = null;
+            if (FrankenCorpse == null || PastLife == null)
             {
-                stat.Save(Writer);
+                return false;
             }
-        }
-        public override void Read(GameObject Basis, SerializationReader Reader)
-        {
-            base.Read(Basis, Reader);
-
-            GenderName = Reader.ReadOptimizedString();
-
-            PronounSetName = Reader.ReadOptimizedString();
-
-            int statCount = Reader.ReadInt32();
-            Stats = new(statCount);
-            for (int i = 0; i < statCount; i++)
+            FrankenBrain = FrankenCorpse.Brain;
+            if (FrankenBrain != null
+                && PastLife?.Brain is Brain pastBrain)
             {
-                Statistic statistic = Statistic.Load(Reader, Basis);
-                Stats.TryAdd(statistic.Name, statistic);
+                FrankenCorpse.Brain.Allegiance ??= new();
+                FrankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
+                FrankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
+                if ((!UD_FleshGolems_Reanimated.HasWorldGenerated || ExcludedFromDynamicEncounters))
+                {
+                    FrankenCorpse.Brain.Allegiance.Clear();
+                    FrankenCorpse.Brain.Allegiance.Add("Newly Sentient Beings", 75);
+                    foreach ((string faction, int rep) in pastBrain.Allegiance)
+                    {
+                        if (!pastBrain.Allegiance.ContainsKey(faction))
+                        {
+                            FrankenCorpse.Brain.Allegiance.Add(faction, rep);
+                        }
+                        else
+                        {
+                            FrankenCorpse.Brain.Allegiance[faction] += rep;
+                        }
+                    }
+                    if (!FrankenCorpse.HasPropertyOrTag("StartingPet") && !FrankenCorpse.HasPropertyOrTag("Pet"))
+                    {
+                        FrankenCorpse.Brain.PartyLeader = pastBrain.PartyLeader;
+                        FrankenCorpse.Brain.PartyMembers = pastBrain.PartyMembers;
+
+                        FrankenCorpse.Brain.Opinions = pastBrain.Opinions;
+
+                    }
+                }
+                FrankenBrain.Wanders = pastBrain.Wanders;
+                FrankenBrain.WallWalker = pastBrain.WallWalker;
+                FrankenBrain.HostileWalkRadius = pastBrain.HostileWalkRadius;
+
+                FrankenBrain.Mobile = pastBrain.Mobile;
             }
+            return true;
         }
-        public override void FinalizeRead(SerializationReader Reader)
+
+        public static bool RestoreCyberneticsFromPastLife(
+            GameObject FrankenCorpse,
+            UD_FleshGolems_PastLife PastLife,
+            out bool WereCyberneticsInstalled)
         {
-            base.FinalizeRead(Reader);
-            Gender = new(GenderName);
-            PronounSet = PronounSet.Get(PronounSetName);
+            WereCyberneticsInstalled = false;
+            if (FrankenCorpse == null || PastLife == null)
+            {
+                return false;
+            }
+            if (!PastLife.InstalledCybernetics.IsNullOrEmpty())
+            {
+                Body frankenBody = FrankenCorpse.Body;
+                foreach ((GameObject cybernetic, string bodyPartType) in PastLife.InstalledCybernetics)
+                {
+                    if (frankenBody.FindCybernetics(cybernetic) != null)
+                    {
+                        continue;
+                    }
+                    if (cybernetic.DeepCopy() is GameObject newCybernetic
+                        && newCybernetic.TryRemoveFromContext())
+                    {
+                        if (newCybernetic.TryGetPart(out CyberneticsBaseItem cyberneticBasePart))
+                        {
+                            int cyberneticsCost = cyberneticBasePart.Cost;
+                            FrankenCorpse.ModIntProperty(UD_FleshGolems_CorpseReanimationHelper.CYBERNETICS_LICENSES, cyberneticsCost);
+                            FrankenCorpse.ModIntProperty(UD_FleshGolems_CorpseReanimationHelper.CYBERNETICS_LICENSES_FREE, cyberneticsCost);
+
+                            List<BodyPart> bodyParts = frankenBody.GetPart(bodyPartType);
+                            bodyParts.ShuffleInPlace();
+
+                            foreach (BodyPart bodyPart in bodyParts)
+                            {
+                                if (bodyPart.CanReceiveCyberneticImplant()
+                                    && !bodyPart.HasInstalledCybernetics())
+                                {
+                                    bodyPart.Implant(newCybernetic);
+                                    WereCyberneticsInstalled = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
         }
 
         [WishCommand("UD_FleshGolems debug PastLife")]
