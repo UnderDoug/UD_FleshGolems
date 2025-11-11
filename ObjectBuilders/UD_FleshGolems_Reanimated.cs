@@ -176,7 +176,7 @@ namespace XRL.World.ObjectBuilders
                 var pastLife = corpse.RequirePart<UD_FleshGolems_PastLife>();
 
                 if (Creature.TryGetPart(out UD_FleshGolems_PastLife prevPastLife)
-                    && prevPastLife.Init && prevPastLife.IsCorpse)
+                    && prevPastLife.Init && prevPastLife.WasCorpse)
                 {
                     corpse.RemovePart(pastLife);
                     pastLife = corpse.AddPart(prevPastLife);
@@ -366,6 +366,20 @@ namespace XRL.World.ObjectBuilders
                 Creature.MakeInactive();
                 Corpse.MakeActive();
 
+                bool doIDSwap = true;
+                if (doIDSwap)
+                {
+                    string creatureID = Creature.ID;
+                    int creatureBaseID = Creature.BaseID;
+
+                    Creature.ID = Corpse.ID;
+                    Creature.BaseID = Corpse.BaseID;
+
+                    Corpse.ID = creatureID;
+                    Corpse.BaseID = creatureBaseID;
+                }
+
+                Creature.Obliterate();
                 replaced = true;
             }
             catch (Exception x)

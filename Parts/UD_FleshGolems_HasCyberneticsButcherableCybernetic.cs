@@ -181,26 +181,25 @@ namespace XRL.World.Parts
             bool any = false;
             if (TryGetButcherableCyberneticPart(Corpse, out CyberneticsButcherableCybernetic butcherableCybernetic))
             {
-                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsList) + ", " +
                     nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
                     nameof(Cybernetics) + ": \"" + Cybernetics + "\"");
-                */
+
                 butcherableCybernetic.Cybernetics ??= new();
 
                 if (!Cybernetics.IsNullOrEmpty())
                 {
                     foreach (string cyberneticBlueprint in Cybernetics.CachedCommaExpansion())
                     {
-                        // UnityEngine.Debug.Log("    " + nameof(cyberneticBlueprint) + ": " + cyberneticBlueprint);
+                        UnityEngine.Debug.Log("    " + nameof(cyberneticBlueprint) + ": " + cyberneticBlueprint);
                         if (GameObject.Create(cyberneticBlueprint) is GameObject cyberneticObject)
                         {
                             any = EmbedCyberneticWithSuccessChance(butcherableCybernetic, cyberneticObject, 100);
                         }
                     }
                 }
-                // UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
+                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }
@@ -217,13 +216,11 @@ namespace XRL.World.Parts
             bool any = false;
             if (TryGetButcherableCyberneticPart(Corpse, out CyberneticsButcherableCybernetic butcherableCybernetic))
             {
-                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsTable) + ", " +
                     nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
                     nameof(Table) + ": \"" + Table + "\"" + ", " +
                     nameof(rolledCount) + ": " + rolledCount);
-                */
                 butcherableCybernetic.Cybernetics ??= new();
 
                 if (!Table.IsNullOrEmpty())
@@ -233,7 +230,7 @@ namespace XRL.World.Parts
 
                     if (processTable)
                     {
-                        // UnityEngine.Debug.Log(nameof(processTable) + ": \"" + processTable + "\"");
+                        UnityEngine.Debug.Log(nameof(processTable) + ": \"" + processTable + "\"");
                     }
 
                     int maxAtempts = 5;
@@ -260,7 +257,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
-                // UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
+                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }
@@ -277,13 +274,11 @@ namespace XRL.World.Parts
             bool any = false;
             if (TryGetButcherableCyberneticPart(Corpse, out CyberneticsButcherableCybernetic butcherableCybernetic))
             {
-                /*
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsForLimb) + ", " +
                     nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
                     nameof(ForLimb) + ": \"" + (ForLimb ?? NULL)+ "\"" + ", " +
                     nameof(rolledCount) + ": " + rolledCount);
-                */
                 butcherableCybernetic.Cybernetics ??= new();
 
                 if (!ForLimb.IsNullOrEmpty())
@@ -310,7 +305,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
-                // UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
+                UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
             }
             return any;
         }

@@ -123,5 +123,49 @@ namespace UD_FleshGolems
             Item.SetIntProperty(nameof(WontSell), WontSell ? 1 : 0, RemoveIfZero: true);
             return Item;
         }
+
+        public static int DamageTo1HP(this GameObject Creature)
+        {
+            if (Creature == null || Creature.GetStat("Hitpoints") is not Statistic hitpoints)
+            {
+                return 0;
+            }
+            return hitpoints.Value - 1;
+        }
+
+        public static T OverrideWithDeepCopyOrRequirePart<T>(this GameObject GameObject, T PartToCopy)
+            where T : IPart, new()
+        {
+            if (PartToCopy == null)
+            {
+                return GameObject.RequirePart<T>();
+            }
+            if (GameObject.TryGetPart(out T bIAJ_Description))
+            {
+                GameObject.RemovePart(bIAJ_Description);
+            }
+            return GameObject.AddPart(PartToCopy.DeepCopy(GameObject, null) as T);
+        }
+
+        public static string SetSpecies(this GameObject GameObject, string Species)
+        {
+            GameObject.SetStringProperty(nameof(Species), Species);
+            return Species;
+        }
+        public static string SetGenotype(this GameObject GameObject, string Genotype)
+        {
+            GameObject.SetStringProperty(nameof(Genotype), Genotype);
+            return Genotype;
+        }
+        public static string SetSubtype(this GameObject GameObject, string Subtype)
+        {
+            GameObject.SetStringProperty(nameof(Subtype), Subtype);
+            return Subtype;
+        }
+
+        public static GameObjectBlueprint GetGameObjectBlueprint(this string Blueprint)
+        {
+            return Utils.GetGameObjectBlueprint(Blueprint);
+        }
     }
 }

@@ -6,12 +6,15 @@ using XRL;
 using XRL.Core;
 using XRL.Rules;
 using XRL.World;
-using XRL.World.Capabilities;
 using XRL.World.Parts;
+using XRL.World.ObjectBuilders;
+using XRL.World.Capabilities;
 using XRL.World.Conversations;
 
+using UD_FleshGolems;
+using static UD_FleshGolems.Utils;
+
 using SerializeField = UnityEngine.SerializeField;
-using XRL.World.ObjectBuilders;
 
 namespace XRL.World.Effects
 {
@@ -21,8 +24,13 @@ namespace XRL.World.Effects
     {
         public const string ENDLESSLY_SUFFERING = "{{UD_FleshGolems_reanimated|endlessly suffering}}";
 
+        private int FrameOffset => (int.Parse(Object.ID) % 3) + 1;
+
         public static int BASE_SMEAR_CHANCE => 5;
         public static int BASE_SPATTER_CHANCE => 2;
+        public static int GracePeriodTurns => 2;
+
+        private int GracePeriod;
 
         [SerializeField]
         private string SourceID;
@@ -49,6 +57,8 @@ namespace XRL.World.Effects
 
         public UD_FleshGolems_UnendingSuffering()
         {
+            GracePeriod = GracePeriodTurns;
+
             SourceObject = null;
             Damage = "1";
             ChanceToDamage = 10;
@@ -156,13 +166,14 @@ namespace XRL.World.Effects
                 return false;
             }
 
-            StartMessage(Object);
-
             StatShifter.SetStatShift(
                 target: Object,
                 statName: "AcidResistance",
                 amount: 200,
                 true);
+
+            StartMessage(Object);
+
             return base.Apply(Object);
         }
         public override void Remove(GameObject Object)
@@ -200,8 +211,9 @@ namespace XRL.World.Effects
             bool tookDamage = false;
             if (chanceToDamage.in100())
             {
+                int damage = CapDamageTo1HPRemaining(Object, Damage.RollCached());
                 tookDamage = Object.TakeDamage(
-                    Amount: Damage.RollCached(),
+                    Amount: damage,
                     Attributes: DamageAttributes(),
                     Owner: Object,
                     Message: DamageMessage(),
@@ -279,13 +291,18 @@ namespace XRL.World.Effects
         }
         public override bool HandleEvent(EndTurnEvent E)
         {
-            Suffer();
+            if (GracePeriod < 1)
+            {
+                GracePeriod--;
+                Suffer();
+            }
             return base.HandleEvent(E);
         }
         public override bool Render(RenderEvent E)
         {
             _ = Object.Render;
             int currentFrame = XRLCore.CurrentFrame % 60;
+
             bool firstRange = currentFrame > 15 && currentFrame < 25;
             bool secondRange = currentFrame > 45 && currentFrame < 55;
             if (firstRange || secondRange)

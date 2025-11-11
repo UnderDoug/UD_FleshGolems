@@ -51,23 +51,26 @@ namespace XRL.World.Parts
 
             public Location2D GetLocation() => new(X, Y);
         }
-        
-        public bool Init { get; protected set; }
-        public bool IsCorpse => (GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint)?.InheritsFrom("Corpse")).GetValueOrDefault();
 
-        public bool WasPlayer;
+        public GameObject BrainInAJar;
+
+        public bool Init { get; protected set; }
+        public bool WasCorpse => (GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint)?.InheritsFrom("Corpse")).GetValueOrDefault();
+
+        public bool WasPlayer => Blueprint.IsPlayerBlueprint() || BrainInAJar.HasPropertyOrTag("UD_FleshGolems_WasPlayer");
 
         public int TimesReanimated;
 
         public string Blueprint;
-        public string BaseDisplayName;
-        public Render PastRender;
-        public string Description;
+
+        public string BaseDisplayName => BrainInAJar?.BaseDisplayName;
+        public Render PastRender => BrainInAJar?.Render;
+
+        public string Description => BrainInAJar?.GetPart<Description>()?._Short;
 
         public UD_FleshGolems_DeathAddress DeathAddress;
 
-        [NonSerialized]
-        public Brain Brain;
+        public Brain Brain => BrainInAJar?.Brain;
 
         [NonSerialized]
         public string GenderName;
@@ -103,20 +106,15 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_PastLife()
         {
+            BrainInAJar = GetBrainInAJar();
             Init = false;
-
-            WasPlayer = false;
 
             TimesReanimated = 0;
 
             Blueprint = null;
-            BaseDisplayName = null;
-            PastRender = null;
-            Description = null;
 
             DeathAddress = null;
 
-            Brain = null;
             GenderName = null;
             Gender = null;
             PronounSetName = null;
@@ -153,128 +151,151 @@ namespace XRL.World.Parts
             Initialize(PrevPastLife);
         }
 
+        private static GameObject GetBrainInAJar()
+        {
+            return GameObjectFactory.Factory.CreateUnmodifiedObject("UD_FleshGolems Brain In A Jar Widget");
+        }
+
         public void Initialize(GameObject PastLife)
         {
             if (!Init)
             {
                 try
                 {
-                    WasPlayer = PastLife != null && PastLife.Blueprint.IsPlayerBlueprint();
-                    Blueprint = PastLife?.Blueprint;
-                    if (GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint).InheritsFrom("Corpse"))
+                    BrainInAJar ??= GetBrainInAJar();
+                    if (BrainInAJar != null)
                     {
-                        TimesReanimated = 1;
-                    }
-                    BaseDisplayName = PastLife?.BaseDisplayName;
-                    PastRender = PastLife?.Render?.DeepCopy(ParentObject) as Render;
-                    Description = PastLife?.GetPart<Description>()?._Short;
+                        Blueprint = PastLife.Blueprint;
 
-                    if (PastLife?.CurrentCell is Cell deathCell
-                        && deathCell.ParentZone is Zone deathZone)
-                    {
-                        DeathAddress = new(deathZone.ZoneID, deathCell.Location);
-                    }
-
-                    if (PastLife?.Brain is Brain pastBrain)
-                    {
-                        Brain = pastBrain.DeepCopy(ParentObject, null) as Brain;
-                        if (Brain != null)
+                        if (PastLife.IsPlayer())
                         {
-                            try
+                            BrainInAJar.SetStringProperty("UD_FleshGolems_WasPlayer", "Yep, I used to be the player!");
+                        }
+
+                        if (PastLife.GetBlueprint().InheritsFrom("UD_FleshGolems Brain In A Jar Widget")
+                            || PastLife.GetBlueprint().InheritsFrom("Corpse"))
+                        {
+                            TimesReanimated++;
+                        }
+
+                        BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Titles>());
+                        BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Epithets>());
+                        BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Honorifics>());
+
+                        Render bIAJ_Render = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Render);
+                        BrainInAJar.Render = bIAJ_Render;
+
+                        Description bIAJ_Description = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Description>());
+
+                        if (PastLife.CurrentCell is Cell deathCell
+                            && deathCell.ParentZone is Zone deathZone)
+                        {
+                            DeathAddress = new(deathZone.ZoneID, deathCell.Location);
+                        }
+
+                        Physics bIAJ_Physics = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Physics);
+                        BrainInAJar.Physics = bIAJ_Physics;
+
+                        Brain bIAJ_Brain = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Brain);
+                        BrainInAJar.Brain = bIAJ_Brain;
+                        try
+                        {
+                            foreach ((int flags, PartyMember partyMember) in bIAJ_Brain.PartyMembers)
                             {
-                                foreach ((int flags, PartyMember partyMember) in pastBrain.PartyMembers)
+                                PartyMember partyMemberCopy = new(partyMember.Reference, partyMember.Flags);
+                                Brain.PartyMembers.TryAdd(flags, partyMemberCopy);
+                            }
+                        }
+                        catch (Exception x)
+                        {
+                            MetricsManager.LogException(Name + "." + nameof(Initialize), x, "game_mod_exception");
+                            Brain.PartyMembers = new();
+                        }
+                        try
+                        {
+                            foreach ((int key, OpinionList opinionList) in bIAJ_Brain.Opinions)
+                            {
+                                OpinionList opinionsCopy = new();
+                                foreach (IOpinion opinionCopy in opinionList)
                                 {
-                                    PartyMember partyMemberCopy = new(partyMember.Reference, partyMember.Flags);
-                                    Brain.PartyMembers.TryAdd(flags, partyMemberCopy);
+                                    opinionsCopy.Add(opinionCopy);
+                                }
+                                Brain.Opinions.TryAdd(key, opinionsCopy);
+                            }
+                        }
+                        catch (Exception x)
+                        {
+                            MetricsManager.LogException(Name + "." + nameof(Initialize), x, "game_mod_exception");
+                            Brain.Opinions = new();
+                        }
+
+                        if (!PastLife.GenderName.IsNullOrEmpty())
+                        {
+                            BrainInAJar.SetGender(PastLife.GenderName);
+                        }
+
+                        if (!PastLife.PronounSetName.IsNullOrEmpty())
+                        {
+                            BrainInAJar.SetPronounSet(PastLife.PronounSetName);
+                        }
+
+                        ConversationScript bIAJ_Conversation = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<ConversationScript>());
+
+                        if (PastLife.Statistics.IsNullOrEmpty())
+                        {
+                            BrainInAJar.Statistics = new();
+                            foreach ((string statName, Statistic stat) in PastLife.Statistics)
+                            {
+                                Statistic newStat = new(stat);
+                                if (statName == "Hitpoints")
+                                {
+                                    newStat.Penalty = 0;
+                                }
+                                newStat.Owner = BrainInAJar;
+                                BrainInAJar.Statistics.Add(statName, newStat);
+                            }
+                        }
+
+                        Body bIAJ_Body = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Body);
+                        BrainInAJar.Body = bIAJ_Body;
+
+                        BrainInAJar.SetSpecies(PastLife.GetSpecies());
+                        BrainInAJar.SetGenotype(PastLife.GetGenotype());
+                        BrainInAJar.SetSubtype(PastLife.GetSubtype());
+
+                        Mutations bIAJ_Mutations = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Mutations>());
+                        Skills bIAJ_Skills = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Skills>());
+                        foreach (BaseSkill baseSkill in PastLife.GetPartsDescendedFrom<BaseSkill>())
+                        {
+                            // There's a bug in v1.04 with how Skills serializes its BaseSkills
+                            // that means the only way to guarantee copying them is via the parts list.
+                            if (!bIAJ_Skills.SkillList.Contains(baseSkill))
+                            {
+                                bIAJ_Skills.AddSkill(baseSkill);
+                            }
+                        }
+                        /*
+                        if (PastLife?.GetInstalledCyberneticsReadonly() is List<GameObject> pastInstalledCybernetics)
+                        {
+                            InstalledCybernetics = new();
+                            foreach (GameObject pastInstalledCybernetic in pastInstalledCybernetics)
+                            {
+                                if (pastInstalledCybernetic.ID is string cyberneticID
+                                    && PastLife?.Body?.FindCybernetics(pastInstalledCybernetic)?.Type is string implantedLimb)
+                                {
+                                    InstalledCybernetics.Add(new(cyberneticID, implantedLimb));
                                 }
                             }
-                            catch (Exception x)
-                            {
-                                MetricsManager.LogException(Name + "." + nameof(Initialize), x, "game_mod_exception");
-                                Brain.PartyMembers = new();
-                            }
-                            try
-                            {
-                                foreach ((int key, OpinionList opinionList) in pastBrain.Opinions)
-                                {
-                                    OpinionList opinionsCopy = new();
-                                    foreach (IOpinion opinionCopy in opinionList)
-                                    {
-                                        opinionsCopy.Add(opinionCopy);
-                                    }
-                                    Brain.Opinions.TryAdd(key, opinionsCopy);
-                                }
-                            }
-                            catch (Exception x)
-                            {
-                                MetricsManager.LogException(Name + "." + nameof(Initialize), x, "game_mod_exception");
-                                Brain.Opinions = new();
-                            }
                         }
-                    }
-                    GenderName = PastLife?.GenderName;
-                    Gender = new(PastLife?.GetGender(AsIfKnown: true));
-                    if (PastLife?.GetGender(AsIfKnown: true) is Gender pastGender)
-                    {
-                        Gender = new(pastGender);
-                    }
-                    PronounSetName = PastLife?.PronounSetName;
-                    if (PastLife?.GetPronounSet() is PronounSet pastPronouns)
-                    {
-                        PronounSet = new(pastPronouns);
-                    }
-                    ConversationScriptID = PastLife?.GetPart<ConversationScript>()?.ConversationID;
+                        */
+                        BrainInAJar._Property = PastLife._Property;
+                        BrainInAJar._IntProperty = PastLife._IntProperty;
 
-                    Stats = new(PastLife?.Statistics);
-                    Species = PastLife?.GetSpecies();
-                    Genotype = PastLife?.GetGenotype();
-                    Subtype = PastLife?.GetSubtype();
-
-                    if (PastLife?.GetPart<Mutations>() is Mutations pastMutations)
-                    {
-                        MutationLevels = new();
-                        foreach (BaseMutation baseMutation in pastMutations.MutationList)
+                        foreach (Effect pastEffect in PastLife.Effects)
                         {
-                            MutationLevels.TryAdd(baseMutation.GetMutationEntry().Name, baseMutation.BaseLevel);
+                            BrainInAJar.Effects.Add(pastEffect.DeepCopy(BrainInAJar, null));
                         }
                     }
-                    if (PastLife?.GetPart<Skills>() is Skills pastSkills)
-                    {
-                        Skills = new();
-                        foreach (BaseSkill baseSkill in pastSkills.SkillList)
-                        {
-                            Skills.Add(baseSkill.Name);
-                        }
-                    }
-                    if (PastLife?.GetInstalledCyberneticsReadonly() is List<GameObject> pastInstalledCybernetics)
-                    {
-                        InstalledCybernetics = new();
-                        foreach (GameObject pastInstalledCybernetic in pastInstalledCybernetics)
-                        {
-                            if (pastInstalledCybernetic.ID is string cyberneticID
-                                && PastLife?.Body?.FindCybernetics(pastInstalledCybernetic)?.Type is string implantedLimb)
-                            {
-                                InstalledCybernetics.Add(new(cyberneticID, implantedLimb));
-                            }
-                        }
-                    }
-
-                    Tags = new(PastLife?.GetBlueprint()?.Tags);
-                    _Property = new(PastLife?._Property);
-                    _IntProperty = new(PastLife?._IntProperty);
-
-                    if (PastLife != null && !PastLife._Effects.IsNullOrEmpty())
-                    {
-                        Effects = new();
-                        foreach (Effect pastEffect in PastLife._Effects)
-                        {
-                            Effects.Add(new(pastEffect.ClassName, pastEffect.Duration));
-                        }
-                    }
-
-                    Titles = PastLife?.GetPart<Titles>()?.DeepCopy(ParentObject) as Titles;
-                    Epithets = PastLife?.GetPart<Epithets>()?.DeepCopy(ParentObject) as Epithets;
-                    Honorifics = PastLife?.GetPart<Honorifics>()?.DeepCopy(ParentObject) as Honorifics;
                 }
                 catch (Exception x)
                 {
@@ -291,40 +312,8 @@ namespace XRL.World.Parts
         {
             if (!Init && PrevPastLife != null && PrevPastLife.Init)
             {
-                TimesReanimated = PrevPastLife.TimesReanimated;
-
-                Blueprint = PrevPastLife.Blueprint;
-                BaseDisplayName = PrevPastLife.BaseDisplayName;
-                PastRender = PrevPastLife.PastRender;
-                Description = PrevPastLife.Description;
-
-                DeathAddress = PrevPastLife.DeathAddress;
-
-                Brain = PrevPastLife.Brain;
-                Gender = PrevPastLife.Gender;
-                PronounSet = PrevPastLife.PronounSet;
-                ConversationScriptID = PrevPastLife.ConversationScriptID;
-
-                Stats = PrevPastLife.Stats;
-                Species = PrevPastLife.Species;
-                Genotype = PrevPastLife.Genotype;
-                Subtype = PrevPastLife.Subtype;
-
-                MutationLevels = PrevPastLife.MutationLevels;
-                Skills = PrevPastLife.Skills;
-                InstalledCybernetics = PrevPastLife.InstalledCybernetics;
-
-                Tags = PrevPastLife.Tags;
-                _Property = PrevPastLife._Property;
-                _IntProperty = PrevPastLife._IntProperty;
-
-                Effects = PrevPastLife.Effects;
-
-                Titles = PrevPastLife.Titles;
-                Epithets = PrevPastLife.Epithets;
-                Honorifics = PrevPastLife.Honorifics;
-
-                Init = true;
+                Initialize(PrevPastLife.BrainInAJar);
+                TimesReanimated++;
             }
             else
             if (PrevPastLife?.ParentObject is GameObject pastLife)
@@ -335,10 +324,6 @@ namespace XRL.World.Parts
 
         public override void Attach()
         {
-            if (Init && GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint).InheritsFrom("Corpse"))
-            {
-                TimesReanimated++;
-            }
             base.Attach();
         }
 
@@ -455,9 +440,6 @@ namespace XRL.World.Parts
         {
             base.Write(Basis, Writer);
 
-            Brain ??= new();
-            Save(Brain, Writer);
-
             Writer.WriteOptimized(Gender?.Name);
             Writer.WriteOptimized(PronounSet?.Name);
 
@@ -470,8 +452,6 @@ namespace XRL.World.Parts
         public override void Read(GameObject Basis, SerializationReader Reader)
         {
             base.Read(Basis, Reader);
-
-            Brain = Load(Basis, Reader) as Brain;
 
             GenderName = Reader.ReadOptimizedString();
 

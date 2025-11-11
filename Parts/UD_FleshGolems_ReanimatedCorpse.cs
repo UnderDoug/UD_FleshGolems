@@ -16,16 +16,16 @@ namespace XRL.World.Parts
         public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolems_reanimated|reanimated}}";
 
         [SerializeField]
-        private string SourceID;
+        private string ReanimatorID;
 
-        private GameObject _SourceObject;
-        public GameObject SourceObject
+        private GameObject _Reanimator;
+        public GameObject Reanimator
         {
-            get => _SourceObject ??= GameObject.FindByID(SourceID);
+            get => _Reanimator ??= GameObject.FindByID(ReanimatorID);
             set
             {
-                SourceID = value?.ID;
-                _SourceObject = value;
+                ReanimatorID = value?.ID;
+                _Reanimator = value;
             }
         }
 
@@ -48,12 +48,12 @@ namespace XRL.World.Parts
 
         public override void Attach()
         {
-            AttemptToSuffer();
             ParentObject.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject.GetBlueprint()));
             foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
             {
                 ParentObject.RemovePart(partToRemove);
             }
+            AttemptToSuffer();
             base.Attach();
         }
 
@@ -110,13 +110,13 @@ namespace XRL.World.Parts
             {
                 if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
                 {
-                    int tier = (frankenCorpse.Stat("Level") - 1) / 5 + 1;
-                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(SourceObject, tier));
+                    int tier = GetTierFromLevel(frankenCorpse);
+                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier));
                 }
                 else
-                if (unendingSuffering.SourceObject == null && SourceObject != null)
+                if (unendingSuffering.SourceObject == null && Reanimator != null)
                 {
-                    unendingSuffering.SourceObject = SourceObject;
+                    unendingSuffering.SourceObject = Reanimator;
                 }
             }
             return false;

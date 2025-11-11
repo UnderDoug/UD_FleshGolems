@@ -24,6 +24,10 @@ namespace XRL.World.ObjectBuilders
         {
             if (SpecialChanceOneIn > 0 && 1.ChanceIn(SpecialChanceOneIn) && !ContextsToIgnore.Contains(Context))
             {
+                if (UD_FleshGolems_Reanimated.HasWorldGenerated)
+                {
+                    Object.SetStringProperty("UD_FleshGolems_Reanimator", "UD_FleshGolems Mad Monger");
+                }
                 UD_FleshGolems_Reanimated.Unkill(Object, Context);
             }
         }

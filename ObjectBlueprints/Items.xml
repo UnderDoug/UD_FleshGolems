@@ -4,7 +4,7 @@
     <part Name="UD_FleshGolems_CorpseReanimationHelper" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Corpse Corpse" CorpseChance="100" />
     <tag Name="Animatable" />
-    <tag Name="Tier" />
+    <removetag Name="Tier" />
     <builder Name="Animated" ChanceOneIn="3000" />
     <builder Name="UD_FleshGolems_OptionallyAnimated" ChanceOneIn="1" />
     <tag Name="HeroNameTitleDescriptor" Value="Suffering,Waiting,Silent" />
