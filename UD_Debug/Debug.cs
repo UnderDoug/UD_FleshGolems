@@ -32,11 +32,16 @@ namespace UD_FleshGolems.Debug
             _LastIndent = null;
             Indent = LastIndent;
         }
+        public static void ResetIndent(out Indents Indent)
+        {
+            _LastIndent = null;
+            Indent = new(LastIndent);
+        }
         [GameBasedCacheInit]
         [ModSensitiveCacheInit]
         public static void ResetIndent()
         {
-            ResetIndent(out _);
+            ResetIndent(out Indents _);
         }
         public static void GetIndent(out Indent Indent)
         {

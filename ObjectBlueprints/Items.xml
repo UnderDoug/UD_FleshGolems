@@ -12,11 +12,15 @@
     <tag Name="DynamicObjectsTable:AnimatableFurniture" />
     <tag Name="BodyType" Value="Jelly" />
     <tag Name="Species" Value="Jelly" />
+    <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:TextFragments:PoeticFeatures= and =subject.uD_xTag:TextFragments:PoeticFeatures2= are brought =subject.uD_xTag:TextFragments:PoeticVerbs= back into a horrific facsimile of life. =subject.UD_xTag:TextFragments:PoeticAdjectives= =subject.uD_xTag:TextFragments:PoeticNoises= and =subject.uD_xTag:TextFragments:PoeticNoises2= escape =subject.possessive= every movement and twist the gut of anyone unfortunate enough to hear it." />
     <xtagTextFragments
+      CorpseDescription="mess"
       PoeticFeatures="viscera,muck,entrails,sinew,bone"
+      PoeticFeatures2="viscera,muck,entrails,sinew,bone"
       PoeticVerbs="squirming,wriggling,squelching"
       PoeticAdjectives="wet,moist,meaty"
-      PoeticnNoises="gurgles,slurps,squelches" />
+      PoeticNoises="gurgles,slurps"
+      PoeticNoises2="squelches" />
     <xtagUD_FleshGolems_Ragged
       GrossAdjective="wet,moist,fettid"
       SoftMaterial="viscera,muck,entrails,sinew"
@@ -43,10 +47,13 @@
     <tag Name="HeroNameTitleAdmirers" Value="Tinkers,Craftspeople,Robots" />
     <tag Name="BodyType" Value="HumanoidRobot" />
     <xtagTextFragments
+      CorpseDescription="scrap"
       PoeticFeatures="oil,gel,bent chrome,jagged edges"
+      PoeticFeatures2="oil,gel,bent chrome,jagged edges"
       PoeticVerbs="jittering,stuttering,whining"
       PoeticAdjectives="slick,erratic,crunchy"
-      PoeticnNoises="sizzles,whirs,sputters" />
+      PoeticNoises="sizzles,whirs"
+      PoeticNoises2="sputters" />
     <xtagTextFragments
       GrossAdjective="oily,slick,grimy"
       SoftMaterial="membrane,circuitry"
@@ -92,10 +99,13 @@
     <removetag Name="Meat" />
     <part Name="Food" Message="The fibers are tough." />
     <xtagTextFragments
-      PoeticFeatures="sap,fibre,roots"
+      CorpseDescription="mulch"
+      PoeticFeatures="sap,fibre"
+      PoeticFeatures2="roots"
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
-      PoeticnNoises="gurgles,slurps,squelches" />
+      PoeticNoises="gurgles,slurps"
+      PoeticNoises2="squelches" />
     <xtagTextFragments
       GrossAdjective="wet,moist,rotten"
       SoftMaterial="membrane,cellulose"
@@ -111,7 +121,7 @@
       PoeticFeatures="sap,fibre,roots,wood,fruit,leaves"
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
-      PoeticnNoises="gurgles,slurps,squelches" />
+      PoeticNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Cactus Corpse" Inherits="UD_FleshGolems Plant Corpse">
@@ -121,7 +131,7 @@
       PoeticFeatures="sap,fibre,roots,spines,fruit"
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
-      PoeticnNoises="gurgles,slurps,squelches" />
+      PoeticNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Flower Corpse" Inherits="UD_FleshGolems Plant Corpse">
@@ -132,7 +142,7 @@
       PoeticFeatures="sap,fibre,roots,petals,leaves"
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
-      PoeticnNoises="gurgles,slurps,squelches" />
+      PoeticNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Vine Corpse" Inherits="UD_FleshGolems Plant Corpse">
@@ -143,7 +153,7 @@
       PoeticFeatures="sap,fibre,roots,petals,leaves,thorns,fruit"
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
-      PoeticnNoises="gurgles,slurps,squelches" />
+      PoeticNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Tree Corpse" Inherits="UD_FleshGolems Plant Corpse">
@@ -156,7 +166,7 @@
       PoeticFeatures="sap,fibre,roots,leaves,fruit"
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
-      PoeticnNoises="gurgles,slurps,squelches" />
+      PoeticNoises="gurgles,slurps,squelches" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
@@ -172,10 +182,12 @@
     <tag Name="HeroNameTitleAdmirers" Value="Gardeners,MYcologists,The Last of Us" />
     <part Name="Food" Message="The material is soft and slimy." />
     <xtagTextFragments
-      PoeticFeatures="spores,fibre,tendrils"
+      PoeticFeatures="spores,tendrils"
+      PoeticFeatures2="fibre"
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
-      PoeticnNoises="gurgles,slurps,squelches" />
+      PoeticNoises="gurgles,slurps"
+      PoeticNoises2="squelches" />
     <xtagTextFragments
       GrossAdjective="wet,moist,rotten"
       SoftMaterial="skirt,gills,teeth"

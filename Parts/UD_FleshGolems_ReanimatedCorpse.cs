@@ -15,6 +15,13 @@ namespace XRL.World.Parts
     {
         public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolems_reanimated|reanimated}}";
 
+        public static List<string> PartsInNeedOfRemovalWhenAnimated => new()
+        {
+            nameof(Food),
+            nameof(Butcherable),
+            nameof(Harvestable),
+        };
+
         [SerializeField]
         private string ReanimatorID;
 
@@ -29,19 +36,22 @@ namespace XRL.World.Parts
             }
         }
 
+        public UD_FleshGolems_PastLife PastLife => ParentObject?.GetPart<UD_FleshGolems_PastLife>();
+
+        private string _NewDisplayName;
+        public string NewDisplayName => _NewDisplayName ??= PastLife?.GenerateIDisplayName();
+
+        private string _NewDescription;
+        public string NewDescription => _NewDescription ??= PastLife?.GenerateDescription();
+
         public string BleedLiquid;
 
         public Dictionary<string, int> BleedLiquidPortions;
 
-        public static List<string> PartsInNeedOfRemovalWhenAnimated => new()
-        {
-            nameof(Food),
-            nameof(Butcherable),
-            nameof(Harvestable),
-        };
-
         public UD_FleshGolems_ReanimatedCorpse()
         {
+            _NewDisplayName = null;
+            _NewDisplayName = null;
             BleedLiquid = null;
             BleedLiquidPortions = null;
         }
@@ -54,6 +64,11 @@ namespace XRL.World.Parts
                 ParentObject.RemovePart(partToRemove);
             }
             AttemptToSuffer();
+            if (ParentObject.TryGetPart(out Description frankenDescription)
+                && !NewDescription.IsNullOrEmpty())
+            {
+                frankenDescription._Short += "\n\n" + NewDescription;
+            }
             base.Attach();
         }
 
@@ -104,6 +119,7 @@ namespace XRL.World.Parts
             return Capabilities.Tier.Constrain((Creature.Stat("Level") - 1) / 5 + 1);
         }
         public int GetTierFromLevel() => GetTierFromLevel(ParentObject);
+
         public bool AttemptToSuffer()
         {
             if (ParentObject is GameObject frankenCorpse)
@@ -131,6 +147,10 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
+            if (!NewDisplayName.IsNullOrEmpty())
+            {
+                E.ReplacePrimaryBase(NewDisplayName);
+            }
             if (int.TryParse(E.Object.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
                 && NoReanimatedNamePrefix < 1)
             {

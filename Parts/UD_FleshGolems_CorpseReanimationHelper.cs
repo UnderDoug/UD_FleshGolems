@@ -810,49 +810,10 @@ namespace XRL.World.Parts
                 Description frankenDescription = frankenCorpse.RequirePart<Description>();
                 if (frankenDescription != null)
                 {
-                    List<string> poeticFeatures = new()
+                    if (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_CorpseDescription") is string corpseDescription)
                     {
-                        "viscera",
-                        "muck",
-                    };
-                    if (frankenCorpse?.GetxTag("TextFragments", "PoeticFeatures") is string poeticFeaturesXTag)
-                    {
-                        poeticFeatures = new(poeticFeaturesXTag.Split(','));
+                        frankenDescription._Short = corpseDescription.StartReplace().AddObject(frankenCorpse).ToString();
                     }
-                    string firstPoeticFeature = poeticFeatures.GetRandomElement() ?? "Viscera";
-                    poeticFeatures.Remove(firstPoeticFeature);
-                    string secondPoeticFeature = poeticFeatures.GetRandomElement() ?? "muck";
-                    poeticFeatures.Remove(secondPoeticFeature);
-
-                    string poeticVerb = frankenCorpse?.GetxTag("TextFragments", "PoeticVerbs")?.Split(',')?.GetRandomElement() ?? "squirming";
-
-                    string poeticAdjective = frankenCorpse?.GetxTag("TextFragments", "PoeticAdjectives")?.Split(',')?.GetRandomElement() ?? "wet";
-
-                    List<string> poeticNoises = new()
-                    {
-                        "gurgles",
-                        "slurps",
-                    };
-                    if (frankenCorpse?.GetxTag("TextFragments", "PoeticnNoises") is string poeticNoisesXTag)
-                    {
-                        poeticFeatures = new(poeticNoisesXTag.Split(','));
-                    }
-                    string firstPoeticNoise = poeticNoises.GetRandomElement();
-                    poeticNoises.Remove(firstPoeticNoise);
-                    string secondPoeticNoise = poeticNoises.GetRandomElement();
-                    poeticFeatures.Remove(secondPoeticNoise);
-
-                    CorpseDescription = frankenDescription._Short;
-                    frankenDescription._Short =
-                        ("*FirstFeature* and *secondFeature* are brought *verbing* back into a horrific facsimile of life. " +
-                        "*Adjective* *firstNoise* and *secondNoise* escape =subject.possessive= every movement and twist the " +
-                        "gut of anyone unfortunate enough to hear it.")
-                            .Replace("*FirstFeature*", firstPoeticFeature.Capitalize())
-                            .Replace("*secondFeature*", secondPoeticFeature)
-                            .Replace("*verbing*", poeticVerb)
-                            .Replace("*Adjective*", poeticAdjective.Capitalize())
-                            .Replace("*firstNoise*", firstPoeticNoise)
-                            .Replace("*secondNoise*", secondPoeticNoise);
                 }
                 string sourceBlueprintName = FigureOutWhatBlueprintThisCorpseCameFrom(frankenCorpse, PastLife);
 
@@ -884,7 +845,6 @@ namespace XRL.World.Parts
                 
                 AddPlayerSkillsIfPlayer(frankenCorpse, wasPlayer);
                 PastLife.RestoreSkills(out Skills frankenSkills);
-
 
                 if (frankenCorpse.GetBlueprint().Tags.ContainsKey(nameof(Gender)))
                 {
@@ -918,11 +878,6 @@ namespace XRL.World.Parts
                     AssignSkillsFromBlueprint(frankenSkills, sourceBlueprint);
 
                     excludedFromDynamicEncounters = PastLife != null && PastLife.Tags.ContainsKey("ExcludeFromDynamicEncounters");
-
-                    frankenBody = frankenCorpse.Body;
-                    if (frankenBody != null)
-                    {
-                    }
 
                     if (frankenCorpse.TryGetPart(out Leveler frankenLeveler))
                     {
@@ -968,6 +923,7 @@ namespace XRL.World.Parts
                     }
                     */
 
+                    /*
                     if (sourceBlueprint.DisplayName() is string sourceBlueprintDisplayName)
                     {
                         string sourceCreatureName = null;
@@ -1031,6 +987,7 @@ namespace XRL.World.Parts
                             frankenCorpse.Render.DisplayName = sourceBlueprintDisplayName + " corpse";
                         }
                     }
+                    */
 
                     string BleedLiquid = null;
                     if (sourceBlueprint.Tags.ContainsKey(nameof(BleedLiquid)))
@@ -1079,6 +1036,7 @@ namespace XRL.World.Parts
                             {
                                 frankenCorpse.Body.Rebuild(golemAnatomy);
                             }
+                            PastLife.RestoreAdditionalLimbs();
                         }
                         if (golemBodyBlueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.Tile), out string golemTile))
                         {
