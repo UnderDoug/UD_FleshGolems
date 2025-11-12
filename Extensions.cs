@@ -133,18 +133,18 @@ namespace UD_FleshGolems
             return hitpoints.Value - 1;
         }
 
-        public static T OverrideWithDeepCopyOrRequirePart<T>(this GameObject GameObject, T PartToCopy)
+        public static T OverrideWithDeepCopyOrRequirePart<T>(this GameObject GameObject, T PartToCopy, Func<GameObject, GameObject> MapInv = null)
             where T : IPart, new()
         {
             if (PartToCopy == null)
             {
-                return GameObject.RequirePart<T>();
+                return GameObject?.RequirePart<T>();
             }
-            if (GameObject.TryGetPart(out T bIAJ_Description))
+            if (GameObject != null && GameObject.TryGetPart(out T existingPart))
             {
-                GameObject.RemovePart(bIAJ_Description);
+                GameObject?.RemovePart(existingPart);
             }
-            return GameObject.AddPart(PartToCopy.DeepCopy(GameObject, null) as T);
+            return GameObject?.AddPart(PartToCopy.DeepCopy(GameObject, MapInv) as T);
         }
 
         public static string SetSpecies(this GameObject GameObject, string Species)

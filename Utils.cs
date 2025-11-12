@@ -141,6 +141,11 @@ namespace UD_FleshGolems
             return GameObjectFactory.Factory.GetBlueprint(Blueprint);
         }
 
+        public static GameObject DeepCopyMapInventory(GameObject Source)
+        {
+            return Source.DeepCopy(MapInv: DeepCopyMapInventory);
+        }
+
         /* 
          * 
          * Wishes!
