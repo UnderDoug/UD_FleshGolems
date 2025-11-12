@@ -414,7 +414,7 @@ namespace XRL.World.Parts
                     Init = true;
                     if (obliteratePastLife)
                     {
-                        PastLife.Obliterate();
+                        PastLife?.Obliterate();
                     }
                     Debug.SetIndent(indent[0]);
                 }
