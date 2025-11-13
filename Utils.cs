@@ -8,6 +8,7 @@ using Qud.API;
 using XRL;
 using XRL.Wish;
 using XRL.World;
+using XRL.World.Parts.Mutation;
 using XRL.World.Text.Attributes;
 using XRL.World.Text.Delegates;
 using XRL.Language;
@@ -26,8 +27,19 @@ namespace UD_FleshGolems
 {
     [HasWishCommand]
     [HasVariableReplacer]
+    [UD_FleshGolems_HasDebugRegistry]
     public static class Utils
     {
+        [UD_FleshGolems_DebugRegistry]
+        public static Dictionary<string, bool> doDebugRegistry(Dictionary<string, bool> Registry)
+        {
+            Registry.Register(typeof(Utils), nameof(UD_xTag), false);
+            Registry.Register(typeof(Utils), nameof(UD_xTagSingle), false);
+            Registry.Register(typeof(Utils), nameof(UD_xTagMulti), false);
+            Registry.Register(typeof(Utils), nameof(UD_xTagMultiU), false);
+            return Registry;
+        }
+
         public static ModInfo ThisMod => ModManager.GetMod(MOD_ID);
 
         public static string GetPlayerBlueprint()
@@ -285,9 +297,40 @@ namespace UD_FleshGolems
         [WishCommand( Command = "UD_FleshGolems test kit" )]
         public static bool ReanimationTestKit_WishHandler()
         {
-            The.Player.ReceiveObject("Neuro Animator");
-            The.Player.ReceiveObject("Antimatter Cell");
-            Examiner.IDAll();
+            return ReanimationTestKit_WishHandler(null);
+        }
+        [WishCommand( Command = "UD_FleshGolems test kit" )]
+        public static bool ReanimationTestKit_WishHandler(string Parameters)
+        {
+            if (Parameters.IsNullOrEmpty() || (!Parameters.EqualsNoCase("Corpse") && !Parameters.EqualsNoCase("Corpses")))
+            {
+                The.Player.ReceiveObject("Neuro Animator");
+                The.Player.ReceiveObject("Antimatter Cell");
+                Examiner.IDAll();
+                Mutations playerMutations = The.Player.RequirePart<Mutations>();
+                if (The.Player.GetPartsDescendedFrom<UD_FleshGolems_NanoNecroAnimation>().IsNullOrEmpty()
+                    && !The.Player.HasPart<UD_FleshGolems_NanoNecroAnimation>())
+                {
+                    Dictionary<string, string> reanimationMutationEntries = new()
+                    {
+                        { "Physical", nameof(UD_FleshGolems_NanoNecroAnimation) },
+                        { "Mental", nameof(UD_FleshGolems_NecromanticAura) }
+                    };
+                    if (The.Player.IsChimera())
+                    {
+                        playerMutations.AddMutation(reanimationMutationEntries["Physical"]);
+                    }
+                    else
+                    if (The.Player.IsEsper())
+                    {
+                        playerMutations.AddMutation(reanimationMutationEntries["Mental"]);
+                    }
+                    else
+                    {
+                        playerMutations.AddMutation(reanimationMutationEntries.GetRandomElement().Value);
+                    }
+                }
+            }
             if (Popup.AskNumber("How many corpses do you want?", Start: 20, Min: 0, Max: 100) is int corpseCount
                 && corpseCount > 0)
             {

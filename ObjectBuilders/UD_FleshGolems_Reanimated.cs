@@ -78,7 +78,8 @@ namespace XRL.World.ObjectBuilders
                     && !corpsePart.CorpseBlueprint.IsNullOrEmpty())
                 {
                     corpseBlueprint = GameObjectFactory.Factory.GetBlueprintIfExists(corpsePart?.CorpseBlueprint);
-                    if (corpseBlueprint.InheritsFrom("Corpse"))
+                    if (corpseBlueprint != null
+                        && corpseBlueprint.InheritsFrom("Corpse"))
                     {
                         corpseBlueprintName = corpsePart.CorpseBlueprint;
                     }
@@ -94,12 +95,15 @@ namespace XRL.World.ObjectBuilders
 
                     if (corpseBlueprint == null)
                     {
-                        corpseBlueprintName = GameObjectFactory.Factory?.GetBlueprintIfExists(creatureBaseBlueprint)
-                            ?.GetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), speciesCorpse);
+                        corpseBlueprint = creatureBaseBlueprint?.GetGameObjectBlueprint()?.GetCorpseBlueprint()?.GetGameObjectBlueprint();
+                        corpseBlueprintName = corpseBlueprint?.GetCorpseBlueprint();
                     }
-                    corpseBlueprint = GameObjectFactory.Factory.GetBlueprintIfExists(corpseBlueprintName);
 
                     corpseBlueprintName = corpseBlueprint?.Name ?? fallbackCorpse;
+                }
+                if (!corpseBlueprintName.IsNullOrEmpty() && !corpseBlueprintName.GetGameObjectBlueprint().InheritsFrom("Corpse"))
+                {
+                    corpseBlueprintName = null;
                 }
                 if ((corpse = GameObject.Create(corpseBlueprintName, Context: nameof(UD_FleshGolems_PastLife))) == null)
                 {
@@ -124,7 +128,7 @@ namespace XRL.World.ObjectBuilders
                     corpse.SetStringProperty("SourceID", Creature.ID);
                 }
                 corpse.SetStringProperty("SourceBlueprint", Creature.Blueprint);
-                if (50.in100())
+                if (100.in100())
                 {
                     string killerBlueprint = EncountersAPI.GetACreatureBlueprint();
                     if (100.in100())

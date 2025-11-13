@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<mutations Hidden="true" ExcludeFromPool="true">
+  <category Name="Physical">
+    <mutation Name="Nano Necro Animation" Type="Physical" Cost="12" Class="UD_FleshGolems_NanoNecroAnimation" Exclusions="Nano Necro Animation" BearerDescription="those who bring others back" Tile="Mutations/syphon_vim.bmp" />
+  </category>
+  <category Name="Mental">
+    <mutation Name="Necromantic Aura" Type="Mental" Cost="12" Class="UD_FleshGolems_NecromanticAura" Exclusions="Necromantic Aura" BearerDescription="those who bring others back" Tile="Mutations/sunder_mind.bmp" />
+  </category>
+</mutations>

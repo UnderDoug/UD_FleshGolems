@@ -233,23 +233,33 @@ namespace XRL.World.Parts
             return GameObjectFactory.Factory.CreateUnmodifiedObject("UD_FleshGolems Brain In A Jar Widget");
         }
 
-        public static Dictionary<string,int> GetBlueprintsWhoseCorpseThisCouldBe(string Blueprint, bool Include0Chance = false)
+        public static Dictionary<string, int> GetBlueprintsWhoseCorpseThisCouldBe(
+            string Blueprint,
+            bool Include0Chance = true,
+            bool ExcludeExcludedFromDynamicEnounter = true)
         {
             Dictionary<string, int> blueprintsWeightedList = new();
             foreach (GameObjectBlueprint gameObjectBlueprint in GameObjectFactory.Factory.Blueprints.Values)
             {
                 if (gameObjectBlueprint.IsBaseBlueprint()
-                    || gameObjectBlueprint.IsExcludedFromDynamicEncounters())
+                    || (ExcludeExcludedFromDynamicEnounter && gameObjectBlueprint.IsExcludedFromDynamicEncounters()))
                 {
                     continue;
                 }
                 if (gameObjectBlueprint.TryGetCorpseBlueprint(out string corpseBlueprint)
-                    && corpseBlueprint == Blueprint
+                    && GameObjectFactory.Factory.HasBlueprint(corpseBlueprint)
+                    && (corpseBlueprint == Blueprint || corpseBlueprint.GetGameObjectBlueprint().InheritsFrom(Blueprint))
                     && gameObjectBlueprint.TryGetCorpseChance(out int corpseChance)
                     && (corpseChance > 0 || Include0Chance))
                 {
                     blueprintsWeightedList.TryAdd(gameObjectBlueprint.Name, corpseChance);
                 }
+            }
+            if (blueprintsWeightedList.IsNullOrEmpty()
+                && Blueprint.GetGameObjectBlueprint().Inherits is string blueprintInherits
+                && blueprintInherits.GetGameObjectBlueprint().InheritsFrom("Corpse"))
+            {
+                blueprintsWeightedList = GetBlueprintsWhoseCorpseThisCouldBe(blueprintInherits, Include0Chance);
             }
             return blueprintsWeightedList;
         }
@@ -278,7 +288,7 @@ namespace XRL.World.Parts
             }
             return null;
         }
-        public static string GetALivingBlueprintForCorpse(string CorpseBlueprint, bool Include0Chance = false)
+        public static string GetALivingBlueprintForCorpse(string CorpseBlueprint, bool Include0Chance = true)
         {
             return GetBlueprintsWhoseCorpseThisCouldBe(CorpseBlueprint, Include0Chance: Include0Chance)?.Keys?.GetRandomElementCosmetic();
         }
@@ -1021,6 +1031,39 @@ namespace XRL.World.Parts
             else
             {
                 Popup.Show("nothing selected to debug " + nameof(UD_FleshGolems_PastLife));
+            }
+        }
+
+        [WishCommand("UD_FleshGolems wot creature?")]
+        public static void Debug_WotDis_WishHandler()
+        {
+            int startX = 40;
+            int startY = 12;
+            if (The.Player.CurrentCell is Cell playerCell)
+            {
+                startX = playerCell.X;
+                startY = playerCell.Y;
+            }
+            if (PickTarget.ShowPicker(
+                Style: PickTarget.PickStyle.EmptyCell,
+                StartX: startX,
+                StartY: startY,
+                VisLevel: AllowVis.Any,
+                ObjectTest: UD_FleshGolems_NanoNecroAnimation.IsCorpse,
+                Label: "pick corpse to get creatrue") is Cell pickCell
+                && Popup.PickGameObject(
+                    Title: "pick corpse to get creatrue",
+                    Objects: pickCell.GetObjectsWithPart(nameof(UD_FleshGolems_PastLife)),
+                    AllowEscape: true,
+                    ShortDisplayNames: true) is GameObject pickedObject)
+            {
+                Popup.Show(
+                    pickedObject.GetReferenceDisplayName(Short: true) + " might have been " + 
+                    Grammar.A(GetALivingBlueprintForCorpseWeighted(pickedObject.Blueprint)));
+            }
+            else
+            {
+                Popup.Show("no corpse selected to get a creature from");
             }
         }
     }

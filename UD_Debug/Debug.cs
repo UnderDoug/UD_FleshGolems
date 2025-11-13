@@ -12,6 +12,49 @@ namespace UD_FleshGolems.Logging
     [HasGameBasedStaticCache]
     public static class Debug
     {
+        private static bool doDebug => true;
+        private static Dictionary<string, bool> doDebugRegistry = new()
+        {
+            { "Example", true },
+        };
+        public static void Register(
+            Type Class,
+            string MethodName,
+            bool Value,
+            Dictionary<string, bool> Registry,
+            out Dictionary<string, bool> ReturnRegistry)
+        {
+            Registry.Add(Class.Name + "." + MethodName, Value);
+            ReturnRegistry = Registry;
+        }
+        public static void Register(this Dictionary<string, bool> Registry, Type Class, string MethodName, bool Value)
+        {
+            Register(Class, MethodName, Value, Registry, out doDebugRegistry);
+        }
+        public static Dictionary<string, bool> GetRegistry()
+        {
+            if (_GotRegistry)
+            {
+                return doDebugRegistry;
+            }
+            Type classWithDebugRegistryAttribute = typeof(UD_FleshGolems_HasDebugRegistryAttribute);
+            Type methodWithDebugRegistryAttribute = typeof(UD_FleshGolems_DebugRegistryAttribute);
+            foreach (Type hasDebugRegistry in ModManager.GetClassesWithAttribute(classWithDebugRegistryAttribute))
+            {
+                List<MethodInfo> debugRegistryMethods = ModManager.GetMethodsWithAttribute(methodWithDebugRegistryAttribute, hasDebugRegistry);
+                foreach (MethodInfo debugRegistryMethod in debugRegistryMethods)
+                {
+                    doDebugRegistry = debugRegistryMethod.Invoke(null, new object[] { doDebugRegistry }) as Dictionary<string, bool>;
+                }
+            }
+            _GotRegistry = true;
+            return doDebugRegistry;
+        }
+
+        [ModSensitiveStaticCache( CreateEmptyInstance = false )]
+        [GameBasedStaticCache( ClearInstance = false )]
+        private static bool _GotRegistry = false;
+
         [ModSensitiveStaticCache( CreateEmptyInstance = false )]
         [GameBasedStaticCache( ClearInstance = false )]
         private static Indent _LastIndent = null;
@@ -78,6 +121,18 @@ namespace UD_FleshGolems.Logging
 
         public static void Log<T>(string Field, T Value, Indent Indent = null)
         {
+            string callingTypeAndMethod = GetCallingTypeAndMethod();
+            if (doDebugRegistry.ContainsKey(callingTypeAndMethod))
+            {
+                if (!doDebugRegistry[callingTypeAndMethod])
+                {
+                    return;
+                }
+            }
+            if (!doDebug)
+            {
+                return;
+            }
             Indent ??= GetNewIndent();
             string output = Field;
             if (Value != null &&

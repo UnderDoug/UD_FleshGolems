@@ -200,5 +200,21 @@ namespace UD_FleshGolems
             }
             return false;
         }
+
+        public static bool IsCorpse(this GameObjectBlueprint Blueprint)
+        {
+            return Blueprint.InheritsFrom("Corpse");
+        }
+
+        public static bool IsCorpse(this GameObject Corpse)
+        {
+            if (Corpse == null
+                || Corpse.HasPart<AnimatedObject>()
+                || !Corpse.HasPart<UD_FleshGolems_CorpseReanimationHelper>())
+            {
+                return false;
+            }
+            return Corpse.GetBlueprint().IsCorpse();
+        }
     }
 }

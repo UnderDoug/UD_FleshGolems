@@ -26,6 +26,8 @@ namespace XRL.World.Effects
 
         private int FrameOffset => (int.Parse(Object.ID) % 3) + 1;
 
+        private bool FlipRenderColors => (int.Parse(Object.ID) % 2) == 0;
+
         private List<int> FrameRanges => new()
         {
             15 + FrameOffset,
@@ -350,7 +352,7 @@ namespace XRL.World.Effects
             if (firstRange || secondRange)
             {
                 E.RenderString = "\u0003";
-                E.ApplyColors(firstRange ? "&K" : "&R", ICON_COLOR_PRIORITY);
+                E.ApplyColors((firstRange == !FlipRenderColors) ? "&K" : "&R", ICON_COLOR_PRIORITY);
                 return false;
             }
             return true;
