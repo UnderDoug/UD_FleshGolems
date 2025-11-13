@@ -13,20 +13,8 @@ namespace XRL.World.Parts
 
         [SerializeField]
         private bool DisplayNameAdjusted;
-        
-        [SerializeField]
-        private string WielderID;
 
-        private GameObject _Wielder;
-        public GameObject Wielder
-        {
-            get => _Wielder ??= GameObject.FindByID(WielderID);
-            set
-            {
-                WielderID = value?.ID;
-                _Wielder = value;
-            }
-        }
+        public GameObject Wielder;
 
         [SerializeField]
         private string Description;
@@ -34,8 +22,7 @@ namespace XRL.World.Parts
         public UD_FleshGolems_RaggedNaturalWeapon()
         {
             DisplayNameAdjusted = false;
-            WielderID = null;
-            _Wielder = null;
+            Wielder = null;
             Description = null;
         }
 
@@ -52,7 +39,15 @@ namespace XRL.World.Parts
 
         public override void ApplyModification(GameObject obj)
         {
-            
+            if (obj == ParentObject
+                && !obj.HasProperName
+                && !DisplayNameAdjusted
+                && obj.Render is Render render
+                && render.DisplayName.Contains("ragged "))
+            {
+                render.DisplayName = render.DisplayName.Replace("ragged ", "");
+                DisplayNameAdjusted = true;
+            }
             base.ApplyModification(obj);
         }
 
@@ -61,12 +56,19 @@ namespace XRL.World.Parts
         public void ProcessDescriptionElements(GameObject Wielder = null)
         {
             if (ParentObject.TryGetPart(out Description descriptionPart)
-                && Wielder != null || this.Wielder != null)
+                && (Wielder != null || this.Wielder != null))
             {
-                Description = descriptionPart._Short.StartReplace().AddObject(Wielder).ToString();
-                UnityEngine.Debug.Log(descriptionPart._Short.StartReplace().AddObject(Wielder).ToString());
+                this.Wielder ??= Wielder;
+                Wielder ??= this.Wielder;
+
+                string processedDescription = descriptionPart._Short.StartReplace().AddObject(Wielder).ToString();
+                Description = processedDescription;
+                UnityEngine.Debug.Log(processedDescription);
+
                 UnityEngine.Debug.Log(Description);
+
                 descriptionPart._Short = Description;
+
                 UnityEngine.Debug.Log(descriptionPart._Short);
             }
         }
@@ -80,7 +82,7 @@ namespace XRL.World.Parts
             if ((E.Understood() || E.AsIfKnown) && !E.Object.HasProperName)
             {
                 if (!DisplayNameAdjusted
-                    && ParentObject.Render is Render render
+                    && E.Object.Render is Render render
                     && render.DisplayName.Contains("ragged "))
                 {
                     render.DisplayName = render.DisplayName.Replace("ragged ", "");

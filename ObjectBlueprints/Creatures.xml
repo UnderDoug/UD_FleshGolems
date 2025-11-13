@@ -15,6 +15,7 @@
   </object>
 
   <object Name="UD_FleshGolems Brain In A Jar Widget" Inherits="Widget">
+    <part Name="Render" DisplayName="unfortunate soul" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
@@ -22,6 +23,7 @@
     <part Name="Render" DisplayName="Jofo Qudwufo" />
     <part Name="Brain" Wanders="false" />
     <xtagGrammar Proper="true" />
+    <intproperty Name="ProperNoun" Value="1" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <stat Name="Hitpoints" sValue="17d3+4" />
@@ -65,11 +67,13 @@
     <part Name="Render" DisplayName="'Monger" DetailColor="R" TileColor="&amp;W" />
     <part Name="Description" Short="A frantic slip of a =subject.personTerm= =subject.verb:flitter= agitatedly between the several foci of =subject.possessive= attention. Were it not for =subject.possessive= palid countenance, one might have assumed the vigor of youth kept =subject.objective= so spry, though =subject.possessive= poorly state appears, perhaps a bit... unnatural. =subject.Subjective= =subject.verb:wear:afterpronoun= =subject.possessive= affect of general disgust in much the same way as =subject.subjective= =subject.verb:wear:afterpronoun= =subject.possessive= lab coat: seemingly out of habit, and perhaps a misplaced sense of self-import." />
     <part Name="Honorifics" Primary="the Mad" />
+    <xtagGrammar Proper="true" />
+    <intproperty Name="ProperNoun" Value="1" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Mad Monger Corpse" CorpseChance="100" />
     <part Name="GenericInventoryRestocker" Table="UD_FleshGolems Mad Monger Stock Table" Chance="85" />
     <part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" />
-    <xtagGrammar Proper="true" />
     <part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger" />
+    <part Name="UD_FleshGolems_EnforceCyberneticRejectionSyndrome" />
     <removepart Name="HasGuards" />
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
@@ -99,7 +103,7 @@
   
   -->
   <object Name="Robot" Load="Merge">
-    <part Name="Corpse" CorpseBlueprint="Chrome Robot Corpse" CorpseChance="0" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Chrome Robot Corpse" CorpseChance="0" />
   </object>
   <object Name="BaseRobot" Load="Merge">
     <part Name="Corpse" CorpseChance="20" />
@@ -152,37 +156,38 @@
 
   <!-- Flesh Golem natural weapons -->
   <object Name="UD_FleshGolems Ragged Weapon" Inherits="NaturalWeapon">
-    <part Name="Render" DisplayName="ragged weapon"
+    <part Name="Render" DisplayName="weapon"
           TileColor="&amp;r" DetailColor="w" ColorString="&amp;r"/>
-    <part Name="Description" Short="=subject.UD_xTag:UD_FleshGolems_Ragged:GrossAdjective= =subject.uD_xTag:UD_FleshGolems_Ragged:Skin= is pressed taut over =subject.uD_xTag:UD_FleshGolems_Ragged:HarshAdjective= =subject.uD_xTag:UD_FleshGolems_Ragged:HardMaterial= which protudes in several places, forming a very deadly make-shift weapon." />
-    <part Name="RandomColors" DetailColor="w,K,R" />
+    <part Name="Description" Short="=subject.UD_xTag:UD_FleshGolems_Ragged:GrossAdjective= =subject.uD_xTag:UD_FleshGolems_Ragged:Skin= is held taut over =subject.uD_xTag:UD_FleshGolems_Ragged:HarshAdjective= =subject.uD_xTag:UD_FleshGolems_Ragged:HardMaterial= which protudes in several places, forming a very deadly make-shift weapon." />
+    <part Name="RandomColors" DetailColor="w,w,K,K,K,R" />
     <part Name="MeleeWeapon" Slot="" HitBonus="10" PenBonus="0" MaxStrengthBonus="999" Stat="Strength" />
     <part Name="UD_FleshGolems_SetDefaultBehaviorBlueprintWhenDefaultBehavior" />
+    <part Name="UD_FleshGolems_RaggedNaturalWeapon" />
     <tag Name="BaseObject" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Ragged Cudgel" Inherits="UD_FleshGolems Ragged Weapon">
-    <part Name="Render" DisplayName="ragged cudgel" />
+    <part Name="Render" DisplayName="cudgel" />
     <part Name="MeleeWeapon" BaseDamage="4d6" Skill="Cudgel" />
     <tag Name="BaseObject" Value="*noinherit" />
     <part Name="ConfuseOnHit" Chance="15" />
     <part Name="StunOnHit" Chance="15" />
   </object>
   <object Name="UD_FleshGolems Ragged Axe" Inherits="UD_FleshGolems Ragged Weapon">
-    <part Name="Render" DisplayName="ragged axe" />
+    <part Name="Render" DisplayName="axe" />
     <part Name="MeleeWeapon" BaseDamage="1d8+8" Skill="Axe" />
     <tag Name="BaseObject" Value="*noinherit" />
     <part Name="ConfuseOnHit" Chance="15" />
     <part Name="VomitOnHit" Chance="15" />
   </object>
   <object Name="UD_FleshGolems Ragged LongBlades" Inherits="UD_FleshGolems Ragged Weapon">
-    <part Name="Render" DisplayName="ragged long blade" />
+    <part Name="Render" DisplayName="long blade" />
     <part Name="MeleeWeapon" BaseDamage="2d12" Skill="LongBlades" />
     <tag Name="BaseObject" Value="*noinherit" />
     <part Name="PoisonOnHit" Chance="15" />
     <part Name="StunOnHit" Chance="15" />
   </object>
   <object Name="UD_FleshGolems Ragged ShortBlades" Inherits="UD_FleshGolems Ragged Weapon">
-    <part Name="Render" DisplayName="ragged dagger" />
+    <part Name="Render" DisplayName="dagger" />
     <part Name="MeleeWeapon" BaseDamage="1d12+5" Skill="ShortBlades" />
     <tag Name="BaseObject" Value="*noinherit" />
     <part Name="PoisonOnHit" Chance="15" />
@@ -191,133 +196,133 @@
 
   <!-- Flesh Golem natural weapons - hand -->
   <object Name="UD_FleshGolems Ragged Hand Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="ragged mitt" Tile="Creatures/natural-weapon-fist.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="clump" Tile="Creatures/natural-weapon-pseudopod.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
   <object Name="UD_FleshGolems Ragged Hand Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="ragged spade" Tile="Creatures/natural-weapon-drill.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="spade" Tile="Creatures/natural-weapon-drill.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
   <object Name="UD_FleshGolems Ragged Hand LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="ragged blade" Tile="Items/sw_longblade_10.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="blade" Tile="Items/sw_longblade_10.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
   <object Name="UD_FleshGolems Ragged Hand ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="ragged point" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="point" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Hand" />
   </object>
   <!-- Flesh Golem natural weapons - face -->
   <object Name="UD_FleshGolems Ragged Face Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="ragged molars" />
+    <part Name="Render" DisplayName="molars" Tile="Creatures/natural-weapon-bite.bmp" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Face Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="ragged trines" />
+    <part Name="Render" DisplayName="trines" Tile="Creatures/natural-weapon-bite.bmp" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Face LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="ragged tusks" />
+    <part Name="Render" DisplayName="tusks" Tile="items/sw_horns2.bmp" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Face ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="ragged fangs" />
+    <part Name="Render" DisplayName="fangs" Tile="Items/girshling_fangs.bmp" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
   </object>
   <!-- Flesh Golem natural weapons - head -->
   <object Name="UD_FleshGolems Ragged Head Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="ragged bulb" />
+    <part Name="Render" DisplayName="bulb" Tile="Items/sw_casque.bmp" />
     <part Name="MeleeWeapon" Slot="Head" />
   </object>
   <object Name="UD_FleshGolems Ragged Head Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="ragged ridge" />
+    <part Name="Render" DisplayName="ridge" Tile="Creatures/natural-weapon-finned-tail.bmp" />
     <part Name="MeleeWeapon" Slot="Head" />
   </object>
   <object Name="UD_FleshGolems Ragged Head LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="ragged prow" />
+    <part Name="Render" DisplayName="prow" Tile="Items/sw_horn.bmp" />
     <part Name="MeleeWeapon" Slot="Head" />
   </object>
   <object Name="UD_FleshGolems Ragged Head ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="ragged horn" />
+    <part Name="Render" DisplayName="horn" Tile="items/sw_horns2.bmp" />
     <part Name="MeleeWeapon" Slot="Head" />
   </object>
   <!-- Flesh Golem natural weapons - foot -->
   <object Name="UD_FleshGolems Ragged Foot Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="ragged corm" />
+    <part Name="Render" DisplayName="corm" Tile="Creatures/natural-weapon-knob.bmp" />
     <part Name="MeleeWeapon" Slot="Foot" />
   </object>
   <object Name="UD_FleshGolems Ragged Foot Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="ragged spade" />
+    <part Name="Render" DisplayName="spade" Tile="Creatures/natural-weapon-shovel.bmp" />
     <part Name="MeleeWeapon" Slot="Foot" />
   </object>
   <object Name="UD_FleshGolems Ragged Foot LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="ragged blade" />
+    <part Name="Render" DisplayName="blade" Tile="Items/sw_longblade_10.bmp" VFlip="true" />
     <part Name="MeleeWeapon" Slot="Foot" />
   </object>
   <object Name="UD_FleshGolems Ragged Foot ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="ragged point" />
+    <part Name="Render" DisplayName="point" Tile="Creatures/natural-weapon-thorns.bmp" />
     <part Name="MeleeWeapon" Slot="Foot" />
   </object>
   <!-- Flesh Golem natural weapons - arm -->
   <object Name="UD_FleshGolems Ragged Arm Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="ragged discs" />
+    <part Name="Render" DisplayName="discs" Tile="Creatures/natural-weapon-knob.bmp" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Arm Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="ragged ridges" />
+    <part Name="Render" DisplayName="ridges" Tile="Creatures/natural-weapon-thorns.bmp" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Arm LongBlade" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="ragged scales" />
+    <part Name="Render" DisplayName="scales" Tile="Creatures/natural-weapon-thorns.bmp" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Arm ShortBlade" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="ragged thorns" Tile="Creatures/natural-weapon-thorns.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="thorns" Tile="Creatures/natural-weapon-thorns.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
   </object>
   <!-- Flesh Golem natural weapons - body -->
   <object Name="UD_FleshGolems Ragged Body Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="ragged bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Body Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="ridged ragged bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="ridged bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Body LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="bladed ragged bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="bladed bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
   <object Name="UD_FleshGolems Ragged Body ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="pointed ragged bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="pointed bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
   </object>
   <!-- Flesh Golem natural weapons - tail -->
   <object Name="UD_FleshGolems Ragged Tail Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
-    <part Name="Render" DisplayName="ragged tail" Tile="Creatures/natural-weapon-tail.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="tail" Tile="Creatures/natural-weapon-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
   <object Name="UD_FleshGolems Ragged Tail Axe" Inherits="UD_FleshGolems Ragged Axe">
-    <part Name="Render" DisplayName="ridged ragged tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="ridged tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
   <object Name="UD_FleshGolems Ragged Tail LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
-    <part Name="Render" DisplayName="bladed ragged tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="bladed tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
   <object Name="UD_FleshGolems Ragged Tail ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
-    <part Name="Render" DisplayName="pointed ragged tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
+    <part Name="Render" DisplayName="pointed tail" Tile="Creatures/natural-weapon-finned-tail.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Tail" />
   </object>
   

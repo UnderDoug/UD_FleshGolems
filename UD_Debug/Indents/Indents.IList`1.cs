@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace UD_FleshGolems.Debug
+namespace UD_FleshGolems.Logging
 {
     public partial class Indents : IList<Indent>
     {
@@ -11,9 +11,10 @@ namespace UD_FleshGolems.Debug
         {
             get
             {
+                Index = Math.Min(Index, Indent.MaxIndent - 1 - Items[0].Value);
                 if (Index >= Size)
                 {
-                    EnsureCapacity(Index);
+                    EnsureCapacity(Index + 1);
                 }
                 return Last = Items[Index];
             }

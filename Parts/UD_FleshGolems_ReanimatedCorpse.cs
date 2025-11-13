@@ -64,11 +64,6 @@ namespace XRL.World.Parts
                 ParentObject.RemovePart(partToRemove);
             }
             AttemptToSuffer();
-            if (ParentObject.TryGetPart(out Description frankenDescription)
-                && !NewDescription.IsNullOrEmpty())
-            {
-                frankenDescription._Short += "\n\n" + NewDescription;
-            }
             base.Attach();
         }
 
@@ -141,6 +136,7 @@ namespace XRL.World.Parts
         {
             return base.WantEvent(ID, cascade)
                 || ID == GetDisplayNameEvent.ID
+                || ID == GetShortDescriptionEvent.ID
                 || ID == EndTurnEvent.ID
                 || ID == GetBleedLiquidEvent.ID
                 || ID == BeforeDeathRemovalEvent.ID;
@@ -155,6 +151,14 @@ namespace XRL.World.Parts
                 && NoReanimatedNamePrefix < 1)
             {
                 E.AddAdjective(REANIMATED_ADJECTIVE, 5);
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(GetShortDescriptionEvent E)
+        {
+            if (!NewDescription.IsNullOrEmpty())
+            {
+                E.Infix.AppendLine().Append(NewDescription);
             }
             return base.HandleEvent(E);
         }

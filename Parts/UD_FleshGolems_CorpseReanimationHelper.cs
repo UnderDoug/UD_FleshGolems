@@ -15,7 +15,7 @@ using XRL.World.Skills;
 using XRL.World.AI;
 
 using UD_FleshGolems;
-using UD_FleshGolems.Debug;
+using UD_FleshGolems.Logging;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
@@ -162,7 +162,7 @@ namespace XRL.World.Parts
             blueprintsToCheck.ShuffleInPlace();
             int maxChecks = int.MaxValue; // 2500;
             int checkCounter = 0;
-            Debug.Log("Checking " + maxChecks + "/" + blueprintsToCheck.Count, indent[1]);
+            Debug.Log("Checking " + (maxChecks == int.MaxValue ? blueprintsToCheck.Count : maxChecks) + "/" + blueprintsToCheck.Count, indent[1]);
             foreach (GameObjectBlueprint gameObjectBlueprint in blueprintsToCheck)
             {
                 if (++checkCounter > maxChecks)
@@ -752,12 +752,9 @@ namespace XRL.World.Parts
 
         public static bool MakeItALIVE(
             GameObject Corpse,
-            UD_FleshGolems_PastLife PastLife,
-            ref string CreatureName,
-            ref string SourceBlueprint,
-            ref string CorpseDescription)
+            UD_FleshGolems_PastLife PastLife)
         {
-            UnityEngine.Debug.Log("    " + nameof(MakeItALIVE) + ", " + nameof(Corpse) + ": " + Corpse?.DebugName ?? "null");
+            Debug.LogHeader(nameof(Corpse) + ": " + (Corpse?.DebugName ?? "null"), out Indents indent);
             if (Corpse is GameObject frankenCorpse
                 && frankenCorpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>() is var reanimationHelper)
             {
@@ -815,21 +812,6 @@ namespace XRL.World.Parts
                         frankenDescription._Short = corpseDescription.StartReplace().AddObject(frankenCorpse).ToString();
                     }
                 }
-                string sourceBlueprintName = FigureOutWhatBlueprintThisCorpseCameFrom(frankenCorpse, PastLife);
-
-                SourceBlueprint ??= sourceBlueprintName;
-
-                /*
-                Corpse frankenCorpseCorpse = frankenCorpse.RequirePart<Corpse>();
-                if (frankenCorpseCorpse != null)
-                {
-                    if (frankenCorpseCorpse.CorpseBlueprint.IsNullOrEmpty())
-                    {
-                        frankenCorpseCorpse.CorpseBlueprint = frankenCorpse.Blueprint;
-                    }
-                    frankenCorpseCorpse.CorpseChance = 100;
-                }
-                */
 
                 PastLife.RestoreAnatomy(out Body frankenBody);
 
@@ -855,7 +837,11 @@ namespace XRL.World.Parts
                     frankenCorpse.SetPronounSet(frankenCorpse.GetBlueprint().Tags[nameof(PronounSet)]);
                 }
 
-                if (GameObjectFactory.Factory.GetBlueprintIfExists(sourceBlueprintName) is GameObjectBlueprint sourceBlueprint)
+                bool wantDoRequip = false;
+                int guaranteedNaturalWeapons = 3;
+                int bestowedNaturalWeapons = 0;
+                bool guaranteeNaturalWeapon() => guaranteedNaturalWeapons >= bestowedNaturalWeapons;
+                if (GameObjectFactory.Factory.GetBlueprintIfExists(PastLife?.Blueprint) is GameObjectBlueprint sourceBlueprint)
                 {
                     bool isProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
                     {
@@ -868,7 +854,7 @@ namespace XRL.World.Parts
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
 
                     float physicalAdjustmentFactor = 1.2f; // wasPlayer ? 1.0f : 1.2f;
-                    float mentalAdjustmentFactor = 0.75f; // wasPlayer ? 1.0f : 0.75f;
+                    float mentalAdjustmentFactor = 0.80f; // wasPlayer ? 1.0f : 0.80f;
                     AssignStatsFromPastLifeWithFactor(frankenCorpse, PastLife, PhysicalAdjustmentFactor: physicalAdjustmentFactor, MentalAdjustmentFactor: mentalAdjustmentFactor);
 
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
@@ -877,7 +863,7 @@ namespace XRL.World.Parts
 
                     AssignSkillsFromBlueprint(frankenSkills, sourceBlueprint);
 
-                    excludedFromDynamicEncounters = PastLife != null && PastLife.Tags.ContainsKey("ExcludeFromDynamicEncounters");
+                    excludedFromDynamicEncounters = PastLife != null && !PastLife.Tags.IsNullOrEmpty() && PastLife.Tags.ContainsKey("ExcludeFromDynamicEncounters");
 
                     if (frankenCorpse.TryGetPart(out Leveler frankenLeveler))
                     {
@@ -912,82 +898,6 @@ namespace XRL.World.Parts
                         frankenEpithets = frankenCorpse.RequirePart<Epithets>();
                         frankenEpithets.Primary = sourceCreatureEpithets;
                     }
-
-                    /*
-                    string corpsePartName = nameof(Parts.Corpse);
-                    string corpsepartBlueprintName = nameof(Parts.Corpse.CorpseBlueprint);
-                    if (frankenCorpseCorpse != null
-                        && sourceBlueprint.TryGetPartParameter(corpsePartName, corpsepartBlueprintName, out string frankenCorpseCorpseBlueprint))
-                    {
-                        frankenCorpseCorpse.CorpseBlueprint = frankenCorpseCorpseBlueprint;
-                    }
-                    */
-
-                    /*
-                    if (sourceBlueprint.DisplayName() is string sourceBlueprintDisplayName)
-                    {
-                        string sourceCreatureName = null;
-                        bool wereProperlyNamed = false;
-                        if (GameObject.CreateSample(sourceBlueprint.Name) is GameObject sampleSourceObject)
-                        {
-                            wereProperlyNamed = sampleSourceObject.HasProperName;
-                            if (wereProperlyNamed)
-                            {
-                                sourceCreatureName = sampleSourceObject.GetReferenceDisplayName(Short: true);
-                            }
-                            sampleSourceObject?.Obliterate();
-                        }
-                        if (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_CreatureProperName") is string frankenCorpseProperName)
-                        {
-                            wereProperlyNamed = true;
-                            sourceCreatureName = frankenCorpseProperName;
-                        }
-                        sourceCreatureName ??= frankenCorpse.GetPropertyOrTag("CreatureName");
-
-                        if (frankenDescription != null
-                            && sourceBlueprint.TryGetPartParameter(nameof(Description), nameof(Description.Short), out string sourceDescription))
-                        {
-                            if (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_CorpseDescription") is string sourceCorpseDescription)
-                            {
-                                sourceDescription = sourceCorpseDescription;
-                            }
-                            if (PastLife != null && !PastLife.Description.IsNullOrEmpty())
-                            {
-                                sourceDescription = PastLife.Description;
-                            }
-                            if (sourceBlueprintDisplayName.Contains("[") || sourceBlueprintDisplayName.Contains("]"))
-                            {
-                                wereProperlyNamed = true;
-                            }
-                            string whoTheyWere = wereProperlyNamed ? sourceCreatureName : sourceBlueprintDisplayName;
-                            if (whoTheyWere.ToLower().EndsWith(" corpse") || whoTheyWere.ToLower().StartsWith("corpse of "))
-                            {
-                                whoTheyWere = UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE + " " + whoTheyWere;
-                            }
-                            if (whoTheyWere.Contains("[") || whoTheyWere.Contains("]") || frankenCorpse.GetStringProperty("SourceID") == "1")
-                            {
-                                whoTheyWere = frankenCorpse.GetGenotype();
-                            }
-                            if (!wereProperlyNamed)
-                            {
-                                whoTheyWere = Grammar.A(whoTheyWere);
-                            }
-
-                            frankenDescription._Short += "\n\n" + "In life, this mess was " + (wasPlayer ? "you." : (whoTheyWere + ":\n" + sourceDescription));
-                        }
-                        if (!sourceCreatureName.IsNullOrEmpty())
-                        {
-                            frankenCorpse.Render.DisplayName = "corpse of " + sourceCreatureName;
-
-                            frankenCorpse.GiveProperName(sourceCreatureName);
-                            frankenCorpse.RequirePart<Honorifics>().Primary = "corpse of";
-                        }
-                        else
-                        {
-                            frankenCorpse.Render.DisplayName = sourceBlueprintDisplayName + " corpse";
-                        }
-                    }
-                    */
 
                     string BleedLiquid = null;
                     if (sourceBlueprint.Tags.ContainsKey(nameof(BleedLiquid)))
@@ -1052,14 +962,14 @@ namespace XRL.World.Parts
                         AssignMutationsFromBlueprint(frankenMutations, golemBodyBlueprint, Exclude: giganticIfNotAlready);
                         AssignSkillsFromBlueprint(frankenSkills, golemBodyBlueprint);
                     }
-                    bool wantDoRequip = false;
-                    debugLog("Granting Natural Equipment...");
-                    debugLog(nameof(sourceBlueprint), nameof(sourceBlueprint.Inventory), 3);
+
+                    Debug.Log("Granting SourceBlueprint Natural Equipment...", indent[1]);
+                    Debug.Log(nameof(sourceBlueprint), nameof(sourceBlueprint.Inventory), indent[2]);
                     if (sourceBlueprint.Inventory != null)
                     {
                         foreach (InventoryObject inventoryObject in sourceBlueprint.Inventory)
                         {
-                            debugLog(nameof(inventoryObject), inventoryObject.Blueprint ?? NULL, 4);
+                            string itemLabel = (inventoryObject?.Blueprint ?? NULL) + " | ";
                             if (GameObjectFactory.Factory.GetBlueprintIfExists(inventoryObject.Blueprint) is GameObjectBlueprint inventoryObjectBlueprint
                                 && inventoryObjectBlueprint.IsNatural())
                             {
@@ -1073,100 +983,103 @@ namespace XRL.World.Parts
                                         && frankenCorpse.ReceiveObject(raggedWeaponObject))
                                     {
                                         string debugOutput =
-                                            AppendTick("") +
                                             nameof(sampleNaturalGear) + ": " + sampleNaturalGear.DebugName + " | " +
                                             nameof(raggedWeaponObject) + ": " + raggedWeaponObject.DebugName;
-                                        debugLog(debugOutput, Indent: 5);
+                                        Debug.Log(AppendTick("") + itemLabel + debugOutput, Indent: indent[4]);
                                         wantDoRequip = true;
+                                        bestowedNaturalWeapons++;
                                     }
                                     sampleNaturalGear?.Obliterate();
                                 }
                             }
                             else
                             {
-                                debugLog(AppendCross("") + "Not Natural'", Indent: 5);
+                                Debug.Log(AppendCross("") + itemLabel + "Not Natural'", Indent: indent[4]);
                             }
                         }
                     }
-                    debugLog(nameof(frankenBody), nameof(frankenBody.LoopParts), 3);
-                    foreach (BodyPart frankenLimb in frankenBody.LoopParts())
+                }
+                frankenBody ??= frankenCorpse.Body;
+                Debug.Log("Granting Additional Natural Equipment...", indent[1]);
+                Debug.Log(nameof(frankenBody), nameof(frankenBody.LoopParts), indent[2]);
+                List<BodyPart> frankenLimbs = new(frankenBody.LoopParts());
+                frankenLimbs.ShuffleInPlace();
+                foreach (BodyPart frankenLimb in frankenBody.LoopParts())
+                {
+                    string limbLabel = frankenLimb.Type + " | ";
+                    if (frankenLimb.DefaultBehavior is GameObject frankenNaturalGear
+                        && frankenNaturalGear.GetBlueprint() is GameObjectBlueprint frankenNaturalGearBlueprint
+                        && !frankenNaturalGearBlueprint.InheritsFrom("UD_FleshGolems Ragged Weapon"))
                     {
-                        debugLog(nameof(frankenLimb), frankenLimb.Type, 4);
-                        if (frankenLimb.DefaultBehavior is GameObject frankenNaturalGear
-                            && frankenNaturalGear.GetBlueprint() is GameObjectBlueprint frankenNaturalGearBlueprint
-                            && !frankenNaturalGearBlueprint.InheritsFrom("UD_FleshGolems Ragged Weapon"))
-                        {
-                            if (frankenNaturalGear.TryGetPart(out MeleeWeapon mw)
-                                && !mw.IsImprovisedWeapon()
-                                && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotAndSkillMatchesBlueprint(bp, mw))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
-                                && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject)
-                            {
-                                string debugOutput = 
-                                    AppendTick("") + 
-                                    nameof(frankenNaturalGear) + ": " + frankenNaturalGear.DebugName + " | " + 
-                                    nameof(raggedWeaponObject) + ": " + raggedWeaponObject.DebugName;
-                                debugLog(debugOutput, Indent: 5);
-
-                                frankenNaturalGear.Obliterate();
-                                frankenLimb.DefaultBehavior = raggedWeaponObject;
-                                frankenLimb.DefaultBehaviorBlueprint = raggedWeaponBlueprintName;
-                            }
-                        }
-                        else
-                        if (25.in100()
-                            && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotMatchesBlueprint(bp, frankenLimb.Type))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
+                        if (frankenNaturalGear.TryGetPart(out MeleeWeapon mw)
+                            && !mw.IsImprovisedWeapon()
+                            && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotAndSkillMatchesBlueprint(bp, mw))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
                             && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject)
                         {
-                            string debugOutput = 
-                                AppendTick("") + "Rolled 1 in 4 | " + 
-                                nameof(raggedWeaponObject) + ": " + raggedWeaponObject.DebugName;
-                            debugLog(debugOutput, Indent: 5);
+                            string debugOutput =
+                                nameof(frankenNaturalGear) + ": " + (frankenNaturalGear?.DebugName ?? NULL) + " | " +
+                                nameof(raggedWeaponObject) + ": " + (raggedWeaponObject.DebugName ?? NULL);
+                            Debug.Log(AppendTick("") + limbLabel + debugOutput, Indent: indent[3]);
 
+                            frankenNaturalGear.Obliterate();
                             frankenLimb.DefaultBehavior = raggedWeaponObject;
                             frankenLimb.DefaultBehaviorBlueprint = raggedWeaponBlueprintName;
-                        }
-                        else
-                        {
-                            debugLog(AppendCross("") + "nuffin'", Indent: 5);
+                            bestowedNaturalWeapons++;
                         }
                     }
-                    if (wantDoRequip)
+                    else
+                    if ((guaranteeNaturalWeapon() || 25.in100())
+                        && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotMatchesBlueprint(bp, frankenLimb.Type))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
+                        && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject)
                     {
-                        frankenBrain?.WantToReequip();
+                        string debugOutput = "Rolled 1 in 4 | " + nameof(raggedWeaponObject) + ": " + (raggedWeaponObject?.DebugName ?? NULL);
+                        Debug.Log(AppendTick("") + limbLabel + debugOutput, Indent: indent[3]);
+
+                        frankenLimb.DefaultBehavior = raggedWeaponObject;
+                        frankenLimb.DefaultBehaviorBlueprint = raggedWeaponBlueprintName;
+                        bestowedNaturalWeapons++;
                     }
-
-                    if (frankenMutations != null)
+                    else
                     {
-                        bool giveRegen = true;
-                        if (giveRegen
-                            && MutationFactory.GetMutationEntryByName("Regeneration").Class is string regenerationMutationClass)
-                        {
-                            if (frankenMutations.GetMutation(regenerationMutationClass) is not BaseMutation regenerationMutation)
-                            {
-                                frankenMutations.AddMutation(regenerationMutationClass, Level: 10);
-                                regenerationMutation = frankenMutations.GetMutation(regenerationMutationClass);
-                            }
-                            regenerationMutation.CapOverride = 5;
+                        Debug.Log(AppendCross("") + limbLabel + "nuffin'", Indent: indent[3]);
+                    }
+                }
+                if (wantDoRequip)
+                {
+                    frankenBrain?.WantToReequip();
+                }
 
-                            if (regenerationMutation.Level < 5)
-                            {
-                                regenerationMutation.ChangeLevel(5);
-                            }
-                        }
-                        string nightVisionMutaitonName = "Night Vision";
-                        string darkVisionMutationName = "Dark Vision";
-                        MutationEntry nightVisionEntry = MutationFactory.GetMutationEntryByName(nightVisionMutaitonName);
-                        MutationEntry darkVisionEntry = MutationFactory.GetMutationEntryByName(darkVisionMutationName);
-                        if (!frankenMutations.HasMutation(nightVisionEntry.Class) && !frankenMutations.HasMutation(darkVisionEntry.Class))
+                if (frankenMutations != null)
+                {
+                    bool giveRegen = true;
+                    if (giveRegen
+                        && MutationFactory.GetMutationEntryByName("Regeneration").Class is string regenerationMutationClass)
+                    {
+                        if (frankenMutations.GetMutation(regenerationMutationClass) is not BaseMutation regenerationMutation)
                         {
-                            if (darkVisionEntry.Instance is BaseMutation darkVisionMutation)
+                            frankenMutations.AddMutation(regenerationMutationClass, Level: 10);
+                            regenerationMutation = frankenMutations.GetMutation(regenerationMutationClass);
+                        }
+                        regenerationMutation.CapOverride = 5;
+
+                        if (regenerationMutation.Level < 5)
+                        {
+                            regenerationMutation.ChangeLevel(5);
+                        }
+                    }
+                    string nightVisionMutaitonName = "Night Vision";
+                    string darkVisionMutationName = "Dark Vision";
+                    MutationEntry nightVisionEntry = MutationFactory.GetMutationEntryByName(nightVisionMutaitonName);
+                    MutationEntry darkVisionEntry = MutationFactory.GetMutationEntryByName(darkVisionMutationName);
+                    if (!frankenMutations.HasMutation(nightVisionEntry.Class) && !frankenMutations.HasMutation(darkVisionEntry.Class))
+                    {
+                        if (darkVisionEntry.Instance is BaseMutation darkVisionMutation)
+                        {
+                            if (darkVisionMutation.CapOverride == -1)
                             {
-                                if (darkVisionMutation.CapOverride == -1)
-                                {
-                                    darkVisionMutation.CapOverride = 8;
-                                }
-                                frankenMutations.AddMutation(darkVisionMutation, 8);
+                                darkVisionMutation.CapOverride = 8;
                             }
+                            frankenMutations.AddMutation(darkVisionMutation, 8);
                         }
                     }
                 }
@@ -1199,10 +1112,10 @@ namespace XRL.World.Parts
                 if (frankenCorpse.GetStat("Hitpoints") is Statistic frankenHitpoints)
                 {
                     int minHitpoints = Stat.RollCached("4d3+5");
-                    UnityEngine.Debug.Log("        " + nameof(frankenHitpoints) + " " + nameof(minHitpoints) + ": " + minHitpoints);
+                    Debug.Log(nameof(frankenHitpoints) + " " + nameof(minHitpoints), minHitpoints, Indent: indent[1]);
                     frankenHitpoints.BaseValue = Math.Max(minHitpoints, frankenHitpoints.BaseValue);
                     frankenHitpoints.Penalty = 0;
-                    UnityEngine.Debug.Log("        " + nameof(frankenHitpoints) + ": " + frankenHitpoints.Value + "/" + frankenHitpoints.BaseValue);
+                    Debug.Log(nameof(frankenHitpoints), frankenHitpoints.Value + "/" + frankenHitpoints.BaseValue, Indent: indent[1]);
                 }
 
                 if (frankenCorpse != null)
@@ -1211,8 +1124,10 @@ namespace XRL.World.Parts
                     reanimatedCorpse.Reanimator = reanimationHelper.Reanimator;
                     // reanimatedCorpse.AttemptToSuffer();
                 }
+                Debug.SetIndent(indent[0]);
                 return true;
             }
+            Debug.SetIndent(indent[0]);
             return false;
         }
 
@@ -1267,37 +1182,13 @@ namespace XRL.World.Parts
             if (!IsALIVE
                 && ParentObject == E.Object)
             {
-                /*
-                if (E.Object.GetPropertyOrTag("UD_FleshGolems_PastLife_Blueprint") is string pastLifeBlueprint
-                    && GameObject.CreateSample(pastLifeBlueprint) is GameObject samplePastLife)
-                {
-                    E.Object.RequirePart<UD_FleshGolems_PastLife>().Initialize(samplePastLife);
-                    samplePastLife?.Obliterate();
-                }
-                else
-                if (!E.Object.TryGetPart(out UD_FleshGolems_PastLife pastLife))
-                {
-                    if (E.Object.GetPropertyOrTag("SourceID") is string sourceID
-                        && GameObject.FindByID(sourceID) is GameObject actualPastLife)
-                    {
-                        E.Object.RequirePart<UD_FleshGolems_PastLife>().Initialize(actualPastLife);
-                    }
-                    else
-                    if (E.Object.GetPropertyOrTag("SourceBlueprint") is string sourceBlueprint
-                        && GameObject.CreateSample(sourceBlueprint) is GameObject sampleSourceObject)
-                    {
-
-                        E.Object.RequirePart<UD_FleshGolems_PastLife>().Initialize(sampleSourceObject);
-                    }
-                }
-                */
                 if (!E.Object.TryGetPart(out UD_FleshGolems_PastLife pastLife))
                 {
                     pastLife = E.Object.RequirePart<UD_FleshGolems_PastLife>().Initialize();
                 }
                 Reanimator = E.Actor;
                 IsALIVE = true;
-                MakeItALIVE(E.Object, PastLife, ref CreatureName, ref SourceBlueprint, ref CorpseDescription);
+                MakeItALIVE(E.Object, pastLife);
             }
             return base.HandleEvent(E);
         }
@@ -1330,18 +1221,6 @@ namespace XRL.World.Parts
                 return true;
             }
             return base.HandleEvent(E);
-        }
-
-        static void debugLog(string Field, object Value = null, int Indent = 0)
-        {
-            string indent = " ".ThisManyTimes(Math.Min(12, Indent) * 4);
-            string output = indent + Field;
-            if (Value != null &&
-                !Value.ToString().IsNullOrEmpty())
-            {
-                output += ": " + Value;
-            }
-            UnityEngine.Debug.Log(output);
         }
     }
 }

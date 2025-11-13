@@ -11,16 +11,14 @@
     <tag Name="HeroNameTitleAdmirers" Value="Surgeons,Healers,Scientists,Scientists of the Mad Variety" />
     <tag Name="DynamicObjectsTable:AnimatableFurniture" />
     <tag Name="BodyType" Value="Jelly" />
-    <tag Name="Species" Value="Jelly" />
-    <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:TextFragments:PoeticFeatures= and =subject.uD_xTag:TextFragments:PoeticFeatures2= are brought =subject.uD_xTag:TextFragments:PoeticVerbs= back into a horrific facsimile of life. =subject.UD_xTag:TextFragments:PoeticAdjectives= =subject.uD_xTag:TextFragments:PoeticNoises= and =subject.uD_xTag:TextFragments:PoeticNoises2= escape =subject.possessive= every movement and twist the gut of anyone unfortunate enough to hear it." />
+    <tag Name="Species" Value="jelly" />
+    <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:2:U:TextFragments:PoeticFeatures= are brought =subject.uD_xTag:TextFragments:PoeticVerbs= back into a horrific facsimile of life. =subject.UD_xTag:TextFragments:PoeticAdjectives= =subject.uD_xTag:2:U:TextFragments:PoeticNoises= escape =subject.possessive= every movement and twist the gut of anyone unfortunate enough to hear it." />
     <xtagTextFragments
       CorpseDescription="mess"
       PoeticFeatures="viscera,muck,entrails,sinew,bone"
-      PoeticFeatures2="viscera,muck,entrails,sinew,bone"
       PoeticVerbs="squirming,wriggling,squelching"
       PoeticAdjectives="wet,moist,meaty"
-      PoeticNoises="gurgles,slurps"
-      PoeticNoises2="squelches" />
+      PoeticNoises="gurgles,slurps,squelches" />
     <xtagUD_FleshGolems_Ragged
       GrossAdjective="wet,moist,fettid"
       SoftMaterial="viscera,muck,entrails,sinew"
@@ -34,10 +32,23 @@
   
   <object Name="UD_FleshGolems Corpse Corpse" Inherits="Corpse">
     <part Name="Render" DisplayName="pile of gunk" ColorString="&amp;K"
-          TileColor="&amp;K" DetailColor="w" />
-    <part Name="Description" Short="A mound of chrome scraps and dented junk puts some elevation to the ground." />
+          TileColor="&amp;K" DetailColor="r" />
+    <part Name="Description" Short="Violence is splayed in a viscous smear across the environment." />
     <tag Name="BodyType" Value="Ooze" />
-    <tag Name="Species" Value="Ooze" />
+    <tag Name="Species" Value="ooze" />
+    <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:3:U:TextFragments:PoeticFeatures= are brought =subject.uD_xTag:2:U:TextFragments:PoeticVerbs= back into an abject affront to the natural order. =subject.UD_xTag:TextFragments:PoeticAdjectives= =subject.uD_xTag:3:U:TextFragments:PoeticNoises= escape =subject.possessive= every movement, and =subject.possessive= very being seemingly screams for =subject.possessive= existence to cease." />
+    <xtagTextFragments
+      CorpseDescription="smear"
+      PoeticFeatures="pulp,goo,viscera,muck,sinew,calcifications,rot,mucus"
+      PoeticVerbs="squirming,wriggling,squelching,shambling,screaming,wretching,bubbling"
+      PoeticAdjectives="wet,moist,meaty,sloppy,sick,wretched"
+      PoeticNoises="gurgles,slurps,squelches,pops" />
+    <xtagUD_FleshGolems_Ragged
+      GrossAdjective="wet,moist,fettid"
+      SoftMaterial="pulp,goo,viscera,muck,rot,sinew,mucus"
+      Skin="membrane"
+      HarshAdjective="jagged,cracked,crooked,dented,scuffed,ragged,splayed"
+      HardMaterial="calcifications" />
     <tag Name="UD_FleshGolems_ExcludeFromCorpseQuest" Value="*noinherit" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
@@ -49,11 +60,9 @@
     <xtagTextFragments
       CorpseDescription="scrap"
       PoeticFeatures="oil,gel,bent chrome,jagged edges"
-      PoeticFeatures2="oil,gel,bent chrome,jagged edges"
       PoeticVerbs="jittering,stuttering,whining"
       PoeticAdjectives="slick,erratic,crunchy"
-      PoeticNoises="sizzles,whirs"
-      PoeticNoises2="sputters" />
+      PoeticNoises="sizzles,whirs,sputters" />
     <xtagTextFragments
       GrossAdjective="oily,slick,grimy"
       SoftMaterial="membrane,circuitry"
@@ -80,6 +89,31 @@
     <part Name="Render" DisplayName="heap of {{c|chrome}} scrap" />
     <part Name="Description" Short="A mound of chrome scraps and dented junk puts some elevation to the ground." />
     <tag Name="UD_FleshGolems_CorpseQuestStep_DisplayName" Value="Robot" />
+    <tag Name="BodyType" Value="RailedMechanism" />
+    <tag Name="Species" Value="infrastructure" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Chrome Robot Corpse Corpse" CorpseChance="100" />
+  </object>
+  <object Name="UD_FleshGolems Chrome Robot Corpse Corpse" Inherits="UD_FleshGolems Chrome Robot Corpse">
+    <part Name="Render" DisplayName="pile of {{c|chrome}} trash" />
+    <part Name="Description" Short="Violence is splayed in an assorted splaying of scrap across the environment." />
+    <tag Name="UD_FleshGolems_CorpseQuestStep_DisplayName" Value="Robot" />
+    <tag Name="BodyType" Value="HumanoidOctohedron" />
+    <tag Name="Species" Value="crystal" />
+    <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:3:U:TextFragments:PoeticFeatures= are brought =subject.uD_xTag:2:U:TextFragments:PoeticVerbs= back into an abject affront to the natural order. =subject.UD_xTag:TextFragments:PoeticAdjectives= =subject.uD_xTag:3:U:TextFragments:PoeticNoises= escape =subject.possessive= every movement, and =subject.possessive= very being seemingly screams for =subject.possessive= existence to cease." />
+    <xtagTextFragments
+      CorpseDescription="streak"
+      PoeticFeatures="pulp,goo,viscera,muck,sinew,calcifications,rot,mucus"
+      PoeticVerbs="squirming,wriggling,squelching,shambling,screaming,wretching,bubbling"
+      PoeticAdjectives="wet,moist,meaty,sloppy,sick,wretched"
+      PoeticNoises="gurgles,slurps,squelches,pops" />
+    <xtagUD_FleshGolems_Ragged
+      GrossAdjective="wet,moist,fettid"
+      SoftMaterial="pulp,goo,viscera,muck,rot,sinew,mucus"
+      Skin="membrane"
+      HarshAdjective="jagged,cracked,crooked,dented,scuffed,ragged,splayed"
+      HardMaterial="calcifications" />
+    <tag Name="UD_FleshGolems_ExcludeFromCorpseQuest" Value="*noinherit" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
   <object Name="UD_FleshGolems PlantCorpseHeroics">
@@ -100,12 +134,10 @@
     <part Name="Food" Message="The fibers are tough." />
     <xtagTextFragments
       CorpseDescription="mulch"
-      PoeticFeatures="sap,fibre"
-      PoeticFeatures2="roots"
+      PoeticFeatures="sap,fibre,roots"
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
-      PoeticNoises="gurgles,slurps"
-      PoeticNoises2="squelches" />
+      PoeticNoises="gurgles,slurps,squelches" />
     <xtagTextFragments
       GrossAdjective="wet,moist,rotten"
       SoftMaterial="membrane,cellulose"
@@ -182,12 +214,10 @@
     <tag Name="HeroNameTitleAdmirers" Value="Gardeners,MYcologists,The Last of Us" />
     <part Name="Food" Message="The material is soft and slimy." />
     <xtagTextFragments
-      PoeticFeatures="spores,tendrils"
-      PoeticFeatures2="fibre"
+      PoeticFeatures="spores,tendrils,fibre"
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
-      PoeticNoises="gurgles,slurps"
-      PoeticNoises2="squelches" />
+      PoeticNoises="gurgles,slurps,squelches" />
     <xtagTextFragments
       GrossAdjective="wet,moist,rotten"
       SoftMaterial="skirt,gills,teeth"

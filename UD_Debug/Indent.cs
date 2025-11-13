@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace UD_FleshGolems.Debug
+namespace UD_FleshGolems.Logging
 {
     public class Indent
     {

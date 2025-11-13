@@ -19,11 +19,13 @@ using XRL.World.ObjectBuilders;
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
 
 using UD_FleshGolems;
-using UD_FleshGolems.Debug;
+using UD_FleshGolems.Logging;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
+using XRL.Rules;
+using Qud.API;
 
 namespace XRL.World.Parts
 {
@@ -107,7 +109,7 @@ namespace XRL.World.Parts
             {
             }
             public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic)
-                : this(Cybernetic, Cybernetic.Implantee.Body)
+                : this(Cybernetic, Cybernetic?.Implantee?.Body)
             {
             }
             public void Deconstruct(out GameObject Cybernetic, out string ImplantedLimbType)
@@ -231,6 +233,56 @@ namespace XRL.World.Parts
             return GameObjectFactory.Factory.CreateUnmodifiedObject("UD_FleshGolems Brain In A Jar Widget");
         }
 
+        public static Dictionary<string,int> GetBlueprintsWhoseCorpseThisCouldBe(string Blueprint, bool Include0Chance = false)
+        {
+            Dictionary<string, int> blueprintsWeightedList = new();
+            foreach (GameObjectBlueprint gameObjectBlueprint in GameObjectFactory.Factory.Blueprints.Values)
+            {
+                if (gameObjectBlueprint.IsBaseBlueprint()
+                    || gameObjectBlueprint.IsExcludedFromDynamicEncounters())
+                {
+                    continue;
+                }
+                if (gameObjectBlueprint.TryGetCorpseBlueprint(out string corpseBlueprint)
+                    && corpseBlueprint == Blueprint
+                    && gameObjectBlueprint.TryGetCorpseChance(out int corpseChance)
+                    && (corpseChance > 0 || Include0Chance))
+                {
+                    blueprintsWeightedList.TryAdd(gameObjectBlueprint.Name, corpseChance);
+                }
+            }
+            return blueprintsWeightedList;
+        }
+
+        public static string GetALivingBlueprintForCorpseWeighted(string CorpseBlueprint)
+        {
+            Dictionary<string, int> WeightedBlueprints = GetBlueprintsWhoseCorpseThisCouldBe(CorpseBlueprint);
+            int maxWeight = 0;
+            foreach (int weight in WeightedBlueprints.Values)
+            {
+                maxWeight += maxWeight;
+            }
+            int cumulativeWeight = 0;
+            int rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
+            foreach ((string blueprint, int weight) in WeightedBlueprints)
+            {
+                if (weight < 1)
+                {
+                    continue;
+                }
+                cumulativeWeight += weight;
+                if (rolledAmount < cumulativeWeight)
+                {
+                    return blueprint;
+                }
+            }
+            return null;
+        }
+        public static string GetALivingBlueprintForCorpse(string CorpseBlueprint, bool Include0Chance = false)
+        {
+            return GetBlueprintsWhoseCorpseThisCouldBe(CorpseBlueprint, Include0Chance: Include0Chance)?.Keys?.GetRandomElementCosmetic();
+        }
+
         public UD_FleshGolems_PastLife Initialize(GameObject PastLife = null)
         {
             Debug.LogHeader(nameof(PastLife) + ": " + (PastLife?.DebugName ?? NULL), out Indents indent);
@@ -242,18 +294,24 @@ namespace XRL.World.Parts
                     BrainInAJar ??= GetNewBrainInAJar();
                     if (BrainInAJar != null)
                     {
-                        Blueprint ??= ParentObject?.GetPropertyOrTag(PASTLIFE_BLUEPRINT_PROPTAG, ParentObject?.GetPropertyOrTag("SourceObject", PastLife?.Blueprint));
+                        Blueprint ??= ParentObject?.GetPropertyOrTag(PASTLIFE_BLUEPRINT_PROPTAG)
+                            ?? ParentObject?.GetPropertyOrTag("SourceObject")
+                            ?? PastLife?.Blueprint
+                            ?? GetALivingBlueprintForCorpseWeighted(ParentObject.Blueprint);
 
                         Debug.Log(nameof(Blueprint), Blueprint, indent[1]);
 
                         obliteratePastLife = PastLife == null;
-                        PastLife ??= GameObject.CreateSample(Blueprint);
+                        PastLife ??= GameObject.CreateSample(Blueprint)
+                            ?? GameObject.CreateSample(EncountersAPI.GetACreatureBlueprintModel(bp => bp.TryGetCorpseChance(out int bpCorpseChance) && bpCorpseChance > 0).Name)
+                            ?? GameObject.CreateSample("Trash Monk");
 
                         Debug.Log(nameof(PastLife), PastLife?.DebugName ?? NULL, indent[1]);
 
-                        if (PastLife.TryGetPart(out UD_FleshGolems_PastLife prevPastLife))
+                        if (PastLife.TryGetPart(out UD_FleshGolems_PastLife prevPastLife)
+                            && prevPastLife.DeepCopy(BrainInAJar, DeepCopyMapInventory) is UD_FleshGolems_PastLife prevPastLifeCopy)
                         {
-                            BrainInAJar.AddPart(prevPastLife.DeepCopy(BrainInAJar, DeepCopyMapInventory) as UD_FleshGolems_PastLife);
+                            BrainInAJar.AddPart(prevPastLifeCopy);
                         }
 
                         if (PastLife.IsPlayer())
@@ -400,7 +458,10 @@ namespace XRL.World.Parts
                         {
                             foreach (GameObject installedCybernetic in installedCybernetics)
                             {
-                                InstalledCybernetics.Add(new(installedCybernetic));
+                                if (installedCybernetic?.Implantee?.Body is Body implanteeBody)
+                                {
+                                    InstalledCybernetics.Add(new(installedCybernetic, implanteeBody));
+                                }
                             }
                         }
                     }
@@ -547,7 +608,13 @@ namespace XRL.World.Parts
             }
             else
             {
-                postDescription += (PastLife?.RefName ?? PastLife.GetBlueprint().DisplayName()) + ":\n" + oldDescription;
+                string whoTheyWere = (PastLife?.RefName ?? PastLife.GetBlueprint().DisplayName());
+                if (!PastLife.WasProperlyNamed)
+                {
+                    whoTheyWere = Grammar.A(whoTheyWere);
+                }
+                string postDescriptionEnd = PastLife.WasCorpse ? "." : ":\n" + oldDescription;
+                postDescription += whoTheyWere + postDescriptionEnd;
             }
             return postDescription;
         }

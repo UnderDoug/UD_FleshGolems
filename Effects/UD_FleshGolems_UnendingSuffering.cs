@@ -26,6 +26,14 @@ namespace XRL.World.Effects
 
         private int FrameOffset => (int.Parse(Object.ID) % 3) + 1;
 
+        private List<int> FrameRanges => new()
+        {
+            15 + FrameOffset,
+            25 + FrameOffset,
+            45 + FrameOffset,
+            55 + FrameOffset,
+        };
+
         public static int BASE_SMEAR_CHANCE => 5;
         public static int BASE_SPATTER_CHANCE => 2;
         public static int GracePeriodTurns => 2;
@@ -148,7 +156,7 @@ namespace XRL.World.Effects
         }
         public virtual string DamageAttributes()
         {
-            return "Bleeding Unavoidable";
+            return "Bleeding Unavoidable Suffering";
         }
         public virtual string DamageMessage()
         {
@@ -211,6 +219,18 @@ namespace XRL.World.Effects
             bool tookDamage = false;
             if (chanceToDamage.in100())
             {
+                string oldAutoActSetting = AutoAct.Setting;
+                bool isAutoActing = AutoAct.IsActive();
+                // string oldNon = Object.GetPropertyOrTag("Non");
+                if (Object.IsPlayerControlled())
+                {
+                    if (isAutoActing)
+                    {
+                        AutoAct.Setting = "";
+                    }
+                    // Object.SetStringProperty("Non", "I'm not visible!");
+                }
+
                 int damage = CapDamageTo1HPRemaining(Object, Damage.RollCached());
                 tookDamage = Object.TakeDamage(
                     Amount: damage,
@@ -222,6 +242,15 @@ namespace XRL.World.Effects
                     Source: Object,
                     Indirect: true,
                     SilentIfNoDamage: true);
+
+                if (Object.IsPlayerControlled())
+                {
+                    if (isAutoActing)
+                    {
+                        AutoAct.Setting = oldAutoActSetting;
+                    }
+                    // Object.SetStringProperty("Non", oldNon, true);
+                }
             }
 
             if (Object.CurrentCell is not Cell suferrerCell || suferrerCell.OnWorldMap())
@@ -293,25 +322,13 @@ namespace XRL.World.Effects
         {
             if (GracePeriod < 1)
             {
-                GracePeriod--;
                 Suffer();
             }
-            return base.HandleEvent(E);
-        }
-        public override bool Render(RenderEvent E)
-        {
-            _ = Object.Render;
-            int currentFrame = XRLCore.CurrentFrame % 60;
-
-            bool firstRange = currentFrame > 15 && currentFrame < 25;
-            bool secondRange = currentFrame > 45 && currentFrame < 55;
-            if (firstRange || secondRange)
+            else
             {
-                E.RenderString = "\u0003";
-                E.ApplyColors(firstRange ? "&K" : "&R", ICON_COLOR_PRIORITY);
-                return false;
+                GracePeriod--;
             }
-            return true;
+            return base.HandleEvent(E);
         }
         public override bool HandleEvent(PhysicalContactEvent E)
         {
@@ -322,6 +339,21 @@ namespace XRL.World.Effects
         {
             Initialize(UD_FleshGolems_ReanimatedCorpse.GetTierFromLevel(Object));
             return base.HandleEvent(E);
+        }
+        public override bool Render(RenderEvent E)
+        {
+            _ = Object.Render;
+            int currentFrame = XRLCore.CurrentFrame % 60;
+
+            bool firstRange = currentFrame > FrameRanges[0] && currentFrame < FrameRanges[1];
+            bool secondRange = currentFrame > FrameRanges[2] && currentFrame < FrameRanges[3];
+            if (firstRange || secondRange)
+            {
+                E.RenderString = "\u0003";
+                E.ApplyColors(firstRange ? "&K" : "&R", ICON_COLOR_PRIORITY);
+                return false;
+            }
+            return true;
         }
     }
 }

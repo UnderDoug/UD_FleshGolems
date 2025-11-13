@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
+using Qud.API;
+
 using XRL;
 using XRL.Wish;
 using XRL.World;
@@ -11,11 +13,14 @@ using XRL.World.Text.Delegates;
 using XRL.Language;
 using XRL.CharacterBuilds;
 using XRL.CharacterBuilds.Qud;
+using XRL.World.Parts;
+using XRL.UI;
+
+using UD_FleshGolems;
+using UD_FleshGolems.Logging;
 
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
-using XRL.World.Parts;
-using XRL.UI;
 
 namespace UD_FleshGolems
 {
@@ -87,17 +92,8 @@ namespace UD_FleshGolems
         }
 
         [VariableObjectReplacer]
-        public static string UD_xTag(DelegateContext Context)
+        public static string UD_xTagSingle(DelegateContext Context)
         {
-            if (!Context.Parameters.IsNullOrEmpty())
-            {
-                UnityEngine.Debug.Log(nameof(UD_xTag) + "." + nameof(Context.Target) + ": " + (Context?.Target?.DebugName ?? NULL));
-                UnityEngine.Debug.Log(nameof(UD_xTag) + "." + nameof(Context.Value) + ": " + (Context?.Value?.ToString() ?? NULL));
-                foreach (string parameter in Context.Parameters)
-                {
-                    UnityEngine.Debug.Log("    " + parameter);
-                }
-            }
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 1
@@ -108,9 +104,140 @@ namespace UD_FleshGolems
                 output = tagValue;
                 if (Context.Capitalize)
                 {
-                    output = tagValue.Capitalize();
+                    output = output.Capitalize();
                 }
             }
+            return output;
+        }
+
+        [VariableObjectReplacer]
+        public static string UD_xTagMulti(DelegateContext Context)
+        {
+            string output = null;
+            if (!Context.Parameters.IsNullOrEmpty()
+                && Context.Parameters.Count > 2
+                && Context.Target is GameObject target
+                && int.TryParse(Context.Parameters[0], out int count)
+                && target.GetxTag(Context.Parameters[1], Context.Parameters[2]) is string multixTag
+                && multixTag.CachedCommaExpansion() is List<string> multiTagList)
+            {
+                List<string> andList = new();
+                for (int i = 0; i < count; i++)
+                {
+                    if (multiTagList.GetRandomElementCosmetic() is string entry)
+                    {
+                        andList.Add(entry);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                output = Grammar.MakeAndList(andList);
+                if (andList.Count > 2 && !output.Contains(", and "))
+                {
+                    output = output.Replace(" and ", ", and ");
+                }
+                if (Context.Capitalize)
+                {
+                    output = output.Capitalize();
+                }
+            }
+            return output;
+        }
+
+        [VariableObjectReplacer]
+        public static string UD_xTagMultiU(DelegateContext Context)
+        {
+            Debug.GetIndents(out Indents oldIndent);
+            Indents indent = new(Debug.GetNewIndent());
+            string output = null;
+            if (!Context.Parameters.IsNullOrEmpty()
+                && Context.Parameters.Count > 3
+                && Context.Target is GameObject target
+                && int.TryParse(Context.Parameters[0], out int count)
+                && Context.Parameters[1] is string unique
+                && (unique.EqualsNoCase("U") || unique.EqualsNoCase("Unique"))
+                && target.GetxTag(Context.Parameters[2], Context.Parameters[3]) is string multixTag
+                && multixTag.CachedCommaExpansion() is List<string> multiTagList)
+            {
+                List<string> andList = new();
+                Debug.Log(nameof(multiTagList) + " Entries:", indent[1]);
+                for (int i = 0; i < count; i++)
+                {
+                    if (multiTagList.GetRandomElementCosmeticExcluding(Exclude: s => andList.Contains(s)) is string entry)
+                    {
+                        Debug.Log(entry, indent[2]);
+                        andList.Add(entry);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                output = Grammar.MakeAndList(andList);
+                if (andList.Count > 2 && !output.Contains(", and "))
+                {
+                    output = output.Replace(" and ", ", and ");
+                }
+                if (Context.Capitalize)
+                {
+                    output = output.Capitalize();
+                }
+            }
+            Debug.SetIndent(oldIndent[0]);
+            return output;
+        }
+
+        [VariableObjectReplacer]
+        public static string UD_xTag(DelegateContext Context)
+        {
+            Debug.GetIndents(out Indents oldIndent);
+            Indents indent = new(Debug.GetNewIndent());
+            Debug.Log(nameof(UD_xTag) + "." + nameof(Context.Target), Context?.Target?.DebugName ?? NULL, indent);
+            string parameters = null;
+            foreach (string parameter in Context.Parameters)
+            {
+                if (!parameters.IsNullOrEmpty())
+                {
+                    parameters += ", ";
+                }
+                parameters += parameter;
+            }
+            Debug.Log(nameof(Context.Parameters), parameters, indent[1]);
+            string output = null;
+            if (!Context.Parameters.IsNullOrEmpty()
+                && Context.Target is GameObject target)
+            {
+                switch (Context.Parameters.Count)
+                {
+                    case 0:
+                    case 1:
+                        Debug.Log("Uh-oh!", indent[1]);
+                        break;
+
+                    case 2:
+                        output = UD_xTagSingle(Context);
+                        Debug.Log(nameof(UD_xTagSingle), indent[1]);
+                        break;
+
+                    case 3:
+                        output = UD_xTagMulti(Context);
+                        Debug.Log(nameof(UD_xTagMulti), indent[1]);
+                        break;
+
+                    default: // 4
+                        output = UD_xTagMultiU(Context);
+                        Debug.Log(nameof(UD_xTagMultiU), indent[1]);
+                        break;
+                }
+                if (Context.Capitalize)
+                {
+                    Debug.Log(nameof(Context.Capitalize), indent[1]);
+                    output = output.Capitalize();
+                }
+            }
+            Debug.SetIndent(oldIndent[0]);
             return output;
         }
 
@@ -143,6 +270,10 @@ namespace UD_FleshGolems
 
         public static GameObject DeepCopyMapInventory(GameObject Source)
         {
+            if (Source == null)
+            {
+                return null;
+            }
             return Source.DeepCopy(MapInv: DeepCopyMapInventory);
         }
 
@@ -157,11 +288,40 @@ namespace UD_FleshGolems
             The.Player.ReceiveObject("Neuro Animator");
             The.Player.ReceiveObject("Antimatter Cell");
             Examiner.IDAll();
-            if (Popup.AskNumber("How many corpses do you want?") is int corpseCount)
+            if (Popup.AskNumber("How many corpses do you want?", Start: 20, Min: 0, Max: 100) is int corpseCount
+                && corpseCount > 0)
             {
-                for (int i = 0; i < corpseCount; i++)
+                int maxAttempts = corpseCount * 2;
+                List<string> corpseBlueprints = new();
+                while (corpseCount > 0 && maxAttempts > 0)
                 {
-
+                    maxAttempts--;
+                    if (GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(bp => bp.InheritsFrom("Corpse"))) is GameObject corpseObject)
+                    {
+                        The.Player.CurrentCell.GetAdjacentCells(5).GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject)).AddObject(corpseObject);
+                        if (corpseObject.CurrentCell != null)
+                        {
+                            corpseBlueprints.Add(corpseObject.Blueprint);
+                            corpseCount--;
+                        }
+                        else
+                        {
+                            corpseObject?.Obliterate();
+                        }
+                    }
+                }
+                if (corpseBlueprints.Count > 0)
+                {
+                    string corpseListOutput = null;
+                    foreach (string corpseBlueprint in corpseBlueprints)
+                    {
+                        if (!corpseListOutput.IsNullOrEmpty())
+                        {
+                            corpseListOutput += "\n";
+                        }
+                        corpseListOutput += "{{K|\u0007}} " + corpseBlueprint;
+                    }
+                    Popup.Show("Generated " + corpseBlueprints.Count + " corpses of various types:\n" + corpseListOutput);
                 }
             }
             return true;

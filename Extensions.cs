@@ -48,7 +48,7 @@ namespace UD_FleshGolems
             }
         }
 
-        public static T GetRandomElementCosmetic<T>(this IEnumerable<T> Enumerable, Predicate<T> Exclude)
+        public static T GetRandomElementCosmeticExcluding<T>(this IEnumerable<T> Enumerable, Predicate<T> Exclude)
             where T : class
         {
             List<T> filteredList = new(Enumerable);
@@ -166,6 +166,39 @@ namespace UD_FleshGolems
         public static GameObjectBlueprint GetGameObjectBlueprint(this string Blueprint)
         {
             return Utils.GetGameObjectBlueprint(Blueprint);
+        }
+
+        public static string GetCorpseBlueprint(this GameObjectBlueprint Blueprint)
+        {
+            if (Blueprint.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string corpseBlueprint))
+            {
+                return corpseBlueprint;
+            }
+            return null;
+        }
+        public static bool TryGetCorpseBlueprint(this GameObjectBlueprint Blueprint, out string CorpseBlueprint)
+        {
+            return (CorpseBlueprint = Blueprint.GetCorpseBlueprint()) != null;
+        }
+
+        public static int? GetCorpseChance(this GameObjectBlueprint Blueprint)
+        {
+            if (Blueprint.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseChance), out int corpseChance))
+            {
+                return corpseChance;
+            }
+            return null;
+        }
+        public static bool TryGetCorpseChance(this GameObjectBlueprint Blueprint, out int CorpseChance)
+        {
+            CorpseChance = 0;
+            int? corpseChance = Blueprint.GetCorpseChance();
+            if (corpseChance != null)
+            {
+                CorpseChance = (int)corpseChance;
+                return true;
+            }
+            return false;
         }
     }
 }

@@ -346,7 +346,7 @@ namespace XRL.World.QuestManagers
 
         public static UD_FleshGolems_CorpseQuestStep CreateASpeciesCorpseQuestStep(List<UD_FleshGolems_CorpseQuestStep> Steps, UD_FleshGolems_CorpseQuestSystem ParentSystem)
         {
-            string species = AllSpecies.GetRandomElementCosmetic(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
+            string species = AllSpecies.GetRandomElementCosmeticExcluding(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
                 Name = "Find " + Grammar.A(species.Capitalize()) + " Species Corpse",
@@ -360,7 +360,7 @@ namespace XRL.World.QuestManagers
         }
         public static UD_FleshGolems_CorpseQuestStep CreateABaseCorpseQuestStep(List<UD_FleshGolems_CorpseQuestStep> Steps, UD_FleshGolems_CorpseQuestSystem ParentSystem)
         {
-            string baseBlueprint = AllBaseCorpses.GetRandomElementCosmetic(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
+            string baseBlueprint = AllBaseCorpses.GetRandomElementCosmeticExcluding(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {
                 Name = "Find " + Grammar.A(baseBlueprint.Capitalize()),
@@ -374,7 +374,7 @@ namespace XRL.World.QuestManagers
         }
         public static UD_FleshGolems_CorpseQuestStep CreateAFactionCorpseQuestStep(List<UD_FleshGolems_CorpseQuestStep> Steps, UD_FleshGolems_CorpseQuestSystem ParentSystem)
         {
-            string factionName = AllFactions.GetRandomElementCosmetic(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
+            string factionName = AllFactions.GetRandomElementCosmeticExcluding(Exclude: s => HasQuestStepWithCorpseItemValue(Steps, s));
             string factionDisplayName = Factions.Get(factionName).DisplayName;
             UD_FleshGolems_CorpseQuestStep questStep = new(ParentSystem)
             {

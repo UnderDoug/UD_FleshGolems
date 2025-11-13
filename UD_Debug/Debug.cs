@@ -6,7 +6,7 @@ using System.Text;
 
 using XRL;
 
-namespace UD_FleshGolems.Debug
+namespace UD_FleshGolems.Logging
 {
     [HasModSensitiveStaticCache]
     [HasGameBasedStaticCache]
