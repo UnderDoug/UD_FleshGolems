@@ -8,6 +8,7 @@ using XRL;
 
 using UD_FleshGolems;
 using static UD_FleshGolems.Options;
+using static UD_FleshGolems.Utils;
 
 namespace UD_FleshGolems.Logging
 {
@@ -20,61 +21,91 @@ namespace UD_FleshGolems.Logging
         {
             get
             {
-                string callingTypeAndMethod = GetCallingTypeAndMethod();
-                if (GetRegistry().ContainsKey(callingTypeAndMethod))
+                try
                 {
-                    if (!GetRegistry()[callingTypeAndMethod])
+                    if (TryGetCallingTypeAndMethod(out _, out MethodBase callingMethod)
+                        && GetRegistry() is List<MethodRegistryEntry> registry
+                        && registry.Contains(callingMethod))
                     {
-                        if (DebugEnableAllLogging)
+                        if (!registry.GetValue(callingMethod))
                         {
-                            return _DoDebug;
+                            if (!DebugEnableAllLogging)
+                            {
+                                return false;
+                            }
                         }
-                        return false;
                     }
                 }
-                if (!_DoDebug)
+                catch (Exception x)
                 {
-                    return false;
+                    MetricsManager.LogException(typeof(Debug) + "." + nameof(DoDebug), x, "game_mod_exception");
                 }
-                return true;
+                return _DoDebug;
             }
         }
-        private static Dictionary<string, bool> _DoDebugRegistry = new()
-        {
-            { "Example", true },
-        };
-        public static Dictionary<string, bool> DoDebugRegistry => GetRegistry();
+        private static List<MethodRegistryEntry> _DoDebugRegistry = new();
+        public static List<MethodRegistryEntry> DoDebugRegistry => GetRegistry();
         public static void Register(
             Type Class,
             string MethodName,
             bool Value,
-            Dictionary<string, bool> Registry,
-            out Dictionary<string, bool> ReturnRegistry)
+            List<MethodRegistryEntry> Registry,
+            out List<MethodRegistryEntry> ReturnRegistry)
         {
-            UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(Register) + "(" + Class.Name + "." + MethodName + ": " + Value + ")");
-            Registry.Add(Class.Name + "." + MethodName, Value);
+            Register(Class.GetMethod(MethodName), Value, Registry, out ReturnRegistry);
+        }
+        public static void Register(
+            MethodBase MethodBase,
+            bool Value,
+            List<MethodRegistryEntry> Registry,
+            out List<MethodRegistryEntry> ReturnRegistry)
+        {
+            string declaringType = MethodBase.DeclaringType.Name;
+            UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(Register) + "(" + declaringType + "." + MethodBase.Name + ": " + Value + ")");
+            Registry.Add(new(MethodBase, Value));
             ReturnRegistry = Registry;
         }
-        public static void Register(this Dictionary<string, bool> Registry, Type Class, string MethodName, bool Value)
+        public static void Register(this List<MethodRegistryEntry> Registry, Type Class, string MethodName, bool Value)
         {
             Register(Class, MethodName, Value, Registry, out _DoDebugRegistry);
         }
-        public static Dictionary<string, bool> GetRegistry()
+        public static void Register(this List<MethodRegistryEntry> Registry, MethodBase MethodBase, bool Value)
+        {
+            Register(MethodBase, Value, Registry, out _DoDebugRegistry);
+        }
+        public static void Register(this List<MethodRegistryEntry> Registry, string MethodName, bool Value)
+        {
+            TryGetCallingTypeAndMethod(out Type CallingType, out _);
+            foreach (MethodBase methodBase in CallingType.GetMethods())
+            {
+                if (methodBase.Name == MethodName)
+                {
+                    Register(methodBase, Value, Registry, out _DoDebugRegistry);
+                }
+            }
+        }
+        public static void Register(this List<MethodRegistryEntry> Registry, MethodRegistryEntry RegisterEntry)
+        {
+            Register((MethodBase)RegisterEntry, RegisterEntry, Registry, out _DoDebugRegistry);
+        }
+        public static List<MethodRegistryEntry> GetRegistry()
         {
             if (_GotRegistry)
             {
                 return _DoDebugRegistry;
             }
-            Type classWithDebugRegistryAttribute = typeof(UD_FleshGolems_HasDebugRegistryAttribute);
-            Type methodWithDebugRegistryAttribute = typeof(UD_FleshGolems_DebugRegistryAttribute);
-            foreach (Type hasDebugRegistry in ModManager.GetClassesWithAttribute(classWithDebugRegistryAttribute))
+            try
             {
-                List<MethodInfo> debugRegistryMethods = ModManager.GetMethodsWithAttribute(methodWithDebugRegistryAttribute, hasDebugRegistry);
+                List<MethodInfo> debugRegistryMethods = ModManager.GetMethodsWithAttribute(typeof(UD_FleshGolems_DebugRegistryAttribute));
                 foreach (MethodInfo debugRegistryMethod in debugRegistryMethods)
                 {
-                    UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(GetRegistry) + "(" + hasDebugRegistry.Name + "." + debugRegistryMethod.Name + ")");
-                    _DoDebugRegistry = debugRegistryMethod.Invoke(null, new object[] { _DoDebugRegistry }) as Dictionary<string, bool>;
+                    debugRegistryMethod.Invoke(null, new object[] { _DoDebugRegistry });
                 }
+            }
+            catch (Exception x)
+            {
+                MetricsManager.LogException(nameof(Debug) + "." + nameof(GetRegistry), x, "game_mod_exception");
+                _GotRegistry = true;
             }
             _GotRegistry = true;
             return _DoDebugRegistry;
@@ -132,20 +163,32 @@ namespace UD_FleshGolems.Logging
             GetIndents(0, out Indents);
         }
 
-        private static string GetCallingTypeAndMethod(bool AppendSpace = false)
+        public static string GetCallingTypeAndMethod(bool AppendSpace = false)
         {
+            if (TryGetCallingTypeAndMethod(out Type declaringType, out MethodBase methodBase))
+            {
+                return declaringType.Name + "." + methodBase.Name + (AppendSpace ? " " : "");
+            }
+            return null;
+        }
+        public static bool TryGetCallingTypeAndMethod(out Type CallingType, out MethodBase Method)
+        {
+            CallingType = null;
+            Method = null;
             StackFrame[] stackFrames = new StackTrace().GetFrames();
             int stackTraceCount = Math.Min(stackFrames.Length, 8);
             for (int i = 0; i < stackTraceCount; i++)
             {
                 if (stackFrames[i].GetMethod() is MethodBase methodBase
                     && methodBase.DeclaringType is Type declaringType
-                    && declaringType != typeof(Debug))
+                    && !declaringType.Equals(typeof(UD_FleshGolems.Logging.Debug)))
                 {
-                    return declaringType.Name + "." + methodBase.Name + (AppendSpace ? " " : "");
+                    CallingType = declaringType;
+                    Method = methodBase;
+                    return true;
                 }
             }
-            return null;
+            return false;
         }
 
         public static void Log<T>(string Field, T Value, Indent Indent = null)
@@ -183,6 +226,30 @@ namespace UD_FleshGolems.Logging
         {
             GetIndents(out Indent);
             Log(GetCallingTypeAndMethod(true) + Message, Indent);
+        }
+        public static void CheckYeh(string Message, Indent Indent = null)
+        {
+            Log(AppendTick("") + " " + Message, (string)null, Indent);
+        }
+        public static void CheckNah(string Message, Indent Indent = null)
+        {
+            Log(AppendCross("") + " " + Message, (string)null, Indent);
+        }
+        public static void YehNah(string Message, bool? Good = null, Indent Indent = null)
+        {
+            string append = null;
+            if (Good != null)
+            {
+                if (!Good.GetValueOrDefault())
+                {
+                    append = AppendCross("") + " ";
+                }
+                else
+                {
+                    append = AppendTick("") + " ";
+                }
+            }
+            Log(append + Message, (string)null, Indent);
         }
     }
 }

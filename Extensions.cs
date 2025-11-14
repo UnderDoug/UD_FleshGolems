@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
+using UD_FleshGolems.Logging;
+
+using XRL;
 using XRL.CharacterBuilds.Qud;
 using XRL.Rules;
 using XRL.World;
@@ -15,6 +19,29 @@ namespace UD_FleshGolems
 {
     public static class Extensions
     {
+        public static bool Contains(this List<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
+        {
+            foreach (MethodBase methodBase in DebugRegistry)
+            {
+                if (MethodBase.Equals(methodBase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public static bool GetValue(this List<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
+        {
+            foreach ((MethodBase methodBase, bool value )in DebugRegistry)
+            {
+                if (MethodBase.Equals(methodBase))
+                {
+                    return value;
+                }
+            }
+            throw new ArgumentOutOfRangeException(nameof(MethodBase), "Not found.");
+        }
+
         public static bool IsPlayerBlueprint(this string Blueprint)
         {
             return Blueprint == Startup.PlayerBlueprint;
@@ -261,8 +288,61 @@ namespace UD_FleshGolems
             return Utils.IsBaseGameObjectBlueprint(Blueprint);
         }
 
+        public static Dictionary<T, int> ConvertToWeightedList<T>(this List<KeyValuePair<T, int>> EntriesList)
+        {
+            Dictionary<T, int> weightedEntries = new();
+            if (!EntriesList.IsNullOrEmpty())
+            {
+                foreach ((T item, int weight) in EntriesList)
+                {
+                    if (!weightedEntries.ContainsKey(item))
+                    {
+                        weightedEntries.Add(item, weight);
+                    }
+                    else
+                    {
+                        weightedEntries[item] += weight;
+                    }
+                }
+            }
+            return weightedEntries;
+        }
+
+        public static List<T> ConvertToList<T>(this List<KeyValuePair<T, int>> EntriesList)
+        {
+            List<T> outputList = new();
+            if (!EntriesList.IsNullOrEmpty())
+            {
+                foreach ((T item, int _) in EntriesList)
+                {
+                    if (!outputList.Contains(item))
+                    {
+                        outputList.Add(item);
+                    }
+                }
+            }
+            return outputList;
+        }
+
+        public static Dictionary<T, int> ConvertToWeightedList<T>(this IEnumerable<T> Items)
+        {
+            Dictionary<T, int> weightedList = new();
+            foreach (T item in Items)
+            {
+                if (weightedList.ContainsKey(item))
+                {
+                    weightedList[item]++;
+                }
+                else
+                {
+                    weightedList.Add(item, 1);
+                }
+            }
+            return weightedList;
+        }
+
         public static string GenerateBulletList(
-            this List<string> Items,
+            this IEnumerable<string> Items,
             string Label = null,
             string Bullet = "\u0007",
             string BulletColor = "K")
@@ -278,6 +358,22 @@ namespace UD_FleshGolems
                 output += "{{" + BulletColor + "|" + Bullet + "}} " + item;
             }
             return Label + output;
+        }
+
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this Dictionary<T, int> Entries)
+        {
+            foreach ((T item, int count) in Entries)
+            {
+                yield return count.Things(item.ToString());
+            }
+        }
+
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this IEnumerable<T> Entries)
+        {
+            foreach ((T item, int count) in Entries.ConvertToWeightedList())
+            {
+                yield return count.Things(item.ToString());
+            }
         }
     }
 }

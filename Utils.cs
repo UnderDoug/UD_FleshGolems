@@ -27,16 +27,16 @@ namespace UD_FleshGolems
 {
     [HasWishCommand]
     [HasVariableReplacer]
-    [UD_FleshGolems_HasDebugRegistry]
     public static class Utils
     {
         [UD_FleshGolems_DebugRegistry]
-        public static Dictionary<string, bool> doDebugRegistry(Dictionary<string, bool> Registry)
+        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
         {
-            Registry.Register(typeof(Utils), nameof(UD_xTag), false);
-            Registry.Register(typeof(Utils), nameof(UD_xTagSingle), false);
-            Registry.Register(typeof(Utils), nameof(UD_xTagMulti), false);
-            Registry.Register(typeof(Utils), nameof(UD_xTagMultiU), false);
+            Registry.Register(typeof(Utils).GetMethod(nameof(UD_xTag)), false);
+            Registry.Register(typeof(Utils).GetMethod(nameof(UD_xTagSingle)), false);
+            Registry.Register(typeof(Utils).GetMethod(nameof(UD_xTagMulti)), false);
+            Registry.Register(typeof(Utils).GetMethod(nameof(UD_xTagMultiU)), false);
+            Registry.Register(typeof(Utils).GetMethod(nameof(UD_xTagMultiU)), false);
             return Registry;
         }
 
@@ -279,11 +279,6 @@ namespace UD_FleshGolems
             return Math.Min(hitpoints.Value - 1, DamageAmount);
         }
 
-        public static GameObjectBlueprint GetGameObjectBlueprint(string Blueprint)
-        {
-            return GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint);
-        }
-
         public static GameObject DeepCopyMapInventory(GameObject Source)
         {
             if (Source == null)
@@ -291,6 +286,11 @@ namespace UD_FleshGolems
                 return null;
             }
             return Source.DeepCopy(MapInv: DeepCopyMapInventory);
+        }
+
+        public static GameObjectBlueprint GetGameObjectBlueprint(string Blueprint)
+        {
+            return GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint);
         }
 
         public static bool BlueprintsMatchOrThatBlueprintInheritsFromThisOne(string ThisBlueprint, string ThatBlueprint)

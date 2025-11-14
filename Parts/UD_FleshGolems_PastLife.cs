@@ -5,7 +5,9 @@ using System.Text;
 using HarmonyLib;
 
 using Genkit;
+using Qud.API;
 
+using XRL.Rules;
 using XRL.UI;
 using XRL.Wish;
 using XRL.Language;
@@ -17,6 +19,7 @@ using XRL.World.Anatomy;
 using XRL.World.ObjectBuilders;
 
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
+using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
@@ -24,15 +27,45 @@ using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
-using XRL.Rules;
-using Qud.API;
+using System.Reflection;
+using XRL.Collections;
 
 namespace XRL.World.Parts
 {
+    [HasModSensitiveStaticCache]
+    [HasGameBasedStaticCache]
     [HasWishCommand]
     [Serializable]
     public class UD_FleshGolems_PastLife : IScribedPart
     {
+        [UD_FleshGolems_DebugRegistry]
+        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
+        {
+            /*
+            Type thisType = typeof(UD_FleshGolems_PastLife);
+            MethodBase GetMethod(string methodName)
+            {
+                return thisType.GetMethod(methodName);
+            }
+            Registry.Register(GetMethod(nameof(GetProcessableCorpsesProducts)), false);
+            Registry.Register(GetMethod(nameof(GetProcessableCorpsesAndTheirProducts)), true);
+            Registry.Register(GetMethod(nameof(GetCorpsesThisProductComesFrom)), true);
+            Registry.Register(GetMethod(nameof(EntityCouldHaveComeFromThisCorpse)), true);
+            Registry.Register(GetMethod(nameof(GetBlueprintsWhoseCorpseThisCouldBe)), true);
+            Registry.Register(GetMethod(nameof(GetALivingBlueprintForCorpseWeighted)), true);
+            Registry.Register(GetMethod(nameof(GetALivingBlueprintForCorpse)), true);
+            */
+            Registry.Register(nameof(GetProcessableCorpsesProducts), false);
+            Registry.Register(nameof(GetProcessableCorpsesProducts), false);
+            Registry.Register(nameof(GetProcessableCorpsesAndTheirProducts), false);
+            Registry.Register(nameof(GetCorpsesThisProductComesFrom), false);
+            Registry.Register(nameof(EntityCouldHaveComeFromThisCorpse), false);
+            Registry.Register(nameof(GetBlueprintsWhoseCorpseThisCouldBe), true);
+            Registry.Register(nameof(GetALivingBlueprintForCorpseWeighted), true);
+            Registry.Register(nameof(GetALivingBlueprintForCorpse), true);
+            return Registry;
+        }
+
         [Serializable]
         public class UD_FleshGolems_DeathAddress : IComposite
         {
@@ -135,6 +168,26 @@ namespace XRL.World.Parts
                 return new(Source.Key, Source.Value);
             }
         }
+
+        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        public static StringMap<List<string>> ProcessablesByProduct = new();
+
+        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        public static StringMap<List<string>> ProductsByProcessable = new();
+
+        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        public static StringMap<List<string>> EntitesByCorpse = new();
+
+        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        public static StringMap<List<KeyValuePair<string, int>>> EntitesByCorpseWithChance = new();
+
+        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        public static StringMap<Dictionary<string, int>> EntitesWeightedByCorpse = new();
 
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
 
@@ -267,140 +320,298 @@ namespace XRL.World.Parts
         /// <param name="OnSuccessFieldName">The name of the field that contains the processing success result.</param>
         /// <param name="PossibleProducts"></param>
         /// <param name="ProductFilter">Any conditions by which a product should be included, to the exclusion of all others.</param>
-        /// <returns>An <see cref="IEnumerable{string}"/> of the <see cref="GameObject.Blueprint"/> or <see cref="GameObjectBlueprint.Name"/> for each potential "product" from successfully "processing" the <paramref name="CorpseBlueprint"/></returns>
-        public static IEnumerable<string> GetProcessableCorpsesProducts(
+        /// <returns>An <see cref="List{string}"/> of the <see cref="GameObject.Blueprint"/> or <see cref="GameObjectBlueprint.Name"/> for each potential "product" from successfully "processing" the <paramref name="CorpseBlueprint"/></returns>
+        public static List<string> GetProcessableCorpsesProducts(
             GameObjectBlueprint CorpseBlueprint,
             string ProcessableType,
             string OnSuccessFieldName,
             Predicate<GameObjectBlueprint> ProductFilter = null)
         {
+            Debug.GetIndents(out Indents indent);
+            Debug.Log(
+                Debug.GetCallingTypeAndMethod(true),
+                CorpseBlueprint.Name + ", " + ProcessableType + ", " + OnSuccessFieldName,
+                indent[1]);
+
             if (CorpseBlueprint == null
-                || !CorpseBlueprint.TryGetPartParameter(ProcessableType, OnSuccessFieldName, out string butcherProductValue))
+                || !CorpseBlueprint.TryGetPartParameter(ProcessableType, OnSuccessFieldName, out string processedProductValue))
             {
-                yield break;
+                Debug.SetIndent(indent[0]);
+                return new();
             }
-            if (!butcherProductValue.StartsWith('@'))
+            List<string> outputList = new();
+            Debug.Log(processedProductValue, indent[2]);
+            if (!processedProductValue.StartsWith('@'))
             {
-                if (ProductFilter == null || ProductFilter(butcherProductValue.GetGameObjectBlueprint()))
+                if (ProductFilter == null || ProductFilter(processedProductValue.GetGameObjectBlueprint()))
                 {
-                    yield return butcherProductValue;
+                    Debug.Log(processedProductValue, indent[3]);
+                    outputList.Add(processedProductValue);
                 }
             }
             else
-            if (PopulationManager.GetEach(butcherProductValue.Replace("@", "")) is List<string> butcherProducts
-                && !butcherProducts.IsNullOrEmpty())
             {
-                foreach (string butcherProduct in butcherProducts)
+                string tableName = processedProductValue.Replace("@", "");
+                if (PopulationManager.Populations.ContainsKey(tableName)
+                    && PopulationManager.Populations[tableName] is PopulationInfo productsPopInfo)
                 {
-                    if (ProductFilter == null || ProductFilter(butcherProductValue.GetGameObjectBlueprint()))
+                    foreach (PopulationItem productItemInfo in productsPopInfo.Items)
                     {
-                        yield return butcherProduct;
+                        Debug.Log(productItemInfo.Name, indent[3]);
+                        if (productItemInfo.Name?.GetGameObjectBlueprint() is GameObjectBlueprint processedProductBlueprint
+                            && (ProductFilter == null || ProductFilter(processedProductBlueprint)))
+                        {
+                            Debug.CheckYeh("Added", indent[4]);
+                            outputList.Add(productItemInfo.Name);
+                        }
                     }
                 }
             }
+            Debug.SetIndent(indent[0]);
+            return outputList;
         }
-
-        public static IEnumerable<KeyValuePair<string, List<string>>> GetProcessableCorpsesAndTheirProducts(
-            Predicate<GameObjectBlueprint> CorpseFilter = null,
-            Predicate<GameObjectBlueprint> ProductFilter = null)
+        public static List<KeyValuePair<string, List<string>>> GetProcessableCorpsesAndTheirProducts()
         {
+            Debug.GetIndents(out Indents indent);
+            Debug.Log(Debug.GetCallingTypeAndMethod(true), indent[1]);
             List<string> PossibleProducts = new();
-            foreach (GameObjectBlueprint corpseBlueprint in GetCorpseBlueprints(cb => IsProcessableCorpse(cb, CorpseFilter)))
+            List<KeyValuePair<string, List<string>>> output = new();
+            foreach (GameObjectBlueprint corpseBlueprint in GetCorpseBlueprints(IsProcessableCorpse))
             {
-                foreach (string butcherableProduct in GetProcessableCorpsesProducts(corpseBlueprint, nameof(Butcherable), nameof(Butcherable.OnSuccess), ProductFilter))
+                if (ProductsByProcessable[corpseBlueprint.Name] is List<string> cachedProducts)
                 {
-                    PossibleProducts.Add(butcherableProduct);
+                    output.Add(new(corpseBlueprint.Name, cachedProducts));
+                    continue;
                 }
-                foreach (string harvestableProduct in GetProcessableCorpsesProducts(corpseBlueprint, nameof(Harvestable), nameof(Harvestable.OnSuccess), ProductFilter))
+                List<string> butcherableProducts = new(GetProcessableCorpsesProducts(
+                    CorpseBlueprint: corpseBlueprint,
+                    ProcessableType: nameof(Butcherable),
+                    OnSuccessFieldName: nameof(Butcherable.OnSuccess)));
+
+                if (!butcherableProducts.IsNullOrEmpty())
                 {
-                    PossibleProducts.Add(harvestableProduct);
+                    Debug.Log(nameof(butcherableProducts), indent[2]);
+                    foreach (string butcherableProduct in butcherableProducts)
+                    {
+                        Debug.Log(butcherableProduct, indent[3]);
+                        PossibleProducts.Add(butcherableProduct);
+                    }
+                }
+
+                List<string> harvestableProducts = new(GetProcessableCorpsesProducts(
+                    CorpseBlueprint: corpseBlueprint,
+                    ProcessableType: nameof(Harvestable),
+                    OnSuccessFieldName: nameof(Harvestable.OnSuccess)));
+
+                if (!harvestableProducts.IsNullOrEmpty())
+                {
+                    Debug.Log(nameof(harvestableProducts), indent[2]);
+                    foreach (string harvestableProduct in harvestableProducts)
+                    {
+                        Debug.Log(harvestableProduct, indent[3]);
+                        PossibleProducts.Add(harvestableProduct);
+                    }
                 }
                 if (!PossibleProducts.IsNullOrEmpty())
                 {
-                    yield return new(corpseBlueprint.Name, PossibleProducts);
+                    Debug.Log(nameof(PossibleProducts), PossibleProducts.Count, indent[2]);
+
+                    ProductsByProcessable[corpseBlueprint.Name] = PossibleProducts;
+                    output.Add(new(corpseBlueprint.Name, PossibleProducts));
+                }
+                else
+                {
+                    Debug.Log("No " + nameof(PossibleProducts), indent[2]);
                 }
                 PossibleProducts.Clear();
             }
-            yield break;
+            Debug.SetIndent(indent[0]);
+            return output;
+        }
+        public static List<KeyValuePair<string, List<string>>> GetProcessableCorpsesAndTheirProducts(
+            Predicate<GameObjectBlueprint> CorpseFilter,
+            Predicate<GameObjectBlueprint> ProductFilter)
+        {
+            List<KeyValuePair<string, List<string>>> output = new();
+            foreach ((string processableCorpseBlueprint, List<string> products) in GetProcessableCorpsesAndTheirProducts())
+            {
+                if (CorpseFilter != null && CorpseFilter(processableCorpseBlueprint.GetGameObjectBlueprint()))
+                {
+                    continue;
+                }
+                foreach (string product in products)
+                {
+                    if (ProductFilter != null && ProductFilter(product.GetGameObjectBlueprint()))
+                    {
+                        continue;
+                    }
+                    output.Add(new(processableCorpseBlueprint, products));
+                }
+            }
+            return output;
         }
 
         public static List<string> GetCorpsesThisProductComesFrom(string ProductBlueprint)
         {
+            Debug.GetIndents(out Indents indent);
+            Debug.Log(Debug.GetCallingTypeAndMethod(true), indent[1]);
+            if (ProcessablesByProduct[ProductBlueprint] is List<string> cachedProcessables)
+            {
+                return cachedProcessables;
+            }
             List<string> corpseList = new();
-            foreach ((string corpseBlueprint, List<string> productsList) in GetProcessableCorpsesAndTheirProducts(ProductFilter: UD_FleshGolems_NanoNecroAnimation.IsCorpse))
+            foreach ((string corpseBlueprint, List<string> productsList) in GetProcessableCorpsesAndTheirProducts(null, ProductFilter: IsCorpse))
             {
                 if (productsList.Contains(ProductBlueprint))
                 {
+                    Debug.Log(nameof(corpseBlueprint), corpseBlueprint, indent[2]);
                     corpseList.Add(corpseBlueprint);
                 }
             }
+            ProcessablesByProduct[ProductBlueprint] = corpseList;
+            Debug.SetIndent(indent[0]);
             return corpseList;
         }
 
-        public static Dictionary<string, int> GetBlueprintsWhoseCorpseThisCouldBe(
-            string Blueprint,
+        public static bool EntityCouldHaveComeFromThisCorpse(
+            GameObjectBlueprint Entity,
+            string CorpseBlueprint,
+            out string EntityCorpseBlueprint,
+            out int EntityCorpseChance,
+            bool Include0Chance = true)
+        {
+            Debug.GetIndents(out Indents indent);
+            Debug.Log(Debug.GetCallingTypeAndMethod(true) + "(" + nameof(Entity) + ": " + Entity.Name + ", " + CorpseBlueprint + ")", indent[1]);
+            if (Entity.TryGetCorpseBlueprintAndChance(out EntityCorpseBlueprint, out EntityCorpseChance)
+                && (EntityCorpseChance > 0 || Include0Chance))
+            {
+                if (CorpseBlueprint == EntityCorpseBlueprint)
+                {
+                    // this entity has this corpse blueprint.
+                    Debug.Log(AppendTick("") + " Same Blueprints", indent[2]);
+                    Debug.SetIndent(indent[0]);
+                    return true;
+                }
+                else
+                if (CorpseBlueprint.InheritsFrom(EntityCorpseBlueprint))
+                {
+                    // this corpse blueprint inherits from this entity's corpse blueprint
+                    Debug.Log(AppendTick("") + " This Corpse inherits Entity Corpse Blueprint", indent[2]);
+                    Debug.SetIndent(indent[0]);
+                    return true;
+                }
+                else
+                if (CorpseBlueprint.IsBaseBlueprint() && EntityCorpseBlueprint.InheritsFrom(CorpseBlueprint))
+                {
+                    // this entity's corpse inherits from this base corpse blueprint
+                    Debug.Log(AppendTick("") + " This Base Corpse is inherited by Entity Corpse", indent[2]);
+                    Debug.SetIndent(indent[0]);
+                    return true;
+                }
+            }
+            Debug.Log(AppendCross("") + " No Match", indent[2]);
+            Debug.SetIndent(indent[0]);
+            return false;
+        }
+
+        public static List<KeyValuePair<string, int>> GetBlueprintsWhoseCorpseThisCouldBe(
+            string CorpseBlueprint,
             bool Include0Chance = true,
             bool ExcludeExcludedFromDynamicEnounter = true)
         {
-            Dictionary<string, int> blueprintsWeightedList = new();
-            foreach (GameObjectBlueprint gOBP in GameObjectFactory.Factory.Blueprints.Values)
+            Debug.GetIndents(out Indents indent);
+            Debug.Log(Debug.GetCallingTypeAndMethod(true), CorpseBlueprint, indent[1]);
+            if (EntitesByCorpseWithChance[CorpseBlueprint] is List<KeyValuePair<string, int>> cachedValue)
             {
-                if (gOBP.IsBaseBlueprint() || (ExcludeExcludedFromDynamicEnounter && gOBP.IsExcludedFromDynamicEncounters()))
+                return cachedValue ;
+            }
+            if (CorpseBlueprint.IsNullOrEmpty() || !CorpseBlueprint.IsCorpse())
+            {
+                // if there's no blueprint to test or the corpse being testing is not a corpse then return.
+                EntitesByCorpse.Add(CorpseBlueprint, new());
+                EntitesByCorpseWithChance.Add(CorpseBlueprint, new());
+                EntitesWeightedByCorpse.Add(CorpseBlueprint, new());
+                Debug.Log(AppendCross("") + " No Corpse Blueprint or Corpse Blueprint Not Corpse", indent[2]);
+                Debug.SetIndent(indent[0]);
+                return null;
+            }
+            List<string> processableOriginCorpses = GetCorpsesThisProductComesFrom(CorpseBlueprint);
+            List<KeyValuePair<string, int>> blueprintsWeightedList = new();
+            foreach (GameObjectBlueprint entityBlueprint in GameObjectFactory.Factory.Blueprints.Values)
+            {
+                if (entityBlueprint.IsBaseBlueprint() || (ExcludeExcludedFromDynamicEnounter && entityBlueprint.IsExcludedFromDynamicEncounters()))
                 {
+                    // We don't want base creatures or (optionally) ones excluded from dynamic encounters.
+                    Debug.Log(AppendCross("") + " Entity Blueprint is Base or optionally excluded (ExcludeFromDynamic)", indent[2]);
                     continue;
                 }
-                if (gOBP.TryGetCorpseBlueprintAndChance(out string corpseBlueprint, out int corpseChance)
-                    && (corpseChance > 0 || Include0Chance))
+                if (EntityCouldHaveComeFromThisCorpse(
+                    Entity: entityBlueprint,
+                    CorpseBlueprint: CorpseBlueprint,
+                    EntityCorpseBlueprint: out _,
+                    EntityCorpseChance: out int corpseChance,
+                    Include0Chance: Include0Chance))
                 {
-                    bool wantToAdd = false;
-                    if (Blueprint == corpseBlueprint)
-                    {
-                        wantToAdd = true;
-                    }
-                    else
-                    if (Blueprint.IsBaseBlueprint() && corpseBlueprint.InheritsFrom(Blueprint))
-                    {
-                        wantToAdd = true;
-                    }
-                    else
-                    if (Blueprint.InheritsFrom(corpseBlueprint))
-                    {
-                        wantToAdd = true;
-                    }
-                    if (wantToAdd)
-                    {
-                        blueprintsWeightedList.TryAdd(gOBP.Name, corpseChance);
-                    }
+                    // add this entity if their corpse matches the one being tested.
+                    blueprintsWeightedList.TryAdd(new(entityBlueprint.Name, corpseChance));
                 }
-                foreach (string processableCorpse in GetCorpsesThisProductComesFrom(Blueprint))
+                if (!processableOriginCorpses.IsNullOrEmpty())
                 {
-                    Dictionary<string, int> blueprintsWithProcessableCorpses = GetBlueprintsWhoseCorpseThisCouldBe(processableCorpse, Include0Chance);
-                    foreach ((string processableCreature, int processableCreatureWeight) in blueprintsWithProcessableCorpses)
+                    Debug.Log("Corpse Blueprint is processing product...", indent[2]);
+                    foreach (string processableOriginCorpse in processableOriginCorpses)
                     {
-                        blueprintsWeightedList.TryAdd(processableCreature, processableCreatureWeight);
+                        Debug.Log(processableOriginCorpse, indent[3]);
+                        if (EntityCouldHaveComeFromThisCorpse(
+                            Entity: entityBlueprint,
+                            CorpseBlueprint: processableOriginCorpse,
+                            EntityCorpseBlueprint: out _,
+                            EntityCorpseChance: out int processableOriginCorpseChance,
+                            Include0Chance: Include0Chance))
+                        {
+                            // add this entity for any corpse matches for corpses that can be processed into this corpse.
+                            // IE, if the corpse blueprint is an "Ogre Ape Heart", then
+                            //     it comes from an "Ogre Ape Corpse", therefore 
+                            //     "Ogre Ape" should be a possible outcome.
+                            blueprintsWeightedList.TryAdd(new(entityBlueprint.Name, processableOriginCorpseChance));
+                        }
                     }
                 }
             }
             if (blueprintsWeightedList.IsNullOrEmpty()
-                && Blueprint.GetGameObjectBlueprint().Inherits is string blueprintInherits
-                && blueprintInherits.GetGameObjectBlueprint().InheritsFrom("Corpse"))
+                && CorpseBlueprint.GetGameObjectBlueprint().Inherits is string blueprintInherits
+                && (blueprintInherits.InheritsFrom("Corpse") || blueprintInherits == "Corpse"))
             {
-                return GetBlueprintsWhoseCorpseThisCouldBe(blueprintInherits, Include0Chance);
+                // if we got an empty list, then we can broaden the search.
+                // run the search again, but for the corpse that the tested one inherits from
+                // if it indeed does inherit from a corpse.
+                blueprintsWeightedList = GetBlueprintsWhoseCorpseThisCouldBe(blueprintInherits, Include0Chance);
             }
+            EntitesByCorpse.Add(CorpseBlueprint, blueprintsWeightedList.ConvertToList());
+            EntitesByCorpseWithChance.Add(CorpseBlueprint, blueprintsWeightedList);
+            EntitesWeightedByCorpse.Add(CorpseBlueprint, blueprintsWeightedList.ConvertToWeightedList());
+            Debug.SetIndent(indent[0]);
             return blueprintsWeightedList;
         }
 
-        public static string GetALivingBlueprintForCorpseWeighted(string CorpseBlueprint)
+        public static string GetALivingBlueprintForCorpseWeighted(string CorpseBlueprint, bool Include0Chance = true)
         {
-            Dictionary<string, int> WeightedBlueprints = GetBlueprintsWhoseCorpseThisCouldBe(CorpseBlueprint);
+            Debug.GetIndents(out Indents indent);
+            Dictionary<string, int> weightedBlueprints = GetBlueprintsWhoseCorpseThisCouldBe(CorpseBlueprint).ConvertToWeightedList();
+            List<string> blueprints = new(weightedBlueprints.Keys);
             int maxWeight = 0;
-            foreach (int weight in WeightedBlueprints.Values)
+            foreach (string blueprint in blueprints)
             {
-                maxWeight += maxWeight;
+                if (Include0Chance && weightedBlueprints[blueprint] == 0)
+                {
+                    weightedBlueprints[blueprint]++;
+                }
+                maxWeight += weightedBlueprints[blueprint];
             }
             int cumulativeWeight = 0;
             int rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
-            foreach ((string blueprint, int weight) in WeightedBlueprints)
+
+            Debug.Log(Debug.GetCallingTypeAndMethod(true) + "(" + CorpseBlueprint + ", " + rolledAmount + "/" + maxWeight + ")", indent[1]);
+            foreach ((string blueprint, int weight) in weightedBlueprints)
             {
                 if (weight < 1)
                 {
@@ -412,11 +623,15 @@ namespace XRL.World.Parts
                     return blueprint;
                 }
             }
+            Debug.SetIndent(indent[0]);
             return null;
         }
         public static string GetALivingBlueprintForCorpse(string CorpseBlueprint, bool Include0Chance = true)
         {
-            return GetBlueprintsWhoseCorpseThisCouldBe(CorpseBlueprint, Include0Chance: Include0Chance)?.Keys?.GetRandomElementCosmetic();
+            return GetBlueprintsWhoseCorpseThisCouldBe(CorpseBlueprint, Include0Chance: Include0Chance)
+                ?.ConvertToWeightedList()
+                ?.Keys
+                ?.GetRandomElementCosmetic();
         }
 
         public UD_FleshGolems_PastLife Initialize(GameObject PastLife = null)
@@ -1193,10 +1408,10 @@ namespace XRL.World.Parts
                 StartX: startX,
                 StartY: startY,
                 VisLevel: AllowVis.Any,
-                ObjectTest: UD_FleshGolems_NanoNecroAnimation.IsCorpse,
+                ObjectTest: IsCorpse,
                 Label: "pick a corpse to get a list of possible creatrues") is Cell pickCell)
             {
-                List<GameObject> corpseList = pickCell.GetObjectsViaEventList(Filter: UD_FleshGolems_NanoNecroAnimation.IsCorpse);
+                List<GameObject> corpseList = pickCell.GetObjectsViaEventList(Filter: IsCorpse);
                 GameObject targetCorpse = null;
                 if (corpseList.Count == 1)
                 {
@@ -1213,7 +1428,7 @@ namespace XRL.World.Parts
                 }
                 if (targetCorpse != null)
                 {
-                    List<string> possibleBlueprints = new(GetBlueprintsWhoseCorpseThisCouldBe(targetCorpse.Blueprint).Keys);
+                    List<string> possibleBlueprints = new(GetBlueprintsWhoseCorpseThisCouldBe(targetCorpse.Blueprint).ConvertToWeightedList().Keys);
 
                     string corpseListLabel = 
                         targetCorpse.IndicativeProximal + " " + targetCorpse.GetReferenceDisplayName(Short: true) + 
