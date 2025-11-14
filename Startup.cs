@@ -9,6 +9,9 @@ using XRL.UI;
 using XRL.World;
 
 using static UD_FleshGolems.Const;
+using static UD_FleshGolems.Options;
+using XRL.World.Parts;
+using XRL.World.Parts.Mutation;
 
 namespace UD_FleshGolems
 {
@@ -64,11 +67,38 @@ namespace UD_FleshGolems
     // [GameBasedCacheInit]
 
     [PlayerMutator]
-    public class LearnAllTheBytes : IPlayerMutator
+    public class UD_FleshGolems_PlayerMutator : IPlayerMutator
     {
+        // Called once when the player is generated (a fair bit after they're created.
         public void mutate(GameObject player)
         {
-            // Called once when the player is generated (a fair bit after they're created.
+            if (DebugEnableTestKit)
+            {
+                Mutations playerMutations = player.RequirePart<Mutations>();
+                if (player.GetPartsDescendedFrom<UD_FleshGolems_NanoNecroAnimation>().IsNullOrEmpty()
+                    && !player.HasPart<UD_FleshGolems_NanoNecroAnimation>())
+                {
+                    Dictionary<string, string> reanimationMutationEntries = new()
+                    {
+                        { "Physical", nameof(UD_FleshGolems_NanoNecroAnimation) },
+                        { "Mental", nameof(UD_FleshGolems_NecromanticAura) }
+                    };
+                    if (player.IsChimera())
+                    {
+                        playerMutations.AddMutation(reanimationMutationEntries["Physical"]);
+                    }
+                    else
+                    if (player.IsEsper())
+                    {
+                        playerMutations.AddMutation(reanimationMutationEntries["Mental"]);
+                    }
+                    else
+                    {
+                        playerMutations.AddMutation(reanimationMutationEntries.GetRandomElementCosmetic().Value);
+                    }
+                }
+            }
+            
         }
     }
 

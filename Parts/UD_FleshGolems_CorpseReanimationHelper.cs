@@ -841,6 +841,7 @@ namespace XRL.World.Parts
                 int guaranteedNaturalWeapons = 3;
                 int bestowedNaturalWeapons = 0;
                 bool guaranteeNaturalWeapon() => guaranteedNaturalWeapons >= bestowedNaturalWeapons;
+                Debug.Log("Getting SourceBlueprint Natural Equipment...", indent[1]);
                 if (GameObjectFactory.Factory.GetBlueprintIfExists(PastLife?.Blueprint) is GameObjectBlueprint sourceBlueprint)
                 {
                     bool isProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
@@ -934,8 +935,10 @@ namespace XRL.World.Parts
                         }
                     }
 
+                    Debug.Log("Getting Golem Anatomy...", indent[1]);
                     if (GolemBodySelection.GetBodyBlueprintFor(sourceBlueprint) is GameObjectBlueprint golemBodyBlueprint)
                     {
+                        Debug.Log(nameof(golemBodyBlueprint), golemBodyBlueprint.Name, indent[2]);
                         if (golemBodyBlueprint.TryGetPartParameter(nameof(Body), nameof(Body.Anatomy), out string golemAnatomy))
                         {
                             if (frankenCorpse.Body == null)
@@ -961,6 +964,27 @@ namespace XRL.World.Parts
                         // AssignStatsFromBlueprint(frankenCorpse, golemBodyBlueprint);
                         AssignMutationsFromBlueprint(frankenMutations, golemBodyBlueprint, Exclude: giganticIfNotAlready);
                         AssignSkillsFromBlueprint(frankenSkills, golemBodyBlueprint);
+                    }
+                    else
+                    {
+                        Debug.Log("Uh-oh! Something went wrong!", indent[2]);
+                        Debug.Log("Changing tile to the PastLife Tile", indent[2]);
+                        if (PastLife?.PastRender?.Tile is string pastTile)
+                        {
+                            Debug.Log("Tile changed", "\"" + pastTile + "\"", indent[3]);
+                            frankenCorpse.Render.Tile = pastTile;
+                        }
+                        else
+                        {
+                            Debug.Log("Uh-oh! Something went wrong!", indent[3]);
+                            Debug.Log("Changing tile to the sourceBlueprint Tile", indent[3]);
+                            if (sourceBlueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.Tile), out string sourceTile))
+                            {
+                                Debug.Log("Tile changed", "\"" + sourceTile + "\"", indent[4]);
+                                frankenCorpse.Render.Tile = sourceTile;
+                            }
+                        }
+                        PastLife.RestoreAdditionalLimbs();
                     }
 
                     Debug.Log("Granting SourceBlueprint Natural Equipment...", indent[1]);
@@ -1140,7 +1164,7 @@ namespace XRL.World.Parts
             }
             catch (Exception x)
             {
-                MetricsManager.LogException(nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(Register), x, "game_mod_exception");
+                MetricsManager.LogException(Name + "." + nameof(Register), x, "game_mod_exception");
             }
             finally
             {

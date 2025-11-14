@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using XRL.Core;
+using XRL.World.Anatomy;
 using XRL.World.Effects;
 
 using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
@@ -119,6 +120,10 @@ namespace XRL.World.Parts
         {
             if (ParentObject is GameObject frankenCorpse)
             {
+                foreach (BodyPart bodyPart in frankenCorpse.Body.LoopParts())
+                {
+
+                }
                 if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
                 {
                     int tier = GetTierFromLevel(frankenCorpse);

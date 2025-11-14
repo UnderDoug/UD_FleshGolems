@@ -226,6 +226,21 @@
       HardMaterial="stipe" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
+
+  <object Name="Chute Crab Corpse" Inherits="Crab Corpse">
+    <part Name="Physics" Weight="20" />
+    <part Name="Render" DisplayName="chute crab corpse" ColorString="&amp;Y" />
+    <part Name="Butcherable" OnSuccess="@Eyeless Crab Corpse" />
+    <tag Name="Tier" Value="2" />
+  </object>
+
+  <object Name="Sated Dreamcrungle" Load="Merge">
+    <mixin Name="UD_FleshGolems Bush Corpse" />
+  </object>
+
+  <object Name="Jumble of Tongues" Load="Merge">
+    <mixin Name="UD_FleshGolems Flower Corpse" />
+  </object>
   
   <!--
   

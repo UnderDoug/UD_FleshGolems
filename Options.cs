@@ -6,6 +6,11 @@ namespace UD_FleshGolems
     [HasOptionFlagUpdate(Prefix = "Option_UD_FleshGolems_")]
     public static class Options
     {
+        // Debug Settings
+        [OptionFlag] public static bool DebugEnableTestKit;
+        [OptionFlag] public static bool DebugEnableLogging;
+        [OptionFlag] public static bool DebugEnableAllLogging;
+
         // General Settings
         [OptionFlag] public static int SpecialReanimatedBuilderBaseChanceOneIn;
         [OptionFlag] public static int SpecialReanimatedBuilderChanceOneInMulti;

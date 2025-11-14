@@ -106,6 +106,7 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_xTagSingle(DelegateContext Context)
         {
+            Debug.LogCaller();
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 1
@@ -125,6 +126,7 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_xTagMulti(DelegateContext Context)
         {
+            Debug.LogCaller();
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 2
@@ -163,6 +165,7 @@ namespace UD_FleshGolems
         {
             Debug.GetIndents(out Indents oldIndent);
             Indents indent = new(Debug.GetNewIndent());
+            Debug.LogCaller(indent);
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 3
@@ -206,6 +209,7 @@ namespace UD_FleshGolems
         {
             Debug.GetIndents(out Indents oldIndent);
             Indents indent = new(Debug.GetNewIndent());
+            Debug.LogCaller(indent);
             Debug.Log(nameof(UD_xTag) + "." + nameof(Context.Target), Context?.Target?.DebugName ?? NULL, indent);
             string parameters = null;
             foreach (string parameter in Context.Parameters)
@@ -277,7 +281,7 @@ namespace UD_FleshGolems
 
         public static GameObjectBlueprint GetGameObjectBlueprint(string Blueprint)
         {
-            return GameObjectFactory.Factory.GetBlueprint(Blueprint);
+            return GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint);
         }
 
         public static GameObject DeepCopyMapInventory(GameObject Source)
@@ -287,6 +291,36 @@ namespace UD_FleshGolems
                 return null;
             }
             return Source.DeepCopy(MapInv: DeepCopyMapInventory);
+        }
+
+        public static bool BlueprintsMatchOrThatBlueprintInheritsFromThisOne(string ThisBlueprint, string ThatBlueprint)
+        {
+            if (ThisBlueprint.IsNullOrEmpty() || ThatBlueprint.IsNullOrEmpty())
+            {
+                return false;
+            }
+            if (ThisBlueprint == ThatBlueprint)
+            {
+                return true;
+            }
+            if (ThisBlueprint.IsBaseBlueprint() && ThatBlueprint.InheritsFrom(ThisBlueprint))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool IsBaseGameObjectBlueprint(string Blueprint)
+        {
+            return !Blueprint.IsNullOrEmpty()
+                && Blueprint.GetGameObjectBlueprint().IsBaseBlueprint();
+        }
+
+        public static bool ThisBlueprintInheritsFromThatOne(string ThisBlueprint, string ThatBlueprint)
+        {
+            return !ThisBlueprint.IsNullOrEmpty()
+                && !ThatBlueprint.IsNullOrEmpty()
+                && ThisBlueprint.GetGameObjectBlueprint().InheritsFrom(ThatBlueprint);
         }
 
         /* 
@@ -327,21 +361,29 @@ namespace UD_FleshGolems
                     }
                     else
                     {
-                        playerMutations.AddMutation(reanimationMutationEntries.GetRandomElement().Value);
+                        playerMutations.AddMutation(reanimationMutationEntries.GetRandomElementCosmetic().Value);
                     }
                 }
             }
             if (Popup.AskNumber("How many corpses do you want?", Start: 20, Min: 0, Max: 100) is int corpseCount
                 && corpseCount > 0)
             {
+                int corpseRadius = corpseCount / 4;
                 int maxAttempts = corpseCount * 2;
+                int originalCorpseCount = corpseCount;
                 List<string> corpseBlueprints = new();
+                Loading.SetLoadingStatus("Summoning " + 0 + "/" + originalCorpseCount + " fresh corpses...");
                 while (corpseCount > 0 && maxAttempts > 0)
                 {
                     maxAttempts--;
-                    if (GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(bp => bp.InheritsFrom("Corpse"))) is GameObject corpseObject)
+                    if (GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(Extensions.IsCorpse)) is GameObject corpseObject)
                     {
-                        The.Player.CurrentCell.GetAdjacentCells(5).GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject)).AddObject(corpseObject);
+                        Loading.SetLoadingStatus("Summoning " + (corpseBlueprints.Count + 1) + "/" + originalCorpseCount + " (" + corpseObject.Blueprint + ")...");
+                        The.Player.CurrentCell
+                            .GetAdjacentCells(corpseRadius)
+                            .GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject))
+                            .AddObject(corpseObject);
+
                         if (corpseObject.CurrentCell != null)
                         {
                             corpseBlueprints.Add(corpseObject.Blueprint);
@@ -353,19 +395,14 @@ namespace UD_FleshGolems
                         }
                     }
                 }
+                Loading.SetLoadingStatus("Summoned " + corpseBlueprints.Count + "/" + originalCorpseCount + " fresh corpses...");
                 if (corpseBlueprints.Count > 0)
                 {
-                    string corpseListOutput = null;
-                    foreach (string corpseBlueprint in corpseBlueprints)
-                    {
-                        if (!corpseListOutput.IsNullOrEmpty())
-                        {
-                            corpseListOutput += "\n";
-                        }
-                        corpseListOutput += "{{K|\u0007}} " + corpseBlueprint;
-                    }
-                    Popup.Show("Generated " + corpseBlueprints.Count + " corpses of various types:\n" + corpseListOutput);
+                    string corpseListLabel = "Generated " + corpseBlueprints.Count + " corpses of various types, in a radius of " + corpseRadius + " cells.";
+                    string corpseListOutput = corpseBlueprints.GenerateBulletList(Label: corpseListLabel);
+                    Popup.Show(corpseListOutput);
                 }
+                Loading.SetLoadingStatus(null);
             }
             return true;
         }

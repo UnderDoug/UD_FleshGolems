@@ -6,17 +6,44 @@ using System.Text;
 
 using XRL;
 
+using UD_FleshGolems;
+using static UD_FleshGolems.Options;
+
 namespace UD_FleshGolems.Logging
 {
     [HasModSensitiveStaticCache]
     [HasGameBasedStaticCache]
     public static class Debug
     {
-        private static bool doDebug => true;
-        private static Dictionary<string, bool> doDebugRegistry = new()
+        private static bool _DoDebug => DebugEnableLogging;
+        public static bool DoDebug
+        {
+            get
+            {
+                string callingTypeAndMethod = GetCallingTypeAndMethod();
+                if (GetRegistry().ContainsKey(callingTypeAndMethod))
+                {
+                    if (!GetRegistry()[callingTypeAndMethod])
+                    {
+                        if (DebugEnableAllLogging)
+                        {
+                            return _DoDebug;
+                        }
+                        return false;
+                    }
+                }
+                if (!_DoDebug)
+                {
+                    return false;
+                }
+                return true;
+            }
+        }
+        private static Dictionary<string, bool> _DoDebugRegistry = new()
         {
             { "Example", true },
         };
+        public static Dictionary<string, bool> DoDebugRegistry => GetRegistry();
         public static void Register(
             Type Class,
             string MethodName,
@@ -24,18 +51,19 @@ namespace UD_FleshGolems.Logging
             Dictionary<string, bool> Registry,
             out Dictionary<string, bool> ReturnRegistry)
         {
+            UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(Register) + "(" + Class.Name + "." + MethodName + ": " + Value + ")");
             Registry.Add(Class.Name + "." + MethodName, Value);
             ReturnRegistry = Registry;
         }
         public static void Register(this Dictionary<string, bool> Registry, Type Class, string MethodName, bool Value)
         {
-            Register(Class, MethodName, Value, Registry, out doDebugRegistry);
+            Register(Class, MethodName, Value, Registry, out _DoDebugRegistry);
         }
         public static Dictionary<string, bool> GetRegistry()
         {
             if (_GotRegistry)
             {
-                return doDebugRegistry;
+                return _DoDebugRegistry;
             }
             Type classWithDebugRegistryAttribute = typeof(UD_FleshGolems_HasDebugRegistryAttribute);
             Type methodWithDebugRegistryAttribute = typeof(UD_FleshGolems_DebugRegistryAttribute);
@@ -44,11 +72,12 @@ namespace UD_FleshGolems.Logging
                 List<MethodInfo> debugRegistryMethods = ModManager.GetMethodsWithAttribute(methodWithDebugRegistryAttribute, hasDebugRegistry);
                 foreach (MethodInfo debugRegistryMethod in debugRegistryMethods)
                 {
-                    doDebugRegistry = debugRegistryMethod.Invoke(null, new object[] { doDebugRegistry }) as Dictionary<string, bool>;
+                    UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(GetRegistry) + "(" + hasDebugRegistry.Name + "." + debugRegistryMethod.Name + ")");
+                    _DoDebugRegistry = debugRegistryMethod.Invoke(null, new object[] { _DoDebugRegistry }) as Dictionary<string, bool>;
                 }
             }
             _GotRegistry = true;
-            return doDebugRegistry;
+            return _DoDebugRegistry;
         }
 
         [ModSensitiveStaticCache( CreateEmptyInstance = false )]
@@ -121,15 +150,7 @@ namespace UD_FleshGolems.Logging
 
         public static void Log<T>(string Field, T Value, Indent Indent = null)
         {
-            string callingTypeAndMethod = GetCallingTypeAndMethod();
-            if (doDebugRegistry.ContainsKey(callingTypeAndMethod))
-            {
-                if (!doDebugRegistry[callingTypeAndMethod])
-                {
-                    return;
-                }
-            }
-            if (!doDebug)
+            if (!DoDebug)
             {
                 return;
             }
@@ -157,6 +178,7 @@ namespace UD_FleshGolems.Logging
             GetIndent(out Indent);
             Log(Message, (string)null, Indent);
         }
+        public static void LogCaller(Indent Indent = null) => Log(GetCallingTypeAndMethod(), Indent);
         public static void LogHeader(string Message, out Indents Indent)
         {
             GetIndents(out Indent);

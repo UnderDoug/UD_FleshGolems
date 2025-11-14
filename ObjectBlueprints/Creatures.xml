@@ -154,11 +154,8 @@
     <part Name="Corpse" CorpseChance="20" />
   </object>
   
-  <object Name="Chute Crab Corpse" Inherits="Crab Corpse">
-    <part Name="Physics" Weight="20" />
-    <part Name="Render" DisplayName="chute crab corpse" ColorString="&amp;Y" />
-    <part Name="Butcherable" OnSuccess="@Eyeless Crab Corpse" />
-    <tag Name="Tier" Value="2" />
+  <object Name="Dreamcrungle" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Sated Dreamcrungle" CorpseChance="0" />
   </object>
 
   <!-- Flesh Golem natural weapons -->

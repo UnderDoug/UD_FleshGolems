@@ -144,7 +144,22 @@ namespace UD_FleshGolems
             {
                 GameObject?.RemovePart(existingPart);
             }
-            return GameObject?.AddPart(PartToCopy.DeepCopy(GameObject, MapInv) as T);
+            T returnPart = null;
+            try
+            {
+                returnPart = GameObject?.AddPart(PartToCopy.DeepCopy(GameObject, MapInv) as T);
+            }
+            catch (Exception x)
+            {
+                MetricsManager.LogException(
+                    nameof(OverrideWithDeepCopyOrRequirePart) + " -> " + 
+                    nameof(GameObject.AddPart) + "(" + 
+                    nameof(PartToCopy.DeepCopy) + ")", 
+                    x: x, 
+                    category: "game_mod_exception");
+                returnPart = PartToCopy;
+            }
+            return returnPart;
         }
 
         public static string SetSpecies(this GameObject GameObject, string Species)
@@ -178,7 +193,8 @@ namespace UD_FleshGolems
         }
         public static bool TryGetCorpseBlueprint(this GameObjectBlueprint Blueprint, out string CorpseBlueprint)
         {
-            return (CorpseBlueprint = Blueprint.GetCorpseBlueprint()) != null;
+            return (CorpseBlueprint = Blueprint.GetCorpseBlueprint()) != null
+                && GameObjectFactory.Factory.HasBlueprint(CorpseBlueprint);
         }
 
         public static int? GetCorpseChance(this GameObjectBlueprint Blueprint)
@@ -200,21 +216,68 @@ namespace UD_FleshGolems
             }
             return false;
         }
+        public static bool TryGetCorpseBlueprintAndChance(this GameObjectBlueprint Blueprint, out string CorpseBlueprint, out int CorpseChance)
+        {
+            CorpseChance = 0;
+            return Blueprint.TryGetCorpseBlueprint(out CorpseBlueprint)
+                && Blueprint.TryGetCorpseChance(out CorpseChance);
+        }
+
+
+        public static bool IsCorpse(this GameObjectBlueprint Blueprint, Predicate<GameObjectBlueprint> Filter)
+        {
+            return Blueprint != null
+                && Blueprint.InheritsFrom("Corpse")
+                && (Filter == null || Filter(Blueprint));
+        }
 
         public static bool IsCorpse(this GameObjectBlueprint Blueprint)
         {
-            return Blueprint.InheritsFrom("Corpse");
+            return Blueprint != null
+                && Blueprint.IsCorpse(null);
         }
 
-        public static bool IsCorpse(this GameObject Corpse)
+        public static bool IsCorpse(this string Blueprint, Predicate<GameObjectBlueprint> Filter = null)
         {
-            if (Corpse == null
-                || Corpse.HasPart<AnimatedObject>()
-                || !Corpse.HasPart<UD_FleshGolems_CorpseReanimationHelper>())
+            return Blueprint != null
+                && Blueprint.GetGameObjectBlueprint().IsCorpse(Filter);
+        }
+
+        public static bool IsCorpse(this GameObject Corpse, Predicate<GameObjectBlueprint> Filter = null)
+        {
+            return Corpse != null
+                && !Corpse.HasPart<AnimatedObject>()
+                && Corpse.HasPart<UD_FleshGolems_CorpseReanimationHelper>()
+                && Corpse.GetBlueprint().IsCorpse(Filter);
+        }
+
+        public static bool InheritsFrom(this string Blueprint, string BaseBlueprint)
+        {
+            return Utils.ThisBlueprintInheritsFromThatOne(Blueprint, BaseBlueprint);
+        }
+
+        public static bool IsBaseBlueprint(this string Blueprint)
+        {
+            return Utils.IsBaseGameObjectBlueprint(Blueprint);
+        }
+
+        public static string GenerateBulletList(
+            this List<string> Items,
+            string Label = null,
+            string Bullet = "\u0007",
+            string BulletColor = "K")
+        {
+            Label = Label.IsNullOrEmpty() ? "" : Label + "\n";
+            string output = "";
+            foreach (string item in Items)
             {
-                return false;
+                if (!output.IsNullOrEmpty())
+                {
+                    output += "\n";
+                }
+                output += "{{" + BulletColor + "|" + Bullet + "}} " + item;
             }
-            return Corpse.GetBlueprint().IsCorpse();
+            return Label + output;
         }
     }
 }

@@ -2,6 +2,57 @@
 <options>
   <!-- Option_UD_FleshGolems_ 
   
+  Debug Options
+  -->
+  <option
+        ID="Option_UD_FleshGolems_DebugEnableTestKit"
+        DisplayText="{{UD_FleshGolems_reanimated|Re-animatable Corpses}}: Start with the &quot;Test Kit&quot; for this mod."
+        Category="Debug"
+        Type="Checkbox"
+        Default="No">
+    <helptext>
+      When enabled, the player will start each run with the mod's &quot;Test Kit&quot;, which is just a mutation with the ability to raise the dead at will (with the ability to force them to join you), summon random corpses, and assess corpses for what they might have been in life.
+      
+      This mutation is stupidly overpowered and shouldn't really be used to actually play with.
+
+      The default is {{w|Disabled}}.
+    </helptext>
+  </option>
+  
+  <option
+        ID="Option_UD_FleshGolems_DebugEnableLogging"
+        DisplayText="{{UD_FleshGolems_reanimated|Re-animatable Corpses}}: Turn on debug logging for this mod."
+        Category="Debug"
+        Type="Checkbox"
+        Default="No">
+    <helptext>
+      When enabled, the mod will output verbose logs to Player.log tracing program flow specifically within the mod.
+
+      The default is {{w|Disabled}}.
+    </helptext>
+  </option>
+  
+  <option
+        ID="Option_UD_FleshGolems_DebugEnableAllLogging"
+		    Requires="Option_UD_FleshGolems_DebugEnableLogging!=No"
+        DisplayText="{{UD_FleshGolems_reanimated|Re-animatable Corpses}}: Turn on full logs (performance suffers)."
+        Category="Debug"
+        Type="Checkbox"
+        Default="No">
+    <helptext>
+      When enabled, the mod will output every single call to the mod's debug logger, inclinding the entries that are for niche debugging.
+
+      {{R|This setting can have an impact on performance.}}
+
+      Several, otherwise highly performant, methods will make multiple file-write calls to Player.log. This setting should only be enabled if there's a serious bug that needs plenty of information.
+
+      Make sure to track down the code author of the mod ({{K-o-W-Y-W-o-K alternation|UnderDoug}}) either on the steam workshop, the GitHub repository for the mod, or on Discord, so you can post/send them the resultant log.
+
+      The default is {{w|Disabled}}.
+    </helptext>
+  </option>
+
+  <!--
   Mod Options
   -->
   <option
@@ -28,6 +79,7 @@
   </option>
   <option
         ID="Option_UD_FleshGolems_SpecialReanimatedBuilderChanceOneInMulti"
+		    Requires="Option_UD_FleshGolems_SpecialReanimatedBuilderBaseChanceOneIn!=0"
         DisplayText="Set odds (chance, 1 in) multiplier that an entity will spawn as a shambling {{UD_FleshGolems_reanimated|Reanimated}} creature."
         Category="Mod: Re-animatable Corpses"
         Type="Slider"
@@ -73,6 +125,7 @@
   </option>
   <option
         ID="Option_UD_FleshGolems_SpecialCorpseAnimatedBuilderChanceOneInMulti"
+		    Requires="Option_UD_FleshGolems_SpecialCorpseAnimatedBuilderBaseChanceOneIn!=0"
         DisplayText="Set odds (chance, 1 in) multiplier that a corpse will reanimate as a shallow simulacrum of its former self."
         Category="Mod: Re-animatable Corpses"
         Type="Slider"
