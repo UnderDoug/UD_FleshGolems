@@ -42,6 +42,7 @@ namespace UD_FleshGolems
             // The.Game registered events should go here.
 
             UnityEngine.Debug.Log( nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " + nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
+            CacheSomeCorpses();
         }
 
         // [PlayerMutator]
@@ -55,11 +56,19 @@ namespace UD_FleshGolems
             // Gets called every time the game is loaded but not during generation
 
             UnityEngine.Debug.Log(nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " + nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
+            CacheSomeCorpses();
         }
 
         //
         // End Startup calls
         // 
+
+        public static void CacheSomeCorpses()
+        {
+            UD_FleshGolems_PastLife.GetCorpseBlueprints();
+            UD_FleshGolems_PastLife.GetEntitiesWithCorpseBlueprints();
+            UD_FleshGolems_PastLife.GetProcessableCorpsesAndTheirProducts();
+        }
     }
 
     // [ModSensitiveCacheInit]

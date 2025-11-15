@@ -13,6 +13,8 @@ using XRL.World.Parts.Mutation;
 
 using UD_FleshGolems;
 using static XRL.World.Parts.UD_FleshGolems_PastLife;
+using XRL.World.Effects;
+using XRL.World.Capabilities;
 
 namespace XRL.World.Parts.Mutation
 {
@@ -263,9 +265,15 @@ namespace XRL.World.Parts.Mutation
             return base.Unmutate(GO);
         }
 
-        public static bool IsCorpse(GameObject Corpse)
+        public static bool IsReanimatableCorpse(GameObject Corpse)
         {
             return Corpse.IsCorpse();
+        }
+
+        public static bool IsReanimatableCorpse(GameObjectBlueprint CorpseBlueprint)
+        {
+            return CorpseBlueprint.IsCorpse()
+                && !CorpseBlueprint.IsBaseBlueprint();
         }
 
         public static bool IsCorpse(GameObjectBlueprint CorpseBlueprint)
@@ -275,7 +283,7 @@ namespace XRL.World.Parts.Mutation
 
         public bool ReanimateCorpse(GameObject Corpse, bool SkipReanimatorSwirl = false)
         {
-            if (!IsCorpse(Corpse))
+            if (!IsReanimatableCorpse(Corpse))
             {
                 return false;
             }
@@ -288,10 +296,52 @@ namespace XRL.World.Parts.Mutation
             return true;
         }
 
+        public virtual bool CanRecruitCorpse(GameObject Corpse)
+        {
+            return Corpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering FX) && FX.SourceObject == ParentObject;
+        }
+
         public static bool HasCorpse(GameObject Entity)
         {
             return Entity.GetBlueprint().TryGetCorpseBlueprint(out string corpseBlueprint)
                 && IsCorpse(corpseBlueprint.GetGameObjectBlueprint());
+        }
+
+        public static bool TrySummonCorpse(GameObject Summoner, int CorpseRadius, out GameObject Corpse)
+        {
+            Corpse = null;
+            if (GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(IsReanimatableCorpse)) is GameObject corpseObject)
+            {
+                Corpse = corpseObject;
+                Summoner.CurrentCell
+                    .GetAdjacentCells(CorpseRadius)
+                    .GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject))
+                    .AddObject(Corpse);
+
+                if (Corpse.CurrentCell != null)
+                {
+                    Corpse = corpseObject;
+
+                    Corpse?.SmallTeleportSwirl(Color: "&r", IsOut: true);
+                    // corpseBlueprints.Add(corpseObject.Blueprint);
+                    // corpseCount--;
+                    return true;
+                }
+                else
+                {
+                    if (GameObject.Validate(ref Corpse))
+                    {
+                        Corpse.Obliterate();
+                        Corpse = null;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public bool TrySummonCorpse(int CorpseRadius, out GameObject Corpse)
+        {
+            return TrySummonCorpse(ParentObject, CorpseRadius, out Corpse);
         }
 
         public override bool AllowStaticRegistration() => true;
@@ -306,7 +356,7 @@ namespace XRL.World.Parts.Mutation
             {
                 Cell currentCell = ParentObject.CurrentCell;
                 GameObject targetCorpse = null;
-                if (IsCorpse(ParentObject.Target))
+                if (IsReanimatableCorpse(ParentObject.Target))
                 {
                     targetCorpse = ParentObject.Target;
                 }
@@ -314,9 +364,9 @@ namespace XRL.World.Parts.Mutation
                     PickTarget.PickStyle.EmptyCell,
                     StartX: currentCell.X,
                     StartY: currentCell.Y,
-                    ObjectTest: IsCorpse,
+                    ObjectTest: IsReanimatableCorpse,
                     Label: "Pick a Corpse to " + REANIMATE_NAME) is Cell pickedCell
-                    && pickedCell.GetObjectsViaEventList(IsCorpse) is List<GameObject> cellCorpses
+                    && pickedCell.GetObjectsViaEventList(IsReanimatableCorpse) is List<GameObject> cellCorpses
                     && !cellCorpses.IsNullOrEmpty())
                 {
                     if (cellCorpses.Count == 1)
@@ -355,7 +405,7 @@ namespace XRL.World.Parts.Mutation
             else
             if (E.Command == COMMAND_NAME_REANIMATE_ALL)
             {
-                List<GameObject> corpsesInZone = The.ActiveZone.GetObjects(IsCorpse);
+                List<GameObject> corpsesInZone = The.ActiveZone.GetObjects(IsReanimatableCorpse);
                 int corpsesInZoneCount = corpsesInZone.Count;
                 if (corpsesInZoneCount < 21
                     || Popup.ShowYesNoCancel(
@@ -365,6 +415,15 @@ namespace XRL.World.Parts.Mutation
                         "Proceed?") == DialogResult.Yes)
                 {
                     ParentObject?.SmallTeleportSwirl(Color: "&K", Sound: "Sounds/StatusEffects/sfx_statusEffect_negativeVitality", IsOut: true);
+                    UD_FleshGolems_OngoingReanimate ongoingReanimate = new(ParentObject, corpsesInZone, 100);
+
+                    AutoAct.Action = ongoingReanimate;
+                    AutoAct.Setting = "o";
+                    The.Player.ForfeitTurn(EnergyNeutral: true);
+
+                    E.RequestInterfaceExit();
+                    return true;
+                    /*
                     List<GameObject> reanimatedCorpses = Event.NewGameObjectList();
                     foreach (GameObject corpse in corpsesInZone)
                     {
@@ -413,6 +472,7 @@ namespace XRL.World.Parts.Mutation
                     {
                         return true;
                     }
+                    */
                 }
             }
             else
@@ -427,6 +487,15 @@ namespace XRL.World.Parts.Mutation
                             "Are you sure you want that many?.") == DialogResult.Yes)
                     {
                         ParentObject?.SmallTeleportSwirl(Color: "&K", Sound: "Sounds/StatusEffects/sfx_statusEffect_negativeVitality");
+                        UD_FleshGolems_OngoingSummonCorpse ongoingSummon = new(ParentObject, corpseCount, EnergyCostPer: 100);
+
+                        AutoAct.Action = ongoingSummon;
+                        AutoAct.Setting = "o";
+                        The.Player.ForfeitTurn(EnergyNeutral: true);
+
+                        E.RequestInterfaceExit();
+                        return true;
+                        /*
                         int corpseRadius = corpseCount / 4;
                         int maxAttempts = corpseCount * 2;
                         int originalCorpseCount = corpseCount;
@@ -435,26 +504,11 @@ namespace XRL.World.Parts.Mutation
                         while (corpseCount > 0 && maxAttempts > 0)
                         {
                             maxAttempts--;
-                            if (GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(IsCorpse)) is GameObject corpseObject)
+                            if (TrySummonCorpse(corpseRadius, out GameObject corpseObject))
                             {
                                 Loading.SetLoadingStatus("Summoning " + (corpseBlueprints.Count + 1) + "/" + originalCorpseCount + " (" + corpseObject.Blueprint + ")...");
-                                ParentObject.CurrentCell
-                                    .GetAdjacentCells(corpseRadius)
-                                    .GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject))
-                                    .AddObject(corpseObject);
-
-                                if (corpseObject.CurrentCell != null)
-                                {
-                                    corpseObject.CurrentCell.TelekinesisBlip();
-
-                                    corpseObject?.SmallTeleportSwirl(Color: "&r", IsOut: true);
-                                    corpseBlueprints.Add(corpseObject.Blueprint);
-                                    corpseCount--;
-                                }
-                                else
-                                {
-                                    corpseObject?.Obliterate();
-                                }
+                                corpseBlueprints.Add(corpseObject.Blueprint);
+                                corpseCount--;
                             }
                         }
                         Loading.SetLoadingStatus("Summoned " + corpseBlueprints.Count + "/" + originalCorpseCount + " fresh corpses...");
@@ -470,6 +524,7 @@ namespace XRL.World.Parts.Mutation
                             return true;
                         }
                         Loading.SetLoadingStatus(null);
+                        */
                     }
                 }
             }
@@ -477,7 +532,7 @@ namespace XRL.World.Parts.Mutation
             if (E.Command == COMMAND_NAME_ASSESS_CORPSE)
             {
                 GameObject targetCorpse = null;
-                if (IsCorpse(ParentObject.Target))
+                if (IsReanimatableCorpse(ParentObject.Target))
                 {
                     targetCorpse = ParentObject.Target;
                 }
@@ -493,9 +548,9 @@ namespace XRL.World.Parts.Mutation
                     StartX: startX,
                     StartY: startY,
                     VisLevel: AllowVis.Any,
-                    ObjectTest: IsCorpse,
+                    ObjectTest: IsReanimatableCorpse,
                     Label: "pick a corpse to get a list of possible creatrues") is Cell pickedCell
-                    && pickedCell.GetObjectsViaEventList(Filter: IsCorpse) is List<GameObject> corpseList
+                    && pickedCell.GetObjectsViaEventList(Filter: IsReanimatableCorpse) is List<GameObject> corpseList
                     && !corpseList.IsNullOrEmpty())
                 {
                     if (corpseList.Count == 1)
@@ -525,7 +580,7 @@ namespace XRL.World.Parts.Mutation
                             IsOut: true);
 
                         Dictionary<string, int> weightedList = GetBlueprintsWhoseCorpseThisCouldBe(targetCorpse.Blueprint).ConvertToWeightedList();
-                        List<string> possibleBlueprints = new(weightedList.Keys);
+                        List<string> possibleBlueprints = new(weightedList.ConvertToStringListWithKeyValue((int weight) => weight + " weight"));
 
                         string corpseListLabel =
                             targetCorpse.IndicativeProximal + " " + targetCorpse.GetReferenceDisplayName(Short: true) + 

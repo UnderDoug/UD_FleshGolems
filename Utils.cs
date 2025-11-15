@@ -310,17 +310,25 @@ namespace UD_FleshGolems
             return false;
         }
 
-        public static bool IsBaseGameObjectBlueprint(string Blueprint)
-        {
-            return !Blueprint.IsNullOrEmpty()
-                && Blueprint.GetGameObjectBlueprint().IsBaseBlueprint();
-        }
-
         public static bool ThisBlueprintInheritsFromThatOne(string ThisBlueprint, string ThatBlueprint)
         {
             return !ThisBlueprint.IsNullOrEmpty()
                 && !ThatBlueprint.IsNullOrEmpty()
                 && ThisBlueprint.GetGameObjectBlueprint().InheritsFrom(ThatBlueprint);
+        }
+
+        public static bool IsBaseGameObjectBlueprint(string Blueprint)
+        {
+            return !Blueprint.IsNullOrEmpty()
+                && Blueprint.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
+                && gameObjectBlueprint.IsBaseBlueprint();
+        }
+
+        public static bool IsGameObjectBlueprintExcludedFromDynamicEncounters(string Blueprint)
+        {
+            return !Blueprint.IsNullOrEmpty()
+                && Blueprint.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
+                && gameObjectBlueprint.IsExcludedFromDynamicEncounters();
         }
 
         /* 

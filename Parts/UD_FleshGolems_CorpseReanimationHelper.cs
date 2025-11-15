@@ -1009,7 +1009,7 @@ namespace XRL.World.Parts
                                         string debugOutput =
                                             nameof(sampleNaturalGear) + ": " + sampleNaturalGear.DebugName + " | " +
                                             nameof(raggedWeaponObject) + ": " + raggedWeaponObject.DebugName;
-                                        Debug.Log(AppendTick("") + itemLabel + debugOutput, Indent: indent[4]);
+                                        Debug.Log(AppendTick("") + itemLabel + debugOutput, Indent: indent[3]);
                                         wantDoRequip = true;
                                         bestowedNaturalWeapons++;
                                     }
@@ -1018,7 +1018,7 @@ namespace XRL.World.Parts
                             }
                             else
                             {
-                                Debug.Log(AppendCross("") + itemLabel + "Not Natural'", Indent: indent[4]);
+                                Debug.Log(AppendCross("") + itemLabel + "Not Natural'", Indent: indent[3]);
                             }
                         }
                     }

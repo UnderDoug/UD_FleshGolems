@@ -288,6 +288,16 @@ namespace UD_FleshGolems
             return Utils.IsBaseGameObjectBlueprint(Blueprint);
         }
 
+        public static bool IsExcludedFromDynamicEncounters(this string Blueprint)
+        {
+            return Utils.IsGameObjectBlueprintExcludedFromDynamicEncounters(Blueprint);
+        }
+
+        public static GameObjectBlueprint GetBlueprintIfExists(this PopulationItem PopItem)
+        {
+            return PopItem?.Name?.GetGameObjectBlueprint();
+        }
+
         public static Dictionary<T, int> ConvertToWeightedList<T>(this List<KeyValuePair<T, int>> EntriesList)
         {
             Dictionary<T, int> weightedEntries = new();
@@ -306,6 +316,42 @@ namespace UD_FleshGolems
                 }
             }
             return weightedEntries;
+        }
+
+        public static Dictionary<string, int> ConvertToWeightedList<T>(this List<UD_FleshGolems_PastLife.BlueprintWeightPair> EntriesList)
+        {
+            Dictionary<string, int> weightedEntries = new();
+            if (!EntriesList.IsNullOrEmpty())
+            {
+                foreach ((string blueprint, int weight) in EntriesList)
+                {
+                    if (!weightedEntries.ContainsKey(blueprint))
+                    {
+                        weightedEntries.Add(blueprint, weight);
+                    }
+                    else
+                    {
+                        weightedEntries[blueprint] += weight;
+                    }
+                }
+            }
+            return weightedEntries;
+        }
+
+        public static List<string> ConvertToList(this List<UD_FleshGolems_PastLife.BlueprintWeightPair> EntriesList)
+        {
+            List<string> outputList = new();
+            if (!EntriesList.IsNullOrEmpty())
+            {
+                foreach ((string item, int _) in EntriesList)
+                {
+                    if (!outputList.Contains(item))
+                    {
+                        outputList.Add(item);
+                    }
+                }
+            }
+            return outputList;
         }
 
         public static List<T> ConvertToList<T>(this List<KeyValuePair<T, int>> EntriesList)
@@ -341,6 +387,23 @@ namespace UD_FleshGolems
             return weightedList;
         }
 
+        public static Dictionary<string, int> ConvertToWeightedList(this IEnumerable<UD_FleshGolems_PastLife.BlueprintWeightPair> Items)
+        {
+            Dictionary<string, int> weightedList = new();
+            foreach (UD_FleshGolems_PastLife.BlueprintWeightPair item in Items)
+            {
+                if (weightedList.ContainsKey((string)item))
+                {
+                    weightedList[(string)item] += (int)item;
+                }
+                else
+                {
+                    weightedList.Add((string)item, (int)item);
+                }
+            }
+            return weightedList;
+        }
+
         public static string GenerateBulletList(
             this IEnumerable<string> Items,
             string Label = null,
@@ -360,12 +423,78 @@ namespace UD_FleshGolems
             return Label + output;
         }
 
+        public static string GenerateCSVList(
+            this IEnumerable<List<string>> ItemLists,
+            IEnumerable<string> Headings = null,
+            string Delimiter = ",",
+            string NewLine = "\n")
+        {
+            string headings = "";
+            if (!Headings.IsNullOrEmpty())
+            {
+                foreach (string heading in Headings)
+                {
+                    if (!headings.IsNullOrEmpty())
+                    {
+                        headings += Delimiter;
+                    }
+                    headings += heading;
+                }
+                headings += NewLine;
+            }
+            string output = "";
+            foreach (List<string> itemList in ItemLists)
+            {
+                string rowOutput = "";
+                foreach (string item in itemList)
+                {
+                    if (!rowOutput.IsNullOrEmpty())
+                    {
+                        rowOutput += Delimiter;
+                    }
+                    rowOutput += item;
+                }
+                output += rowOutput + NewLine;
+            }
+            return headings + output;
+        }
+
+        public static string GenerateCSVList<T>(
+            this IEnumerable<KeyValuePair<string, T>> ItemLists,
+            IEnumerable<string> Headings = null,
+            string Delimiter = ",",
+            string NewLine = "\n")
+        {
+            List<List<string>> itemsList = new();
+            foreach (KeyValuePair<string, T> entry in ItemLists)
+            {
+                itemsList.Add(new() { entry.Key, entry.Value.ToString() });
+            }
+            return itemsList.GenerateCSVList(Headings, Delimiter, NewLine);
+        }
+
+        public static IEnumerable<string> ConvertToStringList<T>(this IEnumerable<T> Entries, Func<T, string> Proc)
+        {
+            foreach (T entry in Entries)
+            {
+                string entryProc = Proc != null ? Proc(entry) : entry.ToString();
+                yield return entryProc;
+            }
+            yield break;
+        }
+
+        public static IEnumerable<string> ConvertToStringList<T>(this IEnumerable<T> Entries)
+        {
+            return ConvertToStringList(Entries, null);
+        }
+
         public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this Dictionary<T, int> Entries)
         {
             foreach ((T item, int count) in Entries)
             {
                 yield return count.Things(item.ToString());
             }
+            yield break;
         }
 
         public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this IEnumerable<T> Entries)
@@ -374,6 +503,61 @@ namespace UD_FleshGolems
             {
                 yield return count.Things(item.ToString());
             }
+            yield break;
+        }
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this IEnumerable<T> Entries, Func<T, string> Proc)
+        {
+            foreach ((T item, int count) in Entries.ConvertToWeightedList())
+            {
+                string procItem = Proc != null ? Proc(item) : item.ToString();
+                yield return count.Things(procItem);
+            }
+            yield break;
+        }
+
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this IEnumerable<KeyValuePair<T, int>> Entries, Func<KeyValuePair<T, int>, string> Proc)
+        {
+            foreach (KeyValuePair<T, int> entry in Entries)
+            {
+                string procEntry = Proc != null ? Proc(entry) : entry.Value.Things(entry.Key.ToString());
+                yield return procEntry;
+            }
+            yield break;
+        }
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this IEnumerable<KeyValuePair<T, int>> Entries)
+        {
+            return ConvertToStringListWithItemCount(Entries, null);
+        }
+
+        public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(this IEnumerable<KeyValuePair<string,T>> Entries, Func<KeyValuePair<string, T>, string> Proc)
+        {
+            foreach (KeyValuePair<string, T> entry in Entries)
+            {
+                string procOutput = Proc != null ? Proc(entry) : entry.Key + ": " + entry.Value.ToString();
+                yield return procOutput;
+            }
+            yield break;
+        }
+        public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(this IEnumerable<KeyValuePair<string,T>> Entries, Func<T, string> Proc)
+        {
+            return Entries.ConvertToStringListWithKeyValue(kvp => kvp.Key + ": " + (Proc != null ? Proc(kvp.Value) : kvp.Value.ToString()));
+        }
+
+        public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(this IEnumerable<KeyValuePair<string,T>> Entries)
+        {
+            return Entries.ConvertToStringListWithKeyValue((Func<T, string>)null);
+        }
+
+        public static IEnumerable<string> ConvertToStringListWithKeyValue(this IEnumerable<KeyValuePair<string, GameObjectBlueprint>> Entries)
+        {
+            return ConvertToStringListWithKeyValue(Entries, bp => bp.Name);
+        }
+
+        public static IEnumerable<string> ConvertToStringListWithKeyValue(
+            this IEnumerable<KeyValuePair<string, List<UD_FleshGolems_PastLife.BlueprintWeightPair>>> Entries,
+            Func<List<UD_FleshGolems_PastLife.BlueprintWeightPair>, string> Proc)
+        {
+            return Entries.ConvertToStringListWithKeyValue(kvp => kvp.Key + ": " + (Proc != null ? Proc(kvp.Value) : kvp.Value.ToString()));
         }
     }
 }

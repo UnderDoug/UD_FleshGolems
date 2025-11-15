@@ -254,6 +254,7 @@
     <removetag Name="AggregatedIngredient" />
     <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" Commerce="220" BlurValueMargin="0.25" ForLimb="*" Count="1" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="BaseObject" />
     <removetag Name="Animatable" />
     <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
     <removetag Name="Tier" />
@@ -287,7 +288,7 @@
     <removetag Name="AggregatedIngredient" />
     <part Name="UD_FleshGolems_BecomeRandomLimb" Commerce="180" BlurValueMargin="0.2" TagsOneOf="UD_FleshGolems_NonRobot" TypesOneOf="Arm,Hand,Leg,Foot,Head,Face" Count="1" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
-    <tag Name="BaseItem" Value="*noinherit" />
+    <tag Name="BaseItem" />
     <removetag Name="Tier" />
   </object>
   
