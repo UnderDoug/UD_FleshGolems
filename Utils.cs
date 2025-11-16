@@ -288,6 +288,18 @@ namespace UD_FleshGolems
             return Source.DeepCopy(MapInv: DeepCopyMapInventory);
         }
 
+        public static bool IsBaseBlueprint(GameObjectBlueprint Blueprint)
+        {
+            return Blueprint != null
+                && Blueprint.IsBaseBlueprint();
+        }
+
+        public static bool IsNotBaseBlueprint(GameObjectBlueprint Blueprint)
+        {
+            return Blueprint != null
+                && !Blueprint.IsBaseBlueprint();
+        }
+
         public static GameObjectBlueprint GetGameObjectBlueprint(string Blueprint)
         {
             return GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint);
@@ -312,23 +324,20 @@ namespace UD_FleshGolems
 
         public static bool ThisBlueprintInheritsFromThatOne(string ThisBlueprint, string ThatBlueprint)
         {
-            return !ThisBlueprint.IsNullOrEmpty()
-                && !ThatBlueprint.IsNullOrEmpty()
-                && ThisBlueprint.GetGameObjectBlueprint() is var thisGameObjectBlueprint
+            return !ThatBlueprint.IsNullOrEmpty()
+                && ThisBlueprint?.GetGameObjectBlueprint() is GameObjectBlueprint thisGameObjectBlueprint
                 && thisGameObjectBlueprint.InheritsFrom(ThatBlueprint);
         }
 
         public static bool IsBaseGameObjectBlueprint(string Blueprint)
         {
-            return !Blueprint.IsNullOrEmpty()
-                && Blueprint.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
+            return Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
                 && gameObjectBlueprint.IsBaseBlueprint();
         }
 
         public static bool IsGameObjectBlueprintExcludedFromDynamicEncounters(string Blueprint)
         {
-            return !Blueprint.IsNullOrEmpty()
-                && Blueprint.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
+            return Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
                 && gameObjectBlueprint.IsExcludedFromDynamicEncounters();
         }
 

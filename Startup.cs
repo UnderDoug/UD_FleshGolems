@@ -7,11 +7,15 @@ using Qud.UI;
 using XRL;
 using XRL.UI;
 using XRL.World;
+using XRL.World.Parts;
+using XRL.World.Parts.Mutation;
+
+using PastLife = XRL.World.Parts.UD_FleshGolems_PastLife;
+
+using UD_FleshGolems.Logging;
 
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Options;
-using XRL.World.Parts;
-using XRL.World.Parts.Mutation;
 
 namespace UD_FleshGolems
 {
@@ -20,6 +24,10 @@ namespace UD_FleshGolems
     [HasCallAfterGameLoaded]
     public static class Startup
     {
+        [GameBasedStaticCache( CreateInstance = false )]
+        [ModSensitiveStaticCache]
+        public static bool CachedCorpses = false;
+
         [GameBasedStaticCache( CreateInstance = false )]
         [ModSensitiveStaticCache]
         public static string _PlayerBlueprint = null;
@@ -41,7 +49,9 @@ namespace UD_FleshGolems
 
             // The.Game registered events should go here.
 
-            UnityEngine.Debug.Log( nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " + nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
+            UnityEngine.Debug.Log(
+                nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " + 
+                nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
             CacheSomeCorpses();
         }
 
@@ -55,7 +65,9 @@ namespace UD_FleshGolems
         {
             // Gets called every time the game is loaded but not during generation
 
-            UnityEngine.Debug.Log(nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " + nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
+            UnityEngine.Debug.Log(
+                nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " +
+                nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
             CacheSomeCorpses();
         }
 
@@ -63,11 +75,48 @@ namespace UD_FleshGolems
         // End Startup calls
         // 
 
+        public static int CachingPeriods = 0;
+        public static string GetPeriods(int Periods, out int NewPeriods)
+        {
+            NewPeriods = Periods + 1;
+            return ".".ThisManyTimes(3 - (Periods % 4));
+        }
+        public static void SetLoadingStatusCaching()
+        {
+            Loading.SetLoadingStatus("Caching Corpses" + GetPeriods(CachingPeriods, out CachingPeriods));
+        }
         public static void CacheSomeCorpses()
         {
-            UD_FleshGolems_PastLife.GetCorpseBlueprints();
-            UD_FleshGolems_PastLife.GetEntitiesWithCorpseBlueprints();
-            UD_FleshGolems_PastLife.GetProcessableCorpsesAndTheirProducts(ExcludeEmpty: false);
+            if (!CachedCorpses)
+            {
+                Loading.SetLoadingStatus("Caching Corpses");
+                Debug.GetIndents(out Indents indent);
+                Debug.Log(Debug.GetCallingTypeAndMethod(true), "Started!", indent[1]);
+
+                Debug.Log(nameof(PastLife.GetCorpseBlueprints) + "...", indent[2]);
+                List<GameObjectBlueprint> corpseBlueprints = PastLife.GetCorpseBlueprints(ForCache: true);
+
+                CachingPeriods = 1;
+
+                Debug.Log(nameof(PastLife.GetCorpseCountsAsBlueprints) + "...", indent[2]);
+                foreach (GameObjectBlueprint corpseBlueprint in corpseBlueprints)
+                {
+                    PastLife.GetCorpseCountsAsBlueprints(corpseBlueprint, false, ForCache: true);
+                }
+
+                Debug.Log(nameof(PastLife.GetEntitiesWithCorpseBlueprints) + "...", indent[2]);
+                PastLife.GetEntitiesWithCorpseBlueprints(ForCache: true);
+
+                Debug.Log(nameof(PastLife.GetProcessableCorpsesAndTheirProducts) + "...", indent[2]);
+                PastLife.GetProcessableCorpsesAndTheirProducts(ExcludeEmpty: false, ForCache: true);
+
+                Debug.Log(Debug.GetCallingTypeAndMethod(true), "Finished!", indent[1]);
+
+                Loading.SetLoadingStatus("Caching Corpses Finished!");
+
+                Debug.SetIndent(indent[0]);
+                CachedCorpses = true;
+            }
         }
     }
 

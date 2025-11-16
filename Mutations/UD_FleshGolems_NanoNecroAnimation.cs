@@ -360,63 +360,274 @@ namespace XRL.World.Parts.Mutation
             return TrySummonCorpse(ParentObject, CorpseRadius, out Corpse);
         }
 
+        public bool ProcessReanimateOne()
+        {
+            Cell currentCell = ParentObject.CurrentCell;
+            GameObject targetCorpse = null;
+            if (IsReanimatableCorpse(ParentObject.Target))
+            {
+                targetCorpse = ParentObject.Target;
+            }
+            if (PickTarget.ShowPicker(
+                PickTarget.PickStyle.EmptyCell,
+                StartX: currentCell.X,
+                StartY: currentCell.Y,
+                ObjectTest: IsReanimatableCorpse,
+                Label: "Pick a Corpse to " + REANIMATE_NAME) is Cell pickedCell
+                && pickedCell.GetObjectsViaEventList(IsReanimatableCorpse) is List<GameObject> cellCorpses
+                && !cellCorpses.IsNullOrEmpty())
+            {
+                if (cellCorpses.Count == 1)
+                {
+                    targetCorpse = cellCorpses[0];
+                }
+                if (targetCorpse == null
+                    && Popup.PickGameObject(
+                        Title: "Which corpse did you want to " + REANIMATE_NAME,
+                        Objects: cellCorpses,
+                        AllowEscape: true,
+                        ShortDisplayNames: true) is GameObject pickedObject)
+                {
+                    targetCorpse = pickedObject;
+                }
+                else
+                if (targetCorpse == null)
+                {
+                    Popup.Show("No corpse selected to reanimate.");
+                }
+            }
+            if (targetCorpse != null
+                && ReanimateCorpse(targetCorpse))
+            {
+                string recruitMessage = "Would you like for " + targetCorpse.GetReferenceDisplayName(Short: true) + " to join your party";
+                if (Popup.ShowYesNoCancel(
+                    Message: recruitMessage) == DialogResult.Yes)
+                {
+                    ParentObject?.SmallTeleportSwirl(Color: "&M", Sound: "Sounds/StatusEffects/sfx_statusEffect_charm");
+                    targetCorpse?.SetAlliedLeader<AllyProselytize>(ParentObject);
+                    targetCorpse?.SmallTeleportSwirl(Color: "&m", IsOut: true);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public bool ProcessAssessCorpse()
+        {
+            GameObject targetCorpse = null;
+            if (IsReanimatableCorpse(ParentObject.Target))
+            {
+                targetCorpse = ParentObject.Target;
+            }
+            int startX = 40;
+            int startY = 12;
+            if (ParentObject.CurrentCell is Cell assesserCell)
+            {
+                startX = assesserCell.X;
+                startY = assesserCell.Y;
+            }
+            if (PickTarget.ShowPicker(
+                Style: PickTarget.PickStyle.EmptyCell,
+                StartX: startX,
+                StartY: startY,
+                VisLevel: AllowVis.Any,
+                ObjectTest: IsReanimatableCorpse,
+                Label: "pick a corpse to get a list of possible creatrues") is Cell pickedCell
+                && pickedCell.GetObjectsViaEventList(Filter: IsReanimatableCorpse) is List<GameObject> corpseList
+                && !corpseList.IsNullOrEmpty())
+            {
+                if (corpseList.Count == 1)
+                {
+                    targetCorpse = corpseList[0];
+                }
+                if (targetCorpse == null
+                    && Popup.PickGameObject(
+                        Title: "which corpse?",
+                        Objects: corpseList,
+                        AllowEscape: true,
+                        ShortDisplayNames: true) is GameObject pickedObject)
+                {
+                    targetCorpse = pickedObject;
+                }
+                else
+                if (targetCorpse == null)
+                {
+                    Popup.Show("No corpse selected to get a creature list from.");
+                }
+                if (targetCorpse != null)
+                {
+                    ParentObject?.SmallTeleportSwirl(Color: "&K");
+                    targetCorpse?.SmallTeleportSwirl(
+                        Color: "&r",
+                        Sound: "Sounds/Abilities/sfx_ability_mutation_psychometry_activate",
+                        IsOut: true);
+
+                    Dictionary<string, int> weightedList = GetBlueprintsWhoseCorpseThisCouldBe(targetCorpse.Blueprint).ConvertToWeightedList();
+                    List<string> possibleBlueprints = new(weightedList.ConvertToStringListWithKeyValue());
+
+                    string corpseListLabel =
+                        targetCorpse.IndicativeProximal + " " + targetCorpse.GetReferenceDisplayName(Short: true) +
+                        " might have been any of the following:";
+
+                    string corpseListOutput = possibleBlueprints.GenerateBulletList(Label: corpseListLabel);
+                    Popup.Show(corpseListOutput);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool ProcessPowerWordKill()
+        {
+            int startX = 40;
+            int startY = 12;
+            if (The.Player.CurrentCell is Cell playerCell)
+            {
+                startX = playerCell.X;
+                startY = playerCell.Y;
+            }
+            if (PickTarget.ShowPicker(
+                Style: PickTarget.PickStyle.EmptyCell,
+                StartX: startX,
+                StartY: startY,
+                VisLevel: AllowVis.Any,
+                ObjectTest: HasCorpse,
+                Label: "pick a target to instantly die") is Cell pickedCell
+                && pickedCell.GetObjectsViaEventList(Filter: HasCorpse) is List<GameObject> creatureList
+                && !creatureList.IsNullOrEmpty())
+            {
+                GameObject targetCreature = null;
+                if (creatureList.Count == 1)
+                {
+                    targetCreature = creatureList[0];
+                }
+                if (targetCreature == null
+                    && Popup.PickGameObject(
+                        Title: "which corpse?",
+                        Objects: creatureList,
+                        AllowEscape: true,
+                        ShortDisplayNames: true) is GameObject pickedObject)
+                {
+                    targetCreature = pickedObject;
+                }
+                else
+                if (targetCreature == null)
+                {
+                    Popup.Show("no creatures selected to make instantly die");
+                }
+                if (targetCreature?.GetPart<Corpse>() is Corpse targetCreatureCorpse)
+                {
+                    string sureTargetSelf = ("That's =subject.refname=... \n\n" +
+                        "=subject.verb:are:afterpronoun= =subject.subjective= sure =subject.subjective= want to use " +
+                        "\"Instantly Die\" on =subject.reflexive=?")
+                            .StartReplace()
+                            .AddObject(ParentObject)
+                            .ToString(); ;
+                    if (targetCreature != ParentObject
+                        || Popup.ShowYesNoCancel(sureTargetSelf) == DialogResult.Yes)
+                    {
+                        int corpseChanceBefore = targetCreatureCorpse.CorpseChance;
+                        targetCreatureCorpse.CorpseChance = 100;
+                        string reason = "=object.T= commanded that =subject.subjective= die, and =subject.subjective= simply did."
+                            .StartReplace()
+                            .AddObject(targetCreature)
+                            .AddObject(ParentObject)
+                            .ToString();
+                        if (targetCreature.Die(
+                            Killer: targetCreature,
+                            Reason: reason,
+                            ThirdPersonReason: reason,
+                            Accidental: true,
+                            Force: true))
+                        {
+                            pickedCell.PsychicPulse();
+                            ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_success");
+                            targetCreature?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_success");
+                            return true;
+                        }
+                        targetCreatureCorpse.CorpseChance = corpseChanceBefore;
+                        ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_fail");
+                        Popup.Show("you words hang impotently in the air before dissipating without effect...");
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         public override bool AllowStaticRegistration() => true;
 
         public override bool WantEvent(int ID, int cascade)
             => base.WantEvent(ID, cascade)
+            || ID == GetInventoryActionsEvent.ID
+            || ID == InventoryActionEvent.ID
             || ID == CommandEvent.ID;
 
+        public override bool HandleEvent(GetInventoryActionsEvent E)
+        {
+            if (IsReanimatableCorpse(E.Object.GetBlueprint()))
+            {
+                E.AddAction(
+                    Name: "Reaimate Corpse",
+                    Display: "reanimate corpse",
+                    Command: COMMAND_NAME_REANIMATE_ONE,
+                    Key: 'C',
+                    Priority: 3,
+                    WorksAtDistance: true,
+                    WorksTelekinetically: true,
+                    WorksTelepathically: true);
+                E.AddAction(
+                    Name: "Assess Corpse",
+                    Display: "assess corpse",
+                    Command: COMMAND_NAME_POWERWORD_KILL,
+                    Key: 'S',
+                    Priority: 3,
+                    WorksAtDistance: true,
+                    WorksTelekinetically: true,
+                    WorksTelepathically: true);
+            }
+            if (HasCorpse(E.Object))
+            {
+                E.AddAction(
+                    Name: "Power Word: Kill",
+                    Display: "power word: kill",
+                    Command: COMMAND_NAME_POWERWORD_KILL,
+                    Key: 'K',
+                    Priority: 3,
+                    WorksAtDistance: true,
+                    WorksTelekinetically: true,
+                    WorksTelepathically: true);
+            }
+            return base.HandleEvent(E);
+        }
+
+        public override bool HandleEvent(InventoryActionEvent E)
+        {
+            if (E.Command == COMMAND_NAME_REANIMATE_ONE
+                && ProcessReanimateOne())
+            {
+                return true;
+            }
+            else
+            if (E.Command == COMMAND_NAME_ASSESS_CORPSE
+                && ProcessAssessCorpse())
+            {
+                return true;
+            }
+            else
+            if (E.Command == COMMAND_NAME_POWERWORD_KILL
+                && ProcessPowerWordKill())
+            {
+                return true;
+            }
+            return base.HandleEvent(E);
+        }
         public override bool HandleEvent(CommandEvent E)
         {
-            if (E.Command == COMMAND_NAME_REANIMATE_ONE)
+            if (E.Command == COMMAND_NAME_REANIMATE_ONE
+                && ProcessReanimateOne())
             {
-                Cell currentCell = ParentObject.CurrentCell;
-                GameObject targetCorpse = null;
-                if (IsReanimatableCorpse(ParentObject.Target))
-                {
-                    targetCorpse = ParentObject.Target;
-                }
-                if (PickTarget.ShowPicker(
-                    PickTarget.PickStyle.EmptyCell,
-                    StartX: currentCell.X,
-                    StartY: currentCell.Y,
-                    ObjectTest: IsReanimatableCorpse,
-                    Label: "Pick a Corpse to " + REANIMATE_NAME) is Cell pickedCell
-                    && pickedCell.GetObjectsViaEventList(IsReanimatableCorpse) is List<GameObject> cellCorpses
-                    && !cellCorpses.IsNullOrEmpty())
-                {
-                    if (cellCorpses.Count == 1)
-                    {
-                        targetCorpse = cellCorpses[0];
-                    }
-                    if (targetCorpse == null
-                        && Popup.PickGameObject(
-                            Title: "Which corpse did you want to " + REANIMATE_NAME,
-                            Objects: cellCorpses,
-                            AllowEscape: true,
-                            ShortDisplayNames: true) is GameObject pickedObject)
-                    {
-                        targetCorpse = pickedObject;
-                    }
-                    else
-                    if (targetCorpse == null)
-                    {
-                        Popup.Show("No corpse selected to reanimate.");
-                    }
-                }
-                if (targetCorpse != null
-                    && ReanimateCorpse(targetCorpse))
-                {
-                    string recruitMessage = "Would you like for " + targetCorpse.GetReferenceDisplayName(Short: true) + " to join your party";
-                    if (Popup.ShowYesNoCancel(
-                        Message: recruitMessage) == DialogResult.Yes)
-                    {
-                        ParentObject?.SmallTeleportSwirl(Color: "&M", Sound: "Sounds/StatusEffects/sfx_statusEffect_charm");
-                        targetCorpse?.SetAlliedLeader<AllyProselytize>(ParentObject);
-                        targetCorpse?.SmallTeleportSwirl(Color: "&m", IsOut: true);
-                    }
-                    return true;
-                }
+                return true;
             }
             else
             if (E.Command == COMMAND_NAME_REANIMATE_ALL)
@@ -439,56 +650,6 @@ namespace XRL.World.Parts.Mutation
 
                     E.RequestInterfaceExit();
                     return true;
-                    /*
-                    List<GameObject> reanimatedCorpses = Event.NewGameObjectList();
-                    foreach (GameObject corpse in corpsesInZone)
-                    {
-                        try
-                        {
-                            if (ReanimateCorpse(corpse) && corpse.IsAlive)
-                            {
-                                reanimatedCorpses.Add(corpse);
-                                corpse?.SmallTeleportSwirl(Color: "&r", Sound: "Sounds/StatusEffects/sfx_statusEffect_positiveVitality");
-                            }
-                        }
-                        catch (Exception x)
-                        {
-                            MetricsManager.LogException(
-                                Name + "." + nameof(COMMAND_NAME_REANIMATE_ALL),
-                                x: x,
-                                category: "game_mod_exception");
-                        }
-                    }
-                    if (!reanimatedCorpses.IsNullOrEmpty())
-                    {
-                        reanimatedCorpses?.ShuffleInPlace();
-                        // ParentObject?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_negativeVitality");
-                        // reanimatedCorpses?.GetRandomElementCosmetic()?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_positiveVitality");
-                        List<string> corpseNames = new();
-                        List<IRenderable> corpseRenderables = new();
-                        foreach (GameObject reanimatedCorpse in reanimatedCorpses)
-                        {
-                            corpseNames?.Add(reanimatedCorpse?.GetReferenceDisplayName(Short: true));
-                            corpseRenderables?.Add(reanimatedCorpse?.RenderForUI());
-                        }
-                        if (Popup.PickSeveral(
-                            Title: "Pick which corpses should join you.",
-                            Context: reanimatedCorpses?.GetRandomElementCosmetic(),
-                            AllowEscape: true) is List<(int picked, int amount)> pickedCorpses)
-                        {
-                            ParentObject?.SmallTeleportSwirl(Color: "&M", Sound: "Sounds/StatusEffects/sfx_statusEffect_charm");
-                            foreach ((int picked, int _) in pickedCorpses)
-                            {
-                                reanimatedCorpses[picked]?.SetAlliedLeader<AllyProselytize>(ParentObject);
-                                reanimatedCorpses[picked]?.SmallTeleportSwirl(Color: "&m", IsOut: true);
-                            }
-                        }
-                    }
-                    if (!reanimatedCorpses.IsNullOrEmpty())
-                    {
-                        return true;
-                    }
-                    */
                 }
             }
             else
@@ -511,178 +672,20 @@ namespace XRL.World.Parts.Mutation
 
                         E.RequestInterfaceExit();
                         return true;
-                        /*
-                        int corpseRadius = corpseCount / 4;
-                        int maxAttempts = corpseCount * 2;
-                        int originalCorpseCount = corpseCount;
-                        List<string> corpseBlueprints = new();
-                        Loading.SetLoadingStatus("Summoning " + 0 + "/" + originalCorpseCount + " fresh corpses...");
-                        while (corpseCount > 0 && maxAttempts > 0)
-                        {
-                            maxAttempts--;
-                            if (TrySummonCorpse(corpseRadius, out GameObject corpseObject))
-                            {
-                                Loading.SetLoadingStatus("Summoning " + (corpseBlueprints.Count + 1) + "/" + originalCorpseCount + " (" + corpseObject.Blueprint + ")...");
-                                corpseBlueprints.Add(corpseObject.Blueprint);
-                                corpseCount--;
-                            }
-                        }
-                        Loading.SetLoadingStatus("Summoned " + corpseBlueprints.Count + "/" + originalCorpseCount + " fresh corpses...");
-                        if (corpseBlueprints.Count > 0)
-                        {
-                            string corpseListLabel = "Summoned " + corpseBlueprints.Count + " corpses of various types, in a radius of " + corpseRadius + " cells.";
-                            string corpseListOutput = corpseBlueprints
-                                ?.ConvertToStringListWithItemCount()
-                                ?.GenerateBulletList(Label: corpseListLabel);
-                            Popup.Show(corpseListOutput);
-
-                            Loading.SetLoadingStatus(null);
-                            return true;
-                        }
-                        Loading.SetLoadingStatus(null);
-                        */
                     }
                 }
             }
             else
-            if (E.Command == COMMAND_NAME_ASSESS_CORPSE)
+            if (E.Command == COMMAND_NAME_ASSESS_CORPSE
+                && ProcessAssessCorpse())
             {
-                GameObject targetCorpse = null;
-                if (IsReanimatableCorpse(ParentObject.Target))
-                {
-                    targetCorpse = ParentObject.Target;
-                }
-                int startX = 40;
-                int startY = 12;
-                if (ParentObject.CurrentCell is Cell assesserCell)
-                {
-                    startX = assesserCell.X;
-                    startY = assesserCell.Y;
-                }
-                if (PickTarget.ShowPicker(
-                    Style: PickTarget.PickStyle.EmptyCell,
-                    StartX: startX,
-                    StartY: startY,
-                    VisLevel: AllowVis.Any,
-                    ObjectTest: IsReanimatableCorpse,
-                    Label: "pick a corpse to get a list of possible creatrues") is Cell pickedCell
-                    && pickedCell.GetObjectsViaEventList(Filter: IsReanimatableCorpse) is List<GameObject> corpseList
-                    && !corpseList.IsNullOrEmpty())
-                {
-                    if (corpseList.Count == 1)
-                    {
-                        targetCorpse = corpseList[0];
-                    }
-                    if (targetCorpse == null
-                        && Popup.PickGameObject(
-                            Title: "which corpse?",
-                            Objects: corpseList,
-                            AllowEscape: true,
-                            ShortDisplayNames: true) is GameObject pickedObject)
-                    {
-                        targetCorpse = pickedObject;
-                    }
-                    else
-                    if (targetCorpse == null)
-                    {
-                        Popup.Show("No corpse selected to get a creature list from.");
-                    }
-                    if (targetCorpse != null)
-                    {
-                        ParentObject?.SmallTeleportSwirl(Color: "&K");
-                        targetCorpse?.SmallTeleportSwirl(
-                            Color: "&r",
-                            Sound: "Sounds/Abilities/sfx_ability_mutation_psychometry_activate",
-                            IsOut: true);
-
-                        Dictionary<string, int> weightedList = GetBlueprintsWhoseCorpseThisCouldBe(targetCorpse.Blueprint).ConvertToWeightedList();
-                        List<string> possibleBlueprints = new(weightedList.ConvertToStringListWithKeyValue());
-
-                        string corpseListLabel =
-                            targetCorpse.IndicativeProximal + " " + targetCorpse.GetReferenceDisplayName(Short: true) + 
-                            " might have been any of the following:";
-
-                        string corpseListOutput = possibleBlueprints.GenerateBulletList(Label: corpseListLabel);
-                        Popup.Show(corpseListOutput);
-                        return true;
-                    }
-                }
+                return true;
             }
             else
-            if (E.Command == COMMAND_NAME_POWERWORD_KILL)
+            if (E.Command == COMMAND_NAME_POWERWORD_KILL
+                && ProcessPowerWordKill())
             {
-                int startX = 40;
-                int startY = 12;
-                if (The.Player.CurrentCell is Cell playerCell)
-                {
-                    startX = playerCell.X;
-                    startY = playerCell.Y;
-                }
-                if (PickTarget.ShowPicker(
-                    Style: PickTarget.PickStyle.EmptyCell,
-                    StartX: startX,
-                    StartY: startY,
-                    VisLevel: AllowVis.Any,
-                    ObjectTest: HasCorpse,
-                    Label: "pick a target to instantly die") is Cell pickedCell
-                    && pickedCell.GetObjectsViaEventList(Filter: HasCorpse) is List<GameObject> creatureList
-                    && !creatureList.IsNullOrEmpty())
-                {
-                    GameObject targetCreature = null;
-                    if (creatureList.Count == 1)
-                    {
-                        targetCreature = creatureList[0];
-                    }
-                    if (targetCreature == null
-                        && Popup.PickGameObject(
-                            Title: "which corpse?",
-                            Objects: creatureList,
-                            AllowEscape: true,
-                            ShortDisplayNames: true) is GameObject pickedObject)
-                    {
-                        targetCreature = pickedObject;
-                    }
-                    else
-                    if (targetCreature == null)
-                    {
-                        Popup.Show("no creatures selected to make instantly die");
-                    }
-                    if (targetCreature?.GetPart<Corpse>() is Corpse targetCreatureCorpse)
-                    {
-                        string sureTargetSelf = ("That's =subject.refname=... \n\n" +
-                            "=subject.verb:are:afterpronoun= =subject.subjective= sure =subject.subjective= want to use " +
-                            "\"Instantly Die\" on =subject.reflexive=?")
-                                .StartReplace()
-                                .AddObject(ParentObject)
-                                .ToString(); ;
-                        if (targetCreature != ParentObject
-                            || Popup.ShowYesNoCancel(sureTargetSelf) == DialogResult.Yes)
-                        {
-                            int corpseChanceBefore = targetCreatureCorpse.CorpseChance;
-                            targetCreatureCorpse.CorpseChance = 100;
-                            string reason = "=object.T= commanded that =subject.subjective= die, and =subject.subjective= simply did."
-                                .StartReplace()
-                                .AddObject(targetCreature)
-                                .AddObject(ParentObject)
-                                .ToString();
-                            if (targetCreature.Die(
-                                Killer: targetCreature,
-                                Reason: reason,
-                                ThirdPersonReason: reason,
-                                Accidental: true,
-                                Force: true))
-                            {
-                                pickedCell.PsychicPulse();
-                                ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_success");
-                                targetCreature?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_success");
-                                return true;
-                            }
-                            targetCreatureCorpse.CorpseChance = corpseChanceBefore;
-                            ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_fail");
-                            Popup.Show("you words hang impotently in the air before dissipating without effect...");
-                        }
-                    }
-                }
+                return true;
             }
             return base.HandleEvent(E);
         }

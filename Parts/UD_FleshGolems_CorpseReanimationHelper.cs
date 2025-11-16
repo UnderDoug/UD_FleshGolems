@@ -14,6 +14,8 @@ using XRL.World.Quests.GolemQuest;
 using XRL.World.Skills;
 using XRL.World.AI;
 
+using NanoNecroAnimation = XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
+
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
 using static UD_FleshGolems.Const;
@@ -1217,13 +1219,12 @@ namespace XRL.World.Parts
             }
         }
         public override bool WantEvent(int ID, int Cascade)
-        {
-            return base.WantEvent(ID, Cascade)
-                || ID == BeforeObjectCreatedEvent.ID
-                || ID == AnimateEvent.ID
-                || ID == EnvironmentalUpdateEvent.ID
-                || (FailedToRegisterEvents.Contains(DroppedEvent.ID) && ID == DroppedEvent.ID);
-        }
+            => base.WantEvent(ID, Cascade)
+            || ID == BeforeObjectCreatedEvent.ID
+            || ID == AnimateEvent.ID
+            || ID == EnvironmentalUpdateEvent.ID
+            || (FailedToRegisterEvents.Contains(DroppedEvent.ID) && ID == DroppedEvent.ID);
+
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
         {
             if (!IsALIVE

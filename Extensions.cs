@@ -538,7 +538,7 @@ namespace UD_FleshGolems
             }
             return outputList;
         }
-        public static IEnumerable<string> ConvertToStringList<T>(this IEnumerable<T> Entries)
+        public static List<string> ConvertToStringList<T>(this IEnumerable<T> Entries)
         {
             return ConvertToStringList(Entries, null);
         }

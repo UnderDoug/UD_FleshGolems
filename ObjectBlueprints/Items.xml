@@ -247,11 +247,11 @@
   </object>
 
   <object Name="Sated Dreamcrungle" Load="Merge">
-    <mixin Name="UD_FleshGolems Bush Corpse" />
+    <mixin Name="UD_FleshGolems Bush Corpse" Load="Fill" />
   </object>
 
   <object Name="Jumble of Tongues" Load="Merge">
-    <mixin Name="UD_FleshGolems Flower Corpse" />
+    <mixin Name="UD_FleshGolems Flower Corpse" Load="Fill" />
   </object>
   
   <!--

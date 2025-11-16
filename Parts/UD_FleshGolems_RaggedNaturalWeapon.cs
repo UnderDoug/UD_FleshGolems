@@ -38,8 +38,8 @@ namespace XRL.World.Parts
 
         public string GetAdjective()
         {
-            string adjective;
-            string colorShader;
+            string adjective = null;
+            string colorShader = null;
             if (Wielder?.GetBlueprint() is var wielderBlueprint)
             {
                 if (wielderBlueprint.InheritsFrom("Robot Corpse"))
@@ -59,8 +59,6 @@ namespace XRL.World.Parts
                     adjective = RAGGED_ADJECTIVE;
                     colorShader = RAGGED_SHADER;
                 }
-                    adjective = RAGGED_ADJECTIVE;
-                    colorShader = RAGGED_SHADER;
             }
             adjective ??= RAGGED_ADJECTIVE;
             colorShader ??= RAGGED_SHADER;
