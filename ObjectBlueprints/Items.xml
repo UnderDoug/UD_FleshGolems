@@ -234,6 +234,18 @@
     <tag Name="Tier" Value="2" />
   </object>
 
+  <object Name="Charred Corpse" Load="Merge">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="*" />
+  </object>
+
+  <object Name="Mangled Corpse" Load="Merge">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="*" />
+  </object>
+
+  <object Name="Fresh Corpse" Load="Merge">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Faction:New" />
+  </object>
+
   <object Name="Sated Dreamcrungle" Load="Merge">
     <mixin Name="UD_FleshGolems Bush Corpse" />
   </object>

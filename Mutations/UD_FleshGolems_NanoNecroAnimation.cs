@@ -15,6 +15,7 @@ using UD_FleshGolems;
 using static XRL.World.Parts.UD_FleshGolems_PastLife;
 using XRL.World.Effects;
 using XRL.World.Capabilities;
+using XRL.Messages;
 
 namespace XRL.World.Parts.Mutation
 {
@@ -293,6 +294,15 @@ namespace XRL.World.Parts.Mutation
             }
             Corpse?.SmallTeleportSwirl(Color: "&r", Sound: "Sounds/StatusEffects/sfx_statusEffect_positiveVitality", IsOut: true);
             AnimateObject.Animate(Corpse, ParentObject, ParentObject);
+
+            string summonedMsg = "=subject.Name= =subject.verb:ranimate= =object.refname=."
+                .StartReplace()
+                .AddObject(ParentObject)
+                .AddObject(Corpse)
+                .ToString();
+
+            MessageQueue.AddPlayerMessage(summonedMsg);
+
             return true;
         }
 
@@ -323,8 +333,14 @@ namespace XRL.World.Parts.Mutation
                     Corpse = corpseObject;
 
                     Corpse?.SmallTeleportSwirl(Color: "&r", IsOut: true);
-                    // corpseBlueprints.Add(corpseObject.Blueprint);
-                    // corpseCount--;
+
+                    string summonedMsg = "=subject.Name= =subject.verb:summon= =object.an==object.name=."
+                        .StartReplace()
+                        .AddObject(Summoner)
+                        .AddObject(Corpse)
+                        .ToString();
+                    MessageQueue.AddPlayerMessage(summonedMsg);
+
                     return true;
                 }
                 else
@@ -580,7 +596,7 @@ namespace XRL.World.Parts.Mutation
                             IsOut: true);
 
                         Dictionary<string, int> weightedList = GetBlueprintsWhoseCorpseThisCouldBe(targetCorpse.Blueprint).ConvertToWeightedList();
-                        List<string> possibleBlueprints = new(weightedList.ConvertToStringListWithKeyValue((int weight) => weight + " weight"));
+                        List<string> possibleBlueprints = new(weightedList.ConvertToStringListWithKeyValue());
 
                         string corpseListLabel =
                             targetCorpse.IndicativeProximal + " " + targetCorpse.GetReferenceDisplayName(Short: true) + 

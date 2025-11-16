@@ -67,7 +67,7 @@ namespace UD_FleshGolems
         {
             UD_FleshGolems_PastLife.GetCorpseBlueprints();
             UD_FleshGolems_PastLife.GetEntitiesWithCorpseBlueprints();
-            UD_FleshGolems_PastLife.GetProcessableCorpsesAndTheirProducts();
+            UD_FleshGolems_PastLife.GetProcessableCorpsesAndTheirProducts(ExcludeEmpty: false);
         }
     }
 

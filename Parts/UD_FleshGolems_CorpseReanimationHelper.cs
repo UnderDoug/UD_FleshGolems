@@ -837,7 +837,8 @@ namespace XRL.World.Parts
                     frankenCorpse.SetPronounSet(frankenCorpse.GetBlueprint().Tags[nameof(PronounSet)]);
                 }
 
-                bool wantDoRequip = false;
+                string BleedLiquid = PastLife?.BleedLiquid;
+
                 int guaranteedNaturalWeapons = 3;
                 int bestowedNaturalWeapons = 0;
                 bool guaranteeNaturalWeapon() => guaranteedNaturalWeapons >= bestowedNaturalWeapons;
@@ -900,16 +901,11 @@ namespace XRL.World.Parts
                         frankenEpithets.Primary = sourceCreatureEpithets;
                     }
 
-                    string BleedLiquid = null;
-                    if (sourceBlueprint.Tags.ContainsKey(nameof(BleedLiquid)))
+                    if (BleedLiquid.IsNullOrEmpty()
+                        && sourceBlueprint.Tags.ContainsKey(nameof(BleedLiquid)))
                     {
                         BleedLiquid = sourceBlueprint.Tags[nameof(BleedLiquid)];
                     }
-                    if (BleedLiquid.IsNullOrEmpty())
-                    {
-                        BleedLiquid = "blood-1000";
-                    }
-                    frankenCorpse.GetPropertyOrTag("BleedLiquid", BleedLiquid);
 
                     if (frankenCorpse.GetPropertyOrTag("KillerID") is string killerID
                         && GameObject.FindByID(killerID) is GameObject killer)
@@ -949,7 +945,6 @@ namespace XRL.World.Parts
                             {
                                 frankenCorpse.Body.Rebuild(golemAnatomy);
                             }
-                            PastLife.RestoreAdditionalLimbs();
                         }
                         if (golemBodyBlueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.Tile), out string golemTile))
                         {
@@ -984,7 +979,6 @@ namespace XRL.World.Parts
                                 frankenCorpse.Render.Tile = sourceTile;
                             }
                         }
-                        PastLife.RestoreAdditionalLimbs();
                     }
 
                     Debug.Log("Granting SourceBlueprint Natural Equipment...", indent[1]);
@@ -1002,27 +996,54 @@ namespace XRL.World.Parts
                                 {
                                     if (sampleNaturalGear.TryGetPart(out MeleeWeapon mw)
                                         && !mw.IsImprovisedWeapon()
-                                        && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotAndSkillMatchesBlueprint(bp, mw))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
-                                        && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject
-                                        && frankenCorpse.ReceiveObject(raggedWeaponObject))
+                                        && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotAndSkillMatchesBlueprint(bp, mw))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName)
                                     {
-                                        string debugOutput =
-                                            nameof(sampleNaturalGear) + ": " + sampleNaturalGear.DebugName + " | " +
-                                            nameof(raggedWeaponObject) + ": " + raggedWeaponObject.DebugName;
-                                        Debug.Log(AppendTick("") + itemLabel + debugOutput, Indent: indent[3]);
-                                        wantDoRequip = true;
-                                        bestowedNaturalWeapons++;
+                                        if (GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject)
+                                        {
+                                            string debugOutput =
+                                                nameof(sampleNaturalGear) + ": " + sampleNaturalGear.DebugName + " | " +
+                                                nameof(raggedWeaponObject) + ": " + raggedWeaponObject.DebugName;
+                                            bool anyAssigned = false;
+                                            List<string> weaponSlots = mw.Slot.CachedCommaExpansion().ShuffleInPlace();
+                                            foreach (string weaponSlot in weaponSlots)
+                                            {
+                                                if (frankenCorpse.Body.GetFirstPart(mw.Slot, bp => bp.DefaultBehavior == null) is BodyPart bodyPart
+                                                    && bodyPart.AssignDefaultBehaviour(raggedWeaponObject, SetDefaultBehaviorBlueprint: true))
+                                                {
+                                                    if (raggedWeaponObject.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedWeaponPart))
+                                                    {
+                                                        raggedWeaponPart.ProcessDescriptionElements(frankenCorpse);
+                                                    }
+                                                    bestowedNaturalWeapons++;
+
+                                                    Debug.CheckYeh(itemLabel + debugOutput, Indent: indent[3]);
+                                                    anyAssigned = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!anyAssigned
+                                                && GameObject.Validate(ref raggedWeaponObject))
+                                            {
+                                                Debug.CheckNah(itemLabel + debugOutput, Indent: indent[3]);
+                                                raggedWeaponObject.Obliterate();
+                                            }
+                                        }
                                     }
-                                    sampleNaturalGear?.Obliterate();
+                                    if (GameObject.Validate(ref sampleNaturalGear))
+                                    {
+                                        sampleNaturalGear?.Obliterate();
+                                    }
                                 }
                             }
                             else
                             {
-                                Debug.Log(AppendCross("") + itemLabel + "Not Natural'", Indent: indent[3]);
+                                Debug.CheckNah(itemLabel + "Not Natural'", Indent: indent[3]);
                             }
                         }
                     }
                 }
+                PastLife?.RestoreAdditionalLimbs();
+
                 frankenBody ??= frankenCorpse.Body;
                 Debug.Log("Granting Additional Natural Equipment...", indent[1]);
                 Debug.Log(nameof(frankenBody), nameof(frankenBody.LoopParts), indent[2]);
@@ -1038,39 +1059,45 @@ namespace XRL.World.Parts
                         if (frankenNaturalGear.TryGetPart(out MeleeWeapon mw)
                             && !mw.IsImprovisedWeapon()
                             && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotAndSkillMatchesBlueprint(bp, mw))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
-                            && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject)
+                            && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject
+                            && frankenLimb.AssignDefaultBehaviour(raggedWeaponObject, SetDefaultBehaviorBlueprint: true))
                         {
+                            if (raggedWeaponObject.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedWeaponPart))
+                            {
+                                raggedWeaponPart.ProcessDescriptionElements(frankenCorpse);
+                            }
+                            bestowedNaturalWeapons++;
+
                             string debugOutput =
                                 nameof(frankenNaturalGear) + ": " + (frankenNaturalGear?.DebugName ?? NULL) + " | " +
                                 nameof(raggedWeaponObject) + ": " + (raggedWeaponObject.DebugName ?? NULL);
-                            Debug.Log(AppendTick("") + limbLabel + debugOutput, Indent: indent[3]);
+                            Debug.CheckYeh(limbLabel + debugOutput, Indent: indent[3]);
 
-                            frankenNaturalGear.Obliterate();
-                            frankenLimb.DefaultBehavior = raggedWeaponObject;
-                            frankenLimb.DefaultBehaviorBlueprint = raggedWeaponBlueprintName;
-                            bestowedNaturalWeapons++;
+                            if (GameObject.Validate(ref frankenNaturalGear))
+                            {
+                                frankenNaturalGear?.Obliterate();
+                            }
                         }
                     }
                     else
                     if ((guaranteeNaturalWeapon() || 25.in100())
                         && GetRaggedNaturalWeapons(bp => MeleeWeaponSlotMatchesBlueprint(bp, frankenLimb.Type))?.GetRandomElement()?.Name is string raggedWeaponBlueprintName
-                        && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject)
+                        && GameObject.CreateUnmodified(raggedWeaponBlueprintName) is GameObject raggedWeaponObject
+                        && frankenLimb.AssignDefaultBehaviour(raggedWeaponObject, SetDefaultBehaviorBlueprint: true))
                     {
-                        string debugOutput = "Rolled 1 in 4 | " + nameof(raggedWeaponObject) + ": " + (raggedWeaponObject?.DebugName ?? NULL);
-                        Debug.Log(AppendTick("") + limbLabel + debugOutput, Indent: indent[3]);
-
-                        frankenLimb.DefaultBehavior = raggedWeaponObject;
-                        frankenLimb.DefaultBehaviorBlueprint = raggedWeaponBlueprintName;
+                        if (raggedWeaponObject.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedWeaponPart))
+                        {
+                            raggedWeaponPart.ProcessDescriptionElements(frankenCorpse);
+                        }
                         bestowedNaturalWeapons++;
+
+                        string debugOutput = "Rolled 1 in 4 | " + nameof(raggedWeaponObject) + ": " + (raggedWeaponObject?.DebugName ?? NULL);
+                        Debug.CheckYeh(limbLabel + debugOutput, Indent: indent[3]);
                     }
                     else
                     {
-                        Debug.Log(AppendCross("") + limbLabel + "nuffin'", Indent: indent[3]);
+                        Debug.CheckNah(limbLabel + "nuffin'", Indent: indent[3]);
                     }
-                }
-                if (wantDoRequip)
-                {
-                    frankenBrain?.WantToReequip();
                 }
 
                 if (frankenMutations != null)
@@ -1108,6 +1135,15 @@ namespace XRL.World.Parts
                     }
                 }
 
+                if (BleedLiquid.IsNullOrEmpty())
+                {
+                    BleedLiquid = "blood-1000";
+                }
+                if (!BleedLiquid.IsNullOrEmpty())
+                {
+                    frankenCorpse.SetBleedLiquid(BleedLiquid);
+                }
+
                 if (!UD_FleshGolems_Reanimated.HasWorldGenerated || excludedFromDynamicEncounters)
                 {
                     if (PastLife?.ConversationScriptID is string pastConversationID)
@@ -1142,12 +1178,15 @@ namespace XRL.World.Parts
                     Debug.Log(nameof(frankenHitpoints), frankenHitpoints.Value + "/" + frankenHitpoints.BaseValue, Indent: indent[1]);
                 }
 
+                frankenBrain?.WantToReequip();
+
                 if (frankenCorpse != null)
                 {
                     var reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
                     reanimatedCorpse.Reanimator = reanimationHelper.Reanimator;
                     // reanimatedCorpse.AttemptToSuffer();
                 }
+
                 Debug.SetIndent(indent[0]);
                 return true;
             }
@@ -1161,6 +1200,7 @@ namespace XRL.World.Parts
             try
             {
                 Registrar?.Register(DroppedEvent.ID, EventOrder.EXTREMELY_EARLY);
+                Registrar?.Register("ObjectExtracted");
             }
             catch (Exception x)
             {
@@ -1186,7 +1226,6 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
         {
-
             if (!IsALIVE
                 && ParentObject == E.Object
                 && false)
@@ -1220,13 +1259,25 @@ namespace XRL.World.Parts
         {
             if (AlwaysAnimate
                 && !IsALIVE
-                && ParentObject is GameObject corpse
-                && Animate(out corpse))
+                && ParentObject != null
+                && Animate(out GameObject corpse))
             {
                 ProcessMoveToDeathCell(corpse, PastLife);
                 return true;
             }
             return base.HandleEvent(E);
+        }
+        public override bool FireEvent(Event E)
+        {
+            if (E.ID == "ObjectExtracted"
+                && E.GetGameObjectParameter("Source") is GameObject extractionSource
+                && extractionSource.TryGetPart(out UD_FleshGolems_PastLife pastLife)
+                && PastLife == null)
+            {
+                extractionSource.RemovePart(pastLife);
+                ParentObject.AddPart(pastLife);
+            }
+            return base.FireEvent(E);
         }
         public override bool HandleEvent(DroppedEvent E)
         {

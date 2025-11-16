@@ -10,6 +10,7 @@ using XRL;
 using XRL.CharacterBuilds.Qud;
 using XRL.Rules;
 using XRL.World;
+using XRL.World.Anatomy;
 using XRL.World.Parts;
 
 using static UD_FleshGolems.Const;
@@ -204,6 +205,35 @@ namespace UD_FleshGolems
             GameObject.SetStringProperty(nameof(Subtype), Subtype);
             return Subtype;
         }
+        public static string SetBleedLiquid(this GameObject GameObject, string BleedLiquid)
+        {
+            GameObject.SetStringProperty(nameof(BleedLiquid), BleedLiquid);
+            return BleedLiquid;
+        }
+        public static string SetBleedPrefix(this GameObject GameObject, string BleedPrefix)
+        {
+            GameObject.SetStringProperty(nameof(BleedPrefix), BleedPrefix);
+            return BleedPrefix;
+        }
+        public static string SetBleedColor(this GameObject GameObject, string BleedColor)
+        {
+            GameObject.SetStringProperty(nameof(BleedColor), BleedColor);
+            return BleedColor;
+        }
+
+        public static bool AssignDefaultBehaviour(
+            this BodyPart BodyPart,
+            GameObject DefaultBehavior,
+            bool SetDefaultBehaviorBlueprint = false)
+        {
+            BodyPart.DefaultBehavior = DefaultBehavior;
+            if (SetDefaultBehaviorBlueprint)
+            {
+                BodyPart.DefaultBehaviorBlueprint = DefaultBehavior.Blueprint;
+            }
+            return BodyPart.DefaultBehavior == DefaultBehavior 
+                && (!SetDefaultBehaviorBlueprint || BodyPart.DefaultBehaviorBlueprint == DefaultBehavior.Blueprint);
+        }
 
         public static GameObjectBlueprint GetGameObjectBlueprint(this string Blueprint)
         {
@@ -291,6 +321,26 @@ namespace UD_FleshGolems
         public static bool IsExcludedFromDynamicEncounters(this string Blueprint)
         {
             return Utils.IsGameObjectBlueprintExcludedFromDynamicEncounters(Blueprint);
+        }
+
+        public static bool HasSTag(this GameObjectBlueprint Blueprint, string STag)
+        {
+            return Blueprint.HasTag("Semantic" + STag);
+        }
+        public static bool HasSTag(this string Blueprint, string STag)
+        {
+            return Blueprint.GetGameObjectBlueprint() is var gameObjectBlueprint
+                && gameObjectBlueprint.HasSTag(STag);
+        }
+
+        public static bool IsChiliad(this GameObjectBlueprint Blueprint)
+        {
+            return Blueprint.HasSTag("Chiliad");
+        }
+        public static bool IsChiliad(this string Blueprint)
+        {
+            return Blueprint.GetGameObjectBlueprint() is var gameObjectBlueprint
+                && gameObjectBlueprint.IsChiliad();
         }
 
         public static GameObjectBlueprint GetBlueprintIfExists(this PopulationItem PopItem)
@@ -408,17 +458,22 @@ namespace UD_FleshGolems
             this IEnumerable<string> Items,
             string Label = null,
             string Bullet = "\u0007",
-            string BulletColor = "K")
+            string BulletColor = "K",
+            Func<string,string> ItemPreProc = null,
+            Func<string,string> ItemPostProc = null)
         {
             Label = Label.IsNullOrEmpty() ? "" : Label + "\n";
             string output = "";
             foreach (string item in Items)
             {
+                string preProcItem = ItemPreProc != null ? ItemPreProc(item) : item;
                 if (!output.IsNullOrEmpty())
                 {
                     output += "\n";
                 }
-                output += "{{" + BulletColor + "|" + Bullet + "}} " + item;
+                string prePostProc = "{{" + BulletColor + "|" + Bullet + "}} " + preProcItem;
+                string postProcItem = ItemPostProc != null ? ItemPostProc(prePostProc) : prePostProc;
+                output += postProcItem;
             }
             return Label + output;
         }
@@ -473,22 +528,23 @@ namespace UD_FleshGolems
             return itemsList.GenerateCSVList(Headings, Delimiter, NewLine);
         }
 
-        public static IEnumerable<string> ConvertToStringList<T>(this IEnumerable<T> Entries, Func<T, string> Proc)
+        public static List<string> ConvertToStringList<T>(this IEnumerable<T> Entries, Func<T, string> Proc)
         {
+            List<string> outputList = new();
             foreach (T entry in Entries)
             {
                 string entryProc = Proc != null ? Proc(entry) : entry.ToString();
-                yield return entryProc;
+                outputList.Add(entryProc);
             }
-            yield break;
+            return outputList;
         }
-
         public static IEnumerable<string> ConvertToStringList<T>(this IEnumerable<T> Entries)
         {
             return ConvertToStringList(Entries, null);
         }
 
-        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this Dictionary<T, int> Entries)
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
+            this Dictionary<T, int> Entries)
         {
             foreach ((T item, int count) in Entries)
             {
@@ -497,7 +553,8 @@ namespace UD_FleshGolems
             yield break;
         }
 
-        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this IEnumerable<T> Entries)
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
+            this IEnumerable<T> Entries)
         {
             foreach ((T item, int count) in Entries.ConvertToWeightedList())
             {
@@ -505,7 +562,9 @@ namespace UD_FleshGolems
             }
             yield break;
         }
-        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this IEnumerable<T> Entries, Func<T, string> Proc)
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
+            this IEnumerable<T> Entries,
+            Func<T, string> Proc)
         {
             foreach ((T item, int count) in Entries.ConvertToWeightedList())
             {
@@ -515,7 +574,9 @@ namespace UD_FleshGolems
             yield break;
         }
 
-        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this IEnumerable<KeyValuePair<T, int>> Entries, Func<KeyValuePair<T, int>, string> Proc)
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
+            this IEnumerable<KeyValuePair<T, int>> Entries,
+            Func<KeyValuePair<T, int>, string> Proc)
         {
             foreach (KeyValuePair<T, int> entry in Entries)
             {
@@ -524,12 +585,15 @@ namespace UD_FleshGolems
             }
             yield break;
         }
-        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(this IEnumerable<KeyValuePair<T, int>> Entries)
+        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
+            this IEnumerable<KeyValuePair<T, int>> Entries)
         {
             return ConvertToStringListWithItemCount(Entries, null);
         }
 
-        public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(this IEnumerable<KeyValuePair<string,T>> Entries, Func<KeyValuePair<string, T>, string> Proc)
+        public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(
+            this IEnumerable<KeyValuePair<string,T>> Entries,
+            Func<KeyValuePair<string, T>, string> Proc)
         {
             foreach (KeyValuePair<string, T> entry in Entries)
             {
@@ -538,17 +602,20 @@ namespace UD_FleshGolems
             }
             yield break;
         }
-        public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(this IEnumerable<KeyValuePair<string,T>> Entries, Func<T, string> Proc)
+        public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(
+            this IEnumerable<KeyValuePair<string,T>> Entries,
+            Func<T, string> Proc)
         {
             return Entries.ConvertToStringListWithKeyValue(kvp => kvp.Key + ": " + (Proc != null ? Proc(kvp.Value) : kvp.Value.ToString()));
         }
-
-        public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(this IEnumerable<KeyValuePair<string,T>> Entries)
+        public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(
+            this IEnumerable<KeyValuePair<string,T>> Entries)
         {
             return Entries.ConvertToStringListWithKeyValue((Func<T, string>)null);
         }
 
-        public static IEnumerable<string> ConvertToStringListWithKeyValue(this IEnumerable<KeyValuePair<string, GameObjectBlueprint>> Entries)
+        public static IEnumerable<string> ConvertToStringListWithKeyValue(
+            this IEnumerable<KeyValuePair<string, GameObjectBlueprint>> Entries)
         {
             return ConvertToStringListWithKeyValue(Entries, bp => bp.Name);
         }

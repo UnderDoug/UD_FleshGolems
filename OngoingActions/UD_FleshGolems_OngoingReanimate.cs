@@ -163,7 +163,7 @@ namespace UD_FleshGolems
             bool useEnergy = false;
             try
             {
-                if (ReanimationMutation.ReanimateCorpse(Corpse))
+                if (ReanimationMutation.ReanimateCorpse(Corpse, (NumberDone % 3) == 0))
                 {
                     bool multipleObjects = NumberWanted > 1 && OriginalCount > 1;
                     ReanimatedList ??= new();
@@ -172,14 +172,6 @@ namespace UD_FleshGolems
                     ReanimatedList.Add(Corpse);
                     ReanimatedNames.Add(Corpse.GetReferenceDisplayName(Short: true));
 
-                    if (multipleObjects || NumberWanted > 1)
-                    {
-                        RB = GameText.StartReplace($"=subject.Name= =subject.verb:start:afterpronoun= ranimating =object.refname=.");
-                        RB.AddObject(Reanimator);
-                        RB.AddObject(Corpse);
-
-                        MessageQueue.AddPlayerMessage(RB.ToString());
-                    }
                     GameObject prevCorpse = Corpse;
                     if (!CorpseQueue.IsNullOrEmpty())
                     {
@@ -261,9 +253,9 @@ namespace UD_FleshGolems
         {
             var SB = Event.NewStringBuilder();
             SB.Append("=subject.Name= reanimated");
-            bool doBulletList = NumberDone > 4
+            bool doBulletList = NumberDone > 3
                 && !ReanimatedNames.IsNullOrEmpty()
-                && ReanimatedNames.Count > 4;
+                && ReanimatedNames.Count > 3;
             if (!doBulletList)
             {
                 SB.Append(" ");

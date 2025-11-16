@@ -138,14 +138,6 @@ namespace UD_FleshGolems
                     bool multipleObjects = NumberWanted > 1 && OriginalCount > 1;
                     SummonedList ??= new();
                     SummonedList.Add(summonedCorpse);
-
-                    if (multipleObjects || NumberWanted > 1)
-                    {
-                        RB = GameText.StartReplace($"=subject.Name= =verb:start:afterpronoun= summoning =object.t=.");
-                        RB.AddObject(Summoner);
-                        RB.AddObject(summonedCorpse);
-                        MessageQueue.AddPlayerMessage(RB.ToString());
-                    }
                 }
                 if (NumberDone < NumberWanted)
                 {
@@ -200,14 +192,14 @@ namespace UD_FleshGolems
 
         public override void Interrupt()
         {
-            if (NumberWanted > 1)
+            if (NumberWanted > 1 && NumberDone < NumberWanted)
             {
                 Loading.SetLoadingStatus("Interrupted!");
             }
             base.Interrupt();
         }
 
-        public override bool CanComplete() => !Abort ? NumberDone >= NumberWanted : true;
+        public override bool CanComplete() => Abort || NumberDone >= NumberWanted;
 
         public override void Complete()
         {
@@ -222,9 +214,9 @@ namespace UD_FleshGolems
         {
             var SB = Event.NewStringBuilder();
             SB.Append("=subject.Name= summoned");
-            bool doBulletList = NumberDone > 4
+            bool doBulletList = NumberDone > 3
                 && !SummonedList.IsNullOrEmpty()
-                && SummonedList.Count > 4;
+                && SummonedList.Count > 3;
 
             if (!doBulletList)
             {

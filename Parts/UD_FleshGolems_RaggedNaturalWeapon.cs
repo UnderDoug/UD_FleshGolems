@@ -9,7 +9,17 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_RaggedNaturalWeapon : IModification
     {
-        public static string Adjective => "{{UD_FleshGolems_ragged|ragged}}";
+        public const string RAGGED_ADJECTIVE = "ragged";
+        public const string JAGGED_ADJECTIVE = "jagged";
+        public const string FETTID_ADJECTIVE = "fettid";
+        public const string DECAYED_ADJECTIVE = "decayed";
+
+        public const string RAGGED_SHADER = "UD_FleshGolems_ragged";
+        public const string JAGGED_SHADER = "UD_FleshGolems_jagged";
+        public const string FETTID_SHADER = "UD_FleshGolems_fettid";
+        public const string DECAYED_SHADER = "UD_FleshGolems_decayed";
+
+        public string Adjective => GetAdjective();
 
         [SerializeField]
         private bool DisplayNameAdjusted;
@@ -24,6 +34,37 @@ namespace XRL.World.Parts
             DisplayNameAdjusted = false;
             Wielder = null;
             Description = null;
+        }
+
+        public string GetAdjective()
+        {
+            string adjective;
+            string colorShader;
+            if (Wielder?.GetBlueprint() is var wielderBlueprint)
+            {
+                if (wielderBlueprint.InheritsFrom("Robot Corpse"))
+                {
+                    adjective = RAGGED_ADJECTIVE;
+                    colorShader = RAGGED_SHADER;
+                }
+                else
+                if (wielderBlueprint.InheritsFrom("UD_FleshGolems Plant Corpse"))
+                {
+                    adjective = RAGGED_ADJECTIVE;
+                    colorShader = RAGGED_SHADER;
+                }
+                else
+                if (wielderBlueprint.InheritsFrom("UD_FleshGolems Fungus Corpse"))
+                {
+                    adjective = RAGGED_ADJECTIVE;
+                    colorShader = RAGGED_SHADER;
+                }
+                    adjective = RAGGED_ADJECTIVE;
+                    colorShader = RAGGED_SHADER;
+            }
+            adjective ??= RAGGED_ADJECTIVE;
+            colorShader ??= RAGGED_SHADER;
+            return "{{" + colorShader + "|" + adjective + "}}";
         }
 
         public override void Configure()
@@ -51,7 +92,10 @@ namespace XRL.World.Parts
             base.ApplyModification(obj);
         }
 
-        public override bool AllowStaticRegistration() => true;
+        public void ClearDescription()
+        {
+            Description = null;
+        }
 
         public void ProcessDescriptionElements(GameObject Wielder = null)
         {
@@ -72,6 +116,8 @@ namespace XRL.World.Parts
                 UnityEngine.Debug.Log(descriptionPart._Short);
             }
         }
+
+        public override bool AllowStaticRegistration() => true;
 
         public override bool WantEvent(int ID, int cascade) => base.WantEvent(ID, cascade)
             || ID == GetDisplayNameEvent.ID

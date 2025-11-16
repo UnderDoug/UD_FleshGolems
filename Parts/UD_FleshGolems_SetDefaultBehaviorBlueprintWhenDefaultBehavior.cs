@@ -23,17 +23,24 @@ namespace XRL.World.Parts
                 && bodyPart.DefaultBehaviorBlueprint != ParentObject.Blueprint)
             {
                 bodyPart.DefaultBehaviorBlueprint = ParentObject.Blueprint;
-                if (!RaggedAssigned
-                    && ParentObject.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedNaturalWeapon)
-                    && Wielder != null)
-                {
-                    raggedNaturalWeapon.Wielder = Wielder;
-                    raggedNaturalWeapon.ProcessDescriptionElements(Wielder);
-                    RaggedAssigned = true;
-                }
                 Assigned = bodyPart.DefaultBehaviorBlueprint == ParentObject.Blueprint;
             }
             return true;
+        }
+
+        public bool ProcessRaggedDescription(GameObject Wielder = null)
+        {
+            if (!RaggedAssigned
+                && ParentObject.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedNaturalWeapon)
+                && Wielder != null)
+            {
+                raggedNaturalWeapon.Wielder = Wielder;
+                raggedNaturalWeapon.ClearDescription();
+                raggedNaturalWeapon.ProcessDescriptionElements(Wielder);
+                RaggedAssigned = true;
+                return true;
+            }
+            return false;
         }
 
         public bool UnprocessAssignment(BodyPart bodyPart)
@@ -73,6 +80,7 @@ namespace XRL.World.Parts
                 && bodyPart.DefaultBehaviorBlueprint != item.Blueprint
                 && bodyPart.ParentBody.ParentObject is GameObject wielder)
             {
+                ProcessRaggedDescription(wielder);
                 ProcessAssignment(bodyPart, wielder);
             }
             return base.HandleEvent(E);

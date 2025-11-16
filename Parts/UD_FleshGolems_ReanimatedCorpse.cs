@@ -34,13 +34,14 @@ namespace XRL.World.Parts
             {
                 ReanimatorID = value?.ID;
                 _Reanimator = value;
+                AttemptToSuffer();
             }
         }
 
         public UD_FleshGolems_PastLife PastLife => ParentObject?.GetPart<UD_FleshGolems_PastLife>();
 
         private string _NewDisplayName;
-        public string NewDisplayName => _NewDisplayName ??= PastLife?.GenerateIDisplayName();
+        public string NewDisplayName => _NewDisplayName ??= PastLife?.GenerateDisplayName();
 
         private string _NewDescription;
         public string NewDescription => _NewDescription ??= PastLife?.GenerateDescription();
@@ -122,7 +123,7 @@ namespace XRL.World.Parts
             {
                 foreach (BodyPart bodyPart in frankenCorpse.Body.LoopParts())
                 {
-
+                    // consider fixing up the wonky natural weapon DisplayNames here.
                 }
                 if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
                 {

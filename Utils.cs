@@ -314,7 +314,8 @@ namespace UD_FleshGolems
         {
             return !ThisBlueprint.IsNullOrEmpty()
                 && !ThatBlueprint.IsNullOrEmpty()
-                && ThisBlueprint.GetGameObjectBlueprint().InheritsFrom(ThatBlueprint);
+                && ThisBlueprint.GetGameObjectBlueprint() is var thisGameObjectBlueprint
+                && thisGameObjectBlueprint.InheritsFrom(ThatBlueprint);
         }
 
         public static bool IsBaseGameObjectBlueprint(string Blueprint)

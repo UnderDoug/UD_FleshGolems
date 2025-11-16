@@ -12,6 +12,8 @@ using XRL.Wish;
 using XRL.World.Parts;
 using XRL.World.ZoneBuilders;
 
+using UD_FleshGolems;
+
 namespace XRL.World.WorldBuilders
 {
     [HasGameBasedStaticCache]
@@ -57,6 +59,8 @@ namespace XRL.World.WorldBuilders
             }
 
             WorldCreationProgress.StepProgress("Maddening science...");
+
+            Startup.CacheSomeCorpses();
 
             GameObject theMadMonger = GameObjectFactory.Factory.CreateObject(
                 ObjectBlueprint: "UD_FleshGolems Mad Monger",
@@ -119,7 +123,7 @@ namespace XRL.World.WorldBuilders
                 render = secretTerrainObject.GetPart<Render>();
             }
             secretWorldMapCell.GetFirstObjectWithPart("TerrainTravel").AddPart(new UD_FleshGolems_MadMongerTerrain());
-            if (Options.ShowOverlandEncounters && render != null)
+            if (UI.Options.ShowOverlandEncounters && render != null)
             {
                 render.RenderString = "&W*";
                 render.ParentObject.SetStringProperty("OverlayColor", "&M");
