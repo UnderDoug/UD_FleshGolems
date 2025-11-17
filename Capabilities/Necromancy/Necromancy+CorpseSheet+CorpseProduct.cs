@@ -41,7 +41,7 @@ namespace UD_FleshGolems.Capabilities
         public partial class CorpseSheet : IComposite
         {
             [Serializable]
-            public class CorpseProduct : IComposite, IEquatable<KeyValuePair<string, List<string>>>, IEquatable<Corpse>
+            public class CorpseProduct : IComposite, IEquatable<KeyValuePair<string, List<string>>>, IEquatable<CorpseEntityPair>
             {
                 public string Blueprint;
 
@@ -111,11 +111,11 @@ namespace UD_FleshGolems.Capabilities
                         && CorpseBlueprints.Equals(other.Value);
                 }
 
-                public bool Equals(Corpse other)
+                public bool Equals(CorpseEntityPair other)
                 {
                     return !CorpseBlueprints.IsNullOrEmpty()
                         && other is not null
-                        && CorpseBlueprints.Contains(other.Blueprint);
+                        && CorpseBlueprints.Contains(other.Corpse);
                 }
 
                 public static bool operator ==(CorpseProduct Operand1, KeyValuePair<string, List<string>> Operand2) => Operand1.Equals(Operand2);
@@ -123,10 +123,10 @@ namespace UD_FleshGolems.Capabilities
                 public static bool operator ==(KeyValuePair<string, List<string>> Operand1, CorpseProduct Operand2) => Operand2 == Operand1;
                 public static bool operator !=(KeyValuePair<string, List<string>> Operand1, CorpseProduct Operand2) => Operand2 != Operand1;
 
-                public static bool operator ==(CorpseProduct Operand1, Corpse Operand2) => Operand1.Equals(Operand2);
-                public static bool operator !=(CorpseProduct Operand1, Corpse Operand2) => !(Operand1 == Operand2);
-                public static bool operator ==(Corpse Operand1, CorpseProduct Operand2) => Operand2 == Operand1;
-                public static bool operator !=(Corpse Operand1, CorpseProduct Operand2) => Operand2 != Operand1;
+                public static bool operator ==(CorpseProduct Operand1, CorpseEntityPair Operand2) => Operand1.Equals(Operand2);
+                public static bool operator !=(CorpseProduct Operand1, CorpseEntityPair Operand2) => !(Operand1 == Operand2);
+                public static bool operator ==(CorpseEntityPair Operand1, CorpseProduct Operand2) => Operand2 == Operand1;
+                public static bool operator !=(CorpseEntityPair Operand1, CorpseProduct Operand2) => Operand2 != Operand1;
             }
         }
     }
