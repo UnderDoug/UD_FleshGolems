@@ -16,14 +16,14 @@ namespace UD_FleshGolems.Logging
 
         protected Indent Last;
 
-        protected int DefaultCapacity => 5;
+        protected int DefaultCapacity => Indent.MaxIndent;
 
         public Indents()
         {
             Items = new Indent[1];
             Items[0] = Debug.GetNewIndent();
             EnsureCapacity(DefaultCapacity);
-            Last = null;
+            Last = Items[0];
 
             Version = 0;
         }
@@ -66,12 +66,10 @@ namespace UD_FleshGolems.Logging
                 Capacity = DefaultCapacity;
             }
             Indent[] array = new Indent[Capacity];
-            Indent seedIndent = Items[0] ?? Debug.LastIndent;
+            Indent seedIndent = new Indent(Items[0]) ?? new Indent(Debug.GetNewIndent());
             for (int i = 0; i < Capacity; i++)
             {
-                Indent newIndent = new(seedIndent);
-                newIndent.Value += i;
-                array[i] = newIndent;
+                array[i] = new(i, seedIndent);
             }
             Items = array;
             Size = Capacity;

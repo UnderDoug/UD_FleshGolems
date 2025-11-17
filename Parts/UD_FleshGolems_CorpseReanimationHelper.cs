@@ -771,6 +771,7 @@ namespace XRL.World.Parts
                         reanimationHelper.Reanimator ??= GameObject.FindByBlueprint(reanimatorFallback);
                     }
                 }
+                Debug.Log(PastLife?.Blueprint, new Indents(1, Debug.LastIndents[0]));
 
                 bool wasPlayer = PastLife != null && PastLife.WasPlayer;
 

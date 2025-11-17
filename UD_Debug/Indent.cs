@@ -44,6 +44,10 @@ namespace UD_FleshGolems.Logging
             : this(Source.Value, Source.Factor, Source.Char)
         {
         }
+        public Indent(int offset, Indent Source)
+            : this(Source.Value + offset, Source.Factor, Source.Char)
+        {
+        }
 
         public void ResetIndent()
         {
@@ -59,9 +63,7 @@ namespace UD_FleshGolems.Logging
         }
         public void GetIndents(int Offset, out Indents Indents)
         {
-            Indent newIndent = new(this);
-            newIndent.Value += Offset; 
-            Indents = new(newIndent);
+            Indents = new(new Indent(Offset, this));
         }
         public void GetIndents(out Indents Indents)
         {

@@ -16,7 +16,18 @@ namespace UD_FleshGolems.Logging
     [HasGameBasedStaticCache]
     public static class Debug
     {
-        private static bool _DoDebug => DebugEnableLogging;
+        private static bool SilenceLogging = false;
+
+        public static void SetSilenceLogging(bool Value)
+        {
+            SilenceLogging = Value;
+        }
+        public static void ToggleLogging()
+        {
+            SetSilenceLogging(!SilenceLogging);
+        }
+
+        private static bool _DoDebug => DebugEnableLogging && !SilenceLogging;
         public static bool DoDebug
         {
             get
@@ -125,6 +136,16 @@ namespace UD_FleshGolems.Logging
             set => _LastIndent = value;
         }
 
+        [ModSensitiveStaticCache( CreateEmptyInstance = false )]
+        [GameBasedStaticCache( ClearInstance = false )]
+        private static Indents _LastIndents = null;
+
+        public static Indents LastIndents
+        {
+            get => _LastIndents ??= new(GetNewIndent());
+            set => _LastIndents = value;
+        }
+
         public static Indent GetNewIndent()
         {
             return new(0, 4, ' ');
@@ -132,13 +153,15 @@ namespace UD_FleshGolems.Logging
 
         public static void ResetIndent(out Indent Indent)
         {
-            _LastIndent = null;
-            Indent = LastIndent;
+            _LastIndents = null;
+            Indent = LastIndents;
+            _LastIndent = Indent;
         }
         public static void ResetIndent(out Indents Indent)
         {
-            _LastIndent = null;
-            Indent = new(LastIndent);
+            _LastIndents = null;
+            Indent = LastIndents;
+            _LastIndent = Indent;
         }
         [GameBasedCacheInit]
         [ModSensitiveCacheInit]
@@ -148,15 +171,17 @@ namespace UD_FleshGolems.Logging
         }
         public static void GetIndent(out Indent Indent)
         {
-            Indent = new(LastIndent);
+            Indent = LastIndents;
         }
         public static void SetIndent(Indent Indent)
         {
             LastIndent = Indent;
+            LastIndents = new(Indent);
         }
         public static void GetIndents(int Offset, out Indents Indents)
         {
-            LastIndent.GetIndents(Offset, out Indents);
+            Indents = new(Offset, LastIndents);
+            LastIndents = Indents;
         }
         public static void GetIndents(out Indents Indents)
         {

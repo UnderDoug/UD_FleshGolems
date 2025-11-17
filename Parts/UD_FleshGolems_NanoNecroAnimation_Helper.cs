@@ -29,13 +29,13 @@ namespace XRL.World.Parts
         {
             if (E.Actor.HasPart<NanoNecroAnimation>() || E.Actor.HasPartDescendedFrom<NanoNecroAnimation>())
             {
-                if (IsReanimatableCorpse)
+                if (NanoNecroAnimation.IsReanimatableCorpse(E.Object))
                 {
                     E.AddAction(
                         Name: "Reaimate Corpse",
                         Display: "reanimate corpse",
                         Command: NanoNecroAnimation.COMMAND_NAME_REANIMATE_ONE,
-                        Key: 'C',
+                        Key: '+',
                         FireOnActor: true,
                         Priority: 3,
                         WorksAtDistance: true,
@@ -44,21 +44,22 @@ namespace XRL.World.Parts
                     E.AddAction(
                         Name: "Assess Corpse",
                         Display: "assess corpse",
-                        Command: NanoNecroAnimation.COMMAND_NAME_POWERWORD_KILL,
-                        Key: 'S',
+                        Command: NanoNecroAnimation.ASSESS_CORPSE_NAME,
+                        Key: '?',
                         FireOnActor: true,
                         Priority: 3,
                         WorksAtDistance: true,
                         WorksTelekinetically: true,
                         WorksTelepathically: true);
                 }
-                if (HasCorpse)
+                if (NanoNecroAnimation.HasCorpse(E.Object)
+                    && !NanoNecroAnimation.IsReanimatableCorpse(E.Object))
                 {
                     E.AddAction(
                         Name: "Power Word: Kill",
                         Display: "power word: kill",
                         Command: NanoNecroAnimation.COMMAND_NAME_POWERWORD_KILL,
-                        Key: 'K',
+                        Key: ';',
                         FireOnActor: true,
                         Priority: 3,
                         WorksAtDistance: true,

@@ -9,6 +9,17 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_RaggedNaturalWeapon : IModification
     {
+        public enum TaxonomyAdjective : int
+        {
+            None = 0,
+            Ragged = 1,
+            Jagged = 2,
+            Fettid = 3,
+            Decayed = 4,
+        }
+
+        public const string TAXONOMY_PROPTAG = "UD_FleshGolems Ragged Taxonomy";
+
         public const string RAGGED_ADJECTIVE = "ragged";
         public const string JAGGED_ADJECTIVE = "jagged";
         public const string FETTID_ADJECTIVE = "fettid";
@@ -18,6 +29,8 @@ namespace XRL.World.Parts
         public const string JAGGED_SHADER = "UD_FleshGolems_jagged";
         public const string FETTID_SHADER = "UD_FleshGolems_fettid";
         public const string DECAYED_SHADER = "UD_FleshGolems_decayed";
+
+        public TaxonomyAdjective Taxonomy;
 
         public string Adjective => GetAdjective();
 
@@ -31,6 +44,7 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_RaggedNaturalWeapon()
         {
+            Taxonomy = TaxonomyAdjective.None;
             DisplayNameAdjusted = false;
             Wielder = null;
             Description = null;
@@ -38,31 +52,82 @@ namespace XRL.World.Parts
 
         public string GetAdjective()
         {
-            string adjective = null;
-            string colorShader = null;
-            if (Wielder?.GetBlueprint() is var wielderBlueprint)
+            if (Taxonomy == TaxonomyAdjective.None)
             {
-                if (wielderBlueprint.InheritsFrom("Robot Corpse"))
+                Taxonomy = DetermineTaxonomyAdjective(Wielder);
+            }
+            string adjective = Taxonomy switch
+            {
+                TaxonomyAdjective.Jagged  => JAGGED_ADJECTIVE,
+                TaxonomyAdjective.Fettid  => FETTID_ADJECTIVE,
+                TaxonomyAdjective.Decayed => DECAYED_ADJECTIVE,
+                                        _ => RAGGED_ADJECTIVE,
+            };
+            string colorShader = Taxonomy switch
+            {
+                TaxonomyAdjective.Jagged  => JAGGED_SHADER,
+                TaxonomyAdjective.Fettid  => FETTID_SHADER,
+                TaxonomyAdjective.Decayed => DECAYED_SHADER,
+                                        _ => RAGGED_SHADER,
+            };
+            return "{{" + colorShader + "|" + adjective + "}}";
+        }
+
+        public static TaxonomyAdjective DetermineTaxonomyAdjective(GameObject Wielder)
+        {
+            TaxonomyAdjective output = TaxonomyAdjective.None;
+            if (Wielder == null)
+            {
+                return output;
+            }
+            if (Wielder.TryGetPart(out UD_FleshGolems_PastLife pastLife))
+            {
+                if (pastLife.GetBlueprint().InheritsFrom("Robot"))
                 {
-                    adjective = RAGGED_ADJECTIVE;
-                    colorShader = RAGGED_SHADER;
+                    output = TaxonomyAdjective.Jagged;
                 }
                 else
-                if (wielderBlueprint.InheritsFrom("UD_FleshGolems Plant Corpse"))
+                if (pastLife.GetBlueprint().InheritsFrom("Plant"))
                 {
-                    adjective = RAGGED_ADJECTIVE;
-                    colorShader = RAGGED_SHADER;
+                    output = TaxonomyAdjective.Fettid;
                 }
                 else
-                if (wielderBlueprint.InheritsFrom("UD_FleshGolems Fungus Corpse"))
+                if (pastLife.GetBlueprint().InheritsFrom("Fungus"))
                 {
-                    adjective = RAGGED_ADJECTIVE;
-                    colorShader = RAGGED_SHADER;
+                    output = TaxonomyAdjective.Decayed;
+                }
+                else
+                {
+                    output = TaxonomyAdjective.Ragged;
                 }
             }
-            adjective ??= RAGGED_ADJECTIVE;
-            colorShader ??= RAGGED_SHADER;
-            return "{{" + colorShader + "|" + adjective + "}}";
+            else
+            if (Wielder.GetBlueprint() is var wielderBlueprint)
+            {
+                string taxonomyPropTag = wielderBlueprint.GetPropertyOrTag(TAXONOMY_PROPTAG);
+                if (wielderBlueprint.InheritsFrom("Robot Corpse")
+                    || taxonomyPropTag.EqualsNoCase(TaxonomyAdjective.Jagged.ToString()))
+                {
+                    output = TaxonomyAdjective.Jagged;
+                }
+                else
+                if (wielderBlueprint.InheritsFrom("UD_FleshGolems Plant Corpse")
+                    || taxonomyPropTag.EqualsNoCase(TaxonomyAdjective.Fettid.ToString()))
+                {
+                    output = TaxonomyAdjective.Fettid;
+                }
+                else
+                if (wielderBlueprint.InheritsFrom("UD_FleshGolems Fungus Corpse")
+                    || taxonomyPropTag.EqualsNoCase(TaxonomyAdjective.Decayed.ToString()))
+                {
+                    output = TaxonomyAdjective.Decayed;
+                }
+                else
+                {
+                    output = TaxonomyAdjective.Ragged;
+                }
+            }
+            return output;
         }
 
         public override void Configure()
@@ -102,6 +167,8 @@ namespace XRL.World.Parts
             {
                 this.Wielder ??= Wielder;
                 Wielder ??= this.Wielder;
+
+                Taxonomy = DetermineTaxonomyAdjective(Wielder);
 
                 string processedDescription = descriptionPart._Short.StartReplace().AddObject(Wielder).ToString();
                 Description = processedDescription;

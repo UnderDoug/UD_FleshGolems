@@ -24,7 +24,6 @@ namespace UD_FleshGolems
     [HasCallAfterGameLoaded]
     public static class Startup
     {
-        [GameBasedStaticCache( CreateInstance = false )]
         [ModSensitiveStaticCache]
         public static bool CachedCorpses = false;
 
@@ -83,7 +82,7 @@ namespace UD_FleshGolems
         }
         public static void SetLoadingStatusCaching()
         {
-            Loading.SetLoadingStatus("Caching Corpses" + GetPeriods(CachingPeriods, out CachingPeriods));
+            Loading.SetLoadingStatus("Loading Corpses" + GetPeriods(CachingPeriods, out CachingPeriods));
         }
         public static void CacheSomeCorpses()
         {

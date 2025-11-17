@@ -7,6 +7,7 @@
     <removetag Name="Tier" />
     <builder Name="Animated" ChanceOneIn="3000" />
     <builder Name="UD_FleshGolems_OptionallyAnimated" ChanceOneIn="1" />
+    <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Ragged" />
     <tag Name="HeroNameTitleDescriptor" Value="Suffering,Waiting,Silent" />
     <tag Name="HeroNameTitleAdmirers" Value="Surgeons,Healers,Scientists,Scientists of the Mad Variety" />
     <tag Name="DynamicObjectsTable:AnimatableFurniture" />
@@ -54,6 +55,7 @@
   </object>
   
   <object Name="Robot Corpse" Load="Merge">
+    <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Jagged" />
     <tag Name="HeroNameTitleDescriptor" Value="Scuffed,Broken-down,Corrupted" />
     <tag Name="HeroNameTitleAdmirers" Value="Tinkers,Craftspeople,Robots" />
     <tag Name="BodyType" Value="HumanoidRobot" />
@@ -128,6 +130,7 @@
           ColorString="&amp;g" RenderLayer="5" />
     <part Name="Description" Short="A mound of dank foliage and compost puts some elevation to the ground." />
     <part Name="Physics" Weight="10" />
+    <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Fettid" />
     <mixin Name="UD_FleshGolems PlantCorpseHeroics" />
     <tag Name="Plant" />
     <removetag Name="Meat" />
@@ -210,6 +213,7 @@
     <tag Name="Fungus" />
     <removetag Name="Meat" />
     <part Name="Physics" Weight="10" />
+    <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Decayed" />
     <tag Name="HeroNameTitleDescriptor" Value="Decayed,Barren,Blighted" />
     <tag Name="HeroNameTitleAdmirers" Value="Gardeners,MYcologists,The Last of Us" />
     <part Name="Food" Message="The material is soft and slimy." />
@@ -247,11 +251,13 @@
   </object>
 
   <object Name="Sated Dreamcrungle" Load="Merge">
-    <mixin Name="UD_FleshGolems Bush Corpse" Load="Fill" />
+    <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Fettid" />
+    <mixin Name="UD_FleshGolems Bush Corpse" />
   </object>
 
   <object Name="Jumble of Tongues" Load="Merge">
-    <mixin Name="UD_FleshGolems Flower Corpse" Load="Fill" />
+    <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Fettid" />
+    <mixin Name="UD_FleshGolems Flower Corpse" />
   </object>
   
   <!--

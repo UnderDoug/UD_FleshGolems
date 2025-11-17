@@ -8,11 +8,13 @@ using UD_FleshGolems.Logging;
 
 using XRL;
 using XRL.CharacterBuilds.Qud;
+using XRL.Collections;
 using XRL.Rules;
 using XRL.World;
 using XRL.World.Anatomy;
 using XRL.World.Parts;
 
+using static UD_FleshGolems.Capabilities.Necromancy;
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
 
@@ -68,12 +70,110 @@ namespace UD_FleshGolems
             return @char.ToString().ThisManyTimes(Times);
         }
 
-        public static void TryAdd<T>(this ICollection<T> Collection, T Item)
+        public static void AddUnique<T>(this ICollection<T> Collection, T Item, EqualityComparer<T> Comparer)
         {
-            if (!Collection.Contains(Item))
+            if (Collection == null)
             {
-                Collection.Add(Item);
+                throw new ArgumentNullException(nameof(Collection));
             }
+            if (Item == null)
+            {
+                throw new ArgumentNullException(nameof(Item));
+            }
+            foreach (T item in Collection)
+            {
+                if ((Comparer != null && Comparer.Equals(item, Item))
+                    || (Comparer == null && item.Equals(Item)))
+                {
+                    return;
+                }
+            }
+            Collection.Add(Item);
+        }
+        public static void AddUnique<T>(this ICollection<T> Collection, T Item)
+        {
+            Collection?.AddUnique(Item, null);
+        }
+
+        /// <summary>
+        /// Adds an <paramref name="Item"/> to the <paramref name="List"/> if it doesn't already contain the item. Replaces the <paramref name="Item"/> in the <paramref name="List"/>, or only conditonally does so <paramref name="OnBasisOldNew"/> of the provided <see cref="Func{T, T, bool}"/>, returning true if the <paramref name="List"/> is altered.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="List">The list of <paramref name="Item"/>s to add the unique entry to.</param>
+        /// <param name="Item">The item being added tp the <paramref name="List"/> if the <paramref name="List"/> already contains the item according to the provided <paramref name="Comparer"/>.</param>
+        /// <param name="Comparer">The function by which to determine whether the <paramref name="List"/> already contains the passed <paramref name="Item"/>.</param>
+        /// <param name="OnBasisOldNew">The function by which to determine if the passed <paramref name="Item"/> should replace an existing one as determined by <paramref name="Comparer"/>.</param>
+        /// <returns>
+        ///     <see langword="true"/> if the <paramref name="List"/> is altered;<br />
+        ///     <see langword="false"/>, otherwise.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        ///     If <paramref name="List"/> is <see langword="null"/>, or if <paramref name="Item"/>.<see cref="object.Equals"/>(<see langword="default"/>)
+        /// </exception>
+        public static bool AddUnique<T>(this IList<T> List, T Item, Func<T, T, bool> Comparer, Func<T, T, bool> OnBasisOldNew)
+        {
+            if (List == null)
+            {
+                throw new ArgumentNullException(nameof(List));
+            }
+            if (Item.Equals(default))
+            {
+                throw new ArgumentNullException(nameof(Item));
+            }
+            int index = -1;
+            foreach (T item in List)
+            {
+                if ((Comparer != null && Comparer(item, Item))
+                    || (Comparer == null && item.Equals(Item)))
+                {
+                    index = List.IndexOf(item);
+                    break;
+                }
+            }
+            if (index >= 0)
+            {
+                if (OnBasisOldNew == null || OnBasisOldNew(Item, List[index]))
+                {
+                    List[index] = Item;
+                    return true;
+                }
+                return false;
+            }
+            List.Add(Item);
+            return true;
+        }
+
+        public static bool AddUnique<T>(this IList<T> List, T Item, EqualityComparer<T> Comparer, Comparer<T> OnBasisOldNew)
+        {
+            if (List == null)
+            {
+                throw new ArgumentNullException(nameof(List));
+            }
+            if (Item.Equals(default))
+            {
+                throw new ArgumentNullException(nameof(Item));
+            }
+            int index = -1;
+            foreach (T item in List)
+            {
+                if ((Comparer != null && Comparer.Equals(item, Item))
+                    || (Comparer == null && item.Equals(Item)))
+                {
+                    index = List.IndexOf(item);
+                    break;
+                }
+            }
+            if (index >= 0)
+            {
+                if (OnBasisOldNew == null || OnBasisOldNew.Compare(Item, List[index]) > 0)
+                {
+                    List[index] = Item;
+                    return true;
+                }
+                return false;
+            }
+            List.Add(Item);
+            return true;
         }
 
         public static T GetRandomElementCosmeticExcluding<T>(this IEnumerable<T> Enumerable, Predicate<T> Exclude)
@@ -273,11 +373,30 @@ namespace UD_FleshGolems
             }
             return false;
         }
+        public static void GetCorpseBlueprintAndChance(this GameObjectBlueprint Blueprint, out string CorpseBlueprint, out int CorpseChance)
+        {
+            CorpseBlueprint = Blueprint?.GetCorpseBlueprint();
+            CorpseChance = (Blueprint?.GetCorpseChance()).GetValueOrDefault();
+        }
         public static bool TryGetCorpseBlueprintAndChance(this GameObjectBlueprint Blueprint, out string CorpseBlueprint, out int CorpseChance)
         {
             CorpseChance = 0;
             return Blueprint.TryGetCorpseBlueprint(out CorpseBlueprint)
                 && Blueprint.TryGetCorpseChance(out CorpseChance);
+        }
+        public static BlueprintWeightPair GetCorpseBlueprintWeightPair(this GameObjectBlueprint Blueprint)
+        {
+            BlueprintWeightPair CorpseBlueprintWeightPair = null;
+            if (Blueprint?.GetCorpseBlueprint() is string corpseBlueprint
+                && Blueprint?.GetCorpseChance() is int corpseChance)
+            {
+                CorpseBlueprintWeightPair = new(corpseBlueprint, corpseChance);
+            }
+            return CorpseBlueprintWeightPair;
+        }
+        public static bool TryGetCorpseBlueprintAndChance(this GameObjectBlueprint Blueprint, out BlueprintWeightPair CorpseBlueprintWeightPair)
+        {
+            return (CorpseBlueprintWeightPair = GetCorpseBlueprintWeightPair(Blueprint)) != null;
         }
 
 
@@ -308,9 +427,32 @@ namespace UD_FleshGolems
                 && Corpse.GetBlueprint().IsCorpse(Filter);
         }
 
+        public static bool InheritsFromAny(this GameObjectBlueprint Blueprint, List<string> BaseBlueprints)
+        {
+            foreach (string baseBlueprint in BaseBlueprints)
+            {
+                if (Blueprint.InheritsFrom(baseBlueprint))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static bool InheritsFrom(this string Blueprint, string BaseBlueprint)
         {
             return Utils.ThisBlueprintInheritsFromThatOne(Blueprint, BaseBlueprint);
+        }
+        public static bool InheritsFromAny(this string Blueprint, List<string> BaseBlueprints)
+        {
+            foreach (string baseBlueprint in BaseBlueprints)
+            {
+                if (Blueprint.InheritsFrom(baseBlueprint))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static bool IsBaseBlueprint(this string Blueprint)
@@ -551,6 +693,16 @@ namespace UD_FleshGolems
                 yield return count.Things(item.ToString());
             }
             yield break;
+        }
+        public static List<string> ConvertToStringList<T>(this StringMap<T>.ValueEnumerator Entries, Func<T, string> Proc)
+        {
+            List<string> outputList = new();
+            foreach (T entry in Entries)
+            {
+                string entryProc = Proc != null ? Proc(entry) : entry.ToString();
+                outputList.Add(entryProc);
+            }
+            return outputList;
         }
 
         public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
