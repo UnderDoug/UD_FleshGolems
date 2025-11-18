@@ -176,7 +176,8 @@ namespace UD_FleshGolems.Capabilities
                         && Relationship.Equals(other.Value);
                 }
 
-                public static bool operator ==(CorpseEntityPair Operand1, BlueprintWeight Operand2) => Operand1.Equals(Operand2);
+                public static bool operator ==(CorpseEntityPair Operand1, BlueprintWeight Operand2)
+                    => Operand1 != null && Operand1.Equals(Operand2);
                 public static bool operator !=(CorpseEntityPair Operand1, BlueprintWeight Operand2) => !(Operand1 == Operand2);
 
                 // Comparison
