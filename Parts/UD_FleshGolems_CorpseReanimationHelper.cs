@@ -30,6 +30,7 @@ namespace XRL.World.Parts
     {
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
+        public const string REANIMATED_TILE_PROPTAG = "UD_FleshGolems_PastLife_TileOverride";
 
 
         public const string CYBERNETICS_LICENSES = "CyberneticsLicenses";
@@ -982,6 +983,10 @@ namespace XRL.World.Parts
                                 frankenCorpse.Render.Tile = sourceTile;
                             }
                         }
+                    }
+                    if (frankenCorpse.GetPropertyOrTag(REANIMATED_TILE_PROPTAG, Default: null) is string tileOverride)
+                    {
+                        frankenCorpse.Render.Tile = tileOverride;
                     }
 
                     Debug.Log("Granting SourceBlueprint Natural Equipment...", indent[1]);

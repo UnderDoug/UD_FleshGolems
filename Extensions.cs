@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -15,6 +16,7 @@ using XRL.World.Anatomy;
 using XRL.World.Parts;
 
 using static UD_FleshGolems.Capabilities.Necromancy;
+using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
 
@@ -44,6 +46,15 @@ namespace UD_FleshGolems
             }
             throw new ArgumentOutOfRangeException(nameof(MethodBase), "Not found.");
         }
+
+
+
+        public static bool InheritsFrom(this Type T, Type Type, bool IncludeSelf = true)
+            => (IncludeSelf && T == Type) 
+            || Type.IsSubclassOf(T) 
+            || T.IsAssignableFrom(Type) 
+            || (T.YieldInheritedTypes().ToList() is List<Type> inheritedTypes 
+                && inheritedTypes.Contains(Type));
 
         public static bool IsPlayerBlueprint(this string Blueprint)
         {
@@ -143,7 +154,7 @@ namespace UD_FleshGolems
             return true;
         }
 
-        public static bool AddUnique<T>(this IList<T> List, T Item, EqualityComparer<T> Comparer, Comparer<T> OnBasisOldNew)
+        public static bool AddUnique<T>(this IList<T> List, T Item, EqualityComparer<T> EqualityComparer, Comparer<T> Comparer)
         {
             if (List == null)
             {
@@ -156,8 +167,8 @@ namespace UD_FleshGolems
             int index = -1;
             foreach (T item in List)
             {
-                if ((Comparer != null && Comparer.Equals(item, Item))
-                    || (Comparer == null && item.Equals(Item)))
+                if ((EqualityComparer != null && EqualityComparer.Equals(item, Item))
+                    || (EqualityComparer == null && item.Equals(Item)))
                 {
                     index = List.IndexOf(item);
                     break;
@@ -165,7 +176,7 @@ namespace UD_FleshGolems
             }
             if (index >= 0)
             {
-                if (OnBasisOldNew == null || OnBasisOldNew.Compare(Item, List[index]) > 0)
+                if (Comparer == null || Comparer.Compare(Item, List[index]) > 0)
                 {
                     List[index] = Item;
                     return true;
@@ -384,17 +395,17 @@ namespace UD_FleshGolems
             return Blueprint.TryGetCorpseBlueprint(out CorpseBlueprint)
                 && Blueprint.TryGetCorpseChance(out CorpseChance);
         }
-        public static BlueprintWeightPair GetCorpseBlueprintWeightPair(this GameObjectBlueprint Blueprint)
+        public static CorpseEntityPair GetCorpseBlueprintWeightPair(this GameObjectBlueprint Blueprint)
         {
-            BlueprintWeightPair CorpseBlueprintWeightPair = null;
+            CorpseEntityPair CorpseBlueprintWeightPair = null;
             if (Blueprint?.GetCorpseBlueprint() is string corpseBlueprint
                 && Blueprint?.GetCorpseChance() is int corpseChance)
             {
-                CorpseBlueprintWeightPair = new(corpseBlueprint, corpseChance);
+                CorpseBlueprintWeightPair = new(new CorpseBlueprint(corpseBlueprint), new EntityBlueprint(Blueprint), corpseChance, CorpseEntityPair.PairRelationship.PrimaryCorpse);
             }
             return CorpseBlueprintWeightPair;
         }
-        public static bool TryGetCorpseBlueprintAndChance(this GameObjectBlueprint Blueprint, out BlueprintWeightPair CorpseBlueprintWeightPair)
+        public static bool TryGetCorpseBlueprintAndChance(this GameObjectBlueprint Blueprint, out CorpseEntityPair CorpseBlueprintWeightPair)
         {
             return (CorpseBlueprintWeightPair = GetCorpseBlueprintWeightPair(Blueprint)) != null;
         }

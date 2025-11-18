@@ -34,11 +34,12 @@
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
-    <part Name="Render" DetailColor="w" TileColor="&amp;r"
+    <part Name="Render" DetailColor="K" TileColor="&amp;r"
           DisplayName="the corpse of Jofo Qudwufo" />
     <property Name="CreatureName" Value="Jofo Qudwufo" />
     <property Name="UD_FleshGolems_CreatureProperName" Value="Jofo Qudwufo" />
     <property Name="UD_FleshGolems_PastLife_Blueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
+    <property Name="UD_FleshGolems_PastLife_TileOverride" Value="FleshGolems/ud_flesh_golem_snapjaw_jofo.png" />
     <property Name="SourceBlueprint" Value="UD_FleshGolems Late Jofo Qudwufo" />
     <tag Name="UD_FleshGolems_Reanimator" Value="UD_FleshGolems Mad Monger" />
     <part Name="Brain" Hostile="false" />

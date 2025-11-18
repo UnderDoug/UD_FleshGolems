@@ -1,38 +1,6 @@
 ﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using System.Collections;
-using System.Linq;
-using System.Reflection;
 
-using HarmonyLib;
-
-using Genkit;
-using Qud.API;
-
-using XRL.UI;
-using XRL.Wish;
-using XRL.Rules;
-using XRL.Language;
-using XRL.Collections;
 using XRL.World;
-using XRL.World.AI;
-using XRL.World.Parts.Mutation;
-using XRL.World.Parts.Skill;
-using XRL.World.Anatomy;
-using XRL.World.ObjectBuilders;
-
-using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
-using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
-
-using UD_FleshGolems;
-using UD_FleshGolems.Logging;
-using static UD_FleshGolems.Const;
-using static UD_FleshGolems.Utils;
-
-using SerializeField = UnityEngine.SerializeField;
-using XRL;
-using XRL.World.Parts;
 
 namespace UD_FleshGolems.Capabilities
 {
@@ -40,8 +8,7 @@ namespace UD_FleshGolems.Capabilities
     {
         public partial class CorpseSheet : IComposite
         {
-            [Serializable]
-            public abstract class BlueprintWrapper
+            public abstract partial class BlueprintWrapper
                 : IComposite
                 , IEquatable<BlueprintWrapper>
                 , IEquatable<string>
