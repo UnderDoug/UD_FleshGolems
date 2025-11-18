@@ -16,10 +16,6 @@ namespace UD_FleshGolems.Capabilities
     {
         public partial class CorpseSheet : IComposite
         {
-            [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-            [GameBasedStaticCache(ClearInstance = false)]
-            public static StringMap<CorpseSheet> CorpseSheets = new();
-
             [Serializable] public abstract partial class BlueprintWrapper : IComposite { }
             [Serializable] public partial class CorpseBlueprint : BlueprintWrapper, IComposite { }
             [Serializable] public partial class CorpseProduct : CorpseBlueprint, IComposite { }
@@ -41,7 +37,7 @@ namespace UD_FleshGolems.Capabilities
             public bool IsCorpseProduct
             {
                 get => _IsCorpseProduct = Corpse.GetType().InheritsFrom(typeof(CorpseProduct));
-                private set
+                set
                 {
                     if (value != _IsCorpseProduct)
                     {
@@ -71,19 +67,7 @@ namespace UD_FleshGolems.Capabilities
                 this.Corpse = Corpse;
             }
 
-            public static bool TryGetCorpseSheet(string Corpse, out CorpseSheet CorpseSheet)
-            {
-                CorpseSheets ??= new();
-                if (CorpseSheets[Corpse] is CorpseSheet cachedCorpseSheet)
-                {
-                    CorpseSheet = cachedCorpseSheet;
-                    return true;
-                }
-                CorpseSheet = null;
-                return false;
-            }
-
-            public void Deconstruct(out string Corpse) => Corpse = this.Corpse.Blueprint;
+            public void Deconstruct(out string Corpse) => Corpse = this.Corpse.Name;
             public void Deconstruct(out CorpseBlueprint Corpse) => Corpse = this.Corpse;
             public void Deconstruct(out GameObjectBlueprint Corpse) => Corpse = this.Corpse.GetGameObjectBlueprint();
             public void Deconstruct(out IReadOnlyList<CorpseEntityPair> Pairs) => Pairs = this.Pairs;
@@ -213,11 +197,12 @@ namespace UD_FleshGolems.Capabilities
             public IReadOnlyList<EntityWeight> GetEntityWeights(Predicate<GameObjectBlueprint> Filter = null)
                 => GetEntityWeights(false, Filter);
 
-            public CorpseSheet AddPair(CorpseEntityPair Pair)
+            public CorpseSheet AddPair(CorpseEntityPair Pair, bool SkipInherited = false)
             {
                 Pairs ??= new();
                 Pairs.AddUnique(Pair);
-                if (GetInheritedCorpses(Pair) is List<CorpseEntityPair> inheritedCorpses
+                if (!SkipInherited
+                    && GetInheritedCorpses(Pair) is List<CorpseEntityPair> inheritedCorpses
                     && !inheritedCorpses.IsNullOrEmpty())
                 {
                     Pairs.AddRange(inheritedCorpses);
@@ -240,11 +225,17 @@ namespace UD_FleshGolems.Capabilities
             public CorpseSheet AddPrimaryEntity(string EntityBlueprint, int Weight)
                 => AddEntity(EntityBlueprint, Weight, Relationship.PrimaryCorpse);
 
+            public CorpseSheet AddProductEntity(EntityWeight EntityWeight)
+                => AddEntity(EntityWeight.Blueprint.Name, EntityWeight.Weight, Relationship.CorpseProduct);
+
+            public CorpseSheet AddCountsAsEntity(EntityWeight EntityWeight)
+                => AddEntity(EntityWeight.Blueprint.Name, EntityWeight.Weight, Relationship.CorpseCountsAs);
+
             public bool CorpseHasEntity(string Entity, bool CheckAll = true)
                 => GetEntityWeights(!CheckAll).Any(c => c.Blueprint == Entity);
 
             public bool CorpseHasEntity(EntityBlueprint Entity, bool CheckAll = true)
-                => CorpseHasEntity(Entity.Blueprint, CheckAll);
+                => CorpseHasEntity(Entity.Name, CheckAll);
 
             public bool CorpseHasEntityWithWeight(EntityWeight EntityWeight, bool CheckAll = true)
                 => GetEntityWeights(!CheckAll).Any(c => c.Blueprint == EntityWeight.Blueprint && c.Weight == EntityWeight.Weight);

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 using Qud.API;
 
@@ -339,6 +340,36 @@ namespace UD_FleshGolems
         {
             return Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
                 && gameObjectBlueprint.IsExcludedFromDynamicEncounters();
+        }
+
+        public static List<string> GetDistinctFromPopulation(
+            string TableName,
+            int n,
+            Dictionary<string, string> vars = null,
+            string defaultIfNull = null)
+        {
+            Debug.GetIndents(out Indents indent);
+            Debug.Log(
+                Debug.GetCallingTypeAndMethod() + "(" +
+                nameof(TableName) + ": " + TableName + ", " +
+                nameof(n) + ": " + n + ", " +
+                nameof(vars) + ": " + (vars == null ? 0 : vars.Count) + ", " +
+                nameof(defaultIfNull) + ": " + defaultIfNull + ")",
+                indent[1]);
+
+            List<string> returnList = new();
+            if (PopulationManager.RollDistinctFrom(TableName, n, vars, defaultIfNull) is List<List<PopulationResult>> populationResultsList)
+            {
+                foreach (List<PopulationResult> populationResults in populationResultsList)
+                {
+                    foreach (PopulationResult populationResult in populationResults)
+                    {
+                        Debug.Log(populationResult.Blueprint, indent[2]);
+                        returnList.AddUnique(populationResult.Blueprint);
+                    }
+                }
+            }
+            return returnList;
         }
 
         /* 

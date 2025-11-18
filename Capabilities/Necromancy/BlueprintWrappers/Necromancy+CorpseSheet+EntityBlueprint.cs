@@ -16,7 +16,7 @@ namespace UD_FleshGolems.Capabilities
                 public EntityBlueprint() : base() { }
                 public EntityBlueprint(string Blueprint) : base(Blueprint) { }
                 public EntityBlueprint(GameObjectBlueprint Blueprint) : base(Blueprint) { }
-                public EntityBlueprint(BlueprintWrapper Source) : base(Source.Blueprint) { }
+                public EntityBlueprint(BlueprintWrapper Source) : base(Source.Name) { }
                 public EntityBlueprint(EntityBlueprint Source) : base(Source) { }
 
                 public static explicit operator EntityBlueprint(string Operand) => new(Operand);
@@ -31,11 +31,11 @@ namespace UD_FleshGolems.Capabilities
                     => other is EntityBlueprint otherEntity 
                     && Equals(otherEntity);
 
-                public bool Equals(EntityBlueprint other) => Blueprint == other.Blueprint;
+                public bool Equals(EntityBlueprint other) => Name == other.Name;
 
                 public static bool operator ==(EntityBlueprint Operand1, CorpseBlueprint Operand2)
                     => Operand1.GetType() == Operand2.GetType()
-                    && Operand1.Blueprint == Operand2.Blueprint;
+                    && Operand1.Name == Operand2.Name;
                 public static bool operator !=(EntityBlueprint Operand1, CorpseBlueprint Operand2) => !(Operand1 == Operand2);
 
                 public static bool operator ==(EntityBlueprint Operand1, CorpseProduct Operand2)
@@ -43,7 +43,7 @@ namespace UD_FleshGolems.Capabilities
                     && false;
                 public static bool operator !=(EntityBlueprint Operand1, CorpseProduct Operand2) => !(Operand1 == Operand2);
 
-                public static bool operator ==(EntityBlueprint Operand1, string Operand2) => Operand1.Blueprint == Operand2;
+                public static bool operator ==(EntityBlueprint Operand1, string Operand2) => Operand1.Name == Operand2;
                 public static bool operator !=(EntityBlueprint Operand1, string Operand2) => !(Operand1 == Operand2);
 
                 public static bool operator ==(EntityBlueprint Operand1, GameObjectBlueprint Operand2) => Operand1 == Operand2.Name;

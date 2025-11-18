@@ -157,7 +157,7 @@ namespace UD_FleshGolems.Capabilities
 
                 public bool Equals(CorpseEntityPair other)
                 {
-                    return other.Equals(null)
+                    return other != null
                         && Corpse.Equals(other.Corpse)
                         && Entity.Equals(other.Entity)
                         && Weight.Equals(other.Weight)
@@ -165,7 +165,7 @@ namespace UD_FleshGolems.Capabilities
                 }
                 public bool Equals(BlueprintWeight other)
                 {
-                    return other.Equals(null)
+                    return other != null
                         && Corpse.Equals(other.Blueprint)
                         && Weight.Equals(other.Weight);
                 }

@@ -590,18 +590,18 @@ namespace UD_FleshGolems
             return weightedList;
         }
 
-        public static Dictionary<string, int> ConvertToWeightedList(this IEnumerable<UD_FleshGolems_PastLife.BlueprintWeightPair> Items)
+        public static Dictionary<string, int> ConvertToWeightedList(this IEnumerable<EntityWeight> Entries)
         {
             Dictionary<string, int> weightedList = new();
-            foreach (UD_FleshGolems_PastLife.BlueprintWeightPair item in Items)
+            foreach ((BlueprintWrapper blueprint, int weight ) in Entries)
             {
-                if (weightedList.ContainsKey((string)item))
+                if (weightedList.ContainsKey(blueprint.Name))
                 {
-                    weightedList[(string)item] += (int)item;
+                    weightedList[blueprint.Name] += weight;
                 }
                 else
                 {
-                    weightedList.Add((string)item, (int)item);
+                    weightedList.Add(blueprint.Name, weight);
                 }
             }
             return weightedList;

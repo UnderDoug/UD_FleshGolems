@@ -30,6 +30,7 @@ namespace XRL.World.Parts
     {
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
+        public const string REANIMATED_ALT_TILE_PROPTAG = "UD_FleshGolems_AlternateTileFor:";
         public const string REANIMATED_TILE_PROPTAG = "UD_FleshGolems_PastLife_TileOverride";
 
 
@@ -954,6 +955,12 @@ namespace XRL.World.Parts
                         {
                             frankenCorpse.Render.Tile = golemTile;
                         }
+                        string alternateTileTag = REANIMATED_ALT_TILE_PROPTAG + golemBodyBlueprint.Name.Replace(" Golem", "");
+                        if (GameObjectFactory.Factory.GetBlueprintIfExists("UD_FleshGolems_TileMappings") is GameObjectBlueprint tileMappings
+                            && tileMappings.TryGetStringPropertyOrTag(alternateTileTag, out string alternateTile))
+                        {
+                            frankenCorpse.Render.Tile = alternateTile;
+                        }
 
                         bool giganticIfNotAlready(BaseMutation BM)
                         {
@@ -1194,6 +1201,8 @@ namespace XRL.World.Parts
                     reanimatedCorpse.Reanimator = reanimationHelper.Reanimator;
                     // reanimatedCorpse.AttemptToSuffer();
                 }
+
+                frankenBody?.UpdateBodyParts();
 
                 Debug.SetIndent(indent[0]);
                 return true;

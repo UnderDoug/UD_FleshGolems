@@ -88,6 +88,7 @@ namespace UD_FleshGolems
         {
             if (!CachedCorpses)
             {
+                /*
                 Loading.SetLoadingStatus("Caching Corpses");
                 Debug.GetIndents(out Indents indent);
                 Debug.Log(Debug.GetCallingTypeAndMethod(true), "Started!", indent[1]);
@@ -115,6 +116,7 @@ namespace UD_FleshGolems
 
                 Debug.SetIndent(indent[0]);
                 CachedCorpses = true;
+                */
             }
         }
     }

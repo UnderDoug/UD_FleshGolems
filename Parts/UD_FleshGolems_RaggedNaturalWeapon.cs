@@ -87,12 +87,16 @@ namespace XRL.World.Parts
                     output = TaxonomyAdjective.Jagged;
                 }
                 else
-                if (pastLife.GetBlueprint().InheritsFrom("Plant"))
+                if (pastLife.GetBlueprint().InheritsFrom("Plant")
+                    || pastLife.GetBlueprint().InheritsFrom("BasePlant")
+                    || pastLife.GetBlueprint().InheritsFrom("MutatedPlant"))
                 {
                     output = TaxonomyAdjective.Fettid;
                 }
                 else
-                if (pastLife.GetBlueprint().InheritsFrom("Fungus"))
+                if (pastLife.GetBlueprint().InheritsFrom("Fungus")
+                    || pastLife.GetBlueprint().InheritsFrom("ActiveFungus")
+                    || pastLife.GetBlueprint().InheritsFrom("MutatedFungus"))
                 {
                     output = TaxonomyAdjective.Decayed;
                 }
@@ -170,15 +174,14 @@ namespace XRL.World.Parts
 
                 Taxonomy = DetermineTaxonomyAdjective(Wielder);
 
-                string processedDescription = descriptionPart._Short.StartReplace().AddObject(Wielder).ToString();
-                Description = processedDescription;
-                UnityEngine.Debug.Log(processedDescription);
+                string processedDescription = descriptionPart._Short
+                    .StartReplace()
+                    .AddObject(Wielder)
+                    .ToString();
 
-                UnityEngine.Debug.Log(Description);
+                Description = processedDescription;
 
                 descriptionPart._Short = Description;
-
-                UnityEngine.Debug.Log(descriptionPart._Short);
             }
         }
 

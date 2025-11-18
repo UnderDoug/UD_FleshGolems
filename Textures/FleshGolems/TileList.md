@@ -1,0 +1,68 @@
+# Types of Thing That Need a Tile
+
+- Antelope
+- Ape
+- Baboon
+- Baetyl
+- Bat
+- Bear
+- Bed
+- Bipedal Robot
+- Bird
+- Bush
+- Cat
+- Chair
+- Clam
+- Crab
+- Cragmensch
+- Crystal
+- Dawnglider
+- Dog
+- Door
+- Dromad
+- Equine
+- Fish
+- Flower
+- Fractus
+- Frog
+- Fungus
+- Goat
+- Goatfolk	
+- Hexapodal Robot
+- Hindren
+- Hover
+- Human (done)
+- Humanoid Robot
+- Infrastructure
+- Insect
+- Iron Maiden
+- Jelly
+- Lichen
+- Mopango
+- Mopango Charioteer
+- Nest
+- Oddity
+- Ooze
+- Quadrupedal Robot
+- Reptile
+- Root
+- Slug
+- Slynth
+- Snail
+- Snapjaw
+- Spider
+- Succulent
+- Svardym
+- Swine
+- Table
+- Tortoise
+- Tripedal Robot
+- Tree
+- Troll
+- Turret
+- Urchin
+- Urshiib
+- Vine
+- Wall
+- Wheeled Robot
+- Worm

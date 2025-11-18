@@ -12,8 +12,16 @@ namespace UD_FleshGolems.Capabilities
             {
                 public EntityWeight(EntityBlueprint Corpse, int Weight) : base(Corpse, Weight) { }
 
-                public static implicit operator KeyValuePair<EntityBlueprint, int>(EntityWeight Operand) => new((EntityBlueprint)Operand.Blueprint, Operand.Weight);
-                public static implicit operator EntityWeight(KeyValuePair<EntityBlueprint, int> Operand) => new(Operand.Key, Operand.Value);
+                public void Deconstruct(out EntityBlueprint Blueprint, out int Weight)
+                {
+                    Blueprint = this.Blueprint as EntityBlueprint;
+                    Weight = this.Weight;
+                }
+
+                public static implicit operator KeyValuePair<EntityBlueprint, int>(EntityWeight Operand)
+                    => new((EntityBlueprint)Operand.Blueprint, Operand.Weight);
+                public static implicit operator EntityWeight(KeyValuePair<EntityBlueprint, int> Operand)
+                    => new(Operand.Key, Operand.Value);
             }
         }
     }

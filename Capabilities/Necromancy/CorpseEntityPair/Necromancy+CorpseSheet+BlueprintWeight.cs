@@ -14,10 +14,17 @@ namespace UD_FleshGolems.Capabilities
                 public int Weight;
                 public BlueprintWeight(BlueprintWrapper BlueprintWrapper, int Weight)
                 {
-                    this.Blueprint = BlueprintWrapper;
+                    Blueprint = BlueprintWrapper;
                     this.Weight = Weight;
                 }
-                public static implicit operator KeyValuePair<BlueprintWrapper, int>(BlueprintWeight Operand) => new(Operand.Blueprint, Operand.Weight);
+                public static implicit operator KeyValuePair<BlueprintWrapper, int>(BlueprintWeight Operand)
+                    => new(Operand.Blueprint, Operand.Weight);
+
+                public void Deconstruct(out BlueprintWrapper Blueprint, out int Weight)
+                {
+                    Blueprint = this.Blueprint;
+                    Weight = this.Weight;
+                }
             }
         }
     }

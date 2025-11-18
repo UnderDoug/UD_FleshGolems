@@ -16,7 +16,7 @@ namespace UD_FleshGolems.Capabilities
                 public CorpseBlueprint() : base() { }
                 public CorpseBlueprint(string Blueprint) : base(Blueprint) { }
                 public CorpseBlueprint(GameObjectBlueprint Blueprint) : base(Blueprint) { }
-                public CorpseBlueprint(BlueprintWrapper Source) : base(Source.Blueprint) { }
+                public CorpseBlueprint(BlueprintWrapper Source) : base(Source.Name) { }
                 public CorpseBlueprint(CorpseBlueprint Source) : base(Source) { }
 
                 public static explicit operator CorpseBlueprint(string Operand) => new(Operand);
@@ -31,14 +31,14 @@ namespace UD_FleshGolems.Capabilities
                     => other is CorpseBlueprint otherEntity
                     && Equals(otherEntity);
 
-                public bool Equals(CorpseBlueprint other) => Blueprint == other.Blueprint;
+                public bool Equals(CorpseBlueprint other) => Name == other.Name;
 
                 public static bool operator ==(CorpseBlueprint Operand1, EntityBlueprint Operand2)
                     => Operand1.GetType() == Operand2.GetType()
-                    && Operand1.Blueprint == Operand2.Blueprint;
+                    && Operand1.Name == Operand2.Name;
                 public static bool operator !=(CorpseBlueprint Operand1, EntityBlueprint Operand2) => !(Operand1 == Operand2);
 
-                public static bool operator ==(CorpseBlueprint Operand1, string Operand2) => Operand1.Blueprint == Operand2;
+                public static bool operator ==(CorpseBlueprint Operand1, string Operand2) => Operand1.Name == Operand2;
                 public static bool operator !=(CorpseBlueprint Operand1, string Operand2) => !(Operand1 == Operand2);
 
                 public static bool operator ==(CorpseBlueprint Operand1, GameObjectBlueprint Operand2) => Operand1 == Operand2.Name;

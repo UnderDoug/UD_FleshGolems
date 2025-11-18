@@ -14,34 +14,34 @@ namespace UD_FleshGolems.Capabilities
                 , IEquatable<string>
                 , IEquatable<GameObjectBlueprint>
             {
-                public string Blueprint;
+                public string Name;
 
                 public BlueprintWrapper()
                 {
-                    Blueprint = null;
+                    Name = null;
                 }
                 public BlueprintWrapper(string Blueprint)
                     : this()
                 {
-                    this.Blueprint = Blueprint;
+                    Name = Blueprint;
                 }
                 public BlueprintWrapper(GameObjectBlueprint Blueprint)
                     : this(Blueprint.Name)
                 {
                 }
                 public BlueprintWrapper(BlueprintWrapper Source)
-                    : this(Source.Blueprint)
+                    : this(Source.Name)
                 {
                 }
 
                 public GameObjectBlueprint GetGameObjectBlueprint()
                 {
-                    return Blueprint.GetGameObjectBlueprint();
+                    return Name.GetGameObjectBlueprint();
                 }
 
                 public override string ToString()
                 {
-                    return Blueprint;
+                    return Name;
                 }
 
                 public void Deconstruct(out GameObjectBlueprint Blueprint)
@@ -49,7 +49,7 @@ namespace UD_FleshGolems.Capabilities
                     Blueprint = GetGameObjectBlueprint();
                 }
 
-                public static explicit operator string(BlueprintWrapper Operand) => Operand.Blueprint;
+                public static explicit operator string(BlueprintWrapper Operand) => Operand.Name;
                 public static explicit operator GameObjectBlueprint(BlueprintWrapper Operand) => Operand.GetGameObjectBlueprint();
 
                 // Equality
@@ -76,18 +76,18 @@ namespace UD_FleshGolems.Capabilities
 
                 public override int GetHashCode()
                 {
-                    return Blueprint.GetHashCode();
+                    return Name.GetHashCode();
                 }
 
                 public virtual bool Equals(BlueprintWrapper other)
                 {
-                    return Blueprint.Equals(other.Blueprint)
+                    return Name.Equals(other.Name)
                         && GetType() == other.GetType();
                 }
 
                 public bool Equals(string other)
                 {
-                    return Blueprint.Equals(other);
+                    return Name.Equals(other);
                 }
 
                 public bool Equals(GameObjectBlueprint other)
@@ -98,7 +98,7 @@ namespace UD_FleshGolems.Capabilities
                 public static bool operator ==(BlueprintWrapper Operand1, BlueprintWrapper Operand2) => Operand1.Equals(Operand2);
                 public static bool operator !=(BlueprintWrapper Operand1, BlueprintWrapper Operand2) => !(Operand1 == Operand2);
 
-                public static bool operator ==(BlueprintWrapper Operand1, string Operand2) => Operand1.Blueprint == Operand2;
+                public static bool operator ==(BlueprintWrapper Operand1, string Operand2) => Operand1.Name == Operand2;
                 public static bool operator !=(BlueprintWrapper Operand1, string Operand2) => !(Operand1 == Operand2);
 
                 public static bool operator ==(BlueprintWrapper Operand1, GameObjectBlueprint Operand2) => Operand1 == Operand2.Name;

@@ -25,7 +25,7 @@ namespace UD_FleshGolems.Capabilities
                 public CorpseProduct(string Blueprint, List<CorpseBlueprint> CorpseBlueprints) : base(Blueprint) { this.CorpseBlueprints = CorpseBlueprints; }
                 public CorpseProduct(CorpseBlueprint CorpseBlueprint, List<CorpseBlueprint> CorpseBlueprints) : base(CorpseBlueprint) { this.CorpseBlueprints = CorpseBlueprints; }
 
-                public void Deconstruct(out string Blueprint) => Blueprint = this.Blueprint;
+                public void Deconstruct(out string Blueprint) => Blueprint = this.Name;
 
                 public void Deconstruct(out CorpseBlueprint CorpseBlueprint) => CorpseBlueprint = this;
                 public void Deconstruct(out List<CorpseBlueprint> CorpseBlueprints) => CorpseBlueprints = this.CorpseBlueprints;
@@ -38,7 +38,7 @@ namespace UD_FleshGolems.Capabilities
                 public static implicit operator KeyValuePair<CorpseBlueprint, List<CorpseBlueprint>>(CorpseProduct Operand) => new(Operand, Operand.CorpseBlueprints);
                 public static implicit operator CorpseProduct(KeyValuePair<CorpseBlueprint, List<CorpseBlueprint>> Operand) => new(Operand.Key, Operand.Value);
 
-                public static explicit operator string(CorpseProduct Operand) => Operand.Blueprint;
+                public static explicit operator string(CorpseProduct Operand) => Operand.Name;
                 public static explicit operator List<CorpseBlueprint>(CorpseProduct Operand) => Operand.CorpseBlueprints;
                 public static explicit operator GameObjectBlueprint(CorpseProduct Operand) => Operand.GetGameObjectBlueprint();
 
@@ -54,16 +54,16 @@ namespace UD_FleshGolems.Capabilities
                     }
                     return base.Equals(obj);
                 }
-                public override int GetHashCode() => Blueprint.GetHashCode() ^ CorpseBlueprints.GetHashCode();
+                public override int GetHashCode() => Name.GetHashCode() ^ CorpseBlueprints.GetHashCode();
 
                 public bool Equals(KeyValuePair<CorpseBlueprint, List<CorpseBlueprint>> other)
                     => !other.Equals(default)
-                    && Blueprint.Equals(other.Key)
+                    && Name.Equals(other.Key)
                     && CorpseBlueprints.Equals(other.Value);
 
                 public bool Equals(CorpseProduct other)
                     => !other.Equals(null)
-                    && Blueprint.Equals(other.Blueprint)
+                    && Name.Equals(other.Name)
                     && CorpseBlueprints.All(cbp => other.CorpseBlueprints.Any(ocbp =>  cbp.Equals(ocbp)));
                         // all blueprints are equal to any other blueprint
 
@@ -73,13 +73,13 @@ namespace UD_FleshGolems.Capabilities
 
                 public static bool operator ==(CorpseProduct Operand1, EntityBlueprint Operand2)
                     => Operand1.GetType() == Operand2.GetType()
-                    && Operand1.Blueprint == Operand2.Blueprint;
+                    && Operand1.Name == Operand2.Name;
                 public static bool operator !=(CorpseProduct Operand1, EntityBlueprint Operand2) => !(Operand1 == Operand2);
 
                 public static bool operator ==(CorpseProduct Operand1, CorpseBlueprint Operand2) => ((CorpseBlueprint)Operand1) == Operand2;
                 public static bool operator !=(CorpseProduct Operand1, CorpseBlueprint Operand2) => !(Operand1 == Operand2);
 
-                public static bool operator ==(CorpseProduct Operand1, string Operand2) => Operand1.Blueprint == Operand2;
+                public static bool operator ==(CorpseProduct Operand1, string Operand2) => Operand1.Name == Operand2;
                 public static bool operator !=(CorpseProduct Operand1, string Operand2) => !(Operand1 == Operand2);
 
                 public static bool operator ==(CorpseProduct Operand1, GameObjectBlueprint Operand2) => ((GameObjectBlueprint)Operand1).Name == Operand2.Name;
