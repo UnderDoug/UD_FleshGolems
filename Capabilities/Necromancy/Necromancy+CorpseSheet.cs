@@ -205,13 +205,13 @@ namespace UD_FleshGolems.Capabilities
             public bool AddInheritedCorpses(CorpseEntityPair CorpseEntityPair)
                 => AddInheritedCorpses(GetInheritedCorpses(CorpseEntityPair));
 
-            public IReadOnlyList<EntityWeight> GetEntites(bool ExcludeProducts, Predicate<GameObjectBlueprint> Filter = null)
+            public IReadOnlyList<EntityWeight> GetEntityWeights(bool ExcludeProducts, Predicate<GameObjectBlueprint> Filter = null)
                 => GetPairs(cep => !ExcludeProducts || cep.Relationship != Relationship.CorpseProduct, Filter)
                     .ToList()
                     .ConvertAll(cep => (EntityWeight)cep);
 
-            public IReadOnlyList<EntityWeight> GetEntites(Predicate<GameObjectBlueprint> Filter = null)
-                => GetEntites(false, Filter);
+            public IReadOnlyList<EntityWeight> GetEntityWeights(Predicate<GameObjectBlueprint> Filter = null)
+                => GetEntityWeights(false, Filter);
 
             public CorpseSheet AddPair(CorpseEntityPair Pair)
             {
@@ -241,13 +241,13 @@ namespace UD_FleshGolems.Capabilities
                 => AddEntity(EntityBlueprint, Weight, Relationship.PrimaryCorpse);
 
             public bool CorpseHasEntity(string Entity, bool CheckAll = true)
-                => GetEntites(!CheckAll).Any(c => c.Blueprint == Entity);
+                => GetEntityWeights(!CheckAll).Any(c => c.Blueprint == Entity);
 
             public bool CorpseHasEntity(EntityBlueprint Entity, bool CheckAll = true)
                 => CorpseHasEntity(Entity.Blueprint, CheckAll);
 
             public bool CorpseHasEntityWithWeight(EntityWeight EntityWeight, bool CheckAll = true)
-                => GetEntites(!CheckAll).Any(c => c.Blueprint == EntityWeight.Blueprint && c.Weight == EntityWeight.Weight);
+                => GetEntityWeights(!CheckAll).Any(c => c.Blueprint == EntityWeight.Blueprint && c.Weight == EntityWeight.Weight);
 
             public bool IsPrimaryForEntity(EntityBlueprint EntityBlueprint)
             {
