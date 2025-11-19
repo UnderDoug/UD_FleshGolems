@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
+using UD_FleshGolems.Capabilities.Necromancy;
 using UD_FleshGolems.Logging;
 
 using XRL;
@@ -15,7 +16,6 @@ using XRL.World;
 using XRL.World.Anatomy;
 using XRL.World.Parts;
 
-using static UD_FleshGolems.Capabilities.Necromancy;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
@@ -616,13 +616,13 @@ namespace UD_FleshGolems
             Dictionary<string, int> weightedList = new();
             foreach ((BlueprintBox blueprint, int weight ) in Entries)
             {
-                if (weightedList.ContainsKey(blueprint.Name))
+                if (weightedList.ContainsKey(blueprint.ToString()))
                 {
-                    weightedList[blueprint.Name] += weight;
+                    weightedList[blueprint.ToString()] += weight;
                 }
                 else
                 {
-                    weightedList.Add(blueprint.Name, weight);
+                    weightedList.Add(blueprint.ToString(), weight);
                 }
             }
             return weightedList;

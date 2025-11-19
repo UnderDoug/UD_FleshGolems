@@ -33,6 +33,7 @@ using static UD_FleshGolems.Utils;
 using SerializeField = UnityEngine.SerializeField;
 using UD_FleshGolems.Capabilities;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
+using UD_FleshGolems.Capabilities.Necromancy;
 
 namespace XRL.World.Parts
 {
@@ -505,7 +506,7 @@ namespace XRL.World.Parts
         }
 
         public static List<GameObjectBlueprint> GetCorpseBlueprints(Predicate<GameObjectBlueprint> Filter)
-            => Necromancy.NecromancySystem
+            => NecromancySystem
                 ?.GetCorpseBlueprints(Filter)
                 ?.ToList()?.ConvertAll(cbp => cbp.GetGameObjectBlueprint());
 
@@ -520,7 +521,7 @@ namespace XRL.World.Parts
             List<EntityWeight> blueprintsWeightedList = new();
             if (CorpseBlueprint.IsNullOrEmpty() || !CorpseBlueprint.IsCorpse())
             {
-                return Necromancy.NecromancySystem.RequireCorpseSheet(CorpseBlueprint).GetEntityWeights(Filter);
+                return NecromancySystem.RequireCorpseSheet(CorpseBlueprint).GetEntityWeights(Filter);
             }
             Debug.SetIndent(indent[0]);
             return new List<EntityWeight>();

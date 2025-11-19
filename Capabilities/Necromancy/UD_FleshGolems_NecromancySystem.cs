@@ -33,10 +33,11 @@ using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
 
-using static UD_FleshGolems.Capabilities.Necromancy;
-using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
-using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseSheet.CorpseEntityPair.PairRelationship;
 using UD_FleshGolems.Logging;
+using UD_FleshGolems.Capabilities.Necromancy;
+
+using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
+using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair.PairRelationship;
 
 namespace UD_FleshGolems.Capabilities
 {
@@ -387,7 +388,7 @@ namespace UD_FleshGolems.Capabilities
             List<GameObjectBlueprint> possibleProducts = new();
             foreach (CorpseBlueprint corpseBlueprint in GetCorpseBlueprints(IsProcessableCorpse))
             {
-                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.Name, indent[2]);
+                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.ToString(), indent[2]);
                 
                 List<GameObjectBlueprint> butcherableProducts = new(GetProcessableCorpsesProducts(
                     CorpseBlueprint: corpseBlueprint.GetGameObjectBlueprint(),
@@ -447,7 +448,7 @@ namespace UD_FleshGolems.Capabilities
                             corpseProduct.CorpseBlueprints.AddUnique(corpseBlueprint);
                         }
                         // all the entity weight entries for the corpse we got the product from the product's corpse sheet.
-                        CorpseSheet corpseSheet = RequireCorpseSheet(corpseBlueprint.Name);
+                        CorpseSheet corpseSheet = RequireCorpseSheet(corpseBlueprint.ToString());
                         Debug.Log(
                                 "Adding " + corpseBlueprint + " " + nameof(EntityWeight).Pluralize() +
                                 " to " + nameof(productCorpseSheet),
@@ -658,9 +659,9 @@ namespace UD_FleshGolems.Capabilities
             Debug.Log(Debug.GetCallingTypeAndMethod(true), indent[1]);
             foreach (CorpseBlueprint corpseBlueprint in GetCorpseBlueprints())
             {
-                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.Name, indent[2]);
+                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.ToString(), indent[2]);
                 int counter = 0;
-                CorpseSheet corpseSheet = RequireCorpseSheet(corpseBlueprint.Name);
+                CorpseSheet corpseSheet = RequireCorpseSheet(corpseBlueprint.ToString());
                 List<GameObjectBlueprint> countsAsModels = GetCorpseCountsAsBlueprints(corpseBlueprint.GetGameObjectBlueprint())
                     ?.ConvertAll(ew => ew.GetGameObjectBlueprint());
 

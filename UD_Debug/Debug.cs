@@ -71,7 +71,7 @@ namespace UD_FleshGolems.Logging
             List<MethodRegistryEntry> Registry,
             out List<MethodRegistryEntry> ReturnRegistry)
         {
-            string declaringType = MethodBase.DeclaringType.Name;
+            string declaringType = MethodBase?.DeclaringType?.Name;
             UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(Register) + "(" + declaringType + "." + MethodBase.Name + ": " + Value + ")");
             Registry.Add(new(MethodBase, Value));
             ReturnRegistry = Registry;
@@ -166,7 +166,8 @@ namespace UD_FleshGolems.Logging
         {
             _LastIndents = null;
             Indent = LastIndents;
-            _LastIndent.SetIndent(LastIndents);
+            _LastIndent = null;
+            LastIndent.SetIndent(LastIndents);
         }
         [GameBasedCacheInit]
         [ModSensitiveCacheInit]
