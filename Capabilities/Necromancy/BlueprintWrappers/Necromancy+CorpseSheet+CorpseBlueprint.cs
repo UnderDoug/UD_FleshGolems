@@ -9,14 +9,14 @@ namespace UD_FleshGolems.Capabilities
         public partial class CorpseSheet : IComposite
         {
             public partial class CorpseBlueprint 
-                : BlueprintWrapper
+                : BlueprintBox
                 , IComposite
                 , IEquatable<CorpseBlueprint>
             {
                 public CorpseBlueprint() : base() { }
                 public CorpseBlueprint(string Blueprint) : base(Blueprint) { }
                 public CorpseBlueprint(GameObjectBlueprint Blueprint) : base(Blueprint) { }
-                public CorpseBlueprint(BlueprintWrapper Source) : base(Source.Name) { }
+                public CorpseBlueprint(BlueprintBox Source) : base(Source.Name) { }
                 public CorpseBlueprint(CorpseBlueprint Source) : base(Source) { }
 
                 public static explicit operator CorpseBlueprint(string Operand) => new(Operand);
@@ -27,7 +27,7 @@ namespace UD_FleshGolems.Capabilities
 
                 public override int GetHashCode() => base.GetHashCode();
 
-                public override bool Equals(BlueprintWrapper other)
+                public override bool Equals(BlueprintBox other)
                     => other is CorpseBlueprint otherEntity
                     && Equals(otherEntity);
 

@@ -16,8 +16,8 @@ namespace UD_FleshGolems.Logging
 
         public void Clear()
         {
-            Items = new Indent[DefaultCapacity];
-            Size = DefaultCapacity;
+            Array.Clear(Items, 0, Size);
+            Size = 0;
             Count = 0;
             Version = 0;
             Last = null;

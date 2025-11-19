@@ -505,7 +505,7 @@ namespace XRL.World.Parts
         }
 
         public static List<GameObjectBlueprint> GetCorpseBlueprints(Predicate<GameObjectBlueprint> Filter)
-            => Necromancy.System
+            => Necromancy.NecromancySystem
                 ?.GetCorpseBlueprints(Filter)
                 ?.ToList()?.ConvertAll(cbp => cbp.GetGameObjectBlueprint());
 
@@ -520,7 +520,7 @@ namespace XRL.World.Parts
             List<EntityWeight> blueprintsWeightedList = new();
             if (CorpseBlueprint.IsNullOrEmpty() || !CorpseBlueprint.IsCorpse())
             {
-                return Necromancy.System.RequireCorpseSheet(CorpseBlueprint).GetEntityWeights(Filter);
+                return Necromancy.NecromancySystem.RequireCorpseSheet(CorpseBlueprint).GetEntityWeights(Filter);
             }
             Debug.SetIndent(indent[0]);
             return new List<EntityWeight>();

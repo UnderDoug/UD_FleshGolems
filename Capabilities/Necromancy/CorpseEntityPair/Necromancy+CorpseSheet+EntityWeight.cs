@@ -8,18 +8,15 @@ namespace UD_FleshGolems.Capabilities
     {
         public partial class CorpseSheet : IComposite
         {
-            public partial class EntityWeight : IComposite
+            public partial class EntityWeight
+                : BlueprintWeight<EntityBlueprint>
+                , IComposite
             {
-                public EntityWeight(EntityBlueprint Corpse, int Weight) : base(Corpse, Weight) { }
-
-                public void Deconstruct(out EntityBlueprint Blueprint, out int Weight)
-                {
-                    Blueprint = this.Blueprint as EntityBlueprint;
-                    Weight = this.Weight;
-                }
+                public EntityWeight(EntityBlueprint Entity, int Weight) : base(Entity, Weight) { }
 
                 public static implicit operator KeyValuePair<EntityBlueprint, int>(EntityWeight Operand)
                     => new((EntityBlueprint)Operand.Blueprint, Operand.Weight);
+
                 public static implicit operator EntityWeight(KeyValuePair<EntityBlueprint, int> Operand)
                     => new(Operand.Key, Operand.Value);
             }

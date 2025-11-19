@@ -90,9 +90,17 @@ namespace UD_FleshGolems.Logging
 
         public override bool Equals(object obj)
         {
-            if (obj is int asInt)
+            if (obj == null)
             {
-                return Value.Equals(asInt);
+                return false;
+            }
+            if (obj is Indent indentObj)
+            {
+                return Value == indentObj.Value;
+            }    
+            if (obj is int intObj)
+            {
+                return Value.Equals(intObj);
             }
             return base.Equals(obj);
         }
@@ -101,7 +109,7 @@ namespace UD_FleshGolems.Logging
             return Value.GetHashCode();
         }
 
-        public static bool operator ==(Indent Operand1, Indent Operand2) => Operand1.Value == Operand2.Value;
+        public static bool operator ==(Indent Operand1, Indent Operand2) => Operand1?.Value == Operand2?.Value;
         public static bool operator !=(Indent Operand1, Indent Operand2) => !(Operand1 == Operand2);
 
         public static bool operator ==(Indent Operand1, int Operand2) => Operand1.Value == Operand2;

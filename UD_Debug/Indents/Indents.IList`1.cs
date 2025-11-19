@@ -11,7 +11,13 @@ namespace UD_FleshGolems.Logging
         {
             get
             {
-                Index = Math.Min(Index, Indent.MaxIndent - 1 - Items[0].Value);
+                int start = 0;
+                if (Items != null 
+                    && Items.Length > 0)
+                {
+                    start = (int)Items[0];
+                }
+                Index = GetMaxCapacity(Index, start);
                 if (Index >= Size)
                 {
                     EnsureCapacity(Index + 1);

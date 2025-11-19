@@ -37,7 +37,22 @@ namespace XRL.World.Parts
         [SerializeField]
         private bool DisplayNameAdjusted;
 
-        public GameObject Wielder;
+        [SerializeField]
+        private GameObject _Wielder;
+
+        public GameObject Wielder
+        {
+            get => _Wielder;
+            set
+            {
+                Description = null;
+                _Wielder = value;
+                if (value != null)
+                {
+                    ProcessDescriptionElements(Wielder);
+                }
+            }
+        }
 
         [SerializeField]
         private string Description;
@@ -166,20 +181,15 @@ namespace XRL.World.Parts
 
         public void ProcessDescriptionElements(GameObject Wielder = null)
         {
-            if (ParentObject.TryGetPart(out Description descriptionPart)
-                && (Wielder != null || this.Wielder != null))
+            if (ParentObject?.GetPart<Description>() is Description descriptionPart
+                && Wielder != null)
             {
-                this.Wielder ??= Wielder;
-                Wielder ??= this.Wielder;
-
                 Taxonomy = DetermineTaxonomyAdjective(Wielder);
 
-                string processedDescription = descriptionPart._Short
+                Description = descriptionPart._Short
                     .StartReplace()
                     .AddObject(Wielder)
-                    .ToString();
-
-                Description = processedDescription;
+                    .ToString(); ;
 
                 descriptionPart._Short = Description;
             }

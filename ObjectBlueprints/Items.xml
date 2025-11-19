@@ -259,6 +259,28 @@
     <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Fettid" />
     <mixin Name="UD_FleshGolems Flower Corpse" />
   </object>
+
+  <!--
+  
+  Not ready for reanimatable limbs (yet!)
+  
+  -->
+  <object Name="GenericLimb" Load="Merge">
+    <removetag Name="Animatable" />
+    <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+  </object>
+  <object Name="RobotLimb" Load="Merge">
+    <removetag Name="Animatable" />
+    <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+  </object>
+  <object Name="PlantLimb" Load="Merge">
+    <removetag Name="Animatable" />
+    <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+  </object>
+  <object Name="FungusLimb" Load="Merge">
+    <removetag Name="Animatable" />
+    <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+  </object>
   
   <!--
   

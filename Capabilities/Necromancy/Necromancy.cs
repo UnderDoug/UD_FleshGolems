@@ -40,7 +40,7 @@ namespace UD_FleshGolems.Capabilities
 {
     public static partial class Necromancy
     {
-        public static UD_FleshGolems_NecromancySystem System => UD_FleshGolems_NecromancySystem.System;
+        public static UD_FleshGolems_NecromancySystem NecromancySystem => UD_FleshGolems_NecromancySystem.System;
 
         [Serializable] public partial class CorpseSheet : IComposite { }
 

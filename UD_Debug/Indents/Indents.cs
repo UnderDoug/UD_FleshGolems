@@ -20,12 +20,7 @@ namespace UD_FleshGolems.Logging
 
         public Indents()
         {
-            Items = new Indent[1];
-            Items[0] = Debug.GetNewIndent();
-            EnsureCapacity(DefaultCapacity);
-            Last = Items[0];
-
-            Version = 0;
+            Init();
         }
         public Indents(Indent Source)
             : this()
@@ -59,6 +54,24 @@ namespace UD_FleshGolems.Logging
             Version = 0;
         }
 
+        protected void Init(bool ClearFirst = false)
+        {
+            if (ClearFirst)
+            {
+                Clear();
+            }
+            Items = new Indent[1];
+            Items[0] = Debug.GetNewIndent();
+            EnsureCapacity(DefaultCapacity);
+            Last = Items[0];
+
+            Version = 0;
+        }
+
+        protected int GetMaxCapacity(int Capacity, int Base) => Math.Min(Capacity, Indent.MaxIndent - (1 + Base));
+
+        protected int GetMaxCapacity(int Capacity, Indent Base) => GetMaxCapacity(Capacity, (int)Base);
+
         protected void Resize(int Capacity)
         {
             if (Capacity == 0)
@@ -66,10 +79,16 @@ namespace UD_FleshGolems.Logging
                 Capacity = DefaultCapacity;
             }
             Indent[] array = new Indent[Capacity];
-            Indent seedIndent = new Indent(Items[0]) ?? new Indent(Debug.GetNewIndent());
+            int start = 0;
+            if (Items != null
+                && Items.Length > 0
+                && Items[0] != null)
+            {
+                start = (int)Items[0];
+            }
             for (int i = 0; i < Capacity; i++)
             {
-                array[i] = new(i, seedIndent);
+                array[i] = new(i + start);
             }
             Items = array;
             Size = Capacity;
@@ -78,7 +97,7 @@ namespace UD_FleshGolems.Logging
 
         public void EnsureCapacity(int Capacity)
         {
-            Capacity = Math.Min(Capacity, Indent.MaxIndent - 1 - Items[0].Value);
+            Capacity = GetMaxCapacity(Capacity, Items[0]);
             if (Size < Capacity)
             {
                 Resize(Capacity);
@@ -92,14 +111,30 @@ namespace UD_FleshGolems.Logging
 
         public static implicit operator Indent(Indents Source)
         {
-            return Source.Last;
+            return Source?.Last;
         }
 
-        /*
-        public static explicit operator Indents(Indent Source)
+        public void Reseed(int Offset)
         {
-            return new(Source);
+            if (Items == null)
+            {
+                Init(true);
+            }
+            int last = (int)Last + Offset;
+            for (int i = 0; i < Items.Length; i++)
+            {
+                Items[i] = new(i + Offset);
+            }
+            Last = Items[last];
         }
-        */
+        public void Reseed(Indent Source)
+        {
+            if (Items == null)
+            {
+                Init(true);
+            }
+            Source ??= Debug.GetNewIndent();
+            Reseed((int)Source);
+        }
     }
 }

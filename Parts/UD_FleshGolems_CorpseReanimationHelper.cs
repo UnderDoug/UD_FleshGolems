@@ -1027,7 +1027,7 @@ namespace XRL.World.Parts
                                                 {
                                                     if (raggedWeaponObject.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedWeaponPart))
                                                     {
-                                                        raggedWeaponPart.ProcessDescriptionElements(frankenCorpse);
+                                                        raggedWeaponPart.Wielder = frankenCorpse;
                                                     }
                                                     bestowedNaturalWeapons++;
 
@@ -1079,7 +1079,7 @@ namespace XRL.World.Parts
                         {
                             if (raggedWeaponObject.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedWeaponPart))
                             {
-                                raggedWeaponPart.ProcessDescriptionElements(frankenCorpse);
+                                raggedWeaponPart.Wielder = frankenCorpse;
                             }
                             bestowedNaturalWeapons++;
 
@@ -1102,7 +1102,7 @@ namespace XRL.World.Parts
                     {
                         if (raggedWeaponObject.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedWeaponPart))
                         {
-                            raggedWeaponPart.ProcessDescriptionElements(frankenCorpse);
+                            raggedWeaponPart.Wielder = frankenCorpse;
                         }
                         bestowedNaturalWeapons++;
 

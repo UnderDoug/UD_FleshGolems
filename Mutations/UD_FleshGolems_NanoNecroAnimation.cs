@@ -268,15 +268,23 @@ namespace XRL.World.Parts.Mutation
 
         public static bool IsReanimatableCorpse(GameObject Corpse)
         {
-            return Corpse.IsCorpse()
+            return Corpse != null
+                && Corpse.IsCorpse(IsReanimatableCorpse)
                 && !Corpse.HasPart<AnimatedObject>()
                 && !Corpse.HasPart<UD_FleshGolems_ReanimatedCorpse>();
         }
 
+        public static bool IsReanimatable(GameObjectBlueprint CorpseBlueprint)
+        {
+            return CorpseBlueprint != null
+                && !CorpseBlueprint.IsBaseBlueprint()
+                && CorpseBlueprint.HasPart(nameof(UD_FleshGolems_CorpseReanimationHelper))
+                && CorpseBlueprint.HasTagOrProperty("Animatable");
+        }
         public static bool IsReanimatableCorpse(GameObjectBlueprint CorpseBlueprint)
         {
-            return CorpseBlueprint.IsCorpse()
-                && !CorpseBlueprint.IsBaseBlueprint();
+            return CorpseBlueprint != null
+                && CorpseBlueprint.IsCorpse(IsReanimatable);
         }
 
         public static bool IsCorpse(GameObjectBlueprint CorpseBlueprint)

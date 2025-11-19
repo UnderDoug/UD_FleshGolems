@@ -94,7 +94,7 @@ namespace UD_FleshGolems
             foreach (T item in Collection)
             {
                 if ((Comparer != null && Comparer.Equals(item, Item))
-                    || (Comparer == null && item.Equals(Item)))
+                    || (Comparer == null && Item.Equals(item)))
                 {
                     return;
                 }
@@ -160,10 +160,6 @@ namespace UD_FleshGolems
             {
                 throw new ArgumentNullException(nameof(List));
             }
-            if (Item.Equals(default))
-            {
-                throw new ArgumentNullException(nameof(Item));
-            }
             int index = -1;
             foreach (T item in List)
             {
@@ -185,6 +181,15 @@ namespace UD_FleshGolems
             }
             List.Add(Item);
             return true;
+        }
+        public static bool AddUniqueObject<T>(this IList<T> List, T Item, EqualityComparer<T> EqualityComparer, Comparer<T> Comparer)
+            where T : class
+        {
+            if (Item is null)
+            {
+                throw new ArgumentNullException(nameof(Item));
+            }
+            return List.AddUnique(Item, EqualityComparer, Comparer);
         }
 
         public static T GetRandomElementCosmeticExcluding<T>(this IEnumerable<T> Enumerable, Predicate<T> Exclude)
@@ -293,7 +298,8 @@ namespace UD_FleshGolems
                 MetricsManager.LogException(
                     nameof(OverrideWithDeepCopyOrRequirePart) + " -> " + 
                     nameof(GameObject.AddPart) + "(" + 
-                    nameof(PartToCopy.DeepCopy) + ")", 
+                    nameof(PartToCopy.DeepCopy) + " of " + 
+                    typeof(T).Name + ")", 
                     x: x, 
                     category: "game_mod_exception");
                 returnPart = PartToCopy;
@@ -414,7 +420,7 @@ namespace UD_FleshGolems
         public static bool IsCorpse(this GameObjectBlueprint Blueprint, Predicate<GameObjectBlueprint> Filter)
         {
             return Blueprint != null
-                && Blueprint.InheritsFrom("Corpse")
+                && (Blueprint.InheritsFrom("Corpse") || Blueprint.Name == "Corpse")
                 && (Filter == null || Filter(Blueprint));
         }
 
@@ -438,7 +444,7 @@ namespace UD_FleshGolems
                 && Corpse.GetBlueprint().IsCorpse(Filter);
         }
 
-        public static bool InheritsFromAny(this GameObjectBlueprint Blueprint, List<string> BaseBlueprints)
+        public static bool InheritsFromAny(this GameObjectBlueprint Blueprint, params string[] BaseBlueprints)
         {
             foreach (string baseBlueprint in BaseBlueprints)
             {
@@ -499,6 +505,21 @@ namespace UD_FleshGolems
         public static GameObjectBlueprint GetBlueprintIfExists(this PopulationItem PopItem)
         {
             return PopItem?.Name?.GetGameObjectBlueprint();
+        }
+
+        public static IEnumerable<BodyPart> LoopParts(this Body Body, Predicate<BodyPart> Filter)
+        {
+            if (Body == null)
+            {
+                yield break;
+            }
+            foreach(BodyPart bodyPart in Body.LoopParts())
+            {
+                if (Filter == null || Filter(bodyPart))
+                {
+                    yield return bodyPart;
+                }
+            }
         }
 
         public static Dictionary<T, int> ConvertToWeightedList<T>(this List<KeyValuePair<T, int>> EntriesList)
@@ -593,7 +614,7 @@ namespace UD_FleshGolems
         public static Dictionary<string, int> ConvertToWeightedList(this IEnumerable<EntityWeight> Entries)
         {
             Dictionary<string, int> weightedList = new();
-            foreach ((BlueprintWrapper blueprint, int weight ) in Entries)
+            foreach ((BlueprintBox blueprint, int weight ) in Entries)
             {
                 if (weightedList.ContainsKey(blueprint.Name))
                 {

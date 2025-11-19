@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using UD_FleshGolems.Logging;
+
 using XRL;
 using XRL.Collections;
 using XRL.World;
@@ -16,14 +18,14 @@ namespace UD_FleshGolems.Capabilities
     {
         public partial class CorpseSheet : IComposite
         {
-            [Serializable] public abstract partial class BlueprintWrapper : IComposite { }
-            [Serializable] public partial class CorpseBlueprint : BlueprintWrapper, IComposite { }
+            [Serializable] public abstract partial class BlueprintBox : IComposite { }
+            [Serializable] public partial class CorpseBlueprint : BlueprintBox, IComposite { }
             [Serializable] public partial class CorpseProduct : CorpseBlueprint, IComposite { }
-            [Serializable] public partial class EntityBlueprint : BlueprintWrapper, IComposite { }
+            [Serializable] public partial class EntityBlueprint : BlueprintBox, IComposite { }
             [Serializable] public partial class CorpseEntityPair : IComposite { }
-            [Serializable] public abstract partial class BlueprintWeight : IComposite { }
-            [Serializable] public partial class CorpseWeight : BlueprintWeight, IComposite { }
-            [Serializable] public partial class EntityWeight : BlueprintWeight, IComposite { }
+            [Serializable] public abstract partial class BlueprintWeight<T> : IComposite where T : BlueprintBox, new() { }
+            [Serializable] public partial class CorpseWeight : BlueprintWeight<CorpseBlueprint>, IComposite { }
+            [Serializable] public partial class EntityWeight : BlueprintWeight<EntityBlueprint>, IComposite { }
 
             [SerializeField]
             private CorpseBlueprint Corpse;
@@ -43,10 +45,12 @@ namespace UD_FleshGolems.Capabilities
                     {
                         if (value)
                         {
-                            Corpse = new CorpseProduct(Corpse);
+                            Corpse = new CorpseProduct(Corpse, new(_CorpseProductCorpseBlueprints));
+                            _CorpseProductCorpseBlueprints = null;
                         }
                         else
                         {
+                            _CorpseProductCorpseBlueprints = new(((CorpseProduct)Corpse).CorpseBlueprints);
                             Corpse = new CorpseBlueprint(Corpse);
                         }
                     }
@@ -54,17 +58,26 @@ namespace UD_FleshGolems.Capabilities
                 }
             }
 
+            [SerializeField]
+            private List<CorpseBlueprint> _CorpseProductCorpseBlueprints;
+
+            [SerializeField]
+            private List<CorpseBlueprint> InheritedCorpses;
+
             private CorpseSheet()
             {
                 _IsCorpseProduct = false;
                 Corpse = null;
                 Pairs = new();
+                InheritedCorpses = new();
+                _CorpseProductCorpseBlueprints = new();
             }
 
             public CorpseSheet(CorpseBlueprint Corpse)
                 : this()
             {
                 this.Corpse = Corpse;
+                InheritedCorpses = GetInheritedCorpses(Corpse);
             }
 
             public void Deconstruct(out string Corpse) => Corpse = this.Corpse.Name;
@@ -85,9 +98,9 @@ namespace UD_FleshGolems.Capabilities
             {
                 return Corpse.GetGameObjectBlueprint();
             }
-            public Dictionary<BlueprintWrapper, int> GetWeightedEntityList()
+            public Dictionary<BlueprintBox, int> GetWeightedEntityList()
             {
-                Dictionary<BlueprintWrapper, int> weightedList= new();
+                Dictionary<BlueprintBox, int> weightedList= new();
                 foreach (CorpseEntityPair weightedPairs in Pairs)
                 {
                     AccumulateBlueprintWeight(ref weightedList, Corpse, weightedPairs);
@@ -95,8 +108,8 @@ namespace UD_FleshGolems.Capabilities
                 return weightedList;
             }
             private static void AccumulateBlueprintWeight(
-                ref Dictionary<BlueprintWrapper, int> WeightedList,
-                BlueprintWrapper Key,
+                ref Dictionary<BlueprintBox, int> WeightedList,
+                BlueprintBox Key,
                 CorpseEntityPair Pair)
             {
                 WeightedList ??= new();
@@ -129,10 +142,10 @@ namespace UD_FleshGolems.Capabilities
             private bool CorpseBluprintPairHasSameBlueprint(CorpseEntityPair Old, CorpseEntityPair New) => Old.Corpse == New.Corpse;
             private bool NewCorpseBluprintPairHasHigherWeight(CorpseEntityPair Old, CorpseEntityPair New) => Old.Corpse == New.Corpse;
             private bool AddUniquePair(List<CorpseEntityPair> Collection, CorpseEntityPair Pair)
-                => Collection.AddUnique(
+                => Collection.AddUniqueObject(
                     Item: Pair,
-                    EqualityComparer: new CorpseEntityPairEqualBlueprints(),
-                    Comparer: new CorpseEntityPairCompareRelationshipFirst());
+                    EqualityComparer: new CorpseEntityPairEqualityComparer(CompareType.Blueprints),
+                    Comparer: new CorpseEntityPairComparer(CompareType.Relationship, CompareType.Weight));
 
             private bool AddUniqueEntity(
                 List<CorpseEntityPair> Collection,
@@ -150,44 +163,88 @@ namespace UD_FleshGolems.Capabilities
                 Relationship Relationship = Relationship.None)
                 => AddUniqueEntity(
                     Collection: Collection,
-                    Entity: new EntityBlueprint(Blueprint),
+                    Entity: NecromancySystem.RequireEntityBlueprint(Blueprint),
                     Weight: Weight,
                     Relationship: Relationship);
 
-            private List<CorpseEntityPair> GetInheritedCorpses(CorpseEntityPair CorpseEntityPair)
+            private List<CorpseBlueprint> GetInheritedCorpses(CorpseBlueprint CorpseBlueprint)
             {
-                List<CorpseEntityPair> inheritedCorpses = new();
-                GameObjectBlueprint inheritedCorpse = CorpseEntityPair?.GetCorpseGameObjectBlueprint()?.Inherits?.GetGameObjectBlueprint();
+                Debug.GetIndents(out Indents indent);
+                Debug.Log(Debug.GetCallingTypeAndMethod(), CorpseBlueprint.Name, indent[1]);
+
+                List<CorpseBlueprint> inheritedCorpses = new();
+                GameObjectBlueprint inheritedCorpse = CorpseBlueprint?.GetGameObjectBlueprint()?.Inherits?.GetGameObjectBlueprint();
+
                 while (inheritedCorpse != null
                     && inheritedCorpse.IsCorpse()
-                    && AddUniquePair(
-                        Collection: inheritedCorpses,
-                        Pair: new(
-                            Corpse: new CorpseBlueprint(inheritedCorpse),
-                            Entity: CorpseEntityPair.Entity,
-                            Weight: CorpseEntityPair.Weight,
-                            Relationship: Relationship.InheritedCorpse))
-                    )
+                    && NecromancySystem?.RequireCorpseSheet(inheritedCorpse)?.GetCorpse() is CorpseBlueprint inheritedCorpseBlueprint)
                 {
-                    inheritedCorpse = inheritedCorpse.Inherits?.GetGameObjectBlueprint();
+                    inheritedCorpses.AddUnique(inheritedCorpseBlueprint);
+                    inheritedCorpse = inheritedCorpse?.Inherits?.GetGameObjectBlueprint();
                 }
+                Debug.SetIndent(indent[0]);
                 return inheritedCorpses;
             }
-            private bool AddInheritedCorpses(List<CorpseEntityPair> InheritedCorpseEntityPairs)
+            private bool AddInheritedCorpse(CorpseEntityPair FromCorpse, ref CorpseEntityPair InheritedCorpse)
             {
-                bool any = false;
-                if (!InheritedCorpseEntityPairs.IsNullOrEmpty())
+                Debug.GetIndents(out Indents indent);
+                Debug.Log(Debug.GetCallingTypeAndMethod(), FromCorpse.Corpse.Name, indent[1]);
+                if (FromCorpse?.GetCorpseGameObjectBlueprint()?.Inherits?.GetGameObjectBlueprint() is GameObjectBlueprint inheritedCorpseModel
+                    && inheritedCorpseModel.IsCorpse()
+                    && NecromancySystem?.RequireCorpseSheet(inheritedCorpseModel)?.GetCorpse() is CorpseBlueprint inheritedCorpseBlueprint)
                 {
                     Pairs ??= new();
-                    foreach (CorpseEntityPair inheritedCorpseEntityPair in InheritedCorpseEntityPairs)
-                    {
-                        any = AddUniquePair(Pairs, inheritedCorpseEntityPair) || any;
-                    }
+                    InheritedCorpse =
+                        new CorpseEntityPair(
+                            Corpse: inheritedCorpseBlueprint,
+                            Entity: FromCorpse.Entity,
+                            Weight: FromCorpse.Weight,
+                            Relationship: Relationship.InheritedCorpse);
+
+                    Debug.SetIndent(indent[0]);
+                    return AddUniquePair(Pairs, InheritedCorpse);
                 }
+                Debug.SetIndent(indent[0]);
+                return false;
+            }
+            private bool AddInheritedCorpses(CorpseEntityPair FromCorpse, out List<CorpseEntityPair> InheritedCorpses)
+            {
+                Debug.GetIndents(out Indents indent);
+                Debug.Log(Debug.GetCallingTypeAndMethod(), FromCorpse.Corpse.Name, indent[1]);
+                Pairs ??= new();
+                bool any = false;
+                InheritedCorpses = new();
+                CorpseEntityPair InheritedCorpse = null;
+                while (AddInheritedCorpse(FromCorpse, ref InheritedCorpse))
+                {
+                    InheritedCorpses.Add(InheritedCorpse);
+                    FromCorpse = InheritedCorpse;
+                    any = true;
+                }
+                Debug.SetIndent(indent[0]);
                 return any;
             }
-            public bool AddInheritedCorpses(CorpseEntityPair CorpseEntityPair)
-                => AddInheritedCorpses(GetInheritedCorpses(CorpseEntityPair));
+            private bool AddInheritedCorpses(EntityWeight WithEntityWeight)
+            {
+                Debug.GetIndents(out Indents indent);
+                Debug.Log(Debug.GetCallingTypeAndMethod(), WithEntityWeight?.GetBlueprint()?.Name, indent[1]);
+                Pairs ??= new();
+                bool any = false;
+                foreach (CorpseBlueprint inheritedCorpse in InheritedCorpses)
+                {
+                    Debug.Log(inheritedCorpse?.Name, indent[2]);
+                    any = AddUniquePair(
+                        Collection: Pairs, 
+                        Pair: new CorpseEntityPair(
+                            Corpse: inheritedCorpse,
+                            Entity: WithEntityWeight.GetBlueprint(),
+                            Weight: WithEntityWeight.Weight,
+                            Relationship: Relationship.InheritedCorpse))
+                        || any;
+                }
+                Debug.SetIndent(indent[0]);
+                return any;
+            }
 
             public IReadOnlyList<EntityWeight> GetEntityWeights(bool ExcludeProducts, Predicate<GameObjectBlueprint> Filter = null)
                 => GetPairs(cep => !ExcludeProducts || cep.Relationship != Relationship.CorpseProduct, Filter)
@@ -197,39 +254,42 @@ namespace UD_FleshGolems.Capabilities
             public IReadOnlyList<EntityWeight> GetEntityWeights(Predicate<GameObjectBlueprint> Filter = null)
                 => GetEntityWeights(false, Filter);
 
-            public CorpseSheet AddPair(CorpseEntityPair Pair, bool SkipInherited = false)
+            public CorpseSheet AddPair(CorpseEntityPair Pair, bool SkipInherited = false, EqualityComparer<CorpseEntityPair> EqComparer = null)
             {
                 Pairs ??= new();
-                Pairs.AddUnique(Pair);
-                if (!SkipInherited
-                    && GetInheritedCorpses(Pair) is List<CorpseEntityPair> inheritedCorpses
-                    && !inheritedCorpses.IsNullOrEmpty())
+                if (Pair is null)
                 {
-                    Pairs.AddRange(inheritedCorpses);
+                    throw new ArgumentNullException(nameof(Pair));
+                }
+                Pairs.AddUnique(Pair, EqComparer);
+                if (!SkipInherited)
+                {
+                    AddInheritedCorpses((EntityWeight)Pair);
                 }
                 return this;
             }
-            public CorpseSheet AddEntity(string EntityBlueprint, int Weight, Relationship Relationship)
+            public CorpseSheet AddEntity(string EntityBlueprint, int Weight, Relationship Relationship, EqualityComparer<CorpseEntityPair> EqComparer = null)
                 => AddPair(
-                    new CorpseEntityPair(
+                    Pair: new CorpseEntityPair(
                         Corpse: Corpse, 
-                        Entity: new EntityBlueprint(EntityBlueprint),
+                        Entity: NecromancySystem?.RequireEntityBlueprint(EntityBlueprint),
                         Weight: Weight,
-                        Relationship: Relationship));
-            public CorpseSheet AddEntity(GameObjectBlueprint EntityBlueprint, int Weight, Relationship Relationship)
-                => AddEntity(EntityBlueprint.Name, Weight, Relationship);
+                        Relationship: Relationship),
+                    EqComparer: EqComparer);
+            public CorpseSheet AddEntity(GameObjectBlueprint EntityBlueprint, int Weight, Relationship Relationship, EqualityComparer<CorpseEntityPair> EqComparer = null)
+                => AddEntity(EntityBlueprint.Name, Weight, Relationship, EqComparer);
 
             public CorpseSheet AddPrimaryEntity(GameObjectBlueprint EntityBlueprint, int Weight)
-                => AddEntity(EntityBlueprint, Weight, Relationship.PrimaryCorpse);
+                => AddEntity(EntityBlueprint, Weight, Relationship.PrimaryCorpse, new CorpseEntityPairEqualityComparer(CompareType.Blueprints, CompareType.Relationship));
 
             public CorpseSheet AddPrimaryEntity(string EntityBlueprint, int Weight)
-                => AddEntity(EntityBlueprint, Weight, Relationship.PrimaryCorpse);
+                => AddEntity(EntityBlueprint, Weight, Relationship.PrimaryCorpse, new CorpseEntityPairEqualityComparer(CompareType.Blueprints, CompareType.Relationship));
 
             public CorpseSheet AddProductEntity(EntityWeight EntityWeight)
-                => AddEntity(EntityWeight.Blueprint.Name, EntityWeight.Weight, Relationship.CorpseProduct);
+                => AddEntity(EntityWeight.Blueprint.Name, EntityWeight.Weight, Relationship.CorpseProduct, new CorpseEntityPairEqualityComparer(CompareType.Blueprints, CompareType.Relationship));
 
             public CorpseSheet AddCountsAsEntity(EntityWeight EntityWeight)
-                => AddEntity(EntityWeight.Blueprint.Name, EntityWeight.Weight, Relationship.CorpseCountsAs);
+                => AddEntity(EntityWeight.Blueprint.Name, EntityWeight.Weight, Relationship.CorpseCountsAs, new CorpseEntityPairEqualityComparer(CompareType.Blueprints, CompareType.Relationship));
 
             public bool CorpseHasEntity(string Entity, bool CheckAll = true)
                 => GetEntityWeights(!CheckAll).Any(c => c.Blueprint == Entity);

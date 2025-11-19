@@ -47,6 +47,8 @@ namespace UD_FleshGolems.Capabilities
         [UD_FleshGolems_DebugRegistry]
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
         {
+            Registry.Register(nameof(RequireCorpseSheet), false);
+            Registry.Register(nameof(RequireEntityBlueprint), false);
             Registry.Register(nameof(GetProcessableCorpsesProducts), true);
             return Registry;
         }
@@ -65,15 +67,17 @@ namespace UD_FleshGolems.Capabilities
             OtherCorpse = 7,
         }
 
-        public const string CACHE_EMPTY = "empty";
-
         public const string IGNORE_EXCLUDE_PROPTAG = "UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding";
         public const string CORPSE_COUNTS_AS_PROPTAG = "UD_FleshGolems PastLife CountsAs";
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
 
         public static UD_FleshGolems_NecromancySystem System;
 
-        private StringMap<CorpseSheet> CorpseSheets = new();
+        [SerializeField]
+        private StringMap<CorpseSheet> CorpseSheets;
+
+        [SerializeField]
+        private StringMap<EntityBlueprint> EntityBlueprints;
 
         [SerializeField]
         private bool CorpseSheetsInitialized;
@@ -82,18 +86,42 @@ namespace UD_FleshGolems.Capabilities
         private bool EntityPrimaryCorpsesInitialized;
 
         [SerializeField]
+        private bool CorpseProductsInitialized;
+
+        [SerializeField]
         private bool CountsAsCorspesInitialized;
 
         public UD_FleshGolems_NecromancySystem()
         {
             CorpseSheets = new();
-            Init();
+            EntityBlueprints = new();
+            CorpseSheetsInitialized = false;
+            EntityPrimaryCorpsesInitialized = false;
+            CorpseProductsInitialized = false;
+            CountsAsCorspesInitialized = false;
         }
 
         [GameBasedCacheInit]
         public static void NecromancySystemInit()
         {
             System = The.Game?.RequireSystem(InitializeSystem);
+            Debug.LogHeader("Starting Starting Cache...", out Indents indent);
+            bool success = false;
+            try
+            {
+                System.Init();
+                success = true;
+            }
+            catch (Exception x)
+            {
+                MetricsManager.LogException(nameof(NecromancySystemInit) + " -> " + nameof(Init), x, "game_mod_Exception");
+                success = false;
+            }
+            finally
+            {
+                Debug.Log(Debug.GetCallingTypeAndMethod(), "Cache finished... " + success, indent[0]);
+                Debug.SetIndent(indent[0]);
+            }
         }
         private static UD_FleshGolems_NecromancySystem InitializeSystem() => new();
 
@@ -101,6 +129,7 @@ namespace UD_FleshGolems.Capabilities
         {
             InitializeCorpseSheetsCorpses(out CorpseSheetsInitialized);
             InitializeEntityPrimaryCorpses(out EntityPrimaryCorpsesInitialized);
+            InititializeCorpseProducts(out CorpseProductsInitialized);
             InitializeCountsAsCorspes(out CountsAsCorspesInitialized);
         }
 
@@ -117,11 +146,59 @@ namespace UD_FleshGolems.Capabilities
         }
         public CorpseSheet RequireCorpseSheet(string Blueprint)
         {
+            Debug.GetIndents(out Indents indent);
+            Debug.Log(Debug.GetCallingTypeAndMethod(), Blueprint, indent[1]);
             if (!TryGetCorpseSheet(Blueprint, out CorpseSheet corpseSheet))
             {
+                Debug.Log("No existing CorpseSheet entry; creating new one...", indent[2]);
                 corpseSheet = new CorpseSheet(new CorpseBlueprint(Blueprint));
+                CorpseSheets[Blueprint] = corpseSheet;
             }
+            else
+            {
+                Debug.Log("CorpseSheet entry retreived...", indent[2]);
+            }
+            Debug.SetIndent(indent[0]);
             return corpseSheet;
+        }
+        public CorpseSheet RequireCorpseSheet(GameObjectBlueprint Blueprint)
+        {
+            return RequireCorpseSheet(Blueprint.Name);
+        }
+
+
+        public bool TryGetEntityBluprint(string Entity, out EntityBlueprint EntityBlueprint)
+        {
+            EntityBlueprints ??= new();
+            if (EntityBlueprints[Entity] is EntityBlueprint cachedEntityBlueprint)
+            {
+                EntityBlueprint = cachedEntityBlueprint;
+                return true;
+            }
+            EntityBlueprint = null;
+            return false;
+        }
+        public EntityBlueprint RequireEntityBlueprint(string Blueprint)
+        {
+            Debug.GetIndents(out Indents indent);
+            Debug.Log(Debug.GetCallingTypeAndMethod(), Blueprint, indent[1]);
+
+            if (!TryGetEntityBluprint(Blueprint, out EntityBlueprint entityBlueprint))
+            {
+                Debug.Log("No existing entity entry; creating new one...", indent[2]);
+                entityBlueprint = new EntityBlueprint(Blueprint);
+                EntityBlueprints[Blueprint] = entityBlueprint;
+            }
+            else
+            {
+                Debug.Log("Entity entry retreived...", indent[2]);
+            }
+            Debug.SetIndent(indent[0]);
+            return entityBlueprint;
+        }
+        public EntityBlueprint RequireEntityBlueprint(GameObjectBlueprint Blueprint)
+        {
+            return RequireEntityBlueprint(Blueprint.Name);
         }
 
         private static int CachingPeriods = 0;
@@ -134,19 +211,24 @@ namespace UD_FleshGolems.Capabilities
         {
             if (OnCondition) Loading.SetLoadingStatus("Assessing Corpses" + GetPeriods(CachingPeriods, out CachingPeriods));
         }
+
+        public static bool IsReanimatableCorpse(GameObjectBlueprint Blueprint)
+        {
+            return UD_FleshGolems_NanoNecroAnimation.IsReanimatableCorpse(Blueprint);
+        }
+
         public UD_FleshGolems_NecromancySystem InitializeCorpseSheetsCorpses(out bool Initialized)
         {
             Debug.GetIndents(out Indents indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(), indent[1]);
             int counter = 0;
-            foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList)
+            foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList.Where(IsReanimatableCorpse))
             {
+                Debug.Log(blueprint.Name, indent[2]);
                 SetLoadingStatusCorpses(counter++ % 100 == 0);
-                if (blueprint.IsCorpse())
-                {
-                    CorpseSheets[blueprint.Name] = new CorpseSheet(new CorpseBlueprint(blueprint.Name));
-                }
+                RequireCorpseSheet(blueprint.Name);
             }
+            Debug.CheckYeh(nameof(CorpseSheetsInitialized), indent[1]);
             Initialized = true;
             Debug.SetIndent(indent[0]);
             return this;
@@ -165,20 +247,23 @@ namespace UD_FleshGolems.Capabilities
             int counter = 0;
             foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList.Where(bp => bp.HasPart(nameof(Corpse))))
             {
-                SetLoadingStatusCorpses(counter++ % 250 == 0);
+                Debug.Log(blueprint.Name, indent[2]);
+                SetLoadingStatusCorpses(counter++ % 10 == 0);
                 if (!blueprint.IsBaseBlueprint()
                     && !blueprint.IsChiliad()
                     && blueprint.TryGetCorpseBlueprintAndChance(out string corpseBlueprint, out int corpseChance)
                     && corpseBlueprint.IsCorpse())
                 {
-                    if (!TryGetCorpseSheet(corpseBlueprint, out CorpseSheet corpseSheet))
-                    {
-                        corpseSheet = new(new CorpseBlueprint(corpseBlueprint));
-                        CorpseSheets[corpseBlueprint] = corpseSheet;
-                    }
-                    corpseSheet.AddEntity(blueprint, corpseChance, Relationship.PrimaryCorpse);
+                    Debug.CheckYeh("Added " + nameof(corpseBlueprint) + ": " + corpseBlueprint, indent[3]);
+                    RequireCorpseSheet(corpseBlueprint)
+                        .AddPrimaryEntity(blueprint, corpseChance);
+                }
+                else
+                {
+                    Debug.CheckNah("Skipped, doesn't pass.", indent[3]);
                 }
             }
+            Debug.CheckYeh(nameof(EntityPrimaryCorpsesInitialized), indent[1]);
             Initialized = true;
             Debug.SetIndent(indent[0]);
             return this;
@@ -375,6 +460,7 @@ namespace UD_FleshGolems.Capabilities
                     }
                 }
             }
+            Debug.CheckYeh(nameof(CorpseProductsInitialized), indent[1]);
             Initialized = true;
             Debug.SetIndent(indent[0]);
             return this;
@@ -561,25 +647,37 @@ namespace UD_FleshGolems.Capabilities
             if (countsAsModels.IsNullOrEmpty())
             {
                 Debug.Log(nameof(countsAsModels), "empty!", indent[2]);
-                Debug.SetIndent(indent[0]);
             }
+            Debug.SetIndent(indent[0]);
             return countsAsBlueprints;
         }
 
         private UD_FleshGolems_NecromancySystem InitializeCountsAsCorspes(out bool Initialized)
         {
             Debug.GetIndents(out Indents indent);
+            Debug.Log(Debug.GetCallingTypeAndMethod(true), indent[1]);
             foreach (CorpseBlueprint corpseBlueprint in GetCorpseBlueprints())
             {
-                Debug.Log(Debug.GetCallingTypeAndMethod(true) + "(" + nameof(corpseBlueprint) + ": " + corpseBlueprint.Name + ")", indent[1]);
+                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.Name, indent[2]);
                 int counter = 0;
                 CorpseSheet corpseSheet = RequireCorpseSheet(corpseBlueprint.Name);
-                foreach (GameObjectBlueprint countsAsModel in GetCorpseCountsAsBlueprints(corpseBlueprint.GetGameObjectBlueprint()))
+                List<GameObjectBlueprint> countsAsModels = GetCorpseCountsAsBlueprints(corpseBlueprint.GetGameObjectBlueprint())
+                    ?.ConvertAll(ew => ew.GetGameObjectBlueprint());
+
+                if (countsAsModels.IsNullOrEmpty())
+                {
+                    Debug.CheckNah(nameof(countsAsModels) + " empty!", indent[3]);
+                    continue;
+                }
+                Debug.CheckYeh(nameof(countsAsModels) + "." + nameof(countsAsModels.Count) + ": " + countsAsModels.Count, indent[3]);
+                foreach (GameObjectBlueprint countsAsModel in countsAsModels)
                 {
                     SetLoadingStatusCorpses(counter++ % 5 == 0);
+                    Debug.Log("Added " + nameof(countsAsModel), countsAsModel.Name, indent[4]);
                     corpseSheet.AddCountsAsEntity(new EntityWeight(new EntityBlueprint(countsAsModel), 100));
                 }
             }
+            Debug.CheckYeh(nameof(CountsAsCorspesInitialized), indent[1]);
             Debug.SetIndent(indent[0]);
             Initialized = true;
             return this;

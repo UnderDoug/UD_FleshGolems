@@ -8,28 +8,28 @@ namespace UD_FleshGolems.Capabilities
     {
         public partial class CorpseSheet : IComposite
         {
-            public abstract partial class BlueprintWrapper
+            public abstract partial class BlueprintBox
                 : IComposite
-                , IEquatable<BlueprintWrapper>
+                , IEquatable<BlueprintBox>
                 , IEquatable<string>
                 , IEquatable<GameObjectBlueprint>
             {
                 public string Name;
 
-                public BlueprintWrapper()
+                public BlueprintBox()
                 {
                     Name = null;
                 }
-                public BlueprintWrapper(string Blueprint)
+                public BlueprintBox(string Blueprint)
                     : this()
                 {
                     Name = Blueprint;
                 }
-                public BlueprintWrapper(GameObjectBlueprint Blueprint)
+                public BlueprintBox(GameObjectBlueprint Blueprint)
                     : this(Blueprint.Name)
                 {
                 }
-                public BlueprintWrapper(BlueprintWrapper Source)
+                public BlueprintBox(BlueprintBox Source)
                     : this(Source.Name)
                 {
                 }
@@ -49,8 +49,8 @@ namespace UD_FleshGolems.Capabilities
                     Blueprint = GetGameObjectBlueprint();
                 }
 
-                public static explicit operator string(BlueprintWrapper Operand) => Operand.Name;
-                public static explicit operator GameObjectBlueprint(BlueprintWrapper Operand) => Operand.GetGameObjectBlueprint();
+                public static explicit operator string(BlueprintBox Operand) => Operand.Name;
+                public static explicit operator GameObjectBlueprint(BlueprintBox Operand) => Operand.GetGameObjectBlueprint();
 
                 // Equality
                 public override bool Equals(object obj)
@@ -59,7 +59,7 @@ namespace UD_FleshGolems.Capabilities
                     {
                         return false;
                     }
-                    if (obj is BlueprintWrapper blueprintWrapperObj)
+                    if (obj is BlueprintBox blueprintWrapperObj)
                     {
                         return Equals(blueprintWrapperObj);
                     }
@@ -79,7 +79,7 @@ namespace UD_FleshGolems.Capabilities
                     return Name.GetHashCode();
                 }
 
-                public virtual bool Equals(BlueprintWrapper other)
+                public virtual bool Equals(BlueprintBox other)
                 {
                     return Name.Equals(other.Name)
                         && GetType() == other.GetType();
@@ -95,14 +95,14 @@ namespace UD_FleshGolems.Capabilities
                     return GetGameObjectBlueprint() == other;
                 }
 
-                public static bool operator ==(BlueprintWrapper Operand1, BlueprintWrapper Operand2) => Operand1.Equals(Operand2);
-                public static bool operator !=(BlueprintWrapper Operand1, BlueprintWrapper Operand2) => !(Operand1 == Operand2);
+                public static bool operator ==(BlueprintBox Operand1, BlueprintBox Operand2) => Operand1.Equals(Operand2);
+                public static bool operator !=(BlueprintBox Operand1, BlueprintBox Operand2) => !(Operand1 == Operand2);
 
-                public static bool operator ==(BlueprintWrapper Operand1, string Operand2) => Operand1.Name == Operand2;
-                public static bool operator !=(BlueprintWrapper Operand1, string Operand2) => !(Operand1 == Operand2);
+                public static bool operator ==(BlueprintBox Operand1, string Operand2) => Operand1.Name == Operand2;
+                public static bool operator !=(BlueprintBox Operand1, string Operand2) => !(Operand1 == Operand2);
 
-                public static bool operator ==(BlueprintWrapper Operand1, GameObjectBlueprint Operand2) => Operand1 == Operand2.Name;
-                public static bool operator !=(BlueprintWrapper Operand1, GameObjectBlueprint Operand2) => !(Operand1 == Operand2);
+                public static bool operator ==(BlueprintBox Operand1, GameObjectBlueprint Operand2) => Operand1 == Operand2.Name;
+                public static bool operator !=(BlueprintBox Operand1, GameObjectBlueprint Operand2) => !(Operand1 == Operand2);
             }
         }
     }

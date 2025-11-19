@@ -9,6 +9,8 @@ using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
 
 using SerializeField = UnityEngine.SerializeField;
 
+using UD_FleshGolems;
+
 namespace XRL.World.Parts
 {
     [Serializable]
@@ -138,11 +140,19 @@ namespace XRL.World.Parts
             }
             return false;
         }
+
+        private static bool BodyPartHasRaggedNaturalWeapon(BodyPart BodyPart)
+            => BodyPart.DefaultBehavior is GameObject defaultBehavior
+            && defaultBehavior.GetBlueprint().InheritsFrom("UD_FleshGolems Ragged Weapon")
+            && defaultBehavior.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedNaturalWeaponPart)
+            && raggedNaturalWeaponPart.Wielder == null;
+
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
                 || ID == GetDisplayNameEvent.ID
                 || ID == GetShortDescriptionEvent.ID
+                || ID == DecorateDefaultEquipmentEvent.ID
                 || ID == EndTurnEvent.ID
                 || ID == GetBleedLiquidEvent.ID
                 || ID == BeforeDeathRemovalEvent.ID;
@@ -165,6 +175,23 @@ namespace XRL.World.Parts
             if (!NewDescription.IsNullOrEmpty())
             {
                 E.Infix.AppendLine().Append(NewDescription);
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(DecorateDefaultEquipmentEvent E)
+        {
+            if (ParentObject?.Body is Body frankenBody
+                && frankenBody == E.Body)
+            {
+                foreach (BodyPart bodyPart in frankenBody.LoopParts(BodyPartHasRaggedNaturalWeapon))
+                {
+                    if (bodyPart.DefaultBehavior is GameObject defaultBehavior
+                        && defaultBehavior.GetBlueprint().InheritsFrom("UD_FleshGolems Ragged Weapon")
+                        && defaultBehavior.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedNaturalWeaponPart))
+                    {
+                        raggedNaturalWeaponPart.Wielder = ParentObject;
+                    }
+                }
             }
             return base.HandleEvent(E);
         }

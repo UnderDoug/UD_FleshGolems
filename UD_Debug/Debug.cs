@@ -146,22 +146,27 @@ namespace UD_FleshGolems.Logging
             set => _LastIndents = value;
         }
 
+        public static Indent GetNewIndent(int Offset)
+        {
+            return new(Offset, 4, ' ');
+        }
         public static Indent GetNewIndent()
         {
-            return new(0, 4, ' ');
+            return GetNewIndent(0);
         }
+
 
         public static void ResetIndent(out Indent Indent)
         {
             _LastIndents = null;
             Indent = LastIndents;
-            _LastIndent = Indent;
+            _LastIndent.SetIndent(LastIndents);
         }
         public static void ResetIndent(out Indents Indent)
         {
             _LastIndents = null;
             Indent = LastIndents;
-            _LastIndent = Indent;
+            _LastIndent.SetIndent(LastIndents);
         }
         [GameBasedCacheInit]
         [ModSensitiveCacheInit]
@@ -169,19 +174,19 @@ namespace UD_FleshGolems.Logging
         {
             ResetIndent(out Indents _);
         }
-        public static void GetIndent(out Indent Indent)
-        {
-            Indent = LastIndents;
-        }
         public static void SetIndent(Indent Indent)
         {
-            LastIndent = Indent;
-            LastIndents = new(Indent);
+            LastIndent.SetIndent(Indent);
+            _ = LastIndents[Indent];
         }
         public static void GetIndents(int Offset, out Indents Indents)
         {
-            Indents = new(Offset, LastIndents);
-            LastIndents = Indents;
+            if (Offset != 0)
+            {
+                LastIndents.Reseed(Offset);
+            }
+            Indents = LastIndents;
+            LastIndent.SetIndent(LastIndents);
         }
         public static void GetIndents(out Indents Indents)
         {
@@ -239,11 +244,6 @@ namespace UD_FleshGolems.Logging
         }
         public static void Log(string Message, Indent Indent = null)
         {
-            Log(Message, (string)null, Indent);
-        }
-        public static void Log(string Message, out Indent Indent)
-        {
-            GetIndent(out Indent);
             Log(Message, (string)null, Indent);
         }
         public static void LogCaller(Indent Indent = null) => Log(GetCallingTypeAndMethod(), Indent);

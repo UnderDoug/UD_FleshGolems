@@ -13,11 +13,11 @@ namespace UD_FleshGolems.Capabilities
                 : IComposite
                 , IEquatable<CorpseEntityPair>
                 , IEquatable<BlueprintWeight>
-                , IEquatable<KeyValuePair<BlueprintWrapper, CorpseEntityPair.PairRelationship>>
+                , IEquatable<KeyValuePair<BlueprintBox, CorpseEntityPair.PairRelationship>>
                 , IComparable<CorpseEntityPair>
                 , IComparable<CorpseEntityPair.PairRelationship>
                 , IComparable<BlueprintWeight>
-                , IComparable<KeyValuePair<BlueprintWrapper, CorpseEntityPair.PairRelationship>>
+                , IComparable<KeyValuePair<BlueprintBox, CorpseEntityPair.PairRelationship>>
             {
                 public enum PairRelationship : int
                 {
@@ -28,7 +28,7 @@ namespace UD_FleshGolems.Capabilities
                     CorpseCountsAs = 3,
                 }
 
-                public BlueprintWeight this[BlueprintWrapper Reference]
+                public BlueprintWeight this[BlueprintBox Reference]
                 {
                     get
                     {
@@ -45,7 +45,7 @@ namespace UD_FleshGolems.Capabilities
                     }
                     private set
                     {
-                        if (value.Blueprint != (BlueprintWrapper)null)
+                        if (value.Blueprint != (BlueprintBox)null)
                         {
                             if (Corpse == Reference)
                             {
@@ -105,6 +105,23 @@ namespace UD_FleshGolems.Capabilities
                     return Entity.GetGameObjectBlueprint();
                 }
 
+                public CorpseWeight GetCorpseWeight()
+                {
+                    if (Corpse is null)
+                    {
+                        return null;
+                    }
+                    return new CorpseWeight(Corpse, Weight);
+                }
+                public EntityWeight GetEntityWeight()
+                {
+                    if (Entity is null)
+                    {
+                        return null;
+                    }
+                    return new EntityWeight(Entity, Weight);
+                }
+
                 public override string ToString()
                 {
                     return Corpse + ":" + Entity + "::" + Weight + ";" + Relationship;
@@ -133,11 +150,11 @@ namespace UD_FleshGolems.Capabilities
                     Deconstruct(out Relationship);
                 }
 
-                public static implicit operator CorpseWeight(CorpseEntityPair Operand) => new(Operand.Corpse, Operand.Weight);
-                public static implicit operator EntityWeight(CorpseEntityPair Operand) => new(Operand.Entity, Operand.Weight);
+                public static explicit operator CorpseWeight(CorpseEntityPair Operand) => Operand?.GetCorpseWeight();
+                public static explicit operator EntityWeight(CorpseEntityPair Operand) => Operand?.GetEntityWeight();
 
-                public static explicit operator string(CorpseEntityPair Operand) => Operand.ToString();
-                public static explicit operator int(CorpseEntityPair Operand) => Operand.Weight;
+                public static explicit operator string(CorpseEntityPair Operand) => Operand?.ToString();
+                public static explicit operator int(CorpseEntityPair Operand) => Operand is not null ? Operand.Weight : 0;
 
                 // Equality
                 public override bool Equals(object obj = null)
@@ -157,7 +174,7 @@ namespace UD_FleshGolems.Capabilities
 
                 public bool Equals(CorpseEntityPair other)
                 {
-                    return other != null
+                    return other is not null
                         && Corpse.Equals(other.Corpse)
                         && Entity.Equals(other.Entity)
                         && Weight.Equals(other.Weight)
@@ -165,19 +182,20 @@ namespace UD_FleshGolems.Capabilities
                 }
                 public bool Equals(BlueprintWeight other)
                 {
-                    return other != null
+                    return other is not null
                         && Corpse.Equals(other.Blueprint)
                         && Weight.Equals(other.Weight);
                 }
-                public bool Equals(KeyValuePair<BlueprintWrapper, PairRelationship> other)
+                public bool Equals(KeyValuePair<BlueprintBox, PairRelationship> other)
                 {
-                    return other is KeyValuePair<BlueprintWrapper, PairRelationship> otherKVP
+                    return other is KeyValuePair<BlueprintBox, PairRelationship> otherKVP
                         && Corpse.Equals(otherKVP.Key)
                         && Relationship.Equals(other.Value);
                 }
 
                 public static bool operator ==(CorpseEntityPair Operand1, BlueprintWeight Operand2)
-                    => Operand1 != null && Operand1.Equals(Operand2);
+                    => Operand1 is not null
+                    && Operand1.Equals(Operand2);
                 public static bool operator !=(CorpseEntityPair Operand1, BlueprintWeight Operand2) => !(Operand1 == Operand2);
 
                 // Comparison
@@ -203,7 +221,7 @@ namespace UD_FleshGolems.Capabilities
                 }
                 public int CompareTo(BlueprintWeight other)
                 {
-                    if (other.Blueprint != (BlueprintWrapper)null)
+                    if (other.Blueprint is not null)
                     {
                         return 1;
                     }
@@ -213,9 +231,9 @@ namespace UD_FleshGolems.Capabilities
                     }
                     return Weight.CompareTo(other.Weight);
                 }
-                public int CompareTo(KeyValuePair<BlueprintWrapper, PairRelationship> other)
+                public int CompareTo(KeyValuePair<BlueprintBox, PairRelationship> other)
                 {
-                    if (other.Key != (BlueprintWrapper)null)
+                    if (other.Key is not null)
                     {
                         return 1;
                     }
@@ -226,10 +244,18 @@ namespace UD_FleshGolems.Capabilities
                     return Relationship.CompareTo(other.Value);
                 }
 
-                public static bool operator >(CorpseEntityPair Operand1, BlueprintWeight Operand2) => Operand1.Weight > Operand2.Weight;
-                public static bool operator <(CorpseEntityPair Operand1, BlueprintWeight Operand2) => Operand1.Weight < Operand2.Weight;
-                public static bool operator >=(CorpseEntityPair Operand1, BlueprintWeight Operand2) => Operand1.Weight >= Operand2.Weight;
-                public static bool operator <=(CorpseEntityPair Operand1, BlueprintWeight Operand2) => Operand1.Weight <= Operand2.Weight;
+                public static bool operator >(CorpseEntityPair Operand1, BlueprintWeight Operand2)
+                {
+                    return (Utils.EitherNull(Operand1, Operand2, out int comparison) && comparison > 0)
+                        || (Operand1.Weight > Operand2.Weight);
+                }
+                public static bool operator <(CorpseEntityPair Operand1, BlueprintWeight Operand2)
+                {
+                    return (Utils.EitherNull(Operand1, Operand2, out int comparison) && comparison < 0)
+                        || (Operand1.Weight < Operand2.Weight);
+                }
+                public static bool operator >=(CorpseEntityPair Operand1, BlueprintWeight Operand2) => !(Operand1 < Operand2);
+                public static bool operator <=(CorpseEntityPair Operand1, BlueprintWeight Operand2) => !(Operand1 > Operand2);
             }
         }
     }
