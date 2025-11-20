@@ -24,6 +24,15 @@ namespace UD_FleshGolems
 {
     public static class Extensions
     {
+        [UD_FleshGolems_DebugRegistry]
+        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
+        {
+            if (typeof(Extensions).GetMethod(nameof(GetWeightedRandom)) is MethodBase getWeightedRandom)
+            {
+                Registry.Register(getWeightedRandom, true);
+            }
+            return Registry;
+        }
         public static bool Contains(this List<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
         {
             foreach (MethodBase methodBase in DebugRegistry)
@@ -46,8 +55,6 @@ namespace UD_FleshGolems
             }
             throw new ArgumentOutOfRangeException(nameof(MethodBase), "Not found.");
         }
-
-
 
         public static bool InheritsFrom(this Type T, Type Type, bool IncludeSelf = true)
             => (IncludeSelf && T == Type) 
@@ -596,6 +603,14 @@ namespace UD_FleshGolems
             return weightedList;
         }
 
+        public static string PrependBullet(
+            this string Text,
+            string Bullet = "\u0007",
+            string BulletColor = "K")
+        {
+            return Utils.Bullet(Bullet, BulletColor) + " " + Text;
+        }
+
         public static string GenerateBulletList(
             this IEnumerable<string> Items,
             string Label = null,
@@ -613,7 +628,7 @@ namespace UD_FleshGolems
                 {
                     output += "\n";
                 }
-                string prePostProc = "{{" + BulletColor + "|" + Bullet + "}} " + preProcItem;
+                string prePostProc = preProcItem.PrependBullet(Bullet, BulletColor);
                 string postProcItem = ItemPostProc != null ? ItemPostProc(prePostProc) : prePostProc;
                 output += postProcItem;
             }
@@ -782,7 +797,7 @@ namespace UD_FleshGolems
         public static T GetWeightedRandom<T>(this Dictionary<T, int> WeightedList, bool Include0Weight = true)
         {
             int maxWeight = 0;
-            foreach (T ticket in WeightedList.Keys.ToList())
+            foreach (T ticket in WeightedList.Keys)
             {
                 if (Include0Weight && WeightedList[ticket] == 0)
                 {
@@ -791,6 +806,11 @@ namespace UD_FleshGolems
                 maxWeight += WeightedList[ticket];
             }
             int rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
+
+            Debug.LogMethod(
+                Debug.LastIndent[1].Pin(),
+                new(nameof(rolledAmount), rolledAmount),
+                new(nameof(maxWeight), maxWeight));
 
             int cumulativeWeight = 0;
             foreach ((T ticket, int weight) in WeightedList)
@@ -802,9 +822,11 @@ namespace UD_FleshGolems
                 cumulativeWeight += weight;
                 if (rolledAmount < cumulativeWeight)
                 {
+                    Debug.LastIndent.Unpin();
                     return ticket;
                 }
             }
+            Debug.LastIndent.Unpin();
             return default;
         }
     }

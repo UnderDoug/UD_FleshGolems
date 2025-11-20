@@ -180,19 +180,6 @@ namespace UD_FleshGolems.Capabilities.Necromancy
             }
             return weightedList;
         }
-        public Dictionary<string, int> GetWeightedEntityNameList(bool Include0Chance, Predicate<GameObjectBlueprint> Filter)
-        {
-            Dictionary<string, int> weightedList= new();
-            foreach ((BlueprintBox blueprint, int weight) in GetWeightedEntityList())
-            {
-                if ((Include0Chance || weight > 0)
-                    && (Filter == null || Filter(blueprint.GetGameObjectBlueprint())))
-                {
-                    weightedList.Add(blueprint.ToString(), weight);
-                }
-            }
-            return weightedList;
-        }
         private static void AccumulateBlueprintWeight(
             ref Dictionary<BlueprintBox, int> WeightedList,
             BlueprintBox Key,
@@ -210,6 +197,18 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     WeightedList.Add(blueprintWeight.Blueprint, blueprintWeight.Weight);
                 }
             }
+        }
+        public Dictionary<string, int> GetWeightedEntityNameList(bool Include0Chance, Predicate<GameObjectBlueprint> Filter)
+        {
+            Dictionary<string, int> weightedList= new();
+            foreach ((string blueprint, int weight) in GetWeightedList(Filter))
+            {
+                if (Include0Chance || weight > 0)
+                {
+                    weightedList.Add(blueprint.ToString(), weight);
+                }
+            }
+            return weightedList;
         }
 
         public IReadOnlyList<CorpseEntityPair> GetPairs(Predicate<CorpseEntityPair> Filter, Predicate<GameObjectBlueprint> EntityFilter)
@@ -334,10 +333,9 @@ namespace UD_FleshGolems.Capabilities.Necromancy
         public CorpseSheet AddEntity(
             string EntityBlueprint,
             int Weight,
-            Relationship Relationship,
-            EqualityComparer<CorpseEntityPair> EqComparer = null)
+            Relationship Relationship)
         {
-            EntityBlueprint entityBlueprint = new(EntityBlueprint);
+            EntityBlueprint entityBlueprint = NecromancySystem?.RequireEntityBlueprint(EntityBlueprint);
             EntityWeight entityWeight = new(entityBlueprint, Weight);
             Entities ??= new();
             if (!Entities.ContainsKey(entityBlueprint))
@@ -355,46 +353,54 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     Entities[entityBlueprint][Relationship] = entityWeight;
                 }
             }
+            if (Relationship != Relationship.InheritedCorpse)
+            {
+                foreach (CorpseBlueprint inheritedCorpse in InheritedCorpses)
+                {
+                    CorpseSheet inheritedCorpseSheet = NecromancySystem?.RequireCorpseSheet(inheritedCorpse);
+                    inheritedCorpseSheet.AddInheritedEntity(entityWeight);
+                }
+            }
             return this;
         }
 
         public CorpseSheet AddEntity(
             GameObjectBlueprint EntityBlueprint,
-            int Weight, Relationship Relationship,
-            EqualityComparer<CorpseEntityPair> EqComparer = null)
+            int Weight, Relationship Relationship)
             => AddEntity(
                 EntityBlueprint: EntityBlueprint.Name,
                 Weight: Weight,
-                Relationship: Relationship,
-                EqComparer: EqComparer);
+                Relationship: Relationship);
 
         public CorpseSheet AddPrimaryEntity(GameObjectBlueprint EntityBlueprint, int Weight)
             => AddEntity(
                 EntityBlueprint: EntityBlueprint,
                 Weight: Weight,
-                Relationship: Relationship.PrimaryCorpse,
-                EqComparer: new EqualityComparer(CompareType.Blueprints, CompareType.Relationship));
+                Relationship: Relationship.PrimaryCorpse);
 
         public CorpseSheet AddPrimaryEntity(string EntityBlueprint, int Weight)
             => AddEntity(
                 EntityBlueprint: EntityBlueprint,
                 Weight: Weight,
-                Relationship: Relationship.PrimaryCorpse,
-                EqComparer: new EqualityComparer(CompareType.Blueprints, CompareType.Relationship));
+                Relationship: Relationship.PrimaryCorpse);
+
+        public CorpseSheet AddInheritedEntity(EntityWeight EntityWeight)
+            => AddEntity(
+                EntityBlueprint: EntityWeight.Blueprint.ToString(),
+                Weight: EntityWeight.Weight,
+                Relationship: Relationship.InheritedCorpse);
 
         public CorpseSheet AddProductEntity(EntityWeight EntityWeight)
             => AddEntity(
                 EntityBlueprint: EntityWeight.Blueprint.ToString(),
                 Weight: EntityWeight.Weight,
-                Relationship: Relationship.CorpseProduct,
-                EqComparer: new EqualityComparer(CompareType.Blueprints, CompareType.Relationship));
+                Relationship: Relationship.CorpseProduct);
 
         public CorpseSheet AddCountsAsEntity(EntityWeight EntityWeight)
             => AddEntity(
                 EntityBlueprint: EntityWeight.Blueprint.ToString(),
                 Weight: EntityWeight.Weight,
-                Relationship: Relationship.CorpseCountsAs,
-                EqComparer: new EqualityComparer(CompareType.Blueprints, CompareType.Relationship));
+                Relationship: Relationship.CorpseCountsAs);
 
         public bool CorpseHasEntity(string Entity, bool CheckAll = true)
             => GetEntityWeights(!CheckAll)
@@ -421,5 +427,11 @@ namespace UD_FleshGolems.Capabilities.Necromancy
             }
             return false;
         }
+
+        public Dictionary<string, int> GetWeightedList(Predicate<GameObjectBlueprint> Filter = null)
+            => GetEntityWeights(Filter)?.ConvertToWeightedList();
+
+        public List<string> GetWeightedListToString(Predicate<GameObjectBlueprint> Filter = null)
+            => GetWeightedList(Filter)?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value);
     }
 }

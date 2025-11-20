@@ -158,7 +158,7 @@ namespace UD_FleshGolems.Capabilities
 
             sw.Stop();
             TimeSpan duration = sw.Elapsed;
-            string timeUnit = duration.Minutes > 0 ? "minutes" : "seconds";
+            string timeUnit = duration.Minutes > 0 ? "minute" : "second";
             double timeDuration = duration.Minutes > 0 ? duration.TotalMinutes : duration.TotalSeconds;
             Debug.Log("Corpse Cache took " + timeDuration.Things(timeUnit) + ".", Indent: indent[0]);
             Debug.SetIndent(indent[0]);
@@ -195,6 +195,10 @@ namespace UD_FleshGolems.Capabilities
         public CorpseSheet RequireCorpseSheet(GameObjectBlueprint Blueprint)
         {
             return RequireCorpseSheet(Blueprint.Name);
+        }
+        public CorpseSheet RequireCorpseSheet(CorpseBlueprint Blueprint)
+        {
+            return RequireCorpseSheet(Blueprint.ToString());
         }
 
         public bool TryGetEntityBluprint(string Entity, out EntityBlueprint EntityBlueprint)
@@ -253,12 +257,35 @@ namespace UD_FleshGolems.Capabilities
             return this;
         }
 
-        private static IEnumerable<GameObjectBlueprint> GetEntitiesWithCorpse(Predicate<GameObjectBlueprint> Filter = null)
+        private static IEnumerable<GameObjectBlueprint> GetEntitiesWithCorpseForInit(Predicate<GameObjectBlueprint> Filter = null)
             => GameObjectFactory.Factory.BlueprintList
                 .Where(bp => bp.HasPart(nameof(Corpse)))
                 .Where(bp => !bp.IsBaseBlueprint())
                 .Where(bp => !bp.IsChiliad())
                 .Where(bp => Filter == null || Filter(bp));
+
+        public IEnumerable<EntityBlueprint> GetEntityBlueprintsWithCorpse(Predicate<GameObjectBlueprint> Filter = null)
+        {
+            if (!EntityPrimaryCorpsesInitialized)
+            {
+                yield break;
+            }
+            foreach (EntityBlueprint entityBlueprint in EntityBlueprints.Values)
+            {
+                if (Filter == null || Filter(entityBlueprint.GetGameObjectBlueprint()))
+                {
+                    yield return entityBlueprint;
+                }
+            }
+        }
+        public IEnumerable<GameObjectBlueprint> GetEntityModelsWithCorpse(Predicate<GameObjectBlueprint> Filter = null)
+        {
+            foreach (EntityBlueprint entityBlueprint in GetEntityBlueprintsWithCorpse(Filter))
+            {
+                yield return entityBlueprint.GetGameObjectBlueprint();
+            }
+        }
+
         public UD_FleshGolems_NecromancySystem InitializeEntityPrimaryCorpses(out bool Initialized)
         {
             Debug.GetIndents(out Indent indent);
@@ -446,9 +473,9 @@ namespace UD_FleshGolems.Capabilities
             Debug.GetIndents(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(), indent[1]);
 
-            List<GameObjectBlueprint> possibleProducts = new();
             foreach (CorpseBlueprint corpseBlueprint in GetCorpseBlueprints(IsProcessableCorpse))
             {
+                List<GameObjectBlueprint> possibleProducts = new();
                 Debug.Log(nameof(corpseBlueprint), corpseBlueprint.ToString(), indent[2]);
                 
                 List<GameObjectBlueprint> butcherableProducts = new(GetProcessableCorpsesProducts(
@@ -529,7 +556,7 @@ namespace UD_FleshGolems.Capabilities
                 => bp.HasTagOrProperty(IGNORE_EXCLUDE_PROPTAG)
                 || !bp.IsExcludedFromDynamicEncounters();
 
-        public static bool IsEntityWithCorpse(GameObjectBlueprint Entity) => GetEntitiesWithCorpse().Contains(Entity);
+        public static bool IsEntityWithCorpse(GameObjectBlueprint Entity) => GetEntitiesWithCorpseForInit().Contains(Entity);
 
         private static CountsAs ProcessCountsAsPropTag(string PropTag, out List<string> CountsAsParamaters)
         {
@@ -578,7 +605,11 @@ namespace UD_FleshGolems.Capabilities
 
             Debug.Log(nameof(CountsAs), countsAs, indent[2]);
 
-            List<GameObjectBlueprint> entitiesWithCorpses = GetEntitiesWithCorpse(PossiblyExcludedFromDynamicEncounters).ToList();
+            List<GameObjectBlueprint> entitiesWithCorpses = new();
+            foreach (EntityBlueprint entityBlueprint in EntityBlueprints.Values)
+            {
+                entitiesWithCorpses.Add(entityBlueprint.GetGameObjectBlueprint());
+            }
 
             List<GameObjectBlueprint> countsAsModels = new();
             void addToCountsAsModels(List<string> countsAsBlueprintList)
@@ -613,7 +644,7 @@ namespace UD_FleshGolems.Capabilities
             switch (countsAs)
             {
                 case CountsAs.Any:
-                    countsAsModels = GetEntitiesWithCorpse(PossiblyExcludedFromDynamicEncounters).ToList();
+                    countsAsModels = entitiesWithCorpses;
                     break;
 
                 case CountsAs.Blueprint:
@@ -696,16 +727,21 @@ namespace UD_FleshGolems.Capabilities
                     {
                         bool hasOneOfTheseCorpses(GameObjectBlueprint Entity)
                         {
-                            return Entity.TryGetCorpseBlueprint(out string corpseBlueprint)
+                            return Entity != null
+                                && Entity.TryGetCorpseBlueprint(out string corpseBlueprint)
                                 && countsAsOtherCorpseList.Contains(corpseBlueprint);
                         }
-                        countsAsModels = GetEntitiesWithCorpse(hasOneOfTheseCorpses).ToList();
+                        countsAsModels = GetEntityModelsWithCorpse(hasOneOfTheseCorpses).ToList();
                     }
                     break;
             }
             if (countsAsModels.IsNullOrEmpty())
             {
                 Debug.Log(nameof(countsAsModels), "empty!", indent[2]);
+            }
+            else
+            {
+                countsAsBlueprints = countsAsModels.ConvertAll(bpm => RequireEntityBlueprint(bpm.Name));
             }
             Debug.SetIndent(indent[0]);
             return countsAsBlueprints;
@@ -785,17 +821,17 @@ namespace UD_FleshGolems.Capabilities
                         ?.GenerateBulletList();
             output += "\n\n";
 
-            output += nameof(GetEntitiesWithCorpse) + "\n";
-            output += GetEntitiesWithCorpse()
+            output += nameof(GetEntityBlueprintsWithCorpse) + "\n";
+            output += System?.GetEntityBlueprintsWithCorpse()
                         ?.ToList()
-                        ?.ConvertAll(cbp => cbp.Name)
+                        ?.ConvertAll(cbp => cbp.ToString())
                         ?.GenerateBulletList();
             output += "\n\n";
 
             output += "Entities by Corpse" + "\n";
             output += "Corpse,Entities\n";
             output += System?.Necronomicon
-                        ?.Select(cn => cn.Key + ",\"" + cn.Value.GetEntities().Join() + "\"")
+                        ?.Select(cs => cs.Key + ",\"" + cs.Value.GetEntities().Join() + "\"")
                         ?.ToList()
                         ?.GenerateBulletList();
             output += "\n\n";
@@ -812,9 +848,9 @@ namespace UD_FleshGolems.Capabilities
 
             output += "Full Breakdown" + "\n";
             output += System?.Necronomicon
-                        ?.Select(cn 
-                            => cn.Key + ":\n" 
-                            + cn.Value?.GetEntityWeights()
+                        ?.Select(page 
+                            => page.Key + ":\n" 
+                            + page.Value?.GetEntityWeights()
                                 ?.ConvertToWeightedList()
                                 ?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value)
                                 ?.GenerateBulletList(ItemPostProc: s => UIFriendlyNBPS(4) + s))
@@ -825,7 +861,7 @@ namespace UD_FleshGolems.Capabilities
 
             Debug.SetSilenceLogging(false);
             string uIFriendlySpace = UIFriendlyNBPS(1);
-            UnityEngine.Debug.Log(output.Replace(uIFriendlySpace, " "));
+            UnityEngine.Debug.Log(output.Replace(uIFriendlySpace, " ").Replace(Bullet(), "-"));
             Popup.Show(output);
         }
     }

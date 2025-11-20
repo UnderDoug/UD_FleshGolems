@@ -77,13 +77,12 @@ namespace UD_FleshGolems.Logging
         {
             get
             {
-                Value = CapIndent(Value + Indent);
-                return this;
+                return CapIndent(Value + Indent);
             }
             protected set
             {
                 Value = CapIndent(value + Indent);
-                Pinned = true;
+                // Pinned = true;
             }
         }
 
@@ -93,38 +92,56 @@ namespace UD_FleshGolems.Logging
         protected int CapIndent()
             => Math.Min(MaxIndent, Value);
 
-        public void ResetIndent()
+        public Indent ResetIndent()
         {
             PinnedValue = 0;
             Pinned = false;
+            return this;
         }
 
-        public void ResetIndent(out Indent Indent)
+        public Indent ResetIndent(out Indent Indent)
         {
             PinnedValue = 0;
             Pinned = false;
             Indent = this;
+            return this;
         }
-        public void GetIndent(out Indent Indent, bool? Pinned = null)
+        public Indent GetIndent(out Indent Indent, bool? Pinned = null)
         {
             if (Pinned is bool pinned)
             {
                 this.Pinned = pinned;
             }
             Indent = this;
+            return this;
         }
-        public void SetIndent(Indent Indent)
+        public Indent SetIndent(Indent Indent)
+        {   
+            Unpin();
+            this[Indent.Value] = 0;
+            return this;
+        }
+        public Indent GetIndent(int Offset, out Indent Indent)
+        {
+            this[Offset] = 0;
+            Indent = this;
+            return this;
+        }
+        public Indent GetIndent(out Indent Indent)
+        {
+            return GetIndent(0, out Indent).Pin();
+        }
+
+        public Indent Pin()
+        {
+            Pinned = true;
+            return this;
+        }
+
+        public Indent Unpin()
         {
             Pinned = false;
-            this[(int)Indent] = 0;
-        }
-        public void GetIndent(int Offset, out Indent Indents)
-        {
-            Indents = new(new Indent(Offset, this));
-        }
-        public void GetIndent(out Indent Indent)
-        {
-            GetIndent(0, out Indent);
+            return this;
         }
 
         public override string ToString()

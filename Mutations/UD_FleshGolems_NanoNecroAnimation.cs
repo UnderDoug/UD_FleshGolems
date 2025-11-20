@@ -17,6 +17,8 @@ using XRL.Messages;
 using static XRL.World.Parts.UD_FleshGolems_PastLife;
 
 using UD_FleshGolems;
+using UD_FleshGolems.Logging;
+using ArgPair =  UD_FleshGolems.Logging.Debug.ArgPair;
 
 using UD_FleshGolems.Capabilities.Necromancy;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
@@ -437,14 +439,15 @@ namespace XRL.World.Parts.Mutation
 
         public bool ProcessAssessCorpse(GameObject TargetCorpse = null)
         {
+            Debug.LogMethod(Debug.LastIndent, new ArgPair(nameof(TargetCorpse), TargetCorpse?.DebugName));
             if (TargetCorpse == null
-                && IsReanimatableCorpse(ParentObject.Target))
+                && IsReanimatableCorpse(ParentObject?.Target))
             {
-                TargetCorpse = ParentObject.Target;
+                TargetCorpse = ParentObject?.Target;
             }
             int startX = 40;
             int startY = 12;
-            if (ParentObject.CurrentCell is Cell assesserCell)
+            if (ParentObject?.CurrentCell is Cell assesserCell)
             {
                 startX = assesserCell.X;
                 startY = assesserCell.Y;
@@ -457,7 +460,7 @@ namespace XRL.World.Parts.Mutation
                     VisLevel: AllowVis.Any,
                     ObjectTest: IsReanimatableCorpse,
                     Label: "pick a corpse to get a list of possible creatrues") is Cell pickedCell
-                && pickedCell.GetObjectsViaEventList(Filter: IsReanimatableCorpse) is List<GameObject> corpseList
+                && pickedCell?.GetObjectsViaEventList(Filter: IsReanimatableCorpse) is List<GameObject> corpseList
                 && !corpseList.IsNullOrEmpty())
             {
                 if (corpseList.Count == 1)
@@ -483,11 +486,11 @@ namespace XRL.World.Parts.Mutation
                     IsOut: true);
 
                 string corpseListLabel =
-                    TargetCorpse.IndicativeProximal + " " + TargetCorpse.GetReferenceDisplayName(Short: true) +
+                    TargetCorpse?.IndicativeProximal + " " + TargetCorpse?.GetReferenceDisplayName(Short: true) +
                     " might have been any of the following:";
 
                 string corpseListOutput = NecromancySystem
-                    ?.GetWeightedEntityStringsThisCorpseCouldBe(TargetCorpse, true, Utils.IsBaseBlueprint)
+                    ?.GetWeightedEntityStringsThisCorpseCouldBe(TargetCorpse, true, Utils.IsNotBaseBlueprint)
                     ?.ConvertToStringListWithKeyValue()
                     ?.GenerateBulletList(Label: corpseListLabel);
 
@@ -600,7 +603,7 @@ namespace XRL.World.Parts.Mutation
 
         public override bool HandleEvent(GetInventoryActionsEvent E)
         {
-            if (IsReanimatableCorpse(E.Object.GetBlueprint()))
+            if (IsReanimatableCorpse(E.Object))
             {
                 E.AddAction(
                     Name: "Reaimate Corpse",

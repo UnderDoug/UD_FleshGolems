@@ -1193,7 +1193,7 @@ namespace XRL.World.Parts
                     Debug.Log(nameof(frankenHitpoints), frankenHitpoints.Value + "/" + frankenHitpoints.BaseValue, Indent: indent[1]);
                 }
 
-                frankenBrain?.WantToReequip();
+                // frankenBrain?.WantToReequip();
 
                 if (frankenCorpse != null)
                 {

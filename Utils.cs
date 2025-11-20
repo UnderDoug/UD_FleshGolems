@@ -408,6 +408,11 @@ namespace UD_FleshGolems
                 .StartReplace()
                 .ToString();
 
+        public static string Bullet(string Bullet = "\u0007", string BulletColor = "K")
+        {
+            return "{{" + BulletColor + "|" + Bullet + "}}";
+        }
+
         /* 
          * 
          * Wishes!

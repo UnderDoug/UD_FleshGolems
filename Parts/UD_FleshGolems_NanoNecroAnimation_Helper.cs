@@ -44,7 +44,7 @@ namespace XRL.World.Parts
                     E.AddAction(
                         Name: "Assess Corpse",
                         Display: "assess corpse",
-                        Command: NanoNecroAnimation.ASSESS_CORPSE_NAME,
+                        Command: NanoNecroAnimation.COMMAND_NAME_ASSESS_CORPSE,
                         Key: '?',
                         FireOnActor: true,
                         Priority: 3,

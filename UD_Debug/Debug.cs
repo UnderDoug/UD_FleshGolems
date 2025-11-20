@@ -9,6 +9,8 @@ using XRL;
 using UD_FleshGolems;
 using static UD_FleshGolems.Options;
 using static UD_FleshGolems.Utils;
+using System.Linq;
+using HarmonyLib;
 
 namespace UD_FleshGolems.Logging
 {
@@ -177,6 +179,14 @@ namespace UD_FleshGolems.Logging
             }
             return null;
         }
+        public static string GetCallingMethod(bool AppendSpace = false)
+        {
+            if (TryGetCallingTypeAndMethod(out _, out MethodBase methodBase))
+            {
+                return methodBase.Name + (AppendSpace ? " " : "");
+            }
+            return null;
+        }
         public static bool TryGetCallingTypeAndMethod(out Type CallingType, out MethodBase Method)
         {
             CallingType = null;
@@ -223,10 +233,31 @@ namespace UD_FleshGolems.Logging
             Log(Message, (string)null, Indent);
         }
         public static void LogCaller(Indent Indent = null) => Log(GetCallingTypeAndMethod(), Indent);
+
+        public readonly struct ArgPair
+        {
+            private readonly string Name;
+            private readonly object Value;
+            public ArgPair(string Name, object Value)
+            {
+                this.Name = Name;
+                this.Value = Value;
+            }
+            public override readonly string ToString() => Name + ": " + Value.ToString();
+        }
+        public static void LogMethod(Indent Indent = null, params ArgPair[] ArgPairs)
+        {
+            string output = "";
+            if (!ArgPairs.IsNullOrEmpty())
+            {
+                output += "(" + ArgPairs.ToList().ConvertAll(ap => ap.ToString()).Join() + ")";
+            }
+            Log(GetCallingMethod(), Indent);
+        }
         public static void LogHeader(string Message, out Indent Indent)
         {
             GetIndents(out Indent);
-            Log<Indent>(GetCallingTypeAndMethod(true) + Message, Indent);
+            Log(GetCallingTypeAndMethod(true) + Message, Indent);
         }
         public static void CheckYeh(string Message, Indent Indent = null)
         {

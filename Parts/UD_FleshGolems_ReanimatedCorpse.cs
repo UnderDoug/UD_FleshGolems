@@ -123,17 +123,13 @@ namespace XRL.World.Parts
         {
             if (ParentObject is GameObject frankenCorpse)
             {
-                foreach (BodyPart bodyPart in frankenCorpse.Body.LoopParts())
-                {
-                    // consider fixing up the wonky natural weapon DisplayNames here.
-                }
                 if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
                 {
                     int tier = GetTierFromLevel(frankenCorpse);
                     return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier));
                 }
                 else
-                if (unendingSuffering.SourceObject == null && Reanimator != null)
+                if (unendingSuffering.SourceObject != Reanimator)
                 {
                     unendingSuffering.SourceObject = Reanimator;
                 }
@@ -142,7 +138,7 @@ namespace XRL.World.Parts
         }
 
         private static bool BodyPartHasRaggedNaturalWeapon(BodyPart BodyPart)
-            => BodyPart.DefaultBehavior is GameObject defaultBehavior
+            => BodyPart?.DefaultBehavior is GameObject defaultBehavior
             && defaultBehavior.GetBlueprint().InheritsFrom("UD_FleshGolems Ragged Weapon")
             && defaultBehavior.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedNaturalWeaponPart)
             && raggedNaturalWeaponPart.Wielder == null;

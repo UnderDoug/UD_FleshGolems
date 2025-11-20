@@ -384,14 +384,8 @@ namespace XRL.World.Parts
             bool GuaranteeBlueprint = true)
         {
             Debug.GetIndents(out Indent indent);
-
-            /*
-            IReadOnlyList<EntityWeight> blueprintsThisCorpseCouldBe = GetBlueprintsWhoseCorpseThisCouldBe(
-                CorpseBlueprint: CorpseBlueprint,
-                Filter: IsNotBaseBlueprint);
-            */
-            Dictionary<string, int> //weightedBlueprints = blueprintsThisCorpseCouldBe.ConvertToWeightedList();
-            weightedBlueprints = NecromancySystem?.GetWeightedEntityStringsThisCorpseCouldBe(CorpseBlueprint, true, IsBaseBlueprint);
+            Dictionary<string, int> weightedBlueprints = NecromancySystem
+                ?.GetWeightedEntityStringsThisCorpseCouldBe(CorpseBlueprint, Include0Weight, IsNotBaseBlueprint);
 
             if (weightedBlueprints.GetWeightedRandom(Include0Weight) is string entity)
             {
@@ -631,15 +625,18 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_PastLife Initialize(UD_FleshGolems_PastLife PrevPastLife)
         {
-            if (!Init && PrevPastLife != null && PrevPastLife.Init)
+            if (!Init)
             {
-                Initialize(PrevPastLife.BrainInAJar);
-                TimesReanimated++;
-            }
-            else
-            if (PrevPastLife?.ParentObject is GameObject pastLife)
-            {
-                Initialize(pastLife);
+                if (PrevPastLife != null && PrevPastLife.Init)
+                {
+                    Initialize(PrevPastLife?.BrainInAJar);
+                    TimesReanimated++;
+                }
+                else
+                if (PrevPastLife?.ParentObject is GameObject pastLife)
+                {
+                    Initialize(pastLife);
+                }
             }
             return this;
         }

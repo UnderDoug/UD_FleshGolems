@@ -250,6 +250,10 @@
     <tag Name="UD_FleshGolems PastLife CountsAs" Value="Faction:New" />
   </object>
 
+  <object Name="Black Puma Haunch" Load="Merge">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:cat" />
+  </object>
+
   <object Name="Sated Dreamcrungle" Load="Merge">
     <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Fettid" />
     <mixin Name="UD_FleshGolems Bush Corpse" />
@@ -268,18 +272,22 @@
   <object Name="GenericLimb" Load="Merge">
     <removetag Name="Animatable" />
     <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+    <removepart Name="Corpse" />
   </object>
   <object Name="RobotLimb" Load="Merge">
     <removetag Name="Animatable" />
     <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+    <removepart Name="Corpse" />
   </object>
   <object Name="PlantLimb" Load="Merge">
     <removetag Name="Animatable" />
     <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+    <removepart Name="Corpse" />
   </object>
   <object Name="FungusLimb" Load="Merge">
     <removetag Name="Animatable" />
     <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+    <removepart Name="Corpse" />
   </object>
   
   <!--
@@ -297,6 +305,7 @@
     <tag Name="BaseObject" />
     <removetag Name="Animatable" />
     <removepart Name="UD_FleshGolems_CorpseReanimationHelper" />
+    <removepart Name="Corpse" />
     <removetag Name="Tier" />
   </object>
   <object Name="UD_FleshGolems Corpse WithCybernetics 2" Inherits="UD_FleshGolems Corpse WithCybernetics">
