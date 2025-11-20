@@ -8,17 +8,41 @@ namespace UD_FleshGolems.Logging
     {
         public static int MaxIndent = 12;
 
-        public int Value;
+        protected int PinnedValue;
 
-        public int Factor;
+        protected int Value;
 
-        public char Char;
+        protected int Factor;
+
+        protected char Char;
+
+        protected bool _Pinned;
+
+        protected bool Pinned
+        {
+            get => _Pinned;
+            set
+            {
+                if (value)
+                {
+                    PinnedValue = Value;
+                }
+                else
+                {
+                    Value = PinnedValue;
+                    PinnedValue = 0;
+                }
+                _Pinned = value;
+            }
+        }
 
         public Indent()
         {
+            PinnedValue = 0;
             Value = 0;
             Factor = 4;
             Char = ' ';
+            _Pinned = false;
         }
         public Indent(int Value)
             : this()
@@ -49,30 +73,63 @@ namespace UD_FleshGolems.Logging
         {
         }
 
+        public Indent this[int Indent]
+        {
+            get
+            {
+                Value = CapIndent(Value + Indent);
+                return this;
+            }
+            protected set
+            {
+                Value = CapIndent(value + Indent);
+                Pinned = true;
+            }
+        }
+
+        protected int CapIndent(int Indent)
+            => Math.Min(MaxIndent, Indent);
+
+        protected int CapIndent()
+            => Math.Min(MaxIndent, Value);
+
         public void ResetIndent()
         {
-            Value = 0;
+            PinnedValue = 0;
+            Pinned = false;
         }
-        public void GetIndent(out Indent Indent)
+
+        public void ResetIndent(out Indent Indent)
         {
+            PinnedValue = 0;
+            Pinned = false;
+            Indent = this;
+        }
+        public void GetIndent(out Indent Indent, bool? Pinned = null)
+        {
+            if (Pinned is bool pinned)
+            {
+                this.Pinned = pinned;
+            }
             Indent = this;
         }
         public void SetIndent(Indent Indent)
         {
-            Value = (int)Indent;
+            Pinned = false;
+            this[(int)Indent] = 0;
         }
-        public void GetIndents(int Offset, out Indents Indents)
+        public void GetIndent(int Offset, out Indent Indents)
         {
             Indents = new(new Indent(Offset, this));
         }
-        public void GetIndents(out Indents Indents)
+        public void GetIndent(out Indent Indent)
         {
-            GetIndents(0, out Indents);
+            GetIndent(0, out Indent);
         }
 
         public override string ToString()
         {
-            return Char.ThisManyTimes(Math.Min(MaxIndent, Value) * Factor);
+            return Char.ThisManyTimes(CapIndent() * Factor);
         }
 
         public static implicit operator int(Indent Operand)
@@ -83,51 +140,5 @@ namespace UD_FleshGolems.Logging
         {
             return new(Operand);
         }
-        public static int operator +(Indent Operand1, int Operand2) => Operand1.Value + Operand2;
-        public static int operator -(Indent Operand1, int Operand2) => Operand1.Value - Operand2;
-        public static int operator +(int Operand1, Indent Operand2) => Operand1 + Operand2.Value;
-        public static int operator -(int Operand1, Indent Operand2) => Operand1 - Operand2.Value;
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null)
-            {
-                return false;
-            }
-            if (obj is Indent indentObj)
-            {
-                return Value == indentObj.Value;
-            }    
-            if (obj is int intObj)
-            {
-                return Value.Equals(intObj);
-            }
-            return base.Equals(obj);
-        }
-        public override int GetHashCode()
-        {
-            return Value.GetHashCode();
-        }
-
-        public static bool operator ==(Indent Operand1, Indent Operand2) => Operand1?.Value == Operand2?.Value;
-        public static bool operator !=(Indent Operand1, Indent Operand2) => !(Operand1 == Operand2);
-
-        public static bool operator ==(Indent Operand1, int Operand2) => Operand1.Value == Operand2;
-        public static bool operator !=(Indent Operand1, int Operand2) => !(Operand1 == Operand2);
-
-        public static bool operator ==(int Operand1, Indent Operand2) => Operand2 == Operand1;
-        public static bool operator !=(int Operand1, Indent Operand2) => Operand2 != Operand1;
-
-        public static bool operator >(Indent Operand1, int Operand2) => Operand1.Value > Operand2;
-        public static bool operator <(Indent Operand1, int Operand2) => Operand1.Value < Operand2;
-
-        public static bool operator >(int Operand1, Indent Operand2) => Operand1 > Operand2.Value;
-        public static bool operator <(int Operand1, Indent Operand2) => Operand1 < Operand2.Value;
-
-        public static bool operator >=(Indent Operand1, int Operand2) => Operand1.Value >= Operand2;
-        public static bool operator <=(Indent Operand1, int Operand2) => Operand1.Value <= Operand2;
-
-        public static bool operator >=(int Operand1, Indent Operand2) => Operand1 >= Operand2.Value;
-        public static bool operator <=(int Operand1, Indent Operand2) => Operand1 <= Operand2.Value;
     }
 }

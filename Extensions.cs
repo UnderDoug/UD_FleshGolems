@@ -111,9 +111,9 @@ namespace UD_FleshGolems
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="List">The list of <paramref name="Item"/>s to add the unique entry to.</param>
-        /// <param name="Item">The item being added tp the <paramref name="List"/> if the <paramref name="List"/> already contains the item according to the provided <paramref name="Comparer"/>.</param>
-        /// <param name="Comparer">The function by which to determine whether the <paramref name="List"/> already contains the passed <paramref name="Item"/>.</param>
-        /// <param name="OnBasisOldNew">The function by which to determine if the passed <paramref name="Item"/> should replace an existing one as determined by <paramref name="Comparer"/>.</param>
+        /// <param name="Item">The item being added tp the <paramref name="List"/> if the <paramref name="List"/> already contains the item according to the provided <paramref name="Compare"/>.</param>
+        /// <param name="Compare">The function by which to determine whether the <paramref name="List"/> already contains the passed <paramref name="Item"/>.</param>
+        /// <param name="OnBasisOldNew">The function by which to determine if the passed <paramref name="Item"/> should replace an existing one as determined by <paramref name="Compare"/>.</param>
         /// <returns>
         ///     <see langword="true"/> if the <paramref name="List"/> is altered;<br />
         ///     <see langword="false"/>, otherwise.
@@ -121,7 +121,7 @@ namespace UD_FleshGolems
         /// <exception cref="ArgumentNullException">
         ///     If <paramref name="List"/> is <see langword="null"/>, or if <paramref name="Item"/>.<see cref="object.Equals"/>(<see langword="default"/>)
         /// </exception>
-        public static bool AddUnique<T>(this IList<T> List, T Item, Func<T, T, bool> Comparer, Func<T, T, bool> OnBasisOldNew)
+        public static bool AddUnique<T>(this IList<T> List, T Item, Func<T, T, bool> Compare, Func<T, T, bool> OnBasisOldNew)
         {
             if (List == null)
             {
@@ -134,8 +134,8 @@ namespace UD_FleshGolems
             int index = -1;
             foreach (T item in List)
             {
-                if ((Comparer != null && Comparer(item, Item))
-                    || (Comparer == null && item.Equals(Item)))
+                if ((Compare != null && Compare(item, Item))
+                    || (Compare == null && item.Equals(Item)))
                 {
                     index = List.IndexOf(item);
                     break;
@@ -154,7 +154,7 @@ namespace UD_FleshGolems
             return true;
         }
 
-        public static bool AddUnique<T>(this IList<T> List, T Item, EqualityComparer<T> EqualityComparer, Comparer<T> Comparer)
+        public static bool AddUnique<T>(this IList<T> List, T Item, EqualityComparer<T> EqComparer, Comparer<T> Comparer)
         {
             if (List == null)
             {
@@ -163,8 +163,8 @@ namespace UD_FleshGolems
             int index = -1;
             foreach (T item in List)
             {
-                if ((EqualityComparer != null && EqualityComparer.Equals(item, Item))
-                    || (EqualityComparer == null && item.Equals(Item)))
+                if ((EqComparer != null && EqComparer.Equals(item, Item))
+                    || (EqComparer == null && item.Equals(Item)))
                 {
                     index = List.IndexOf(item);
                     break;
@@ -182,14 +182,14 @@ namespace UD_FleshGolems
             List.Add(Item);
             return true;
         }
-        public static bool AddUniqueObject<T>(this IList<T> List, T Item, EqualityComparer<T> EqualityComparer, Comparer<T> Comparer)
+        public static bool AddUniqueObject<T>(this IList<T> List, T Item, EqualityComparer<T> EqComparer, Comparer<T> Comparer)
             where T : class
         {
             if (Item is null)
             {
                 throw new ArgumentNullException(nameof(Item));
             }
-            return List.AddUnique(Item, EqualityComparer, Comparer);
+            return List.AddUnique(Item, EqComparer, Comparer);
         }
 
         public static T GetRandomElementCosmeticExcluding<T>(this IEnumerable<T> Enumerable, Predicate<T> Exclude)
@@ -562,38 +562,6 @@ namespace UD_FleshGolems
             return weightedEntries;
         }
 
-        public static List<string> ConvertToList(this List<UD_FleshGolems_PastLife.BlueprintWeightPair> EntriesList)
-        {
-            List<string> outputList = new();
-            if (!EntriesList.IsNullOrEmpty())
-            {
-                foreach ((string item, int _) in EntriesList)
-                {
-                    if (!outputList.Contains(item))
-                    {
-                        outputList.Add(item);
-                    }
-                }
-            }
-            return outputList;
-        }
-
-        public static List<T> ConvertToList<T>(this List<KeyValuePair<T, int>> EntriesList)
-        {
-            List<T> outputList = new();
-            if (!EntriesList.IsNullOrEmpty())
-            {
-                foreach ((T item, int _) in EntriesList)
-                {
-                    if (!outputList.Contains(item))
-                    {
-                        outputList.Add(item);
-                    }
-                }
-            }
-            return outputList;
-        }
-
         public static Dictionary<T, int> ConvertToWeightedList<T>(this IEnumerable<T> Items)
         {
             Dictionary<T, int> weightedList = new();
@@ -809,6 +777,35 @@ namespace UD_FleshGolems
             Func<List<UD_FleshGolems_PastLife.BlueprintWeightPair>, string> Proc)
         {
             return Entries.ConvertToStringListWithKeyValue(kvp => kvp.Key + ": " + (Proc != null ? Proc(kvp.Value) : kvp.Value.ToString()));
+        }
+
+        public static T GetWeightedRandom<T>(this Dictionary<T, int> WeightedList, bool Include0Weight = true)
+        {
+            int maxWeight = 0;
+            foreach (T ticket in WeightedList.Keys.ToList())
+            {
+                if (Include0Weight && WeightedList[ticket] == 0)
+                {
+                    WeightedList[ticket]++;
+                }
+                maxWeight += WeightedList[ticket];
+            }
+            int rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
+
+            int cumulativeWeight = 0;
+            foreach ((T ticket, int weight) in WeightedList)
+            {
+                if (weight < 1)
+                {
+                    continue;
+                }
+                cumulativeWeight += weight;
+                if (rolledAmount < cumulativeWeight)
+                {
+                    return ticket;
+                }
+            }
+            return default;
         }
     }
 }

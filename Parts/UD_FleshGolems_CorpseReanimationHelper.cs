@@ -130,7 +130,7 @@ namespace XRL.World.Parts
 
         public static string FigureOutWhatBlueprintThisCorpseCameFrom(GameObject Corpse, UD_FleshGolems_PastLife PastLife = null, bool PrintCheckEvenWhenPastLife = false)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             string blueprint = null;
             if (PastLife?.Blueprint is string pastLifeBlueprint)
             {
@@ -758,7 +758,7 @@ namespace XRL.World.Parts
             GameObject Corpse,
             UD_FleshGolems_PastLife PastLife)
         {
-            Debug.LogHeader(nameof(Corpse) + ": " + (Corpse?.DebugName ?? "null"), out Indents indent);
+            Debug.LogHeader(nameof(Corpse) + ": " + (Corpse?.DebugName ?? "null"), out Indent indent);
             if (Corpse is GameObject frankenCorpse
                 && frankenCorpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>() is var reanimationHelper)
             {
@@ -773,7 +773,7 @@ namespace XRL.World.Parts
                         reanimationHelper.Reanimator ??= GameObject.FindByBlueprint(reanimatorFallback);
                     }
                 }
-                Debug.Log(PastLife?.Blueprint, new Indents(1, Debug.LastIndents[0]));
+                Debug.Log(PastLife?.Blueprint, indent[1]);
 
                 bool wasPlayer = PastLife != null && PastLife.WasPlayer;
 

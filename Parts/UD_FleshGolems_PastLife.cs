@@ -62,8 +62,8 @@ namespace XRL.World.Parts
             */
             Registry.Register(nameof(GetCorpseBlueprints), true);
             Registry.Register(nameof(GetBlueprintsWhoseCorpseThisCouldBe), true);
-            Registry.Register(nameof(GetALivingBlueprintForCorpseWeighted), true);
-            Registry.Register(nameof(GetALivingBlueprintForCorpse), true);
+            Registry.Register(nameof(GetAnEntityForCorpseWeighted), true);
+            Registry.Register(nameof(GetAnEntityForCorpse), true);
             return Registry;
         }
 
@@ -238,49 +238,6 @@ namespace XRL.World.Parts
             OtherCorpse = 7,
         }
 
-        public const string CACHE_EMPTY = "empty";
-
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-        [GameBasedStaticCache(ClearInstance = false)]
-        public static StringMap<GameObjectBlueprint> CorpseBlueprints = new();
-
-        public static StringMap<GameObjectBlueprint> GetProcessableCorpseBlueprints() =>
-            (from bp in CorpseBlueprints 
-             where IsProcessableCorpse(bp.Value) 
-             select bp) as StringMap<GameObjectBlueprint>;
-
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-        [GameBasedStaticCache(ClearInstance = false)]
-        public static StringMap<GameObjectBlueprint> CorpseCorpseProductBlueprints = new(); // corpse products that are also corpses.
-
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-        [GameBasedStaticCache(ClearInstance = false)]
-        public static StringMap<GameObjectBlueprint> EntitiesWithCorpseBlueprints = new();
-
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-        [GameBasedStaticCache(ClearInstance = false)]
-        public static StringMap<string> CorpseByEntity = new();
-
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-        [GameBasedStaticCache(ClearInstance = false)]
-        public static StringMap<List<string>> CountsAsByCorpse = new();
-
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-        [GameBasedStaticCache(ClearInstance = false)]
-        public static StringMap<List<string>> ProcessablesByProduct = new();
-
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-        [GameBasedStaticCache(ClearInstance = false)]
-        public static StringMap<List<string>> ProductsByProcessable = new();
-
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-        [GameBasedStaticCache(ClearInstance = false)]
-        public static StringMap<List<string>> EntitiesByCorpse = new();
-
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
-        [GameBasedStaticCache(ClearInstance = false)]
-        public static StringMap<List<BlueprintWeightPair>> EntityWithWeightByCorpse = new();
-
         public const string IGNORE_EXCLUDE_PROPTAG = "UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding";
         public const string CORPSE_COUNTS_AS_PROPTAG = "UD_FleshGolems PastLife CountsAs";
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
@@ -378,82 +335,6 @@ namespace XRL.World.Parts
             Initialize(PrevPastLife);
         }
 
-        private static void CacheEntityWithWeightByCorpse(string CorpseBlueprint, BlueprintWeightPair Entry)
-        {
-            EntityWithWeightByCorpse ??= new();
-            EntityWithWeightByCorpse[CorpseBlueprint] ??= new();
-            if (EntityWithWeightByCorpse[CorpseBlueprint].Find(e => e.Blueprint == Entry.Blueprint) is BlueprintWeightPair entityWithWeight)
-            {
-                entityWithWeight.Weight += Entry.Weight;
-            }
-            else
-            {
-                EntityWithWeightByCorpse[CorpseBlueprint].Add(Entry);
-            }
-        }
-        private static void CacheEntityWithWeightByCorpse(string CorpseBlueprint, List<BlueprintWeightPair> Entries)
-        {
-            EntityWithWeightByCorpse ??= new();
-            foreach (BlueprintWeightPair entry in Entries)
-            {
-                CacheEntityWithWeightByCorpse(CorpseBlueprint, entry);
-            }
-        }
-
-        private static void CacheCountsAsByCorpse(string CorpseBlueprint, string CountsAsBlueprint)
-        {
-            CountsAsByCorpse ??= new();
-            CountsAsByCorpse[CorpseBlueprint] ??= new();
-            if (!CountsAsByCorpse[CorpseBlueprint].Any(bp => bp == CountsAsBlueprint))
-            {
-                CountsAsByCorpse[CorpseBlueprint].Add(CountsAsBlueprint);
-            }
-        }
-        private static void CacheCountsAsByCorpse(string CorpseBlueprint, List<string> CountsAsBlueprints)
-        {
-            CountsAsByCorpse ??= new();
-            foreach (string entity in CountsAsBlueprints)
-            {
-                CacheCountsAsByCorpse(CorpseBlueprint, entity);
-            }
-        }
-
-        private static void CacheEntitesByCorpse(string CorpseBlueprint, string EntityBlueprint)
-        {
-            EntitiesByCorpse ??= new();
-            EntitiesByCorpse[CorpseBlueprint] ??= new();
-            if (!EntitiesByCorpse[CorpseBlueprint].Any(bp => bp == EntityBlueprint))
-            {
-                EntitiesByCorpse[CorpseBlueprint].Add(EntityBlueprint);
-            }
-        }
-        private static void CacheEntitesByCorpse(string CorpseBlueprint, List<string> EntityBlueprints)
-        {
-            EntitiesByCorpse ??= new();
-            foreach (string entity in EntityBlueprints)
-            {
-                CacheEntitesByCorpse(CorpseBlueprint, entity);
-            }
-        }
-
-        private static void CacheStringMapListString(StringMap<List<string>> ListStringCache, string ByKey, string Value)
-        {
-            ListStringCache ??= new();
-            ListStringCache[ByKey] ??= new();
-            if (!ListStringCache[ByKey].Any(bp => bp == Value))
-            {
-                ListStringCache[ByKey].Add(Value);
-            }
-        }
-        private static void CacheStringMapListString(StringMap<List<string>> ListStringCache, string ByKey, List<string> ListString)
-        {
-            ListStringCache ??= new();
-            foreach (string @string in ListString)
-            {
-                CacheStringMapListString(ListStringCache, ByKey, @string);
-            }
-        }
-
         private static GameObject GetNewBrainInAJar()
         {
             return GameObjectFactory.Factory.CreateUnmodifiedObject("UD_FleshGolems Brain In A Jar Widget");
@@ -475,36 +356,6 @@ namespace XRL.World.Parts
             return IsProcessableCorpse(Corpse, true);
         }
 
-        public static List<GameObjectBlueprint> GetCorpseBlueprints(bool ForCache = false)
-        {
-            List<GameObjectBlueprint> blueprintsList = new();
-            CorpseBlueprints ??= new();
-            if (!ForCache && !CorpseBlueprints.IsNullOrEmpty())
-            {
-                foreach (GameObjectBlueprint blueprint in CorpseBlueprints.Values)
-                {
-                    blueprintsList.Add(blueprint);
-                }
-            }
-            else
-            {
-                int counter = 0;
-                foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList)
-                {
-                    if (ForCache && counter++ % 100 == 0)
-                    {
-                        Startup.SetLoadingStatusCaching();
-                    }
-                    if (blueprint.IsCorpse())
-                    {
-                        CorpseBlueprints[blueprint.Name] = blueprint;
-                        blueprintsList.Add(blueprint);
-                    }
-                }
-            }
-            return blueprintsList;
-        }
-
         public static List<GameObjectBlueprint> GetCorpseBlueprints(Predicate<GameObjectBlueprint> Filter)
             => NecromancySystem
                 ?.GetCorpseBlueprints(Filter)
@@ -513,80 +364,59 @@ namespace XRL.World.Parts
         public static IReadOnlyList<EntityWeight> GetBlueprintsWhoseCorpseThisCouldBe(
             string CorpseBlueprint,
             bool Include0Chance = true,
-            bool ExcludeExcludedFromDynamicEnounter = true,
             Predicate<GameObjectBlueprint> Filter = null)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(true), CorpseBlueprint, indent[1]);
             List<EntityWeight> blueprintsWeightedList = new();
-            if (CorpseBlueprint.IsNullOrEmpty() || !CorpseBlueprint.IsCorpse())
+            if (!CorpseBlueprint.IsNullOrEmpty() && CorpseBlueprint.IsCorpse())
             {
-                return NecromancySystem.RequireCorpseSheet(CorpseBlueprint).GetEntityWeights(Filter);
+                return NecromancySystem?.RequireCorpseSheet(CorpseBlueprint)?.GetEntityWeights(Filter);
+                // Add 0Chance and ExcludeDynamic filters in here.
             }
             Debug.SetIndent(indent[0]);
-            return new List<EntityWeight>();
+            return blueprintsWeightedList;
         }
 
-        public static string GetALivingBlueprintForCorpseWeighted(
+        public static string GetAnEntityForCorpseWeighted(
             string CorpseBlueprint,
-            bool Include0Chance = true,
-            bool GuaranteeBlueprint = true,
-            bool ExcludeExcludedFromDynamicEnounter = true)
+            bool Include0Weight = true,
+            bool GuaranteeBlueprint = true)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
 
+            /*
             IReadOnlyList<EntityWeight> blueprintsThisCorpseCouldBe = GetBlueprintsWhoseCorpseThisCouldBe(
                 CorpseBlueprint: CorpseBlueprint,
-                ExcludeExcludedFromDynamicEnounter: ExcludeExcludedFromDynamicEnounter,
                 Filter: IsNotBaseBlueprint);
+            */
+            Dictionary<string, int> //weightedBlueprints = blueprintsThisCorpseCouldBe.ConvertToWeightedList();
+            weightedBlueprints = NecromancySystem?.GetWeightedEntityStringsThisCorpseCouldBe(CorpseBlueprint, true, IsBaseBlueprint);
 
-            Dictionary<string, int> weightedBlueprints = blueprintsThisCorpseCouldBe.ConvertToWeightedList();
-            List<string> blueprints = new(weightedBlueprints.Keys);
-            int maxWeight = 0;
-            foreach (string blueprint in blueprints)
+            if (weightedBlueprints.GetWeightedRandom(Include0Weight) is string entity)
             {
-                if (Include0Chance && weightedBlueprints[blueprint] == 0)
-                {
-                    weightedBlueprints[blueprint]++;
-                }
-                maxWeight += weightedBlueprints[blueprint];
-            }
-            int cumulativeWeight = 0;
-            int rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
-
-            Debug.Log(Debug.GetCallingTypeAndMethod(true) + "(" + CorpseBlueprint + ", " + rolledAmount + "/" + maxWeight + ")", indent[1]);
-            foreach ((string blueprint, int weight) in weightedBlueprints)
-            {
-                if (weight < 1)
-                {
-                    continue;
-                }
-                cumulativeWeight += weight;
-                if (rolledAmount < cumulativeWeight)
-                {
-                    return blueprint;
-                }
+                return entity;
             }
 
-            if (!Include0Chance && GuaranteeBlueprint)
+            if (!Include0Weight && GuaranteeBlueprint)
             {
-                return GetALivingBlueprintForCorpseWeighted(CorpseBlueprint, true, false, false);
+                return GetAnEntityForCorpseWeighted(CorpseBlueprint, true, false);
             }
 
             Debug.SetIndent(indent[0]);
             return null;
         }
-        public static string GetALivingBlueprintForCorpse(string CorpseBlueprint, bool Include0Chance = true)
+        public static string GetAnEntityForCorpse(string CorpseBlueprint, bool Include0Weight = true)
         {
-            return GetBlueprintsWhoseCorpseThisCouldBe(CorpseBlueprint, Include0Chance: Include0Chance)
-                ?.ConvertToWeightedList()
+            return NecromancySystem
+                ?.GetWeightedEntityStringsThisCorpseCouldBe(CorpseBlueprint, Include0Weight, IsBaseBlueprint)
                 ?.Keys
                 ?.GetRandomElementCosmetic();
         }
 
         public UD_FleshGolems_PastLife Initialize(GameObject PastLife = null)
         {
-            Debug.LogHeader(nameof(PastLife) + ": " + (PastLife?.DebugName ?? NULL), out Indents indent);
+            Debug.LogHeader(nameof(PastLife) + ": " + (PastLife?.DebugName ?? NULL), out Indent indent);
             if (!Init)
             {
                 bool obliteratePastLife = false;
@@ -598,7 +428,7 @@ namespace XRL.World.Parts
                         Blueprint ??= ParentObject?.GetPropertyOrTag(PASTLIFE_BLUEPRINT_PROPTAG)
                             ?? ParentObject?.GetPropertyOrTag("SourceObject")
                             ?? PastLife?.Blueprint
-                            ?? GetALivingBlueprintForCorpseWeighted(ParentObject.Blueprint);
+                            ?? GetAnEntityForCorpseWeighted(ParentObject.Blueprint);
 
                         Debug.Log(nameof(Blueprint), Blueprint ?? NULL, indent[1]);
 
@@ -1228,7 +1058,7 @@ namespace XRL.World.Parts
 
         public virtual void DebugOutput()
         {
-            Debug.ResetIndent(out Indents indent);
+            Debug.ResetIndent(out Indent indent);
             try
             {
                 Debug.Log(nameof(UD_FleshGolems_PastLife), ParentObject.DebugName, indent[0]);
@@ -1414,143 +1244,6 @@ namespace XRL.World.Parts
             }
             Popup.Show("no corpse selected to get a creature list from");
             Debug.SetSilenceLogging(false);
-        }
-
-        [WishCommand("UD_FleshGolems gimme caches")]
-        public static void Debug_GimmeCache_WishHandler()
-        {
-            Debug.SetSilenceLogging(true);
-            string output = "PastLife Corpse Caches\n";
-            output += nameof(CorpseBlueprints) + "\n";
-            List<string> corpseBlueprints = new();
-            foreach ((string corpseBlueprint, GameObjectBlueprint _) in CorpseBlueprints)
-            {
-                corpseBlueprints.Add(corpseBlueprint);
-            }
-            if (corpseBlueprints.IsNullOrEmpty())
-            {
-                corpseBlueprints ??= new()
-                {
-                    "empty",
-                };
-            }
-            output += corpseBlueprints.GenerateBulletList() + "\n\n";
-
-            output += nameof(EntitiesWithCorpseBlueprints) + "\n";
-            List<string> entitiesWithCorpseBlueprints = new();
-            foreach ((string entityBlueprint, GameObjectBlueprint _) in EntitiesWithCorpseBlueprints)
-            {
-                entitiesWithCorpseBlueprints.Add(entityBlueprint);
-            }
-            if (entitiesWithCorpseBlueprints.IsNullOrEmpty())
-            {
-                entitiesWithCorpseBlueprints ??= new()
-                {
-                    "empty",
-                };
-            }
-            output += entitiesWithCorpseBlueprints.GenerateBulletList() + "\n\n";
-
-            output += nameof(CorpseByEntity) + "\n";
-            output += "Entity,Corpse\n";
-            List<string> corpseByEntity = new();
-            foreach (string corpseEntityPair in CorpseByEntity.ConvertToStringListWithKeyValue(kvp => kvp.Key + ": " + kvp.Value))
-            {
-                corpseByEntity.Add(corpseEntityPair);
-            }
-            if (corpseByEntity.IsNullOrEmpty())
-            {
-                corpseByEntity ??= new()
-                {
-                    "empty",
-                };
-            }
-            output += corpseByEntity.GenerateBulletList() + "\n\n";
-
-            output += nameof(EntitiesByCorpse) + "\n";
-            output += "Corpse,Entities\n";
-            List<string> entitesByCorpse = new();
-            foreach (string entityCorpsePair in EntitiesByCorpse.ConvertToStringListWithKeyValue(kvp => kvp.Key + "," + "\"" + kvp.Value.Join() + "\""))
-            {
-                entitesByCorpse.Add(entityCorpsePair);
-            }
-            if (entitesByCorpse.IsNullOrEmpty())
-            {
-                entitesByCorpse ??= new()
-                {
-                    "empty",
-                };
-            }
-            output += entitesByCorpse.GenerateBulletList() + "\n\n";
-
-            output += nameof(ProcessablesByProduct) + "\n";
-            output += "Product,Corpse\n";
-            List<string> processablesByProduct = new();
-            foreach (string corpseProductPair in ProcessablesByProduct.ConvertToStringListWithKeyValue(list => Grammar.MakeAndList(list)))
-            {
-                processablesByProduct.Add(corpseProductPair);
-            }
-            if (processablesByProduct.IsNullOrEmpty())
-            {
-                processablesByProduct ??= new()
-                {
-                    "empty",
-                };
-            }
-            output += processablesByProduct.GenerateBulletList() + "\n\n";
-
-            static string andListOrBulletList(List<string> list)
-            {
-                if (!list.IsNullOrEmpty() & list.Count > 3)
-                {
-                    string spaces = "=ud_nbsp:4=".StartReplace().ToString();
-                    return "\n" + list.GenerateBulletList(ItemPostProc: s => spaces + s);
-                }
-                return "\"" + Grammar.MakeAndList(list) + "\"";
-            }
-            output += nameof(ProductsByProcessable) + "\n";
-            output += "Corpse,Product\n";
-            List<string> productsByProcessable = new();
-            foreach (string productCorpsePair in ProductsByProcessable.ConvertToStringListWithKeyValue(andListOrBulletList))
-            {
-                productsByProcessable.Add(productCorpsePair);
-            }
-            if (productsByProcessable.IsNullOrEmpty())
-            {
-                productsByProcessable ??= new()
-                {
-                    "empty",
-                };
-            }
-            output += productsByProcessable.GenerateBulletList() + "\n\n";
-
-            static string bwpListToStringList(List<BlueprintWeightPair> bwpList)
-            {
-                if (!bwpList.IsNullOrEmpty() & bwpList.Count > 3)
-                {
-                    string spaces = "=ud_nbsp:4=".StartReplace().ToString();
-                    return "\n" + new List<string>(bwpList.ConvertToStringList(bwp => (string)bwp + ": " + (int)bwp)).GenerateBulletList(ItemPostProc: s => spaces + s);
-                }
-                return "\"" + new List<string>(bwpList.ConvertToStringList(bwp => (string)bwp + ": " + (int)bwp)).Join() + "\"";
-            }
-            output += nameof(EntityWithWeightByCorpse) + "\n";
-            List<string> entitesByCorpseWithChance = new();
-            foreach (string corpsewithChanceEntityPair in EntityWithWeightByCorpse.ConvertToStringListWithKeyValue(bwpListToStringList))
-            {
-                entitesByCorpseWithChance.Add(corpsewithChanceEntityPair);
-            }
-            if (entitesByCorpseWithChance.IsNullOrEmpty())
-            {
-                entitesByCorpseWithChance ??= new()
-                {
-                    "empty",
-                };
-            }
-            output += entitesByCorpseWithChance.GenerateBulletList() + "\n\n";
-
-            Debug.SetSilenceLogging(false);
-            UnityEngine.Debug.Log(output);
-            Popup.Show(output);
         }
     }
 }

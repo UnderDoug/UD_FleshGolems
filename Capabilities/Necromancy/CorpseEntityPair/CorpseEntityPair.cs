@@ -1,41 +1,16 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
 using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 
 using HarmonyLib;
 
-using Genkit;
-using Qud.API;
-
-using XRL.UI;
-using XRL.Wish;
-using XRL.Rules;
-using XRL.Language;
-using XRL;
-using XRL.Collections;
 using XRL.World;
-using XRL.World.Parts;
-using XRL.World.AI;
-using XRL.World.Parts.Mutation;
-using XRL.World.Parts.Skill;
-using XRL.World.Anatomy;
-using XRL.World.ObjectBuilders;
 
-using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
-using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
-
-using UD_FleshGolems;
-using static UD_FleshGolems.Const;
-using static UD_FleshGolems.Utils;
-
-using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using UD_FleshGolems.Logging;
 
 using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair.PairRelationship;
-
 using SerializeField = UnityEngine.SerializeField;
 
 namespace UD_FleshGolems.Capabilities.Necromancy
@@ -67,6 +42,14 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                 foreach (MethodBase method in typeof(EqualityComparer).GetMethods())
                 {
                     if (method.Name == nameof(EitherNull))
+                    {
+                        Registry.Register(method, false);
+                    }
+                    if (method.Name == nameof(Equals))
+                    {
+                        Registry.Register(method, false);
+                    }
+                    if (method.Name == nameof(GetHashCode))
                     {
                         Registry.Register(method, false);
                     }
@@ -200,7 +183,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     : default;
             }
 
-            private bool EitherNull(CorpseEntityPair x, CorpseEntityPair y, out bool AreEqual)
+            public bool EitherNull(CorpseEntityPair x, CorpseEntityPair y, out bool AreEqual)
             {
                 // Debug.GetIndents(out Indents indent);
                 //Debug.Log(Debug.GetCallingTypeAndMethod(), indent);
@@ -326,20 +309,6 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                 {
                     return Comparison;
                 }
-                /*
-                if (x == null && y == null)
-                {
-                    return 0;
-                }
-                if (x != null && y != null)
-                {
-                    return 1;
-                }
-                if (x == null && y != null)
-                {
-                    return -1;
-                }
-                */
                 if (Type.HasAllTypes(CompareType.Weight, CompareType.Relationship))
                 {
                     if (TypeOrder.IndexOf(CompareType.Weight) < TypeOrder.IndexOf(CompareType.Relationship))
@@ -436,7 +405,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
             CorpseCountsAs = 3,
         }
 
-        public BlueprintWeight this[BlueprintBox Reference]
+        public BlueprintWeight this[[AllowNull] BlueprintBox Reference]
         {
             get
             {

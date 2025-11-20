@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-
+using System.Linq;
 using ConsoleLib.Console;
 
 using Qud.API;
@@ -10,12 +10,16 @@ using XRL.Language;
 using XRL.UI;
 using XRL.World.AI;
 using XRL.World.Parts.Mutation;
-
-using UD_FleshGolems;
-using static XRL.World.Parts.UD_FleshGolems_PastLife;
 using XRL.World.Effects;
 using XRL.World.Capabilities;
 using XRL.Messages;
+
+using static XRL.World.Parts.UD_FleshGolems_PastLife;
+
+using UD_FleshGolems;
+
+using UD_FleshGolems.Capabilities.Necromancy;
+using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 
 namespace XRL.World.Parts.Mutation
 {
@@ -380,7 +384,8 @@ namespace XRL.World.Parts.Mutation
                 startX = reanimatorCell.X;
                 startY = reanimatorCell.Y;
             }
-            if (IsReanimatableCorpse(ParentObject.Target))
+            if (TargetCorpse == null
+                && IsReanimatableCorpse(ParentObject.Target))
             {
                 TargetCorpse = ParentObject.Target;
             }
@@ -432,7 +437,8 @@ namespace XRL.World.Parts.Mutation
 
         public bool ProcessAssessCorpse(GameObject TargetCorpse = null)
         {
-            if (IsReanimatableCorpse(ParentObject.Target))
+            if (TargetCorpse == null
+                && IsReanimatableCorpse(ParentObject.Target))
             {
                 TargetCorpse = ParentObject.Target;
             }
@@ -476,14 +482,15 @@ namespace XRL.World.Parts.Mutation
                     Sound: "Sounds/Abilities/sfx_ability_mutation_psychometry_activate",
                     IsOut: true);
 
-                Dictionary<string, int> weightedList = GetBlueprintsWhoseCorpseThisCouldBe(TargetCorpse.Blueprint).ConvertToWeightedList();
-                List<string> possibleBlueprints = new(weightedList.ConvertToStringListWithKeyValue());
-
                 string corpseListLabel =
                     TargetCorpse.IndicativeProximal + " " + TargetCorpse.GetReferenceDisplayName(Short: true) +
                     " might have been any of the following:";
 
-                string corpseListOutput = possibleBlueprints.GenerateBulletList(Label: corpseListLabel);
+                string corpseListOutput = NecromancySystem
+                    ?.GetWeightedEntityStringsThisCorpseCouldBe(TargetCorpse, true, Utils.IsBaseBlueprint)
+                    ?.ConvertToStringListWithKeyValue()
+                    ?.GenerateBulletList(Label: corpseListLabel);
+
                 Popup.Show(corpseListOutput);
                 return true;
             }
@@ -496,9 +503,14 @@ namespace XRL.World.Parts.Mutation
 
         public bool ProcessPowerWordKill(GameObject TargetCreature = null)
         {
+            if (TargetCreature == null
+                && HasCorpse(ParentObject.Target))
+            {
+                TargetCreature = ParentObject.Target;
+            }
             int startX = 40;
             int startY = 12;
-            if (The.Player.CurrentCell is Cell sayerCell)
+            if (ParentObject.CurrentCell is Cell sayerCell)
             {
                 startX = sayerCell.X;
                 startY = sayerCell.Y;

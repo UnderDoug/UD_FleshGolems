@@ -63,7 +63,7 @@ namespace UD_FleshGolems.Logging
             List<MethodRegistryEntry> Registry,
             out List<MethodRegistryEntry> ReturnRegistry)
         {
-            Register(Class.GetMethod(MethodName), Value, Registry, out ReturnRegistry);
+            Register(Class?.GetMethod(MethodName), Value, Registry, out ReturnRegistry);
         }
         public static void Register(
             MethodBase MethodBase,
@@ -136,16 +136,6 @@ namespace UD_FleshGolems.Logging
             set => _LastIndent = value;
         }
 
-        [ModSensitiveStaticCache( CreateEmptyInstance = false )]
-        [GameBasedStaticCache( ClearInstance = false )]
-        private static Indents _LastIndents = null;
-
-        public static Indents LastIndents
-        {
-            get => _LastIndents ??= new(GetNewIndent());
-            set => _LastIndents = value;
-        }
-
         public static Indent GetNewIndent(int Offset)
         {
             return new(Offset, 4, ' ');
@@ -158,40 +148,25 @@ namespace UD_FleshGolems.Logging
 
         public static void ResetIndent(out Indent Indent)
         {
-            _LastIndents = null;
-            Indent = LastIndents;
-            _LastIndent.SetIndent(LastIndents);
-        }
-        public static void ResetIndent(out Indents Indent)
-        {
-            _LastIndents = null;
-            Indent = LastIndents;
-            _LastIndent = null;
-            LastIndent.SetIndent(LastIndents);
+            LastIndent.ResetIndent(out Indent);
         }
         [GameBasedCacheInit]
         [ModSensitiveCacheInit]
         public static void ResetIndent()
         {
-            ResetIndent(out Indents _);
+            ResetIndent(out Indent _);
         }
         public static void SetIndent(Indent Indent)
         {
             LastIndent.SetIndent(Indent);
-            _ = LastIndents[Indent];
         }
-        public static void GetIndents(int Offset, out Indents Indents)
+        public static void GetIndent(int Offset, out Indent Indent)
         {
-            if (Offset != 0)
-            {
-                LastIndents.Reseed(Offset);
-            }
-            Indents = LastIndents;
-            LastIndent.SetIndent(LastIndents);
+            Indent = LastIndent[Offset];
         }
-        public static void GetIndents(out Indents Indents)
+        public static void GetIndents(out Indent Indent)
         {
-            GetIndents(0, out Indents);
+            GetIndent(0, out Indent);
         }
 
         public static string GetCallingTypeAndMethod(bool AppendSpace = false)
@@ -235,10 +210,10 @@ namespace UD_FleshGolems.Logging
             {
                 output += ": " + Value;
             }
-            UnityEngine.Debug.Log(Indent + output);
-            SetIndent(Indent);
+            UnityEngine.Debug.Log(Indent.ToString() + output);
+            // SetIndent(Indent);
         }
-        public static void Log<T>(string Field, T Value, out Indents Indent)
+        public static void Log<T>(string Field, T Value, out Indent Indent)
         {
             GetIndents(out Indent);
             Log(Field, Value, Indent);
@@ -248,18 +223,18 @@ namespace UD_FleshGolems.Logging
             Log(Message, (string)null, Indent);
         }
         public static void LogCaller(Indent Indent = null) => Log(GetCallingTypeAndMethod(), Indent);
-        public static void LogHeader(string Message, out Indents Indent)
+        public static void LogHeader(string Message, out Indent Indent)
         {
             GetIndents(out Indent);
-            Log(GetCallingTypeAndMethod(true) + Message, Indent);
+            Log<Indent>(GetCallingTypeAndMethod(true) + Message, Indent);
         }
         public static void CheckYeh(string Message, Indent Indent = null)
         {
-            Log(AppendTick("") + " " + Message, (string)null, Indent);
+            Log(AppendTick("") + Message, (string)null, Indent);
         }
         public static void CheckNah(string Message, Indent Indent = null)
         {
-            Log(AppendCross("") + " " + Message, (string)null, Indent);
+            Log(AppendCross("") + Message, (string)null, Indent);
         }
         public static void YehNah(string Message, bool? Good = null, Indent Indent = null)
         {
@@ -268,11 +243,11 @@ namespace UD_FleshGolems.Logging
             {
                 if (!Good.GetValueOrDefault())
                 {
-                    append = AppendCross("") + " ";
+                    append = AppendCross("");
                 }
                 else
                 {
-                    append = AppendTick("") + " ";
+                    append = AppendTick("");
                 }
             }
             Log(append + Message, (string)null, Indent);

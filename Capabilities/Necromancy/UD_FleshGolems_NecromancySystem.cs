@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using System.Reflection;
+using System.Diagnostics;
 
 using HarmonyLib;
 
@@ -38,10 +39,12 @@ using UD_FleshGolems.Capabilities.Necromancy;
 
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair.PairRelationship;
+using Debug = UD_FleshGolems.Logging.Debug;
 
 namespace UD_FleshGolems.Capabilities
 {
     [HasGameBasedStaticCache]
+    [HasWishCommand]
     [Serializable]
     public class UD_FleshGolems_NecromancySystem : IScribedSystem
     {
@@ -75,7 +78,7 @@ namespace UD_FleshGolems.Capabilities
         public static UD_FleshGolems_NecromancySystem System;
 
         [SerializeField]
-        private StringMap<CorpseSheet> CorpseSheets;
+        private StringMap<CorpseSheet> Necronomicon;
 
         [SerializeField]
         private StringMap<EntityBlueprint> EntityBlueprints;
@@ -94,7 +97,7 @@ namespace UD_FleshGolems.Capabilities
 
         public UD_FleshGolems_NecromancySystem()
         {
-            CorpseSheets = new();
+            Necronomicon = new();
             EntityBlueprints = new();
             CorpseSheetsInitialized = false;
             EntityPrimaryCorpsesInitialized = false;
@@ -105,12 +108,12 @@ namespace UD_FleshGolems.Capabilities
         [GameBasedCacheInit]
         public static void NecromancySystemInit()
         {
+            Debug.GetIndents(out Indent indent);
             System = The.Game?.RequireSystem(InitializeSystem);
-            Debug.LogHeader("Starting Starting Cache...", out Indents indent);
             bool success = false;
             try
             {
-                System.Init();
+                System?.Init();
                 success = true;
             }
             catch (Exception x)
@@ -120,24 +123,51 @@ namespace UD_FleshGolems.Capabilities
             }
             finally
             {
-                Debug.Log(Debug.GetCallingTypeAndMethod(), "Cache finished... " + success, indent[0]);
+                if (The.Game != null)
+                {
+                    Debug.Log(Debug.GetCallingTypeAndMethod(), "Cache finished... " + (success ? "success!" : "failure!"), indent[0]);
+                }
                 Debug.SetIndent(indent[0]);
             }
         }
+
+        private static int CachingPeriods = 0;
+        private static string GetPeriods(int Periods, out int NewPeriods)
+        {
+            NewPeriods = Periods + 1;
+            return ".".ThisManyTimes(Math.Abs(3 - (Periods % 7)));
+        }
+        private static void SetLoadingStatusCorpses(bool OnCondition = true)
+        {
+            if (OnCondition) Loading.SetLoadingStatus("Assessing Corpses" + GetPeriods(CachingPeriods, out CachingPeriods));
+        }
+
         private static UD_FleshGolems_NecromancySystem InitializeSystem() => new();
 
         private void Init()
         {
+            Stopwatch sw = new();
+            sw.Start();
+
+            Debug.LogHeader("Starting Corpse Cache...", out Indent indent);
+
             InitializeCorpseSheetsCorpses(out CorpseSheetsInitialized);
             InitializeEntityPrimaryCorpses(out EntityPrimaryCorpsesInitialized);
             InititializeCorpseProducts(out CorpseProductsInitialized);
             InitializeCountsAsCorspes(out CountsAsCorspesInitialized);
+
+            sw.Stop();
+            TimeSpan duration = sw.Elapsed;
+            string timeUnit = duration.Minutes > 0 ? "minutes" : "seconds";
+            double timeDuration = duration.Minutes > 0 ? duration.TotalMinutes : duration.TotalSeconds;
+            Debug.Log("Corpse Cache took " + timeDuration.Things(timeUnit) + ".", Indent: indent[0]);
+            Debug.SetIndent(indent[0]);
         }
 
         public bool TryGetCorpseSheet(string Corpse, out CorpseSheet CorpseSheet)
         {
-            CorpseSheets ??= new();
-            if (CorpseSheets[Corpse] is CorpseSheet cachedCorpseSheet)
+            Necronomicon ??= new();
+            if (Necronomicon[Corpse] is CorpseSheet cachedCorpseSheet)
             {
                 CorpseSheet = cachedCorpseSheet;
                 return true;
@@ -147,13 +177,13 @@ namespace UD_FleshGolems.Capabilities
         }
         public CorpseSheet RequireCorpseSheet(string Blueprint)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(), Blueprint, indent[1]);
             if (!TryGetCorpseSheet(Blueprint, out CorpseSheet corpseSheet))
             {
                 Debug.Log("No existing CorpseSheet entry; creating new one...", indent[2]);
                 corpseSheet = new CorpseSheet(new CorpseBlueprint(Blueprint));
-                CorpseSheets[Blueprint] = corpseSheet;
+                Necronomicon[Blueprint] = corpseSheet;
             }
             else
             {
@@ -166,7 +196,6 @@ namespace UD_FleshGolems.Capabilities
         {
             return RequireCorpseSheet(Blueprint.Name);
         }
-
 
         public bool TryGetEntityBluprint(string Entity, out EntityBlueprint EntityBlueprint)
         {
@@ -181,7 +210,7 @@ namespace UD_FleshGolems.Capabilities
         }
         public EntityBlueprint RequireEntityBlueprint(string Blueprint)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(), Blueprint, indent[1]);
 
             if (!TryGetEntityBluprint(Blueprint, out EntityBlueprint entityBlueprint))
@@ -202,17 +231,6 @@ namespace UD_FleshGolems.Capabilities
             return RequireEntityBlueprint(Blueprint.Name);
         }
 
-        private static int CachingPeriods = 0;
-        private static string GetPeriods(int Periods, out int NewPeriods)
-        {
-            NewPeriods = Periods + 1;
-            return ".".ThisManyTimes(3 - (Periods % 4));
-        }
-        private static void SetLoadingStatusCorpses(bool OnCondition = true)
-        {
-            if (OnCondition) Loading.SetLoadingStatus("Assessing Corpses" + GetPeriods(CachingPeriods, out CachingPeriods));
-        }
-
         public static bool IsReanimatableCorpse(GameObjectBlueprint Blueprint)
         {
             return UD_FleshGolems_NanoNecroAnimation.IsReanimatableCorpse(Blueprint);
@@ -220,7 +238,7 @@ namespace UD_FleshGolems.Capabilities
 
         public UD_FleshGolems_NecromancySystem InitializeCorpseSheetsCorpses(out bool Initialized)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(), indent[1]);
             int counter = 0;
             foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList.Where(IsReanimatableCorpse))
@@ -243,25 +261,24 @@ namespace UD_FleshGolems.Capabilities
                 .Where(bp => Filter == null || Filter(bp));
         public UD_FleshGolems_NecromancySystem InitializeEntityPrimaryCorpses(out bool Initialized)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(), indent[1]);
             int counter = 0;
             foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList.Where(bp => bp.HasPart(nameof(Corpse))))
             {
-                Debug.Log(blueprint.Name, indent[2]);
                 SetLoadingStatusCorpses(counter++ % 10 == 0);
                 if (!blueprint.IsBaseBlueprint()
                     && !blueprint.IsChiliad()
                     && blueprint.TryGetCorpseBlueprintAndChance(out string corpseBlueprint, out int corpseChance)
                     && corpseBlueprint.IsCorpse())
                 {
-                    Debug.CheckYeh("Added " + nameof(corpseBlueprint) + ": " + corpseBlueprint, indent[3]);
+                    Debug.CheckYeh(blueprint.Name + " added " + nameof(corpseBlueprint) + ": " + corpseBlueprint, indent[2]);
                     RequireCorpseSheet(corpseBlueprint)
                         .AddPrimaryEntity(blueprint, corpseChance);
                 }
                 else
                 {
-                    Debug.CheckNah("Skipped, doesn't pass.", indent[3]);
+                    Debug.CheckNah(blueprint.Name + " skipped, doesn't pass.", indent[2]);
                 }
             }
             Debug.CheckYeh(nameof(EntityPrimaryCorpsesInitialized), indent[1]);
@@ -280,15 +297,26 @@ namespace UD_FleshGolems.Capabilities
         public static bool IsProcessableCorpse(GameObjectBlueprint Corpse)
             => IsProcessableCorpse(Corpse, true);
 
-        public IEnumerable<CorpseBlueprint> GetCorpseBlueprints(Predicate<GameObjectBlueprint> Filter = null)
+        public IEnumerable<CorpseBlueprint> GetCorpseBlueprints()
+        {
+            foreach ((_, CorpseSheet corpseSheet) in Necronomicon)
+            {
+                if (corpseSheet.GetCorpseBlueprint() is GameObjectBlueprint corpseBlueprint)
+                {
+                    yield return corpseSheet.GetCorpse();
+                }
+            }
+        }
+
+        public IEnumerable<CorpseBlueprint> GetCorpseBlueprints(Predicate<GameObjectBlueprint> Filter)
         {
             if (!CorpseSheetsInitialized)
             {
-                string cacheName = nameof(UD_FleshGolems_NecromancySystem) + "." + nameof(CorpseSheets);
+                string cacheName = nameof(UD_FleshGolems_NecromancySystem) + "." + nameof(Necronomicon);
                 MetricsManager.LogModError(ThisMod, "Attempted to iterate " + cacheName + " before it was initialized");
                 yield break;
             }
-            foreach ((_, CorpseSheet corpseSheet) in CorpseSheets)
+            foreach ((_, CorpseSheet corpseSheet) in Necronomicon)
             {
                 if (corpseSheet.GetCorpseBlueprint() is GameObjectBlueprint corpseBlueprint)
                 {
@@ -296,6 +324,39 @@ namespace UD_FleshGolems.Capabilities
                     {
                         yield return corpseSheet.GetCorpse();
                     }
+                }
+            }
+        }
+
+        public IEnumerable<CorpseBlueprint> GetCorpseBlueprints(Predicate<CorpseBlueprint> Filter)
+        {
+            if (!CorpseSheetsInitialized)
+            {
+                string cacheName = nameof(UD_FleshGolems_NecromancySystem) + "." + nameof(Necronomicon);
+                MetricsManager.LogModError(ThisMod, "Attempted to iterate " + cacheName + " before it was initialized");
+                yield break;
+            }
+            foreach ((_, CorpseSheet corpseSheet) in Necronomicon)
+            {
+                if (Filter == null || Filter(corpseSheet.GetCorpse()))
+                {
+                    yield return corpseSheet.GetCorpse();
+                }
+            }
+        }
+        public IEnumerable<CorpseBlueprint> GetCorpseBlueprints(Predicate<CorpseSheet> Filter)
+        {
+            if (!CorpseSheetsInitialized)
+            {
+                string cacheName = nameof(UD_FleshGolems_NecromancySystem) + "." + nameof(Necronomicon);
+                MetricsManager.LogModError(ThisMod, "Attempted to iterate " + cacheName + " before it was initialized");
+                yield break;
+            }
+            foreach ((_, CorpseSheet corpseSheet) in Necronomicon)
+            {
+                if (Filter == null || Filter(corpseSheet))
+                {
+                    yield return corpseSheet.GetCorpse();
                 }
             }
         }
@@ -318,7 +379,7 @@ namespace UD_FleshGolems.Capabilities
             string OnSuccessFieldName,
             Predicate<GameObjectBlueprint> ProductFilter = null)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(
                 Debug.GetCallingTypeAndMethod(true),
                 CorpseBlueprint.Name + ", " + ProcessableType + ", " + OnSuccessFieldName,
@@ -382,7 +443,7 @@ namespace UD_FleshGolems.Capabilities
         }
         public UD_FleshGolems_NecromancySystem InititializeCorpseProducts(out bool Initialized)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(), indent[1]);
 
             List<GameObjectBlueprint> possibleProducts = new();
@@ -430,29 +491,26 @@ namespace UD_FleshGolems.Capabilities
                     SetLoadingStatusCorpses(counter++ % 5 == 0);
                     if (possibleProduct.IsCorpse())
                     {
-                        // If there's no existing entry, make one and assign it.
-                        if (!TryGetCorpseSheet(possibleProduct.Name, out CorpseSheet productCorpseSheet))
+                        CorpseSheet productCorpseSheet = RequireCorpseSheet(possibleProduct.Name);
+                        productCorpseSheet.IsCorpseProduct = true;
+
+                        // add the corpse we got the product from to the corpseProduct's list.
+                        if (productCorpseSheet.AddProductOriginCorpse(corpseBlueprint))
                         {
-                            productCorpseSheet = new CorpseSheet(new CorpseProduct(possibleProduct.Name));
-                            CorpseSheets[possibleProduct.Name] = productCorpseSheet;
+                            Debug.CheckYeh("Added " + corpseBlueprint + " to ProductOriginCorpses list", indent[5]);
                         }
                         else
                         {
-                            // set the existing entry to a corpse product.
-                            productCorpseSheet.IsCorpseProduct = true;
+                            Debug.CheckNah(corpseBlueprint + " is  already in ProductOriginCorpses list", indent[5]);
                         }
-                        // add the corpse we got the product from to the corpseProduct's list.
-                        if (productCorpseSheet.GetCorpse() is CorpseProduct corpseProduct)
-                        {
-                            Debug.CheckYeh("Added " + corpseBlueprint + " to " + nameof(corpseProduct.CorpseBlueprints), indent[5]);
-                            corpseProduct.CorpseBlueprints.AddUnique(corpseBlueprint);
-                        }
-                        // all the entity weight entries for the corpse we got the product from the product's corpse sheet.
+
+                        // add the entity weight entries for the corpse we got the product from to the product's corpse sheet.
                         CorpseSheet corpseSheet = RequireCorpseSheet(corpseBlueprint.ToString());
                         Debug.Log(
                                 "Adding " + corpseBlueprint + " " + nameof(EntityWeight).Pluralize() +
                                 " to " + nameof(productCorpseSheet),
                                 indent[5]);
+
                         foreach (EntityWeight entityWeight in corpseSheet.GetEntityWeights())
                         {
                             Debug.CheckYeh("Added " + entityWeight + " to " + nameof(productCorpseSheet), indent[6]);
@@ -504,7 +562,7 @@ namespace UD_FleshGolems.Capabilities
 
         private List<EntityBlueprint> GetCorpseCountsAsBlueprints(GameObjectBlueprint CorpseBlueprint)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(true) + "(" + nameof(CorpseBlueprint) + ": " + CorpseBlueprint.Name + ")", indent[1]);
             List<EntityBlueprint> countsAsBlueprints = new();
             if (CorpseBlueprint == null
@@ -655,7 +713,7 @@ namespace UD_FleshGolems.Capabilities
 
         private UD_FleshGolems_NecromancySystem InitializeCountsAsCorspes(out bool Initialized)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(true), indent[1]);
             foreach (CorpseBlueprint corpseBlueprint in GetCorpseBlueprints())
             {
@@ -682,6 +740,93 @@ namespace UD_FleshGolems.Capabilities
             Debug.SetIndent(indent[0]);
             Initialized = true;
             return this;
+        }
+
+        public Dictionary<string, int> GetWeightedEntityStringsThisCorpseCouldBe(
+            string CorpseBlueprint,
+            bool Include0CHance = true,
+            Predicate<GameObjectBlueprint> Filter = null)
+            => RequireCorpseSheet(CorpseBlueprint)
+                ?.GetWeightedEntityNameList(Include0CHance, Filter);
+
+        public Dictionary<string, int> GetWeightedEntityStringsThisCorpseCouldBe(
+            CorpseBlueprint CorpseBlueprint,
+            bool Include0CHance = true,
+            Predicate<GameObjectBlueprint> Filter = null)
+            => GetWeightedEntityStringsThisCorpseCouldBe(CorpseBlueprint.ToString(), Include0CHance, Filter);
+
+        public Dictionary<string, int> GetWeightedEntityStringsThisCorpseCouldBe(
+            GameObjectBlueprint CorpseBlueprint,
+            bool Include0CHance = true,
+            Predicate<GameObjectBlueprint> Filter = null)
+            => GetWeightedEntityStringsThisCorpseCouldBe(CorpseBlueprint.Name, Include0CHance, Filter);
+
+        public Dictionary<string, int> GetWeightedEntityStringsThisCorpseCouldBe(
+            GameObject Corpse,
+            bool Include0CHance = true,
+            Predicate<GameObjectBlueprint> Filter = null)
+            => GetWeightedEntityStringsThisCorpseCouldBe(Corpse.Blueprint, Include0CHance, Filter);
+
+        /*
+         * 
+         * Wishes!
+         * 
+         */
+
+        [WishCommand("UD_FleshGolems gimme cache")]
+        public static void Debug_GimmeCache_WishHandler()
+        {
+            Debug.SetSilenceLogging(true);
+            string output = "NecromancySystem Corpse Caches\n";
+            output += nameof(GetCorpseBlueprints) + "\n";
+            output += System?.GetCorpseBlueprints()
+                        ?.ToList()
+                        ?.ConvertAll(cbp => cbp.ToString())
+                        ?.GenerateBulletList();
+            output += "\n\n";
+
+            output += nameof(GetEntitiesWithCorpse) + "\n";
+            output += GetEntitiesWithCorpse()
+                        ?.ToList()
+                        ?.ConvertAll(cbp => cbp.Name)
+                        ?.GenerateBulletList();
+            output += "\n\n";
+
+            output += "Entities by Corpse" + "\n";
+            output += "Corpse,Entities\n";
+            output += System?.Necronomicon
+                        ?.Select(cn => cn.Key + ",\"" + cn.Value.GetEntities().Join() + "\"")
+                        ?.ToList()
+                        ?.GenerateBulletList();
+            output += "\n\n";
+
+            /*
+            output += "Processables By Product" + "\n";
+            output += "Product,Corpse\n";
+            output += System?.GetCorpseBlueprints((CorpseSheet cs) => cs.IsCorpseProduct)
+                        ?.ToList()
+                        ?.ConvertAll(cbp => ((CorpseProduct)cbp).ToDebugString())
+                        ?.GenerateBulletList();
+            output += "\n\n";
+            */
+
+            output += "Full Breakdown" + "\n";
+            output += System?.Necronomicon
+                        ?.Select(cn 
+                            => cn.Key + ":\n" 
+                            + cn.Value?.GetEntityWeights()
+                                ?.ConvertToWeightedList()
+                                ?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value)
+                                ?.GenerateBulletList(ItemPostProc: s => UIFriendlyNBPS(4) + s))
+                        ?.ToList()
+                        ?.ConvertAll(cbp => cbp.ToString())
+                        ?.GenerateBulletList();
+            output += "\n\n";
+
+            Debug.SetSilenceLogging(false);
+            string uIFriendlySpace = UIFriendlyNBPS(1);
+            UnityEngine.Debug.Log(output.Replace(uIFriendlySpace, " "));
+            Popup.Show(output);
         }
     }
 }

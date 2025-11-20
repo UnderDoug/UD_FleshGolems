@@ -164,8 +164,8 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_xTagMultiU(DelegateContext Context)
         {
-            Debug.GetIndents(out Indents oldIndent);
-            Indents indent = new(Debug.GetNewIndent());
+            Debug.GetIndents(out Indent oldIndent);
+            Indent indent = new(Debug.GetNewIndent());
             Debug.LogCaller(indent);
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
@@ -208,8 +208,8 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_xTag(DelegateContext Context)
         {
-            Debug.GetIndents(out Indents oldIndent);
-            Indents indent = new(Debug.GetNewIndent());
+            Debug.GetIndents(out Indent oldIndent);
+            Indent indent = new(Debug.GetNewIndent());
             Debug.LogCaller(indent);
             Debug.Log(nameof(UD_xTag) + "." + nameof(Context.Target), Context?.Target?.DebugName ?? NULL, indent);
             string parameters = null;
@@ -348,7 +348,7 @@ namespace UD_FleshGolems
             Dictionary<string, string> vars = null,
             string defaultIfNull = null)
         {
-            Debug.GetIndents(out Indents indent);
+            Debug.GetIndents(out Indent indent);
             Debug.Log(
                 Debug.GetCallingTypeAndMethod() + "(" +
                 nameof(TableName) + ": " + TableName + ", " +
@@ -402,6 +402,11 @@ namespace UD_FleshGolems
             }
             return false;
         }
+
+        public static string UIFriendlyNBPS(int Count = 1)
+            => ("=ud_nbsp:" + Count + "=")
+                .StartReplace()
+                .ToString();
 
         /* 
          * 

@@ -17,20 +17,10 @@ namespace UD_FleshGolems.Logging
             this.Value = Value;
         }
 
-        public readonly void Deconstruct(out MethodBase MethodBase)
-        {
-            MethodBase = this.MethodBase;
-        }
-
-        public readonly void Deconstruct(out bool Value)
-        {
-            Value = this.Value;
-        }
-
         public readonly void Deconstruct(out MethodBase MethodBase, out bool Value)
         {
-            Deconstruct(out MethodBase);
-            Deconstruct(out Value);
+            Value = this.Value;
+            MethodBase = this.MethodBase;
         }
 
         public readonly string GetTypeAndMethodName()

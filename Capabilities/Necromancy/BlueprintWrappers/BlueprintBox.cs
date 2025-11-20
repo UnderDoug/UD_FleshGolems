@@ -10,7 +10,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
     public abstract class BlueprintBox : IComposite
     {
         [SerializeField]
-        private readonly string Name;
+        protected readonly string Name;
 
         public BlueprintBox()
         {

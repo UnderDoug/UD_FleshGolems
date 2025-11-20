@@ -41,5 +41,10 @@ namespace UD_FleshGolems.Capabilities.Necromancy
         {
             return new(Blueprint, Weight);
         }
+
+        public override string ToString()
+        {
+            return Blueprint.ToString() + ":" + Weight;
+        }
     }
 }
