@@ -135,29 +135,15 @@ namespace XRL.World.Parts
                 this.Cybernetic = Cybernetic;
             }
             public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic, BodyPart ImplantedPart)
-                : this(Cybernetic, ImplantedPart.Type)
-            {
-            }
+                : this(Cybernetic, ImplantedPart.Type) { }
             public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic, Body ImplantedBody)
-                : this(Cybernetic, ImplantedBody.FindCybernetics(Cybernetic))
-            {
-            }
+                : this(Cybernetic, ImplantedBody.FindCybernetics(Cybernetic)) { }
             public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic)
-                : this(Cybernetic, Cybernetic?.Implantee?.Body)
-            {
-            }
+                : this(Cybernetic, Cybernetic?.Implantee?.Body) { }
             public void Deconstruct(out GameObject Cybernetic, out string ImplantedLimbType)
             {
                 ImplantedLimbType = this.ImplantedLimbType;
                 Cybernetic = this.Cybernetic;
-            }
-            public void Deconstruct(out GameObject Cybernetic)
-            {
-                Cybernetic = this.Cybernetic;
-            }
-            public void Deconstruct(out string ImplantedLimbType)
-            {
-                ImplantedLimbType = this.ImplantedLimbType;
             }
 
             public static implicit operator KeyValuePair<GameObject, string>(UD_FleshGolems_InstalledCybernetic Source) => new(Source.Cybernetic, Source.ImplantedLimbType);
@@ -225,21 +211,6 @@ namespace XRL.World.Parts
             public static bool operator !=(KeyValuePair<string, int> Operand1, BlueprintWeightPair Operand2) => Operand2 != Operand1;
         }
 
-        public enum CountsAs : int
-        {
-            None = -1,
-            Any = 0,
-            Blueprint = 1,
-            Population = 2,
-            Faction = 3,
-            Species = 4,
-            Genotype = 5,
-            Subtype = 6,
-            OtherCorpse = 7,
-        }
-
-        public const string IGNORE_EXCLUDE_PROPTAG = "UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding";
-        public const string CORPSE_COUNTS_AS_PROPTAG = "UD_FleshGolems PastLife CountsAs";
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
 
         public GameObject BrainInAJar;
@@ -366,7 +337,7 @@ namespace XRL.World.Parts
             bool Include0Chance = true,
             Predicate<GameObjectBlueprint> Filter = null)
         {
-            Debug.GetIndents(out Indent indent);
+            Debug.GetIndent(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(true), CorpseBlueprint, indent[1]);
             List<EntityWeight> blueprintsWeightedList = new();
             if (!CorpseBlueprint.IsNullOrEmpty() && CorpseBlueprint.IsCorpse())
@@ -383,17 +354,37 @@ namespace XRL.World.Parts
             bool Include0Weight = true,
             bool GuaranteeBlueprint = true)
         {
-            Debug.GetIndents(out Indent indent);
+            Debug.LogMethod(out Indent indent, new Debug.ArgPair[]
+                {
+                    Debug.LogArg(CorpseBlueprint),
+                    Debug.LogArg(nameof(Include0Weight), Include0Weight),
+                    Debug.LogArg(nameof(GuaranteeBlueprint), GuaranteeBlueprint),
+                });
+            
             Dictionary<string, int> weightedBlueprints = NecromancySystem
-                ?.GetWeightedEntityStringsThisCorpseCouldBe(CorpseBlueprint, Include0Weight, IsNotBaseBlueprint);
+                ?.GetWeightedEntityStringsThisCorpseCouldBe(
+                    CorpseBlueprint: CorpseBlueprint,
+                    Include0Weight: Include0Weight,
+                    Filter: IsNotBaseBlueprintOrPossiblyExcludedFromDynamicEncounters,
+                    DrillIntoInheritance: false);
 
+            if (GuaranteeBlueprint && weightedBlueprints.IsNullOrEmpty())
+            {
+                weightedBlueprints = NecromancySystem
+                    ?.GetWeightedEntityStringsThisCorpseCouldBe(
+                        CorpseBlueprint: CorpseBlueprint,
+                        Include0Weight: Include0Weight,
+                        Filter: IsNotBaseBlueprintOrPossiblyExcludedFromDynamicEncounters,
+                        DrillIntoInheritance: true);
+            }
             if (weightedBlueprints.GetWeightedRandom(Include0Weight) is string entity)
             {
+                Debug.SetIndent(indent[0]);
                 return entity;
             }
-
             if (!Include0Weight && GuaranteeBlueprint)
             {
+                Debug.SetIndent(indent[0]);
                 return GetAnEntityForCorpseWeighted(CorpseBlueprint, true, false);
             }
 
@@ -516,9 +507,21 @@ namespace XRL.World.Parts
                             Brain.Opinions = new();
                         }
 
-                        Body bIAJ_Body = BrainInAJar.RequirePart<Body>();
-                        BrainInAJar.Body = bIAJ_Body;
-                        Anatomies.GetAnatomy(PastLife?.Body?.Anatomy ?? "Humanoid")?.ApplyTo(bIAJ_Body);
+                        Body bIAJ_Body = null;
+                        if (Anatomies.GetAnatomy(PastLife?.Body?.Anatomy ?? "Humanoid") is Anatomy.Anatomy pastAnatomy)
+                        { 
+                            if (BrainInAJar.Body == null)
+                            {
+                                bIAJ_Body = BrainInAJar.AddPart(new Body());
+                                bIAJ_Body.Anatomy = pastAnatomy.Name;
+                                BrainInAJar.Body = bIAJ_Body;
+                            }
+                            else
+                            {
+                                BrainInAJar.Body.Rebuild(pastAnatomy.Name);
+                                bIAJ_Body = BrainInAJar.Body; 
+                            }
+                        }
                         RoughlyCopyAdditionalLimbs(bIAJ_Body, PastLife?.Body);
 
                         BrainInAJar.SetBleedLiquid(PastLife.GetBleedLiquid());
@@ -653,7 +656,11 @@ namespace XRL.World.Parts
 
         public GameObjectBlueprint GetBlueprint()
         {
-            return Blueprint.GetGameObjectBlueprint();
+            return Blueprint?.GetGameObjectBlueprint();
+        }
+        public bool TryGetBlueprint(out GameObjectBlueprint GameObjectBlueprint)
+        {
+            return (GameObjectBlueprint = Blueprint?.GetGameObjectBlueprint()) != null;
         }
 
         public static bool RestoreBrain(
@@ -807,7 +814,7 @@ namespace XRL.World.Parts
                 return false;
             }
             if (PastLife.Body is Body pastBody
-                && Anatomies.GetAnatomy(pastBody.Anatomy) is Anatomy.Anatomy anatomy)
+                && Anatomies.GetAnatomy(pastBody?.Anatomy) is Anatomy.Anatomy anatomy)
             {
                 if (FrankenCorpse.Body == null)
                 {

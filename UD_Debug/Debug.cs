@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using System.Linq;
+
+using HarmonyLib;
 
 using XRL;
 
 using UD_FleshGolems;
 using static UD_FleshGolems.Options;
 using static UD_FleshGolems.Utils;
-using System.Linq;
-using HarmonyLib;
 
 namespace UD_FleshGolems.Logging
 {
@@ -128,15 +129,11 @@ namespace UD_FleshGolems.Logging
         [GameBasedStaticCache( ClearInstance = false )]
         private static bool _GotRegistry = false;
 
-        [ModSensitiveStaticCache( CreateEmptyInstance = false )]
-        [GameBasedStaticCache( ClearInstance = false )]
-        private static Indent _LastIndent = null;
+        [ModSensitiveStaticCache(CreateEmptyInstance = true)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        private static Stack<Indent> Indents = new();
 
-        public static Indent LastIndent
-        {
-            get => _LastIndent ??= GetNewIndent();
-            set => _LastIndent = value;
-        }
+        public static Indent LastIndent => Indents?.Peek();
 
         public static Indent GetNewIndent(int Offset)
         {
@@ -147,35 +144,57 @@ namespace UD_FleshGolems.Logging
             return GetNewIndent(0);
         }
 
-
-        public static void ResetIndent(out Indent Indent)
-        {
-            LastIndent.ResetIndent(out Indent);
-        }
         [GameBasedCacheInit]
         [ModSensitiveCacheInit]
         public static void ResetIndent()
         {
-            ResetIndent(out Indent _);
+            Indents ??= new();
+            Indents.Clear();
+            Indents.Push(GetNewIndent());
         }
-        public static void SetIndent(Indent Indent)
+        public static void ResetIndent(out Indent Indent)
         {
-            LastIndent.SetIndent(Indent);
-        }
-        public static void GetIndent(int Offset, out Indent Indent)
-        {
-            Indent = LastIndent[Offset];
-        }
-        public static void GetIndents(out Indent Indent)
-        {
-            GetIndent(0, out Indent);
+            ResetIndent();
+            Indent = Indents.Peek();
         }
 
-        public static string GetCallingTypeAndMethod(bool AppendSpace = false)
+        public static Indent DiscardIndent()
+        {
+            Indents.Pop();
+            if (Indents.IsNullOrEmpty())
+            {
+                ResetIndent();
+            }
+            return LastIndent;
+        }
+        public static Indent SetIndent(Indent Indent)
+        {
+            DiscardIndent();
+            return LastIndent.SetIndent(Indent);
+        }
+
+        public static Indent GetIndent(int Offset, out Indent Indent)
+        {
+            Indent = new(LastIndent);
+            Indent.SetIndent(Offset);
+            Indents.Push(Indent);
+            return Indent;
+        }
+        public static Indent GetIndent(out Indent Indent)
+        {
+            return GetIndent(0, out Indent);
+        }
+
+        public static string GetCallingTypeAndMethod(bool AppendSpace = false, bool TrimModPrefix = true)
         {
             if (TryGetCallingTypeAndMethod(out Type declaringType, out MethodBase methodBase))
             {
-                return declaringType.Name + "." + methodBase.Name + (AppendSpace ? " " : "");
+                string declaringTypeName = declaringType.Name;
+                if (TrimModPrefix)
+                {
+                    declaringTypeName = declaringTypeName.Replace(ThisMod.ID + "_", "");
+                }
+                return declaringTypeName + "." + methodBase.Name + (AppendSpace ? " " : "");
             }
             return null;
         }
@@ -207,13 +226,13 @@ namespace UD_FleshGolems.Logging
             return false;
         }
 
-        public static void Log<T>(string Field, T Value, Indent Indent = null)
+        public static Indent Log<T>(string Field, T Value, Indent Indent = null)
         {
             if (!DoDebug)
             {
-                return;
+                return Indent;
             }
-            Indent ??= GetNewIndent();
+            Indent ??= LastIndent;
             string output = Field;
             if (Value != null &&
                 !Value.ToString().IsNullOrEmpty())
@@ -221,18 +240,17 @@ namespace UD_FleshGolems.Logging
                 output += ": " + Value;
             }
             UnityEngine.Debug.Log(Indent.ToString() + output);
-            // SetIndent(Indent);
+            return Indent;
         }
-        public static void Log<T>(string Field, T Value, out Indent Indent)
+        public static Indent Log<T>(string Field, T Value, out Indent Indent)
         {
-            GetIndents(out Indent);
-            Log(Field, Value, Indent);
+            GetIndent(out Indent);
+            return Log(Field, Value, Indent);
         }
-        public static void Log(string Message, Indent Indent = null)
+        public static Indent Log(string Message, Indent Indent = null)
         {
-            Log(Message, (string)null, Indent);
+            return Log(Message, (string)null, Indent);
         }
-        public static void LogCaller(Indent Indent = null) => Log(GetCallingTypeAndMethod(), Indent);
 
         public readonly struct ArgPair
         {
@@ -243,31 +261,87 @@ namespace UD_FleshGolems.Logging
                 this.Name = Name;
                 this.Value = Value;
             }
-            public override readonly string ToString() => Name + ": " + Value.ToString();
+            public override readonly string ToString()
+            {
+                if (Name.IsNullOrEmpty())
+                {
+                    return Value?.ToString();
+                }
+                return Name + ": " + Value?.ToString();
+            }
         }
-        public static void LogMethod(Indent Indent = null, params ArgPair[] ArgPairs)
+        public static ArgPair LogArg(string Name, object Value)
+        {
+            return new ArgPair(Name, Value);
+        }
+        public static ArgPair LogArg(object Value)
+        {
+            return LogArg(null, Value);
+        }
+        public static Indent LogCaller(Indent Indent = null)
+        {
+            return Log(GetCallingTypeAndMethod(), Indent);
+        }
+
+        public static Indent LogCaller(string MessageAfter, Indent Indent = null, params ArgPair[] ArgPairs)
         {
             string output = "";
             if (!ArgPairs.IsNullOrEmpty())
             {
                 output += "(" + ArgPairs.ToList().ConvertAll(ap => ap.ToString()).Join() + ")";
             }
-            Log(GetCallingMethod(), Indent);
+            if (!MessageAfter.IsNullOrEmpty())
+            {
+                output += " " + MessageAfter;
+            }
+            return Log(GetCallingTypeAndMethod() + output, Indent);
         }
-        public static void LogHeader(string Message, out Indent Indent)
+        public static Indent LogCaller(Indent Indent = null, params ArgPair[] ArgPairs)
         {
-            GetIndents(out Indent);
-            Log(GetCallingTypeAndMethod(true) + Message, Indent);
+            return LogCaller(null, Indent, ArgPairs);
         }
-        public static void CheckYeh(string Message, Indent Indent = null)
+        public static Indent LogCaller(string MessageAfter, out Indent Indent, params ArgPair[] ArgPairs)
         {
-            Log(AppendTick("") + Message, (string)null, Indent);
+            GetIndent(out Indent);
+            return LogCaller(MessageAfter, Indent, ArgPairs);
         }
-        public static void CheckNah(string Message, Indent Indent = null)
+        public static Indent LogCaller(out Indent Indent, params ArgPair[] ArgPairs)
         {
-            Log(AppendCross("") + Message, (string)null, Indent);
+            return LogCaller(null, out Indent, ArgPairs);
         }
-        public static void YehNah(string Message, bool? Good = null, Indent Indent = null)
+        public static Indent LogMethod(string MessageAfter, Indent Indent = null, params ArgPair[] ArgPairs)
+        {
+            string output = "";
+            if (!ArgPairs.IsNullOrEmpty())
+            {
+                output += "(" + ArgPairs.ToList().ConvertAll(ap => ap.ToString()).Join() + ")";
+            }
+            if (!MessageAfter.IsNullOrEmpty())
+            {
+                output += " " + MessageAfter;
+            }
+            return Log(GetCallingMethod() + output, Indent);
+        }
+        public static Indent LogMethod(Indent Indent = null, params ArgPair[] ArgPairs)
+        {
+            return LogMethod(null, Indent, ArgPairs);
+        }
+        public static Indent LogMethod(string MessageAfter, out Indent Indent, params ArgPair[] ArgPairs)
+        {
+            GetIndent(out Indent);
+            return LogMethod(MessageAfter, Indent, ArgPairs);
+        }
+        public static Indent LogMethod(out Indent Indent, params ArgPair[] ArgPairs)
+        {
+            return LogMethod(null, out Indent, ArgPairs);
+        }
+
+        public static Indent LogHeader(string Message, out Indent Indent)
+        {
+            GetIndent(out Indent);
+            return Log(GetCallingTypeAndMethod(true) + Message, Indent);
+        }
+        public static Indent YehNah(string Message, object Value, bool? Good = null, Indent Indent = null)
         {
             string append = null;
             if (Good != null)
@@ -281,7 +355,31 @@ namespace UD_FleshGolems.Logging
                     append = AppendTick("");
                 }
             }
-            Log(append + Message, (string)null, Indent);
+            else
+            {
+                append = "[-] ";
+            }
+            return Log(append + Message, Value, Indent);
+        }
+        public static Indent YehNah(string Message, bool? Good = null, Indent Indent = null)
+        {
+            return YehNah(Message, null, Good, Indent);
+        }
+        public static Indent CheckYeh(string Message, object Value, Indent Indent = null)
+        {
+            return YehNah(Message, Value, true, Indent);
+        }
+        public static Indent CheckYeh(string Message, Indent Indent = null)
+        {
+            return YehNah(Message, null, true, Indent);
+        }
+        public static Indent CheckNah(string Message, object Value, Indent Indent = null)
+        {
+            return YehNah(Message, Value, false, Indent);
+        }
+        public static Indent CheckNah(string Message, Indent Indent = null)
+        {
+            return YehNah(Message, null, false, Indent);
         }
     }
 }

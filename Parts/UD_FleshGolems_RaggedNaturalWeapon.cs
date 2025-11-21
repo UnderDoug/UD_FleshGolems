@@ -95,23 +95,24 @@ namespace XRL.World.Parts
             {
                 return output;
             }
-            if (Wielder.TryGetPart(out UD_FleshGolems_PastLife pastLife))
+            if (Wielder.TryGetPart(out UD_FleshGolems_PastLife pastLife)
+                && pastLife.TryGetBlueprint(out GameObjectBlueprint pastLifeBlueprint))
             {
-                if (pastLife.GetBlueprint().InheritsFrom("Robot"))
+                if (pastLifeBlueprint.InheritsFrom("Robot"))
                 {
                     output = TaxonomyAdjective.Jagged;
                 }
                 else
-                if (pastLife.GetBlueprint().InheritsFrom("Plant")
-                    || pastLife.GetBlueprint().InheritsFrom("BasePlant")
-                    || pastLife.GetBlueprint().InheritsFrom("MutatedPlant"))
+                if (pastLifeBlueprint.InheritsFrom("Plant")
+                    || pastLifeBlueprint.InheritsFrom("BasePlant")
+                    || pastLifeBlueprint.InheritsFrom("MutatedPlant"))
                 {
                     output = TaxonomyAdjective.Fettid;
                 }
                 else
-                if (pastLife.GetBlueprint().InheritsFrom("Fungus")
-                    || pastLife.GetBlueprint().InheritsFrom("ActiveFungus")
-                    || pastLife.GetBlueprint().InheritsFrom("MutatedFungus"))
+                if (pastLifeBlueprint.InheritsFrom("Fungus")
+                    || pastLifeBlueprint.InheritsFrom("ActiveFungus")
+                    || pastLifeBlueprint.InheritsFrom("MutatedFungus"))
                 {
                     output = TaxonomyAdjective.Decayed;
                 }
@@ -121,7 +122,7 @@ namespace XRL.World.Parts
                 }
             }
             else
-            if (Wielder.GetBlueprint() is var wielderBlueprint)
+            if (Wielder?.GetBlueprint() is var wielderBlueprint)
             {
                 string taxonomyPropTag = wielderBlueprint.GetPropertyOrTag(TAXONOMY_PROPTAG);
                 if (wielderBlueprint.InheritsFrom("Robot Corpse")

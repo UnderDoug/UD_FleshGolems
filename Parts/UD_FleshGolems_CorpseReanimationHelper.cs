@@ -32,6 +32,7 @@ namespace XRL.World.Parts
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
         public const string REANIMATED_ALT_TILE_PROPTAG = "UD_FleshGolems_AlternateTileFor:";
         public const string REANIMATED_TILE_PROPTAG = "UD_FleshGolems_PastLife_TileOverride";
+        public const string REANIMATED_PART_EXCLUSIONS_PROPTAG = "UD_FleshGolems_Reanimated_PartExclusions";
 
 
         public const string CYBERNETICS_LICENSES = "CyberneticsLicenses";
@@ -75,19 +76,7 @@ namespace XRL.World.Parts
 
         public string CorpseDescription;
 
-        [SerializeField]
-        private string ReanimatorID;
-
-        private GameObject _Reanimator;
-        public GameObject Reanimator
-        {
-            get => _Reanimator ??= GameObject.FindByID(ReanimatorID);
-            set
-            {
-                ReanimatorID = value?.ID;
-                _Reanimator = value;
-            }
-        }
+        public GameObject Reanimator;
 
         private List<int> FailedToRegisterEvents;
 
@@ -98,6 +87,7 @@ namespace XRL.World.Parts
             CreatureName = null;
             SourceBlueprint = null;
             CorpseDescription = null;
+            Reanimator = null;
             FailedToRegisterEvents = new();
         }
 
@@ -109,10 +99,15 @@ namespace XRL.World.Parts
         public bool Animate(out GameObject FrankenCorpse)
         {
             FrankenCorpse = null;
-            UnityEngine.Debug.Log(nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(Animate));
+            Debug.LogMethod(null, out Indent indent, new Debug.ArgPair[]
+            {
+                Debug.LogArg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? null),
+            });
             if (ParentObject != null && !ParentObject.HasPart<AnimatedObject>())
             {
-                UnityEngine.Debug.Log("    " + nameof(ParentObject) + " not " + nameof(AnimatedObject));
+                Debug.CheckYeh(nameof(ParentObject) + " not " + nameof(AnimatedObject), indent[1])
+                    .DiscardIndent();
+
                 AnimateObject.Animate(ParentObject);
 
                 if (ParentObject.HasPart<AnimatedObject>())
@@ -128,152 +123,6 @@ namespace XRL.World.Parts
             return Animate(out _);
         }
 
-        public static string FigureOutWhatBlueprintThisCorpseCameFrom(GameObject Corpse, UD_FleshGolems_PastLife PastLife = null, bool PrintCheckEvenWhenPastLife = false)
-        {
-            Debug.GetIndents(out Indent indent);
-            string blueprint = null;
-            if (PastLife?.Blueprint is string pastLifeBlueprint)
-            {
-                if (!PrintCheckEvenWhenPastLife)
-                {
-                    return pastLifeBlueprint;
-                }
-                blueprint = pastLifeBlueprint;
-            }
-            if (Corpse.GetPropertyOrTag("UD_FleshGolems_PastLife_Blueprint") is string pastLifeBlueprintTagOrProp)
-            {
-                if (!PrintCheckEvenWhenPastLife)
-                {
-                    return pastLifeBlueprintTagOrProp;
-                }
-                blueprint = pastLifeBlueprintTagOrProp;
-            }
-            string corpseDisplayNameLC = Corpse.GetReferenceDisplayName(Stripped: true, Short: true)?.ToLower();
-            string baseGameSourceBlueprintLC = Corpse.GetPropertyOrTag("SourceBlueprint")?.ToLower();
-            string corpseType = Corpse.Blueprint.Replace(" Corpse", "").Replace("UD_FleshGolems ", "");
-            string corpseSpecies = Corpse.GetStringProperty("Species", corpseType);
-            List<string> probableBlueprints = new();
-            List<string> possibleBlueprints = new();
-            List<string> fallbackBlueprints = new();
-            Debug.Log(
-                "Finding Blueprints for " + (Corpse?.DebugName ?? NULL) + " | " +
-                nameof(corpseDisplayNameLC) + ": " + (corpseDisplayNameLC ?? NULL) + ", " +
-                nameof(baseGameSourceBlueprintLC) + ": " + (baseGameSourceBlueprintLC ?? NULL) + ", " +
-                nameof(corpseType) + ": " + (corpseType ?? NULL) + ", " +
-                nameof(corpseSpecies) + ": " + (corpseSpecies ?? NULL) + ", " +
-                nameof(corpseDisplayNameLC) + ": " + (corpseDisplayNameLC ?? NULL), indent);
-            List<GameObjectBlueprint> blueprintsToCheck = new(GameObjectFactory.Factory.Blueprints.Values);
-            blueprintsToCheck.ShuffleInPlace();
-            int maxChecks = int.MaxValue; // 2500;
-            int checkCounter = 0;
-            Debug.Log("Checking " + (maxChecks == int.MaxValue ? blueprintsToCheck.Count : maxChecks) + "/" + blueprintsToCheck.Count, indent[1]);
-            foreach (GameObjectBlueprint gameObjectBlueprint in blueprintsToCheck)
-            {
-                if (++checkCounter > maxChecks)
-                {
-                    break;
-                }
-                string blueprintName = gameObjectBlueprint.Name;
-                string blueprintNameLC = blueprintName?.ToLower() ?? "XKCD";
-                string gameObjectDisplayName = gameObjectBlueprint.DisplayName()?.Strip()?.ToLower() ?? "XKCD";
-                if (blueprintName == Corpse.Blueprint)
-                {
-                    // Debug.Log(AppendCross("    ") + blueprintName + " is this corpse", indent[2]);
-                    continue;
-                }
-                if (gameObjectBlueprint.IsBaseBlueprint())
-                {
-
-                    // Debug.Log(AppendCross("    ") + blueprintName + " is base blueprint", indent[2]);
-                    continue;
-                }
-                if (!gameObjectBlueprint.InheritsFrom("Creature")
-                    && !gameObjectBlueprint.InheritsFrom("Fungus")
-                    && !gameObjectBlueprint.InheritsFrom("Plant")
-                    && !gameObjectBlueprint.InheritsFrom("Corpse")
-                    && !gameObjectBlueprint.InheritsFrom("Robot"))
-                {
-                    // Debug.Log(AppendCross("    ") + blueprintName + " is not an entity capable of dying", indent[2]);
-                    continue;
-                }
-                if (BlueprintsToSkipCheckingForCorpses.Contains(gameObjectBlueprint.Name))
-                {
-                    // Debug.Log(AppendCross("    ") + blueprintName + " is definitely not the correct one.", indent[2]);
-                    continue;
-                }
-                bool corpseDisplayNameContainsBlueprintDisplayName = corpseDisplayNameLC != null && corpseDisplayNameLC.Contains(gameObjectDisplayName);
-                bool corpseTaggedWithBlueprint = baseGameSourceBlueprintLC != null && baseGameSourceBlueprintLC == blueprintNameLC;
-                if (corpseDisplayNameContainsBlueprintDisplayName || corpseTaggedWithBlueprint)
-                {
-                    if (!probableBlueprints.Contains(blueprintName))
-                    {
-                        probableBlueprints.Add(blueprintName);
-                        /*
-                        Debug.Log(AppendTick("    ") + blueprintName + " added to " + nameof(probableBlueprints) + " }{ [" +
-                            corpseDisplayNameLC + "] contains [" + gameObjectDisplayName + "] || [" + baseGameSourceBlueprintLC + "] == [" + blueprintNameLC + "]", indent[2]);
-                        */
-                    }
-                }
-                bool corpseTypeMatchesBlueprintName = corpseType != null && corpseType.ToLower() == blueprintNameLC;
-                if (corpseTypeMatchesBlueprintName)
-                {
-                    if(!possibleBlueprints.Contains(blueprintName))
-                    {
-                        possibleBlueprints.Add(blueprintName);
-                        /*
-                        Debug.Log(AppendTick("    ") + blueprintName + " added to " + nameof(possibleBlueprints) + " }{ [" +
-                            corpseType.ToLower() + "] == [" + blueprintNameLC + "]", indent[2]);
-                        */
-                    }
-                }
-                bool corpseSpeciesMatchesBlueprintSpecies = corpseSpecies != null && corpseSpecies?.ToLower() == gameObjectBlueprint.GetPropertyOrTag("Species")?.ToLower();
-                if (corpseSpeciesMatchesBlueprintSpecies)
-                {
-                    if (!fallbackBlueprints.Contains(blueprintName))
-                    {
-                        fallbackBlueprints.Add(blueprintName);
-                        /*
-                        Debug.Log(AppendTick("    ") + blueprintName + " added to " + nameof(fallbackBlueprints) + " }{ [" +
-                            corpseSpecies?.ToLower() + "] == [" + gameObjectBlueprint.GetPropertyOrTag("Species")?.ToLower() + "]", indent[2]);
-                        */
-                    }
-                }
-            }
-
-            if (possibleBlueprints.IsNullOrEmpty())
-            {
-                possibleBlueprints.AddRange(fallbackBlueprints);
-                fallbackBlueprints.Clear();
-            }
-            if (probableBlueprints.IsNullOrEmpty())
-            {
-                probableBlueprints.AddRange(possibleBlueprints);
-            }
-            try
-            {
-                Debug.Log("Probable Blueprints for " + Corpse.DebugName, indent[1]);
-                if (!probableBlueprints.IsNullOrEmpty())
-                {
-                    probableBlueprints.ShuffleInPlace();
-                    foreach (string probableBlueprint in probableBlueprints)
-                    {
-                        Debug.Log("    " + probableBlueprint, indent[2]);
-                    }
-                    blueprint ??= probableBlueprints.GetRandomElement();
-                    Debug.Log(nameof(blueprint) + " picked: " + blueprint, indent[1]);
-                    return blueprint;
-                }
-
-                blueprint ??= "Trash Monk";
-                Debug.Log(nameof(blueprint) + " picked: " + blueprint, indent[1]);
-                return blueprint;
-            }
-            finally
-            {
-                Debug.SetIndent(indent[0]);
-            }
-        }
-
         public static bool AssignStatsFromStatistics(
             GameObject FrankenCorpse,
             Dictionary<string, Statistic> Statistics,
@@ -284,6 +133,12 @@ namespace XRL.World.Parts
             if (FrankenCorpse == null || Statistics.IsNullOrEmpty())
             {
                 return any;
+            }
+
+            static int adjustStat(int BaseValue, int StatAdjustment)
+            {
+                int newStatValue = BaseValue + StatAdjustment;
+                return newStatValue < 1 ? 1 : newStatValue;
             }
             foreach ((string statName, Statistic sourceStat) in Statistics)
             {
@@ -302,7 +157,7 @@ namespace XRL.World.Parts
                 }
                 if (!StatAdjustments.IsNullOrEmpty() && StatAdjustments.ContainsKey(statName))
                 {
-                    FrankenCorpse.Statistics[statName].BaseValue += StatAdjustments[statName];
+                    FrankenCorpse.Statistics[statName].BaseValue = adjustStat(FrankenCorpse.Statistics[statName].BaseValue, StatAdjustments[statName]);
                 }
                 any = true;
             }
@@ -758,7 +613,12 @@ namespace XRL.World.Parts
             GameObject Corpse,
             UD_FleshGolems_PastLife PastLife)
         {
-            Debug.LogHeader(nameof(Corpse) + ": " + (Corpse?.DebugName ?? "null"), out Indent indent);
+            Debug.LogMethod(out Indent indent,
+                new Debug.ArgPair[] {
+                    Debug.LogArg(nameof(Corpse), Corpse?.DebugName ?? "null"),
+                    Debug.LogArg(nameof(PastLife), (PastLife == null ? "null" : "not null")),
+                });
+
             if (Corpse is GameObject frankenCorpse
                 && frankenCorpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>() is var reanimationHelper)
             {
@@ -773,11 +633,39 @@ namespace XRL.World.Parts
                         reanimationHelper.Reanimator ??= GameObject.FindByBlueprint(reanimatorFallback);
                     }
                 }
-                Debug.Log(PastLife?.Blueprint, indent[1]);
+                Debug.Log(nameof(PastLife) + "?." + nameof(PastLife.Blueprint), PastLife?.Blueprint, indent[1]);
+
+                bool proceedWithMakeLive = true;
+                try
+                {
+                    if (PastLife == null || PastLife.Blueprint.IsNullOrEmpty() || PastLife.GetBlueprint() == null)
+                    {
+                        frankenCorpse.RemovePart<UD_FleshGolems_PastLife>();
+                        PastLife = frankenCorpse.RequirePart<UD_FleshGolems_PastLife>().Initialize();
+                    }
+                    if (PastLife == null || PastLife.Blueprint.IsNullOrEmpty() || PastLife.GetBlueprint() == null)
+                    {
+                        throw new InvalidOperationException(nameof(UD_FleshGolems_PastLife) + " failed repeatedly to " + nameof(UD_FleshGolems_PastLife.Initialize));
+                    }
+                }
+                catch (Exception x)
+                {
+                    proceedWithMakeLive = false;
+                    frankenCorpse.RemovePart<UD_FleshGolems_PastLife>();
+                    MetricsManager.LogException("Failed to Generate a PastLife for " + (frankenCorpse?.DebugName ?? NULL), x, "game_mod_exception");
+                }
+                if (!proceedWithMakeLive)
+                {
+                    Debug.SetIndent(indent[0]);
+                    return false;
+                }
 
                 bool wasPlayer = PastLife != null && PastLife.WasPlayer;
 
                 bool excludedFromDynamicEncounters = PastLife.ExcludeFromDynamicEncounters;
+
+                Debug.YehNah(nameof(wasPlayer), wasPlayer, indent[1]);
+                Debug.YehNah(nameof(excludedFromDynamicEncounters), excludedFromDynamicEncounters, indent[1]);
 
                 frankenCorpse.SetIntProperty("NoAnimatedNamePrefix", 1);
                 frankenCorpse.SetIntProperty("Bleeds", 1);
@@ -854,7 +742,7 @@ namespace XRL.World.Parts
                     {
                         return IPartsToSkipWhenReanimating.Contains(p.Name)
                             || frankenCorpse.HasPart(p.Name)
-                            || (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_Reanimated_PartExclusions") is string propertyPartExclusions
+                            || (frankenCorpse.GetPropertyOrTag(REANIMATED_PART_EXCLUSIONS_PROPTAG) is string propertyPartExclusions
                                 && propertyPartExclusions.CachedCommaExpansion() is List<string> partExclusionsList
                                 && partExclusionsList.Contains(p.Name));
                     }
@@ -1194,15 +1082,21 @@ namespace XRL.World.Parts
                 }
 
                 // frankenBrain?.WantToReequip();
+                Debug.Log(nameof(frankenBrain.WantToReequip), "skipped", indent[1]);
 
-                if (frankenCorpse != null)
+                var reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
+                if (GameObject.Validate(ref reanimationHelper.Reanimator))
                 {
-                    var reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
                     reanimatedCorpse.Reanimator = reanimationHelper.Reanimator;
-                    // reanimatedCorpse.AttemptToSuffer();
                 }
 
+                Debug.Log(nameof(reanimatedCorpse) + "." + nameof(reanimatedCorpse.Reanimator) + " set", reanimatedCorpse?.Reanimator?.DebugName ?? NULL, indent[1]);
+                // reanimatedCorpse.AttemptToSuffer();
+
+                Debug.Log("Calling " + nameof(frankenBody) + "." + nameof(frankenBody.UpdateBodyParts), indent[1]);
                 frankenBody?.UpdateBodyParts();
+                Debug.CheckYeh("Didn't fail, fortuantely!", indent[2]);
+                // Debug.CheckNah("Skipped Instead!", indent[2]);
 
                 Debug.SetIndent(indent[0]);
                 return true;
@@ -1246,18 +1140,22 @@ namespace XRL.World.Parts
                 && ParentObject == E.Object
                 && false)
             {
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(BeforeObjectCreatedEvent) + ", " +
-                    nameof(IsALIVE) + ": " + IsALIVE);
+                Debug.LogCaller(null, new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(BeforeObjectCreatedEvent)),
+                    Debug.LogArg(nameof(IsALIVE), IsALIVE),
+                });
             }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(AnimateEvent E)
         {
-            UnityEngine.Debug.Log(
-                nameof(UD_FleshGolems_CorpseReanimationHelper) + "." + nameof(AnimateEvent) + ", " +
-                nameof(IsALIVE) + ": " + IsALIVE);
-
+            Debug.LogCaller(out Indent indent, new Debug.ArgPair[]
+            {
+                Debug.LogArg(nameof(AnimateEvent)),
+                Debug.LogArg(nameof(E.Object), E.Object?.DebugName ?? NULL),
+                Debug.LogArg(nameof(IsALIVE), IsALIVE),
+            });
             if (!IsALIVE
                 && ParentObject == E.Object)
             {
@@ -1268,6 +1166,8 @@ namespace XRL.World.Parts
                 Reanimator = E.Actor;
                 IsALIVE = true;
                 MakeItALIVE(E.Object, pastLife);
+                Debug.Log("Definitely resolved called to " + nameof(MakeItALIVE), indent[1])
+                    .DiscardIndent();
             }
             return base.HandleEvent(E);
         }
@@ -1278,6 +1178,11 @@ namespace XRL.World.Parts
                 && ParentObject != null
                 && Animate(out GameObject corpse))
             {
+                Debug.LogCaller(null, new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(EnvironmentalUpdateEvent)),
+                    Debug.LogArg(nameof(IsALIVE), IsALIVE),
+                });
                 ProcessMoveToDeathCell(corpse, PastLife);
                 return true;
             }
@@ -1290,6 +1195,12 @@ namespace XRL.World.Parts
                 && extractionSource.TryGetPart(out UD_FleshGolems_PastLife pastLife)
                 && PastLife == null)
             {
+                Debug.LogCaller(null, new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(Event)),
+                    Debug.LogArg(nameof(E.ID), E.ID),
+                    Debug.LogArg(nameof(extractionSource), extractionSource?.DebugName ?? null),
+                });
                 extractionSource.RemovePart(pastLife);
                 ParentObject.AddPart(pastLife);
             }
@@ -1302,6 +1213,12 @@ namespace XRL.World.Parts
                 && E.Actor is GameObject dying
                 && dying.IsDying)
             {
+                Debug.LogCaller(null, new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(DroppedEvent)),
+                    Debug.LogArg(nameof(corpse), corpse?.DebugName ?? null),
+                    Debug.LogArg(nameof(dying), dying?.DebugName ?? null),
+                });
                 corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(dying);
             }
             if (AlwaysAnimate
@@ -1309,6 +1226,12 @@ namespace XRL.World.Parts
                 && ParentObject != null
                 && Animate())
             {
+                Debug.LogCaller(null, new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(DroppedEvent)),
+                    Debug.LogArg(nameof(AlwaysAnimate), AlwaysAnimate),
+                    Debug.LogArg(nameof(ParentObject), ParentObject?.DebugName ?? null),
+                });
                 return true;
             }
             return base.HandleEvent(E);

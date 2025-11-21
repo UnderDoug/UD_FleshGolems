@@ -6,16 +6,38 @@ using XRL.World.Anatomy;
 using XRL.World.Effects;
 
 using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
+using static XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon;
 
 using SerializeField = UnityEngine.SerializeField;
+using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdjective;
 
 using UD_FleshGolems;
+using UD_FleshGolems.Logging;
+using static UD_FleshGolems.Const;
+using System.Linq;
 
 namespace XRL.World.Parts
 {
     [Serializable]
     public class UD_FleshGolems_ReanimatedCorpse : IScribedPart
     {
+        public struct LiquidPortion
+        {
+            public string Liquid;
+            public int Portion;
+            public LiquidPortion(string Liquid, int Portion)
+            {
+                this.Liquid = Liquid;
+                this.Portion = Portion;
+            }
+            public override readonly string ToString() => Liquid + "-" + Portion;
+            public void Deconstruct(out string Liquid, out int Portion)
+            {
+                Liquid = this.Liquid;
+                Portion = this.Portion;
+            }
+        }
+
         public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolems_reanimated|reanimated}}";
 
         public static List<string> PartsInNeedOfRemovalWhenAnimated => new()
@@ -25,16 +47,22 @@ namespace XRL.World.Parts
             nameof(Harvestable),
         };
 
-        [SerializeField]
-        private string ReanimatorID;
+        public static List<string> MeatContaminationLiquids = new() { "putrid", "slime", "ooze", };
+        public static List<string> RobotContaminationLiquids = new() { "putrid", "gel", "sludge", };
+        public static List<string> PlantContaminationLiquids = new() { "putrid", "slime", "goo", };
+        public static List<string> FungusContaminationLiquids = new() { "putrid", "slime", "acid", };
 
+        [SerializeField]
         private GameObject _Reanimator;
         public GameObject Reanimator
         {
-            get => _Reanimator ??= GameObject.FindByID(ReanimatorID);
+            get
+            {
+                GameObject.Validate(ref _Reanimator);
+                return _Reanimator;
+            }
             set
             {
-                ReanimatorID = value?.ID;
                 _Reanimator = value;
                 AttemptToSuffer();
             }
@@ -50,10 +78,11 @@ namespace XRL.World.Parts
 
         public string BleedLiquid;
 
-        public Dictionary<string, int> BleedLiquidPortions;
+        public List<LiquidPortion> BleedLiquidPortions;
 
         public UD_FleshGolems_ReanimatedCorpse()
         {
+            _Reanimator = null;
             _NewDisplayName = null;
             _NewDisplayName = null;
             BleedLiquid = null;
@@ -62,10 +91,17 @@ namespace XRL.World.Parts
 
         public override void Attach()
         {
-            ParentObject.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject.GetBlueprint()));
+            if (ParentObject.GetBlueprint() is GameObjectBlueprint parentBlueprint)
+            {
+                ParentObject.AddPart(new UD_FleshGolems_CorpseIconColor(parentBlueprint));
+            }
             foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
             {
                 ParentObject.RemovePart(partToRemove);
+            }
+            if (BleedLiquid.IsNullOrEmpty())
+            {
+                _ = GetBleedLiquidEvent.GetFor(ParentObject);
             }
             AttemptToSuffer();
             base.Attach();
@@ -76,7 +112,7 @@ namespace XRL.World.Parts
             return false;
         }
 
-        public static bool TryGetLiquidPortion(string LiquidComponent, out (string Liquid, int Portion) LiquidPortion)
+        public static bool TryGetLiquidPortion(string LiquidComponent, out LiquidPortion LiquidPortion)
         {
             LiquidPortion = new("water", 0);
             if (LiquidComponent.Contains('-'))
@@ -91,27 +127,33 @@ namespace XRL.World.Parts
             }
             return false;
         }
-        public static Dictionary<string, int> GetBleedLiquids(string BleedLiquids)
+        public static List<LiquidPortion> GetBleedLiquids(string BleedLiquids)
         {
             if (BleedLiquids.IsNullOrEmpty())
             {
                 return new();
             }
-            Dictionary<string, int> liquids = new();
-            if (!BleedLiquids.Contains(',') && TryGetLiquidPortion(BleedLiquids, out (string Liquid, int Portion) singleLiquidPortion))
+            List<LiquidPortion> liquids = new();
+            if (!BleedLiquids.Contains(',') && TryGetLiquidPortion(BleedLiquids, out LiquidPortion singleLiquidPortion))
             {
-                liquids.Add(singleLiquidPortion.Liquid, singleLiquidPortion.Portion);
+                liquids.Add(new(singleLiquidPortion.Liquid, singleLiquidPortion.Portion));
                 return liquids;
             }
-            foreach (string liquidComponent in BleedLiquids.Split(','))
+            foreach (string liquidComponent in BleedLiquids.CachedCommaExpansion())
             {
-                if (TryGetLiquidPortion(liquidComponent, out (string Liquid, int Portion) liquidPortion))
+                if (TryGetLiquidPortion(liquidComponent, out LiquidPortion liquidPortion))
                 {
-                    liquids.Add(liquidPortion.Liquid, liquidPortion.Portion);
+                    liquids.Add(new(liquidPortion.Liquid, liquidPortion.Portion));
                 }
             }
             return liquids;
         }
+
+        public static Dictionary<string, int> GetBleedLiquidDict(List<LiquidPortion> LiquidPortionsList)
+            => LiquidPortionsList.ToDictionary(lp => lp.Liquid, lp => lp.Portion);
+
+        public static List<LiquidPortion> GetBleedLiquidPortions(Dictionary<string, int> LiquidDict)
+            => LiquidDict.ToList().ConvertAll(kvp => new LiquidPortion(kvp.Key, kvp.Value));
 
         public static int GetTierFromLevel(GameObject Creature)
         {
@@ -132,6 +174,7 @@ namespace XRL.World.Parts
                 if (unendingSuffering.SourceObject != Reanimator)
                 {
                     unendingSuffering.SourceObject = Reanimator;
+                    return true;
                 }
             }
             return false;
@@ -151,7 +194,8 @@ namespace XRL.World.Parts
                 || ID == DecorateDefaultEquipmentEvent.ID
                 || ID == EndTurnEvent.ID
                 || ID == GetBleedLiquidEvent.ID
-                || ID == BeforeDeathRemovalEvent.ID;
+                || ID == BeforeDeathRemovalEvent.ID
+                || ID == GetDebugInternalsEvent.ID;
         }
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
@@ -179,6 +223,11 @@ namespace XRL.World.Parts
             if (ParentObject?.Body is Body frankenBody
                 && frankenBody == E.Body)
             {
+                Debug.LogCaller(null, new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(DecorateDefaultEquipmentEvent)),
+                    Debug.LogArg(ParentObject?.DebugName ?? NULL),
+                });
                 foreach (BodyPart bodyPart in frankenBody.LoopParts(BodyPartHasRaggedNaturalWeapon))
                 {
                     if (bodyPart.DefaultBehavior is GameObject defaultBehavior
@@ -212,27 +261,38 @@ namespace XRL.World.Parts
                     combinedPortions = 500;
                 }
                 int combinedFactor = combinedPortions / 10;
-                List<(string Liquid, int Portion)> contamination = new()
+
+                List<string> contaminationLiquids = DetermineTaxonomyAdjective(E.Actor) switch
                 {
-                    ("putrid", (int)(combinedFactor * 6.5)),
-                    ("slime", (int)(combinedFactor * 3.0)),
-                    ("acid", (int)(combinedFactor * 0.5)),
+                    Taxonomy.Jagged => RobotContaminationLiquids,
+                    Taxonomy.Fettid => PlantContaminationLiquids,
+                    Taxonomy.Decayed => FungusContaminationLiquids,
+                    _ => MeatContaminationLiquids,
                 };
+
+                List<LiquidPortion> contamination = new()
+                {
+                    new(contaminationLiquids[0], (int)Math.Ceiling(combinedFactor * 6.75)),
+                    new(contaminationLiquids[1], (int)(combinedFactor * 3.0)),
+                    new(contaminationLiquids[2], (int)Math.Floor(combinedFactor * 0.25)),
+                };
+                Dictionary<string, int> bleedLiquids = GetBleedLiquidDict(BleedLiquidPortions);
                 foreach ((string liquid, int portion) in contamination)
                 {
-                    if (BleedLiquidPortions.ContainsKey(liquid))
+                    if (bleedLiquids.ContainsKey(liquid))
                     {
-                        BleedLiquidPortions[liquid] += portion;
+                        bleedLiquids[liquid] += portion;
                     }
                     else
                     {
-                        BleedLiquidPortions.Add(liquid, portion);
+                        bleedLiquids.Add(liquid, portion);
                     }
                 }
+                BleedLiquidPortions = GetBleedLiquidPortions(bleedLiquids);
             }
             if (BleedLiquid.IsNullOrEmpty())
             {
-                LiquidVolume bleedLiquidVolume = new(BleedLiquidPortions);
+                LiquidVolume bleedLiquidVolume = new(GetBleedLiquidDict(BleedLiquidPortions));
                 bleedLiquidVolume.NormalizeProportions();
                 foreach ((string liquid, int portion) in bleedLiquidVolume.ComponentLiquids)
                 {
@@ -258,6 +318,12 @@ namespace XRL.World.Parts
                 corpseObject.SetStringProperty("UD_FleshGolems_OriginalSourceBlueprint", reanimationHelper.SourceBlueprint);
                 corpseObject.SetStringProperty("UD_FleshGolems_CorpseDescription", reanimationHelper.SourceBlueprint);
             }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(GetDebugInternalsEvent E)
+        {
+            E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
+            E.AddEntry(this, nameof(BleedLiquid), BleedLiquid);
             return base.HandleEvent(E);
         }
     }

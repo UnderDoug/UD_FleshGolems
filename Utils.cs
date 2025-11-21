@@ -23,6 +23,7 @@ using UD_FleshGolems.Logging;
 
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
+using UD_FleshGolems.Capabilities;
 
 namespace UD_FleshGolems
 {
@@ -164,7 +165,7 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_xTagMultiU(DelegateContext Context)
         {
-            Debug.GetIndents(out Indent oldIndent);
+            Debug.GetIndent(out Indent oldIndent);
             Indent indent = new(Debug.GetNewIndent());
             Debug.LogCaller(indent);
             string output = null;
@@ -208,7 +209,7 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_xTag(DelegateContext Context)
         {
-            Debug.GetIndents(out Indent oldIndent);
+            Debug.GetIndent(out Indent oldIndent);
             Indent indent = new(Debug.GetNewIndent());
             Debug.LogCaller(indent);
             Debug.Log(nameof(UD_xTag) + "." + nameof(Context.Target), Context?.Target?.DebugName ?? NULL, indent);
@@ -301,6 +302,12 @@ namespace UD_FleshGolems
                 && !Blueprint.IsBaseBlueprint();
         }
 
+        public static bool IsNotBaseBlueprintOrPossiblyExcludedFromDynamicEncounters(GameObjectBlueprint Blueprint)
+        {
+            return IsNotBaseBlueprint(Blueprint)
+                && UD_FleshGolems_NecromancySystem.PossiblyExcludedFromDynamicEncounters(Blueprint);
+        }
+
         public static GameObjectBlueprint GetGameObjectBlueprint(string Blueprint)
         {
             return GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint);
@@ -348,7 +355,7 @@ namespace UD_FleshGolems
             Dictionary<string, string> vars = null,
             string defaultIfNull = null)
         {
-            Debug.GetIndents(out Indent indent);
+            Debug.GetIndent(out Indent indent);
             Debug.Log(
                 Debug.GetCallingTypeAndMethod() + "(" +
                 nameof(TableName) + ": " + TableName + ", " +

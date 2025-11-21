@@ -5,9 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-using UD_FleshGolems.Capabilities.Necromancy;
-using UD_FleshGolems.Logging;
-
 using XRL;
 using XRL.CharacterBuilds.Qud;
 using XRL.Collections;
@@ -15,6 +12,11 @@ using XRL.Rules;
 using XRL.World;
 using XRL.World.Anatomy;
 using XRL.World.Parts;
+
+using UD_FleshGolems.Capabilities.Necromancy;
+using UD_FleshGolems.Logging;
+
+using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair.PairRelationship;
 
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using static UD_FleshGolems.Const;
@@ -359,6 +361,11 @@ namespace UD_FleshGolems
                 && (!SetDefaultBehaviorBlueprint || BodyPart.DefaultBehaviorBlueprint == DefaultBehavior.Blueprint);
         }
 
+        public static IEnumerable<GameObjectBlueprint> GetBlueprints(this GameObjectFactory Factory, Predicate<GameObjectBlueprint> Filter)
+        {
+            return Factory.BlueprintList.Where(bp => Filter == null || Filter(bp));
+        }
+
         public static GameObjectBlueprint GetGameObjectBlueprint(this string Blueprint)
         {
             return Utils.GetGameObjectBlueprint(Blueprint);
@@ -422,7 +429,6 @@ namespace UD_FleshGolems
         {
             return (CorpseBlueprintWeightPair = GetCorpseBlueprintWeightPair(Blueprint)) != null;
         }
-
 
         public static bool IsCorpse(this GameObjectBlueprint Blueprint, Predicate<GameObjectBlueprint> Filter)
         {
@@ -589,15 +595,34 @@ namespace UD_FleshGolems
         public static Dictionary<string, int> ConvertToWeightedList(this IEnumerable<EntityWeight> Entries)
         {
             Dictionary<string, int> weightedList = new();
-            foreach ((BlueprintBox blueprint, int weight ) in Entries)
+            foreach ((BlueprintBox blueprint, int weight) in Entries)
             {
-                if (weightedList.ContainsKey(blueprint.ToString()))
+                string key = blueprint.ToString();
+                if (weightedList.ContainsKey(key))
                 {
-                    weightedList[blueprint.ToString()] += weight;
+                    weightedList[key] += weight;
                 }
                 else
                 {
-                    weightedList.Add(blueprint.ToString(), weight);
+                    weightedList.Add(key, weight);
+                }
+            }
+            return weightedList;
+        }
+
+        public static Dictionary<string, int> ConvertToWeightedList(this IEnumerable<EntityWeightRelationship> Entries)
+        {
+            Dictionary<string, int> weightedList = new();
+            foreach ((BlueprintBox blueprint, int weight, Relationship rel) in Entries)
+            {
+                string key = blueprint.ToString() + "@" + rel.ToString();
+                if (weightedList.ContainsKey(key))
+                {
+                    weightedList[key] += weight;
+                }
+                else
+                {
+                    weightedList.Add(key, weight);
                 }
             }
             return weightedList;
@@ -796,8 +821,11 @@ namespace UD_FleshGolems
 
         public static T GetWeightedRandom<T>(this Dictionary<T, int> WeightedList, bool Include0Weight = true)
         {
+            Debug.GetIndent(out Indent indent);
+
             int maxWeight = 0;
-            foreach (T ticket in WeightedList.Keys)
+            List<T> tickets = new(WeightedList.Keys);
+            foreach (T ticket in tickets)
             {
                 if (Include0Weight && WeightedList[ticket] == 0)
                 {
@@ -807,10 +835,11 @@ namespace UD_FleshGolems
             }
             int rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
 
-            Debug.LogMethod(
-                Debug.LastIndent[1].Pin(),
-                new(nameof(rolledAmount), rolledAmount),
-                new(nameof(maxWeight), maxWeight));
+            Debug.LogMethod(indent[1], new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(rolledAmount), rolledAmount),
+                    Debug.LogArg(nameof(maxWeight), maxWeight)
+                });
 
             int cumulativeWeight = 0;
             foreach ((T ticket, int weight) in WeightedList)
@@ -822,12 +851,24 @@ namespace UD_FleshGolems
                 cumulativeWeight += weight;
                 if (rolledAmount < cumulativeWeight)
                 {
-                    Debug.LastIndent.Unpin();
+                    Debug.SetIndent(indent[0]);
                     return ticket;
                 }
             }
-            Debug.LastIndent.Unpin();
+            Debug.SetIndent(indent[0]);
             return default;
+        }
+
+        public static List<T> ForEach<T>(this List<T> List, Action<T> Action)
+        {
+            List.ForEach(Action);
+            return List;
+        }
+
+        public static TOut ForEach<T, TOut>(this List<T> List, Action<T> Action, TOut Return)
+        {
+            List.ForEach(Action);
+            return Return;
         }
     }
 }

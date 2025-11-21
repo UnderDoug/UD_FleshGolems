@@ -55,10 +55,22 @@
   </object>
   
   <object Name="Robot Corpse" Load="Merge">
+    <part Name="Render" DisplayName="heap of {{c|chrome}} scrap" />
+    <part Name="Description" Short="A mound of chrome scraps and dented junk puts some elevation to the ground." />
+    <builder Name="RandomTile" Tiles="Items/sw_trash_1.bmp,Items/sw_trash_2.bmp,Items/sw_trash_3.bmp,Items/sw_trash_4.bmp" />
+    <part Name="Physics" Weight="200" />
+    <part Name="Commerce" Value="20" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Robot Corpse Corpse" CorpseChance="0" />
+    <tag Name="Tier" Value="2" />
     <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Jagged" />
     <tag Name="HeroNameTitleDescriptor" Value="Scuffed,Broken-down,Corrupted" />
     <tag Name="HeroNameTitleAdmirers" Value="Tinkers,Craftspeople,Robots" />
-    <tag Name="BodyType" Value="HumanoidRobot" />
+    <tag Name="UD_FleshGolems_CorpseQuestStep_DisplayName" Value="Robot" />
+    <tag Name="BodyType" Value="RailedMechanism" />
+    <tag Name="Species" Value="infrastructure" />
+    <part Name="Corpse" CorpseChance="100" />
+    <part Name="Metal" />
+    <property Name="BleedLiquid" Value="oil-1000" />
     <xtagTextFragments
       CorpseDescription="scrap"
       PoeticFeatures="oil,gel,bent chrome,jagged edges"
@@ -69,33 +81,12 @@
       GrossAdjective="oily,slick,grimy"
       SoftMaterial="membrane,circuitry"
       Skin="shorn metal"
-      HarshAdjective="jagged,cracked,crooked,napped"
+      HarshAdjective="jagged,cracked,crooked,snapped"
       HardMaterial="metal plates" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="UD_FleshGolems_ExcludeFromCorpseQuest" Value="*noinherit" />
   </object>
-
-  <object Name="UD_FleshGolems Heap of Chrome Scrap" Inherits="Giant Heap of Chrome Scrap">
-    <part Name="Render" DisplayName="heap of {{c|chrome}} scrap" />
-    <part Name="Description" Short="Chrome sheets and shapes were torn off their welded joints and piled in a heap of scrap." />
-    <builder Name="RandomTile" Tiles="Items/sw_trash_1.bmp,Items/sw_trash_2.bmp,Items/sw_trash_3.bmp,Items/sw_trash_4.bmp" />
-    <part Name="Physics" Weight="200" />
-    <part Name="Commerce" Value="20" />
-    <tag Name="Tier" Value="2" />
-    <removepart Name="Butcherable" />
-    <removetag Name="Role" />
-    <removepart Name="ModGigantic" />
-    <tag Name="UD_FleshGolems_ExcludeFromCorpseQuest" Value="*noinherit" />
-  </object>
-  <object Name="UD_FleshGolems Chrome Robot Corpse" Inherits="UD_FleshGolems Heap of Chrome Scrap">
-    <part Name="Render" DisplayName="heap of {{c|chrome}} scrap" />
-    <part Name="Description" Short="A mound of chrome scraps and dented junk puts some elevation to the ground." />
-    <tag Name="UD_FleshGolems_CorpseQuestStep_DisplayName" Value="Robot" />
-    <tag Name="BodyType" Value="RailedMechanism" />
-    <tag Name="Species" Value="infrastructure" />
-    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Chrome Robot Corpse Corpse" CorpseChance="100" />
-  </object>
-  <object Name="UD_FleshGolems Chrome Robot Corpse Corpse" Inherits="UD_FleshGolems Chrome Robot Corpse">
+  <object Name="UD_FleshGolems Robot Corpse Corpse" Inherits="Robot Corpse">
     <part Name="Render" DisplayName="pile of {{c|chrome}} trash" />
     <part Name="Description" Short="Violence is splayed in an assorted splaying of scrap across the environment." />
     <tag Name="UD_FleshGolems_CorpseQuestStep_DisplayName" Value="Robot" />
@@ -103,17 +94,17 @@
     <tag Name="Species" Value="crystal" />
     <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:3:U:TextFragments:PoeticFeatures= are brought =subject.uD_xTag:2:U:TextFragments:PoeticVerbs= back into an abject affront to the natural order. =subject.UD_xTag:TextFragments:PoeticAdjectives= =subject.uD_xTag:3:U:TextFragments:PoeticNoises= escape =subject.possessive= every movement, and =subject.possessive= very being seemingly screams for =subject.possessive= existence to cease." />
     <xtagTextFragments
-      CorpseDescription="streak"
-      PoeticFeatures="pulp,goo,viscera,muck,sinew,calcifications,rot,mucus"
-      PoeticVerbs="squirming,wriggling,squelching,shambling,screaming,wretching,bubbling"
-      PoeticAdjectives="wet,moist,meaty,sloppy,sick,wretched"
-      PoeticNoises="gurgles,slurps,squelches,pops" />
+      CorpseDescription="heap"
+      PoeticFeatures="oil,gel,bent chrome,jagged edges,grime,sludge"
+      PoeticVerbs="struggling,whining,sputtering"
+      PoeticAdjectives="slick,erratic,crunchy"
+      PoeticNoises="sizzles,whirs,sputters" />
     <xtagUD_FleshGolems_Ragged
-      GrossAdjective="wet,moist,fettid"
-      SoftMaterial="pulp,goo,viscera,muck,rot,sinew,mucus"
-      Skin="membrane"
-      HarshAdjective="jagged,cracked,crooked,dented,scuffed,ragged,splayed"
-      HardMaterial="calcifications" />
+      GrossAdjective="oily,slick,grimy,sludgy"
+      SoftMaterial="membrane,circuitry"
+      Skin="shorn metal"
+      HarshAdjective="jagged,cracked,crooked,snapped,serrated"
+      HardMaterial="metal plates,chrome sheets,struts,supports" />
     <tag Name="UD_FleshGolems_ExcludeFromCorpseQuest" Value="*noinherit" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
@@ -231,11 +222,28 @@
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
 
-  <object Name="Chute Crab Corpse" Inherits="Crab Corpse">
+  <object Name="UD_FleshGolems Cragmensch Corpse" Inherits="Humanoid Corpse">
+    <mixin Name="LargeBoulder" />
+    
+  </object>
+
+  <object Name="UD_FleshGolems Chute Crab Corpse" Inherits="Crab Corpse">
     <part Name="Physics" Weight="20" />
     <part Name="Render" DisplayName="chute crab corpse" ColorString="&amp;Y" />
     <part Name="Butcherable" OnSuccess="@Eyeless Crab Corpse" />
     <tag Name="Tier" Value="2" />
+  </object>
+
+  <object Name="Goatfolk Corpse" Load="Merge">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:goatfolk" />
+  </object>
+
+  <object Name="Flayed Goatfolk Corpse" Load="Merge">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="OtherCorpse:Goatfolk Corpse" />
+  </object>
+
+  <object Name="Charred Goatfolk Corpse" Load="Merge">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="OtherCorpse:Goatfolk Corpse" />
   </object>
 
   <object Name="Charred Corpse" Load="Merge">
@@ -250,6 +258,10 @@
     <tag Name="UD_FleshGolems PastLife CountsAs" Value="Faction:New" />
   </object>
 
+  <object Name="ExileCorpse" Load="Merge">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:human" />
+  </object>
+
   <object Name="Black Puma Haunch" Load="Merge">
     <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:cat" />
   </object>
@@ -262,6 +274,10 @@
   <object Name="Jumble of Tongues" Load="Merge">
     <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Fettid" />
     <mixin Name="UD_FleshGolems Flower Corpse" />
+  </object>
+
+  <object Name="Overglutted Dreamslynth" Load="MergeIfExists">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="OtherCorpse:Sated Dreamcrungle" />
   </object>
 
   <!--

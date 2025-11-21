@@ -31,6 +31,7 @@
     <tag Name="PronounSet" Value="xe/xem/xyr/xyrs/xemself" />
     <property Name="Story" Value="UD_FleshGolems Jofo Qudwufo" />
     <part Name="ConversationScript" ConversationID="UD_FleshGolems Jofo Qudwufo" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Jofo Qudwufo" />
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
@@ -62,6 +63,7 @@
     <!--(Add this dynamically by completing the quest)-->
     <tag Name="Kernelmethod_BetterPetSelector_Description" Value="A mound of wet fur and rotting flesh, uncontent with remaining still." />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="UD_FleshGolems Late Jofo Qudwufo" />
   </object>
   
   <object Name="UD_FleshGolems Mad Monger" Inherits="Gutsmonger">
@@ -88,12 +90,14 @@
   <object Name="UD_FleshGolems Mad Monger Corpse" Inherits="Human Corpse">
     <!--part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger Corpse" /-->
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Blueprint:UD_FleshGolems Mad Monger" />
   </object>
   <object Name="UD_FleshGolems Mad Monger True Kin Corpse" Inherits="Human Corpse">
     <!-- part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger True Corpse" /-->
     <tag Name="Genotype" Value="True Kin" />
     <tag Name="NonMutant" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Blueprint:UD_FleshGolems Mad Monger" />
   </object>
 
   <object Name="UD_FleshGolems BaseAncientEaterTrueKin" Inherits="TrueKinNPC">
@@ -142,7 +146,30 @@
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <part Name="Corpse" CorpseBlueprint="Moldering Corpse" />
   </object>
-  
+
+  <object Name="UD_FleshGolems Skref" Inherits="Argyve">
+    <part Name="Render" DisplayName="Skref" Tile="creatures/caste_21.bmp" RenderString="h" />
+    <xtagGrammar Proper="true" />
+    <!--part Name="Description" Short="=pronouns.Possessive= mushroom cloud of beard hair is powdered with all the abrasions of the trash sea: white lime, red iron, gold filament, opalescent shavings of the plastiglomerate. Chrome joints and pieces of scrap crystal are hooked to pockets lining =pronouns.possessive= torso, and one of =pronouns.possessive= bushy eyebrows is perpetually cocked, though whether that's a symptom of an insatiable curiosity or forehead mutation is unknown." /-->
+    <part Name="Brain" Wanders="true" Factions="Joppa-100" />
+    <removepart Name="Interesting" />
+    <part Name="ConversationScript" ConversationID="tinker" />
+    <!--part Name="ConversationScript" ConversationID="UD_FleshGolems Skref" /-->
+    <stat Name="Level" sValue="4-7" Value="" />
+    <stat Name="Hitpoints" sValue="8,6d2,(t)d3" Value="" />
+    <removeinventoryobject Blueprint="Scratched Data Disk" />
+    <removeproperty Name="WontSell" />
+    <part Name="Corpse" CorpseBlueprint="SkrefCorpse" CorpseChance="100" />
+    <removeskill Name="Tinkering_Repair" />
+    <removeskill Name="Tinkering_ReverseEngineer" />
+    <removeskill Name="Tinkering_Tinker1" />
+    <tag Name="AllowIdleBehavior" />
+    <removetag Name="QuestGiver" />
+    <removetag Name="Gender" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding" />
+    <removetag Name="NoSleep" />
+  </object>
   
   <!--
   
@@ -150,10 +177,10 @@
   
   -->
   <object Name="Robot" Load="Merge">
-    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Chrome Robot Corpse" CorpseChance="0" />
+    <part Name="Corpse" CorpseBlueprint="Robot Corpse" CorpseChance="0" />
   </object>
   <object Name="BaseRobot" Load="Merge">
-    <part Name="Corpse" CorpseChance="20" />
+    <part Name="Corpse" CorpseBlueprint="Robot Corpse" CorpseChance="20" />
   </object>
   
   <object Name="ActivePlant" Load="Merge">
@@ -226,6 +253,43 @@
   </object>
   <object Name="UD_FleshGolems Skybear Corpse" Inherits="Ancient Corpse">
     <part Name="Render" DisplayName="ancient human's corpse" ColorString="&amp;r" TileColor="&amp;r" DetailColor="M" />
+  </object>
+  
+  <!--
+  
+  Base Game Corpse Reassignments
+  
+  -->
+  <object Name="Chute Crab" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Chute Crab Corpse" />
+  </object>
+  
+  <object Name="BaseIssachari" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Human Corpse" />
+  </object>
+  <object Name="Issachari Rifler" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Human Corpse" />
+  </object>
+  
+  <object Name="Caravan Guard" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="Dromad Corpse" />
+  </object>
+  
+  <object Name="Cragmensch" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Cragmensch Corpse" CorpseChance="100" />
+    <removepartpart Name="DropOnDeath" />
+  </object>
+
+  <!--
+  
+  Modded Corpse Reassignments
+  
+  -->
+  <object Name="Donquixote_IssachariSniper_Issachari Sniper" Load="MergeIfExists">
+    <part Name="Corpse" CorpseBlueprint="Human Corpse" />
+  </object>
+  <object Name="Issachari Wyrdwalker" Load="MergeIfExists">
+    <part Name="Corpse" CorpseBlueprint="Human Corpse" />
   </object>
 
   <!-- Flesh Golem natural weapons -->

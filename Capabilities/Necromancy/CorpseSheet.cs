@@ -1,43 +1,16 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 
-using HarmonyLib;
-
-using Genkit;
-using Qud.API;
-
-using XRL.UI;
-using XRL.Wish;
-using XRL.Rules;
-using XRL.Language;
-using XRL;
-using XRL.Collections;
 using XRL.World;
-using XRL.World.Parts;
-using XRL.World.AI;
-using XRL.World.Parts.Mutation;
-using XRL.World.Parts.Skill;
-using XRL.World.Anatomy;
-using XRL.World.ObjectBuilders;
 
-using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
-using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
-
-using UD_FleshGolems;
-using static UD_FleshGolems.Const;
-using static UD_FleshGolems.Utils;
-
-using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using UD_FleshGolems.Logging;
 
 using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair.PairRelationship;
+using ArgPair = UD_FleshGolems.Logging.Debug.ArgPair;
 
 using SerializeField = UnityEngine.SerializeField;
-using static UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair;
-using System.Diagnostics.CodeAnalysis;
 
 namespace UD_FleshGolems.Capabilities.Necromancy
 {
@@ -171,6 +144,10 @@ namespace UD_FleshGolems.Capabilities.Necromancy
         {
             return Corpse.GetGameObjectBlueprint();
         }
+        public IReadOnlyList<CorpseBlueprint> GetInheritedCorpseList()
+        {
+            return InheritedCorpses;
+        }
         public Dictionary<BlueprintBox, int> GetWeightedEntityList()
         {
             Dictionary<BlueprintBox, int> weightedList= new();
@@ -198,7 +175,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                 }
             }
         }
-        public Dictionary<string, int> GetWeightedEntityNameList(bool Include0Chance, Predicate<GameObjectBlueprint> Filter)
+        public Dictionary<string, int> GetWeightedEntityNameList(bool Include0Chance, Predicate<GameObjectBlueprint> Filter, bool DrillIntoInheritance = true)
         {
             Dictionary<string, int> weightedList= new();
             foreach ((string blueprint, int weight) in GetWeightedList(Filter))
@@ -207,6 +184,14 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                 {
                     weightedList.Add(blueprint.ToString(), weight);
                 }
+            }
+            if (DrillIntoInheritance
+                && weightedList.IsNullOrEmpty()
+                && !InheritedCorpses.IsNullOrEmpty())
+            {
+                return NecromancySystem
+                    ?.RequireCorpseSheet(InheritedCorpses[0])
+                    ?.GetWeightedEntityNameList(Include0Chance, Filter, DrillIntoInheritance);
             }
             return weightedList;
         }
@@ -246,8 +231,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
 
         private List<CorpseBlueprint> GetInheritedCorpses(CorpseBlueprint CorpseBlueprint)
         {
-            Debug.GetIndents(out Indent indent);
-            Debug.Log(Debug.GetCallingTypeAndMethod(), CorpseBlueprint.ToString(), indent[1]);
+            Debug.LogMethod(out Indent indent, Debug.LogArg(nameof(CorpseBlueprint), CorpseBlueprint.ToString()));
 
             List<CorpseBlueprint> inheritedCorpses = new();
             GameObjectBlueprint inheritedCorpse = CorpseBlueprint?.GetGameObjectBlueprint()?.Inherits?.GetGameObjectBlueprint();
@@ -268,7 +252,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
         }
         private bool AddInheritedCorpses(EntityWeight WithEntityWeight)
         {
-            Debug.GetIndents(out Indent indent);
+            Debug.GetIndent(out Indent indent);
             Debug.Log(Debug.GetCallingTypeAndMethod(), WithEntityWeight?.GetBlueprint()?.ToString(), indent[1]);
             // Pairs ??= new();
             Entities ??= new();
@@ -314,29 +298,48 @@ namespace UD_FleshGolems.Capabilities.Necromancy
 
         public IReadOnlyList<EntityWeight> GetEntityWeights(bool ExcludeProducts)
             => GetPairs(cep => !ExcludeProducts || cep.Relationship != Relationship.CorpseProduct, (Predicate<GameObjectBlueprint>)null)
-                .ToList()
-                .ConvertAll(cep => cep.GetEntityWeight());
+                ?.ToList()
+                ?.ConvertAll(cep => cep.GetEntityWeight());
 
         public IReadOnlyList<EntityWeight> GetEntityWeights(bool ExcludeProducts, Predicate<EntityWeight> Filter = null)
             => GetPairs(cep => !ExcludeProducts || cep.Relationship != Relationship.CorpseProduct, Filter)
-                .ToList()
-                .ConvertAll(cep => cep.GetEntityWeight());
+                ?.ToList()
+                ?.ConvertAll(cep => cep.GetEntityWeight());
 
         public IReadOnlyList<EntityWeight> GetEntityWeights(bool ExcludeProducts, Predicate<GameObjectBlueprint> Filter = null)
             => GetPairs(cep => !ExcludeProducts || cep.Relationship != Relationship.CorpseProduct, Filter)
-                .ToList()
-                .ConvertAll(cep => cep.GetEntityWeight());
+                ?.ToList()
+                ?.ConvertAll(cep => cep.GetEntityWeight());
 
         public IReadOnlyList<EntityWeight> GetEntityWeights(Predicate<GameObjectBlueprint> Filter = null)
             => GetEntityWeights(false, Filter);
+
+        public IReadOnlyList<EntityWeightRelationship> GetEntityWeightRelationships(bool ExcludeProducts, Predicate<GameObjectBlueprint> Filter = null)
+            => GetPairs(cep => !ExcludeProducts || cep.Relationship != Relationship.CorpseProduct, Filter)
+                ?.ToList()
+                ?.ConvertAll(cep => new EntityWeightRelationship(cep));
+
+        public IReadOnlyList<EntityWeightRelationship> GetEntityWeightRelationships(bool ExcludeProducts, Predicate<EntityWeight> Filter = null)
+            => GetPairs(cep => !ExcludeProducts || cep.Relationship != Relationship.CorpseProduct, Filter)
+                ?.ToList()
+                ?.ConvertAll(cep => new EntityWeightRelationship(cep));
+
+        public IReadOnlyList<EntityWeightRelationship> GetEntityWeightRelationships(Predicate<GameObjectBlueprint> Filter = null)
+            => GetEntityWeightRelationships(false, Filter);
 
         public CorpseSheet AddEntity(
             string EntityBlueprint,
             int Weight,
             Relationship Relationship)
         {
-            EntityBlueprint entityBlueprint = NecromancySystem?.RequireEntityBlueprint(EntityBlueprint);
-            EntityWeight entityWeight = new(entityBlueprint, Weight);
+            Debug.LogMethod("for corpse " + Corpse.ToString(), out Indent indent, new ArgPair[]
+                {
+                    Debug.LogArg(nameof(EntityBlueprint), EntityBlueprint),
+                    Debug.LogArg(nameof(Weight), Weight),
+                    Debug.LogArg(nameof(Relationship), Relationship),
+                });
+            EntityWeight entityWeight = new(NecromancySystem?.RequireEntityBlueprint(EntityBlueprint), Weight);
+            EntityBlueprint entityBlueprint = entityWeight.GetBlueprint();
             Entities ??= new();
             if (!Entities.ContainsKey(entityBlueprint))
             {
@@ -361,6 +364,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     inheritedCorpseSheet.AddInheritedEntity(entityWeight);
                 }
             }
+            Debug.SetIndent(indent[0]);
             return this;
         }
 
@@ -389,6 +393,9 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                 EntityBlueprint: EntityWeight.Blueprint.ToString(),
                 Weight: EntityWeight.Weight,
                 Relationship: Relationship.InheritedCorpse);
+
+        public CorpseSheet AddInheritedEntities(List<EntityWeight> EntityWeights)
+            => EntityWeights.ForEach(ew => AddInheritedEntity(ew), Return: this);
 
         public CorpseSheet AddProductEntity(EntityWeight EntityWeight)
             => AddEntity(

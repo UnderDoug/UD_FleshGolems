@@ -2,52 +2,34 @@
 using System.Collections.Generic;
 using System.Text;
 
+using XRL;
+
 namespace UD_FleshGolems.Logging
 {
     public class Indent
     {
         public static int MaxIndent = 12;
 
-        protected int PinnedValue;
+        protected int BaseValue;
 
-        protected int Value;
+        protected int LastValue;
 
         protected int Factor;
 
         protected char Char;
 
-        protected bool _Pinned;
-
-        protected bool Pinned
-        {
-            get => _Pinned;
-            set
-            {
-                if (value)
-                {
-                    PinnedValue = Value;
-                }
-                else
-                {
-                    Value = PinnedValue;
-                    PinnedValue = 0;
-                }
-                _Pinned = value;
-            }
-        }
-
         public Indent()
         {
-            PinnedValue = 0;
-            Value = 0;
+            BaseValue = 0;
+            LastValue = 0;
             Factor = 4;
             Char = ' ';
-            _Pinned = false;
         }
         public Indent(int Value)
             : this()
         {
-            this.Value = Value;
+            BaseValue = Value;
+            LastValue = Value;
         }
         public Indent(int Value, char Char)
             : this(Value)
@@ -65,11 +47,11 @@ namespace UD_FleshGolems.Logging
             this.Char = Char;
         }
         public Indent(Indent Source)
-            : this(Source.Value, Source.Factor, Source.Char)
+            : this(Source.LastValue, Source.Factor, Source.Char)
         {
         }
         public Indent(int offset, Indent Source)
-            : this(Source.Value + offset, Source.Factor, Source.Char)
+            : this(Source.LastValue + offset, Source.Factor, Source.Char)
         {
         }
 
@@ -77,12 +59,13 @@ namespace UD_FleshGolems.Logging
         {
             get
             {
-                return CapIndent(Value + Indent);
+                LastValue = CapIndent(BaseValue + Indent);
+                return this;
             }
             protected set
             {
-                Value = CapIndent(value + Indent);
-                // Pinned = true;
+                BaseValue = CapIndent(value + Indent);
+                LastValue = BaseValue;
             }
         }
 
@@ -90,58 +73,20 @@ namespace UD_FleshGolems.Logging
             => Math.Min(MaxIndent, Indent);
 
         protected int CapIndent()
-            => Math.Min(MaxIndent, Value);
+            => CapIndent(LastValue);
 
         public Indent ResetIndent()
         {
-            PinnedValue = 0;
-            Pinned = false;
-            return this;
+            return ResetIndent(out _);
         }
-
         public Indent ResetIndent(out Indent Indent)
         {
-            PinnedValue = 0;
-            Pinned = false;
-            Indent = this;
-            return this;
+            LastValue = BaseValue;
+            return Indent = this;
         }
-        public Indent GetIndent(out Indent Indent, bool? Pinned = null)
+        public Indent SetIndent(int Offset)
         {
-            if (Pinned is bool pinned)
-            {
-                this.Pinned = pinned;
-            }
-            Indent = this;
-            return this;
-        }
-        public Indent SetIndent(Indent Indent)
-        {   
-            Unpin();
-            this[Indent.Value] = 0;
-            return this;
-        }
-        public Indent GetIndent(int Offset, out Indent Indent)
-        {
-            this[Offset] = 0;
-            Indent = this;
-            return this;
-        }
-        public Indent GetIndent(out Indent Indent)
-        {
-            return GetIndent(0, out Indent).Pin();
-        }
-
-        public Indent Pin()
-        {
-            Pinned = true;
-            return this;
-        }
-
-        public Indent Unpin()
-        {
-            Pinned = false;
-            return this;
+            return this[Offset] = 0;
         }
 
         public override string ToString()
@@ -151,11 +96,17 @@ namespace UD_FleshGolems.Logging
 
         public static implicit operator int(Indent Operand)
         {
-            return Operand.Value;
+            return Operand.LastValue;
         }
         public static implicit operator Indent(int Operand)
         {
             return new(Operand);
         }
+
+        public Indent DiscardIndent()
+        {
+            return Debug.DiscardIndent();
+        }
+
     }
 }

@@ -37,7 +37,7 @@ namespace XRL.World.Parts
                         Command: NanoNecroAnimation.COMMAND_NAME_REANIMATE_ONE,
                         Key: '+',
                         FireOnActor: true,
-                        Priority: 3,
+                        Priority: 4,
                         WorksAtDistance: true,
                         WorksTelekinetically: true,
                         WorksTelepathically: true);
@@ -47,7 +47,7 @@ namespace XRL.World.Parts
                         Command: NanoNecroAnimation.COMMAND_NAME_ASSESS_CORPSE,
                         Key: '?',
                         FireOnActor: true,
-                        Priority: 3,
+                        Priority: 5,
                         WorksAtDistance: true,
                         WorksTelekinetically: true,
                         WorksTelepathically: true);
@@ -61,7 +61,7 @@ namespace XRL.World.Parts
                         Command: NanoNecroAnimation.COMMAND_NAME_POWERWORD_KILL,
                         Key: ';',
                         FireOnActor: true,
-                        Priority: 3,
+                        Priority: -10,
                         WorksAtDistance: true,
                         WorksTelekinetically: true,
                         WorksTelepathically: true);

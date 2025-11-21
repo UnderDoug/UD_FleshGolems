@@ -283,7 +283,6 @@ namespace XRL.World.Parts.Mutation
         public static bool IsReanimatable(GameObjectBlueprint CorpseBlueprint)
         {
             return CorpseBlueprint != null
-                && !CorpseBlueprint.IsBaseBlueprint()
                 && CorpseBlueprint.HasPart(nameof(UD_FleshGolems_CorpseReanimationHelper))
                 && CorpseBlueprint.HasTagOrProperty("Animatable");
         }
@@ -340,8 +339,9 @@ namespace XRL.World.Parts.Mutation
             if (GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(IsReanimatableCorpse)) is GameObject corpseObject)
             {
                 Corpse = corpseObject;
+                int corpseRadius = Math.Min(25, CorpseRadius);
                 Summoner.CurrentCell
-                    .GetAdjacentCells(CorpseRadius)
+                    .GetAdjacentCells(corpseRadius)
                     .GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject))
                     .AddObject(Corpse);
 
@@ -356,6 +356,7 @@ namespace XRL.World.Parts.Mutation
                         .AddObject(Summoner)
                         .AddObject(Corpse)
                         .ToString();
+
                     MessageQueue.AddPlayerMessage(summonedMsg);
 
                     return true;
@@ -379,6 +380,14 @@ namespace XRL.World.Parts.Mutation
 
         public bool ProcessReanimateOne(GameObject TargetCorpse = null)
         {
+            Debug.GetIndent(out Indent indent);
+            Debug.LogMethod(indent[1], Debug.LogArg(nameof(TargetCorpse), TargetCorpse?.DebugName));
+
+            if (TargetCorpse == null
+                && IsReanimatableCorpse(ParentObject?.Target))
+            {
+                TargetCorpse = ParentObject?.Target;
+            }
             int startX = 40;
             int startY = 12;
             if (ParentObject.CurrentCell is Cell reanimatorCell)
@@ -432,14 +441,18 @@ namespace XRL.World.Parts.Mutation
                     TargetCorpse?.SetAlliedLeader<AllyProselytize>(ParentObject);
                     TargetCorpse?.SmallTeleportSwirl(Color: "&m", IsOut: true);
                 }
+                Debug.SetIndent(indent[0]);
                 return true;
             }
+            Debug.SetIndent(indent[0]);
             return false;
         }
 
         public bool ProcessAssessCorpse(GameObject TargetCorpse = null)
         {
-            Debug.LogMethod(Debug.LastIndent, new ArgPair(nameof(TargetCorpse), TargetCorpse?.DebugName));
+            Debug.GetIndent(out Indent indent);
+            Debug.LogMethod(indent[1], Debug.LogArg(nameof(TargetCorpse), TargetCorpse?.DebugName));
+
             if (TargetCorpse == null
                 && IsReanimatableCorpse(ParentObject?.Target))
             {
@@ -495,17 +508,21 @@ namespace XRL.World.Parts.Mutation
                     ?.GenerateBulletList(Label: corpseListLabel);
 
                 Popup.Show(corpseListOutput);
+                Debug.SetIndent(indent[0]);
                 return true;
             }
             else
             {
                 Popup.Show("No corpse selected to get a creature list from.");
             }
+            Debug.SetIndent(indent[0]);
             return false;
         }
 
         public bool ProcessPowerWordKill(GameObject TargetCreature = null)
         {
+            Debug.GetIndent(out Indent indent);
+            Debug.LogMethod(indent[1], Debug.LogArg(nameof(TargetCreature), TargetCreature?.DebugName));
             if (TargetCreature == null
                 && HasCorpse(ParentObject.Target))
             {
@@ -583,6 +600,7 @@ namespace XRL.World.Parts.Mutation
                     targetCreatureCorpse.CorpseChance = corpseChanceBefore;
                     ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_fail");
                     Popup.Show("you words hang impotently in the air before dissipating without effect...");
+                    Debug.SetIndent(indent[0]);
                     return true;
                 }
             }
@@ -590,6 +608,7 @@ namespace XRL.World.Parts.Mutation
             {
                 Popup.Show("no creatures selected to make instantly die");
             }
+            Debug.SetIndent(indent[0]);
             return false;
         }
 
@@ -597,50 +616,12 @@ namespace XRL.World.Parts.Mutation
 
         public override bool WantEvent(int ID, int cascade)
             => base.WantEvent(ID, cascade)
-            || ID == GetInventoryActionsEvent.ID
             || ID == InventoryActionEvent.ID
             || ID == CommandEvent.ID;
 
-        public override bool HandleEvent(GetInventoryActionsEvent E)
-        {
-            if (IsReanimatableCorpse(E.Object))
-            {
-                E.AddAction(
-                    Name: "Reaimate Corpse",
-                    Display: "reanimate corpse",
-                    Command: COMMAND_NAME_REANIMATE_ONE,
-                    Key: '+',
-                    Priority: 3,
-                    WorksAtDistance: true,
-                    WorksTelekinetically: true,
-                    WorksTelepathically: true);
-                E.AddAction(
-                    Name: "Assess Corpse",
-                    Display: "assess corpse",
-                    Command: COMMAND_NAME_ASSESS_CORPSE,
-                    Key: '?',
-                    Priority: 3,
-                    WorksAtDistance: true,
-                    WorksTelekinetically: true,
-                    WorksTelepathically: true);
-            }
-            if (HasCorpse(E.Object))
-            {
-                E.AddAction(
-                    Name: "Power Word: Kill",
-                    Display: "power word: kill",
-                    Command: COMMAND_NAME_POWERWORD_KILL,
-                    Key: ';',
-                    Priority: 3,
-                    WorksAtDistance: true,
-                    WorksTelekinetically: true,
-                    WorksTelepathically: true);
-            }
-            return base.HandleEvent(E);
-        }
-
         public override bool HandleEvent(InventoryActionEvent E)
         {
+            // these are provided by UD_FleshGolems_NanoNecroAnimation_Helper
             if (E.Command == COMMAND_NAME_REANIMATE_ONE
                 && ProcessReanimateOne(E.Item))
             {
@@ -651,7 +632,7 @@ namespace XRL.World.Parts.Mutation
             if (E.Command == COMMAND_NAME_ASSESS_CORPSE
                 && ProcessAssessCorpse(E.Item))
             {
-                E.RequestInterfaceExit();
+                // E.RequestInterfaceExit();
                 return true;
             }
             else
@@ -696,24 +677,31 @@ namespace XRL.World.Parts.Mutation
             else
             if (E.Command == COMMAND_NAME_SUMMON_CORPSES)
             {
-                if (Popup.AskNumber("How many corpses do you want?", Start: 20, Min: 0, Max: 100) is int corpseCount
+                if (Popup.AskNumber("How many corpses do you want?", Start: 20, Min: 0, Max: 1000) is int corpseCount
                     && corpseCount > 0)
                 {
-                    if (corpseCount < 21
-                        || Popup.ShowYesNoCancel(
-                            Message: corpseCount + " is a lot of corpses.\n\n" +
-                            "Are you sure you want that many?.") == DialogResult.Yes)
+                    if ((corpseCount > 20
+                            && Popup.ShowYesNoCancel(
+                                Message: corpseCount + " is a lot of corpses.\n\n" +
+                                "You can cancel this mid-way the same way as other auto actions.\n\n" +
+                                "Are you sure you want that many?") != DialogResult.Yes)
+                        || (corpseCount > 100
+                            && Popup.ShowYesNoCancel(
+                                Message: corpseCount + " is an inordinate amount of corpses.\n\n" +
+                                "You can cancel this mid-way the same way as other auto actions.\n\n" +
+                                "Are you sure you want that many?") != DialogResult.Yes))
                     {
-                        ParentObject?.SmallTeleportSwirl(Color: "&K", Sound: "Sounds/StatusEffects/sfx_statusEffect_negativeVitality");
-                        UD_FleshGolems_OngoingSummonCorpse ongoingSummon = new(ParentObject, corpseCount, EnergyCostPer: 100);
-
-                        AutoAct.Action = ongoingSummon;
-                        AutoAct.Setting = "o";
-                        The.Player.ForfeitTurn(EnergyNeutral: true);
-
-                        E.RequestInterfaceExit();
-                        return true;
+                        return false;
                     }
+                    ParentObject?.SmallTeleportSwirl(Color: "&K", Sound: "Sounds/StatusEffects/sfx_statusEffect_negativeVitality");
+                    UD_FleshGolems_OngoingSummonCorpse ongoingSummon = new(ParentObject, corpseCount, EnergyCostPer: 100);
+
+                    AutoAct.Action = ongoingSummon;
+                    AutoAct.Setting = "o";
+                    The.Player.ForfeitTurn(EnergyNeutral: true);
+
+                    E.RequestInterfaceExit();
+                    return true;
                 }
             }
             else

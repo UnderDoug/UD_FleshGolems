@@ -42,19 +42,7 @@ namespace XRL.World.Effects
 
         private int GracePeriod;
 
-        [SerializeField]
-        private string SourceID;
-
-        private GameObject _SourceObject;
-        public GameObject SourceObject
-        {
-            get => _SourceObject ??= GameObject.FindByID(SourceID);
-            set
-            {
-                SourceID = value?.ID;
-                _SourceObject = value;
-            }
-        }
+        public GameObject SourceObject;
 
         public string Damage;
 
@@ -223,14 +211,13 @@ namespace XRL.World.Effects
             {
                 string oldAutoActSetting = AutoAct.Setting;
                 bool isAutoActing = AutoAct.IsActive();
-                // string oldNon = Object.GetPropertyOrTag("Non");
+
                 if (Object.IsPlayerControlled())
                 {
                     if (isAutoActing)
                     {
                         AutoAct.Setting = "";
                     }
-                    // Object.SetStringProperty("Non", "I'm not visible!");
                 }
 
                 int damage = CapDamageTo1HPRemaining(Object, Damage.RollCached());
@@ -251,7 +238,6 @@ namespace XRL.World.Effects
                     {
                         AutoAct.Setting = oldAutoActSetting;
                     }
-                    // Object.SetStringProperty("Non", oldNon, true);
                 }
             }
 
