@@ -114,7 +114,7 @@ namespace UD_FleshGolems
 
                 Loading.SetLoadingStatus("Caching Corpses Finished!");
 
-                Debug.SetIndent(indent[0]);
+                Debug.DiscardIndent();
                 CachedCorpses = true;
                 */
             }

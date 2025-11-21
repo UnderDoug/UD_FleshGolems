@@ -371,6 +371,20 @@ namespace UD_FleshGolems
             return Utils.GetGameObjectBlueprint(Blueprint);
         }
 
+        public static IEnumerable<GameObjectBlueprint> GetBlueprintInherits(this GameObjectBlueprint Blueprint)
+        {
+            GameObjectBlueprint inheritedBlueprint = Blueprint?.Inherits?.GetGameObjectBlueprint();
+            while (inheritedBlueprint != null)
+            {
+                yield return inheritedBlueprint;
+                inheritedBlueprint = inheritedBlueprint?.Inherits?.GetGameObjectBlueprint();
+            }
+        }
+        public static IReadOnlyList<GameObjectBlueprint> GetBlueprintInheritsList(this GameObjectBlueprint Blueprint)
+        {
+            return GetBlueprintInherits(Blueprint)?.ToList();
+        }
+
         public static string GetCorpseBlueprint(this GameObjectBlueprint Blueprint)
         {
             if (Blueprint.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string corpseBlueprint))
@@ -851,11 +865,11 @@ namespace UD_FleshGolems
                 cumulativeWeight += weight;
                 if (rolledAmount < cumulativeWeight)
                 {
-                    Debug.SetIndent(indent[0]);
+                    Debug.DiscardIndent();
                     return ticket;
                 }
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return default;
         }
 

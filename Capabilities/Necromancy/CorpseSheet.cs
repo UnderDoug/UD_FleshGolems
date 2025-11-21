@@ -22,9 +22,6 @@ namespace UD_FleshGolems.Capabilities.Necromancy
         [SerializeField]
         protected CorpseBlueprint Corpse;
 
-        // [SerializeField]
-        // private List<CorpseEntityPair> Pairs;
-
         [SerializeField]
         protected Dictionary<EntityBlueprint, Dictionary<Relationship, EntityWeight>> Entities;
 
@@ -57,11 +54,17 @@ namespace UD_FleshGolems.Capabilities.Necromancy
         [SerializeField]
         protected List<CorpseBlueprint> ProductOriginBlueprints;
 
+        public bool InheritedCorpsesInitialized
+            => Corpse?.GetGameObjectBlueprint() is GameObjectBlueprint corpseModel
+            && (corpseModel.Name == "Corpse" 
+                || (corpseModel.GetBlueprintInheritsList().Any(bp => bp.Name == "Corpse")
+                    && InheritedCorpses.IsNullOrEmpty()
+                    && InheritedCorpses.Count > 1));
+
         protected CorpseSheet()
         {
             _IsCorpseProduct = false;
             Corpse = null;
-            // Pairs = new();
             Entities = new();
             InheritedCorpses = new();
             ProductOriginBlueprints = new();
@@ -71,7 +74,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
             : this()
         {
             this.Corpse = Corpse;
-            InheritedCorpses = GetInheritedCorpses(Corpse);
+            InitializeInheritedCorpseList();
         }
 
         public void Deconstruct(out CorpseBlueprint Corpse, out IReadOnlyList<CorpseEntityPair> Pairs)
@@ -229,58 +232,26 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                 .Where(cep => cep.Relationship == Relationship.PrimaryCorpse)
                 .ToList();
 
-        private List<CorpseBlueprint> GetInheritedCorpses(CorpseBlueprint CorpseBlueprint)
+        private IReadOnlyList<CorpseBlueprint> GetInheritedCorpses()
         {
-            Debug.LogMethod(out Indent indent, Debug.LogArg(nameof(CorpseBlueprint), CorpseBlueprint.ToString()));
-
-            List<CorpseBlueprint> inheritedCorpses = new();
-            GameObjectBlueprint inheritedCorpse = CorpseBlueprint?.GetGameObjectBlueprint()?.Inherits?.GetGameObjectBlueprint();
-
-            while (inheritedCorpse != null
-                && inheritedCorpse.IsCorpse()
-                && NecromancySystem?.RequireCorpseSheet(inheritedCorpse)?.GetCorpse() is CorpseBlueprint inheritedCorpseBlueprint)
+            Debug.LogMethod(out Indent indent, Debug.LogArg(nameof(Corpse), Corpse.ToString()));
+            List<CorpseBlueprint> outputList = new();
+            foreach (GameObjectBlueprint inheritedCorpse in Corpse.GetGameObjectBlueprint().GetBlueprintInherits())
             {
-                if (inheritedCorpses.Contains(inheritedCorpseBlueprint))
+                if (inheritedCorpse.IsCorpse()
+                    && NecromancySystem?.RequireCorpseSheet(inheritedCorpse)?.Corpse is CorpseBlueprint inheritedCorpseBlueprint)
                 {
-                    inheritedCorpses.Add(inheritedCorpseBlueprint);
+                    outputList.Add(inheritedCorpseBlueprint);
+                    Debug.Log(inheritedCorpseBlueprint.ToString(), indent[1]);
                 }
-                // inheritedCorpses.AddUnique(inheritedCorpseBlueprint);
-                inheritedCorpse = inheritedCorpse?.Inherits?.GetGameObjectBlueprint();
             }
-            Debug.SetIndent(indent[0]);
-            return inheritedCorpses;
+            Debug.DiscardIndent();
+            return outputList;
         }
-        private bool AddInheritedCorpses(EntityWeight WithEntityWeight)
+        public CorpseSheet InitializeInheritedCorpseList()
         {
-            Debug.GetIndent(out Indent indent);
-            Debug.Log(Debug.GetCallingTypeAndMethod(), WithEntityWeight?.GetBlueprint()?.ToString(), indent[1]);
-            // Pairs ??= new();
-            Entities ??= new();
-            EntityBlueprint entityBlueprint = WithEntityWeight.GetBlueprint();
-            bool any = false;
-            foreach (CorpseBlueprint inheritedCorpse in InheritedCorpses)
-            {
-                Debug.Log(inheritedCorpse?.ToString(), indent[2]);
-                if (!Entities.ContainsKey(entityBlueprint))
-                {
-                    Entities.Add(entityBlueprint, new());
-                }
-                if (!Entities[entityBlueprint].ContainsKey(Relationship.InheritedCorpse))
-                {
-                    Entities[entityBlueprint].Add(Relationship.InheritedCorpse, WithEntityWeight);
-                    any = true;
-                }
-                else
-                {
-                    if (Entities[entityBlueprint][Relationship.InheritedCorpse].Weight < WithEntityWeight.Weight)
-                    {
-                        Entities[entityBlueprint][Relationship.InheritedCorpse] = WithEntityWeight;
-                        any = true;
-                    }
-                }
-            }
-            Debug.SetIndent(indent[0]);
-            return any;
+            InheritedCorpses = GetInheritedCorpses().ToList();
+            return this;
         }
 
         public IReadOnlyList<EntityBlueprint> GetEntities(Predicate<GameObjectBlueprint> Filter = null)
@@ -314,7 +285,9 @@ namespace UD_FleshGolems.Capabilities.Necromancy
         public IReadOnlyList<EntityWeight> GetEntityWeights(Predicate<GameObjectBlueprint> Filter = null)
             => GetEntityWeights(false, Filter);
 
-        public IReadOnlyList<EntityWeightRelationship> GetEntityWeightRelationships(bool ExcludeProducts, Predicate<GameObjectBlueprint> Filter = null)
+        public IReadOnlyList<EntityWeightRelationship> GetEntityWeightRelationships(
+            bool ExcludeProducts,
+            Predicate<GameObjectBlueprint> Filter = null)
             => GetPairs(cep => !ExcludeProducts || cep.Relationship != Relationship.CorpseProduct, Filter)
                 ?.ToList()
                 ?.ConvertAll(cep => new EntityWeightRelationship(cep));
@@ -356,7 +329,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     Entities[entityBlueprint][Relationship] = entityWeight;
                 }
             }
-            if (Relationship != Relationship.InheritedCorpse)
+            if (Relationship != Relationship.InheritedCorpse && false)
             {
                 foreach (CorpseBlueprint inheritedCorpse in InheritedCorpses)
                 {
@@ -364,16 +337,25 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     inheritedCorpseSheet.AddInheritedEntity(entityWeight);
                 }
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return this;
         }
 
         public CorpseSheet AddEntity(
             GameObjectBlueprint EntityBlueprint,
-            int Weight, Relationship Relationship)
+            int Weight,
+            Relationship Relationship)
             => AddEntity(
                 EntityBlueprint: EntityBlueprint.Name,
                 Weight: Weight,
+                Relationship: Relationship);
+
+        public CorpseSheet AddEntity(
+            EntityWeight EntityWeight,
+            Relationship Relationship)
+            => AddEntity(
+                EntityBlueprint: EntityWeight.GetBlueprint().ToString(),
+                Weight: EntityWeight.Weight,
                 Relationship: Relationship);
 
         public CorpseSheet AddPrimaryEntity(GameObjectBlueprint EntityBlueprint, int Weight)

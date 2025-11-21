@@ -21,7 +21,8 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_ReanimatedCorpse : IScribedPart
     {
-        public struct LiquidPortion
+        [Serializable]
+        public struct LiquidPortion : IComposite
         {
             public string Liquid;
             public int Portion;
@@ -63,8 +64,11 @@ namespace XRL.World.Parts
             }
             set
             {
-                _Reanimator = value;
-                AttemptToSuffer();
+                if (_Reanimator != value)
+                {
+                    _Reanimator = value;
+                    AttemptToSuffer();
+                }
             }
         }
 
@@ -91,19 +95,29 @@ namespace XRL.World.Parts
 
         public override void Attach()
         {
-            if (ParentObject.GetBlueprint() is GameObjectBlueprint parentBlueprint)
+            Debug.LogCaller(out Indent indent, Debug.LogArg(nameof(ParentObject), ParentObject?.DebugName ?? NULL));
+            if (ParentObject?.GetBlueprint() is GameObjectBlueprint parentBlueprint)
             {
-                ParentObject.AddPart(new UD_FleshGolems_CorpseIconColor(parentBlueprint));
+                Debug.Log(parentBlueprint.Name, indent[1]);
+                ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(parentBlueprint));
             }
+            Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[2]);
             foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
             {
-                ParentObject.RemovePart(partToRemove);
+                Debug.Log(nameof(partToRemove), partToRemove, indent[3]);
+                ParentObject?.RemovePart(partToRemove);
             }
+            Debug.Log(nameof(BleedLiquid), BleedLiquid ?? NULL, indent[2]);
             if (BleedLiquid.IsNullOrEmpty())
             {
-                _ = GetBleedLiquidEvent.GetFor(ParentObject);
+                Debug.Log(
+                    nameof(GetBleedLiquidEvent) + "." + 
+                    nameof(GetBleedLiquidEvent.GetFor), 
+                    GetBleedLiquidEvent.GetFor(ParentObject),
+                    indent[3]);
             }
             AttemptToSuffer();
+            Debug.DiscardIndent();
             base.Attach();
         }
 
@@ -163,20 +177,30 @@ namespace XRL.World.Parts
 
         public bool AttemptToSuffer()
         {
+            Debug.GetIndent(out Indent indent);
             if (ParentObject is GameObject frankenCorpse)
             {
                 if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
                 {
                     int tier = GetTierFromLevel(frankenCorpse);
+                    Debug.LogMethod(indent[1],
+                        Debug.LogArg(nameof(unendingSuffering), unendingSuffering != null), 
+                        Debug.LogArg(nameof(tier), tier));
+                    Debug.DiscardIndent();
                     return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier));
                 }
                 else
-                if (unendingSuffering.SourceObject != Reanimator)
+                if (unendingSuffering?.SourceObject != Reanimator)
                 {
+                    Debug.LogMethod(indent[1],
+                        Debug.LogArg(nameof(unendingSuffering.SourceObject), unendingSuffering?.SourceObject?.DebugName ?? NULL),
+                        Debug.LogArg(nameof(Reanimator), Reanimator?.DebugName ?? NULL));
                     unendingSuffering.SourceObject = Reanimator;
+                    Debug.DiscardIndent();
                     return true;
                 }
             }
+            Debug.DiscardIndent();
             return false;
         }
 

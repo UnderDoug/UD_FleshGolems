@@ -177,10 +177,10 @@
   
   -->
   <object Name="Robot" Load="Merge">
-    <part Name="Corpse" CorpseBlueprint="Robot Corpse" CorpseChance="0" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Robot Corpse" CorpseChance="0" />
   </object>
   <object Name="BaseRobot" Load="Merge">
-    <part Name="Corpse" CorpseBlueprint="Robot Corpse" CorpseChance="20" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Robot Corpse" CorpseChance="20" />
   </object>
   
   <object Name="ActivePlant" Load="Merge">

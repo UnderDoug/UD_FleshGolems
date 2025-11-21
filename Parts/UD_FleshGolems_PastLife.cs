@@ -345,7 +345,7 @@ namespace XRL.World.Parts
                 return NecromancySystem?.RequireCorpseSheet(CorpseBlueprint)?.GetEntityWeights(Filter);
                 // Add 0Chance and ExcludeDynamic filters in here.
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return blueprintsWeightedList;
         }
 
@@ -379,16 +379,16 @@ namespace XRL.World.Parts
             }
             if (weightedBlueprints.GetWeightedRandom(Include0Weight) is string entity)
             {
-                Debug.SetIndent(indent[0]);
+                Debug.DiscardIndent();
                 return entity;
             }
             if (!Include0Weight && GuaranteeBlueprint)
             {
-                Debug.SetIndent(indent[0]);
+                Debug.DiscardIndent();
                 return GetAnEntityForCorpseWeighted(CorpseBlueprint, true, false);
             }
 
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return null;
         }
         public static string GetAnEntityForCorpse(string CorpseBlueprint, bool Include0Weight = true)
@@ -619,10 +619,10 @@ namespace XRL.World.Parts
                     {
                         PastLife?.Obliterate();
                     }
-                    Debug.SetIndent(indent[0]);
+                    Debug.DiscardIndent();
                 }
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return this;
         }
 
@@ -1158,7 +1158,7 @@ namespace XRL.World.Parts
             }
             finally
             {
-                Debug.SetIndent(indent[0]);
+                Debug.DiscardIndent();
             }
         }
 

@@ -31,29 +31,11 @@ namespace UD_FleshGolems.Logging
             BaseValue = Value;
             LastValue = Value;
         }
-        public Indent(int Value, char Char)
-            : this(Value)
-        {
-            this.Char = Char;
-        }
-        public Indent(int Value, int Factor)
-            : this(Value)
-        {
-            this.Factor = Factor;
-        }
-        public Indent(int Value, int Factor, char Char)
-            : this(Value, Factor)
-        {
-            this.Char = Char;
-        }
-        public Indent(Indent Source)
-            : this(Source.LastValue, Source.Factor, Source.Char)
-        {
-        }
-        public Indent(int offset, Indent Source)
-            : this(Source.LastValue + offset, Source.Factor, Source.Char)
-        {
-        }
+        public Indent(int Value, char Char) : this(Value) => this.Char = Char;
+        public Indent(int Value, int Factor) : this(Value) => this.Factor = Factor;
+        public Indent(int Value, int Factor, char Char) : this(Value, Factor) => this.Char = Char;
+        public Indent(Indent Source) : this(Source.LastValue, Source.Factor, Source.Char) { }
+        public Indent(int offset, Indent Source) : this(Source.LastValue + offset, Source.Factor, Source.Char) { }
 
         public Indent this[int Indent]
         {
@@ -76,37 +58,29 @@ namespace UD_FleshGolems.Logging
             => CapIndent(LastValue);
 
         public Indent ResetIndent()
-        {
-            return ResetIndent(out _);
-        }
+            => ResetIndent(out _);
+
         public Indent ResetIndent(out Indent Indent)
         {
             LastValue = BaseValue;
             return Indent = this;
         }
         public Indent SetIndent(int Offset)
-        {
-            return this[Offset] = 0;
-        }
+            => this[Offset] = 0;
+
+        public Indent GetBaseValue()
+            => BaseValue;
 
         public override string ToString()
-        {
-            return Char.ThisManyTimes(CapIndent() * Factor);
-        }
+            => Char.ThisManyTimes(CapIndent() * Factor);
 
         public static implicit operator int(Indent Operand)
-        {
-            return Operand.LastValue;
-        }
+            => Operand.LastValue;
         public static implicit operator Indent(int Operand)
-        {
-            return new(Operand);
-        }
+            => new(Operand);
 
         public Indent DiscardIndent()
-        {
-            return Debug.DiscardIndent();
-        }
+            => Debug.DiscardIndent();
 
     }
 }

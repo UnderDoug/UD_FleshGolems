@@ -22,7 +22,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
 
         public GameObjectBlueprint GetGameObjectBlueprint()
         {
-            return Name.GetGameObjectBlueprint();
+            return Name?.GetGameObjectBlueprint();
         }
 
         public override string ToString()

@@ -339,7 +339,7 @@ namespace XRL.World.Parts.Mutation
             if (GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(IsReanimatableCorpse)) is GameObject corpseObject)
             {
                 Corpse = corpseObject;
-                int corpseRadius = Math.Min(25, CorpseRadius);
+                int corpseRadius = Math.Min(40, CorpseRadius);
                 Summoner.CurrentCell
                     .GetAdjacentCells(corpseRadius)
                     .GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject))
@@ -441,10 +441,10 @@ namespace XRL.World.Parts.Mutation
                     TargetCorpse?.SetAlliedLeader<AllyProselytize>(ParentObject);
                     TargetCorpse?.SmallTeleportSwirl(Color: "&m", IsOut: true);
                 }
-                Debug.SetIndent(indent[0]);
+                Debug.DiscardIndent();
                 return true;
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return false;
         }
 
@@ -498,9 +498,21 @@ namespace XRL.World.Parts.Mutation
                     Sound: "Sounds/Abilities/sfx_ability_mutation_psychometry_activate",
                     IsOut: true);
 
-                string corpseListLabel =
-                    TargetCorpse?.IndicativeProximal + " " + TargetCorpse?.GetReferenceDisplayName(Short: true) +
-                    " might have been any of the following:";
+                string corpseListLabel = TargetCorpse?.IndicativeProximal + " " + TargetCorpse?.GetReferenceDisplayName(Short: true);
+
+
+                if (TargetCorpse.TryGetPart(out UD_FleshGolems_PastLife pastLife)
+                    && !pastLife.Blueprint.IsNullOrEmpty())
+                {
+                    string pastLifeName = pastLife.BaseDisplayName;
+                    if (!pastLife.WasProperlyNamed)
+                    {
+                        pastLifeName = Grammar.A(pastLife.BaseDisplayName);
+                    }
+                    corpseListLabel += " was\n" + pastLifeName + "\nbut, if they weren't...\n\n" +
+                        "...they ";
+                }
+                corpseListLabel += " might have been any of the following:";
 
                 string corpseListOutput = NecromancySystem
                     ?.GetWeightedEntityStringsThisCorpseCouldBe(TargetCorpse, true, Utils.IsNotBaseBlueprint)
@@ -508,14 +520,14 @@ namespace XRL.World.Parts.Mutation
                     ?.GenerateBulletList(Label: corpseListLabel);
 
                 Popup.Show(corpseListOutput);
-                Debug.SetIndent(indent[0]);
+                Debug.DiscardIndent();
                 return true;
             }
             else
             {
                 Popup.Show("No corpse selected to get a creature list from.");
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return false;
         }
 
@@ -600,7 +612,7 @@ namespace XRL.World.Parts.Mutation
                     targetCreatureCorpse.CorpseChance = corpseChanceBefore;
                     ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_fail");
                     Popup.Show("you words hang impotently in the air before dissipating without effect...");
-                    Debug.SetIndent(indent[0]);
+                    Debug.DiscardIndent();
                     return true;
                 }
             }
@@ -608,7 +620,7 @@ namespace XRL.World.Parts.Mutation
             {
                 Popup.Show("no creatures selected to make instantly die");
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return false;
         }
 
@@ -680,16 +692,18 @@ namespace XRL.World.Parts.Mutation
                 if (Popup.AskNumber("How many corpses do you want?", Start: 20, Min: 0, Max: 1000) is int corpseCount
                     && corpseCount > 0)
                 {
-                    if ((corpseCount > 20
-                            && Popup.ShowYesNoCancel(
-                                Message: corpseCount + " is a lot of corpses.\n\n" +
-                                "You can cancel this mid-way the same way as other auto actions.\n\n" +
-                                "Are you sure you want that many?") != DialogResult.Yes)
-                        || (corpseCount > 100
-                            && Popup.ShowYesNoCancel(
-                                Message: corpseCount + " is an inordinate amount of corpses.\n\n" +
-                                "You can cancel this mid-way the same way as other auto actions.\n\n" +
-                                "Are you sure you want that many?") != DialogResult.Yes))
+                    string excessiveCorpsesMsg = corpseCount + " is ";
+                    excessiveCorpsesMsg += 
+                        corpseCount > 100
+                        ? "is an inordinate amount"
+                        : "is a lot";
+                    excessiveCorpsesMsg += " of corpses.\n\n";
+
+                    if (corpseCount > 20
+                        && Popup.ShowYesNoCancel(
+                            Message: excessiveCorpsesMsg +
+                            "You can cancel this mid-way the same way as other auto actions.\n\n" +
+                            "Are you sure you want that many?") != DialogResult.Yes)
                     {
                         return false;
                     }

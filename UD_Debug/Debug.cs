@@ -160,7 +160,10 @@ namespace UD_FleshGolems.Logging
 
         public static Indent DiscardIndent()
         {
-            Indents.Pop();
+            if (Indents.Count > 0)
+            {
+                Indents.Pop();
+            }
             if (Indents.IsNullOrEmpty())
             {
                 ResetIndent();
@@ -173,16 +176,11 @@ namespace UD_FleshGolems.Logging
             return LastIndent.SetIndent(Indent);
         }
 
-        public static Indent GetIndent(int Offset, out Indent Indent)
-        {
-            Indent = new(LastIndent);
-            Indent.SetIndent(Offset);
-            Indents.Push(Indent);
-            return Indent;
-        }
         public static Indent GetIndent(out Indent Indent)
         {
-            return GetIndent(0, out Indent);
+            Indent = new(LastIndent);
+            Indents.Push(Indent);
+            return Indent;
         }
 
         public static string GetCallingTypeAndMethod(bool AppendSpace = false, bool TrimModPrefix = true)
@@ -303,7 +301,7 @@ namespace UD_FleshGolems.Logging
         public static Indent LogCaller(string MessageAfter, out Indent Indent, params ArgPair[] ArgPairs)
         {
             GetIndent(out Indent);
-            return LogCaller(MessageAfter, Indent, ArgPairs);
+            return LogCaller(MessageAfter, Indent[1], ArgPairs);
         }
         public static Indent LogCaller(out Indent Indent, params ArgPair[] ArgPairs)
         {
@@ -329,7 +327,7 @@ namespace UD_FleshGolems.Logging
         public static Indent LogMethod(string MessageAfter, out Indent Indent, params ArgPair[] ArgPairs)
         {
             GetIndent(out Indent);
-            return LogMethod(MessageAfter, Indent, ArgPairs);
+            return LogMethod(MessageAfter, Indent[1], ArgPairs);
         }
         public static Indent LogMethod(out Indent Indent, params ArgPair[] ArgPairs)
         {

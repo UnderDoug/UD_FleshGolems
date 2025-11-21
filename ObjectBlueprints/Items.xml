@@ -55,21 +55,14 @@
   </object>
   
   <object Name="Robot Corpse" Load="Merge">
-    <part Name="Render" DisplayName="heap of {{c|chrome}} scrap" />
-    <part Name="Description" Short="A mound of chrome scraps and dented junk puts some elevation to the ground." />
-    <builder Name="RandomTile" Tiles="Items/sw_trash_1.bmp,Items/sw_trash_2.bmp,Items/sw_trash_3.bmp,Items/sw_trash_4.bmp" />
-    <part Name="Physics" Weight="200" />
-    <part Name="Commerce" Value="20" />
-    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Robot Corpse Corpse" CorpseChance="0" />
-    <tag Name="Tier" Value="2" />
     <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Jagged" />
     <tag Name="HeroNameTitleDescriptor" Value="Scuffed,Broken-down,Corrupted" />
     <tag Name="HeroNameTitleAdmirers" Value="Tinkers,Craftspeople,Robots" />
     <tag Name="UD_FleshGolems_CorpseQuestStep_DisplayName" Value="Robot" />
     <tag Name="BodyType" Value="RailedMechanism" />
     <tag Name="Species" Value="infrastructure" />
-    <part Name="Corpse" CorpseChance="100" />
     <part Name="Metal" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Robot Corpse Corpse" CorpseChance="100" />
     <property Name="BleedLiquid" Value="oil-1000" />
     <xtagTextFragments
       CorpseDescription="scrap"
@@ -86,7 +79,16 @@
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="UD_FleshGolems_ExcludeFromCorpseQuest" Value="*noinherit" />
   </object>
-  <object Name="UD_FleshGolems Robot Corpse Corpse" Inherits="Robot Corpse">
+  
+  <object Name="UD_FleshGolems Robot Corpse" Inherits="Robot Corpse">
+    <part Name="Render" DisplayName="heap of {{c|chrome}} scrap" />
+    <part Name="Description" Short="A mound of chrome scraps and dented junk puts some elevation to the ground." />
+    <builder Name="RandomTile" Tiles="Items/sw_trash_1.bmp,Items/sw_trash_2.bmp,Items/sw_trash_3.bmp,Items/sw_trash_4.bmp" />
+    <part Name="Physics" Weight="200" />
+    <part Name="Commerce" Value="20" />
+    <tag Name="Tier" Value="2" />
+  </object>
+  <object Name="UD_FleshGolems Robot Corpse Corpse" Inherits="UD_FleshGolems Robot Corpse">
     <part Name="Render" DisplayName="pile of {{c|chrome}} trash" />
     <part Name="Description" Short="Violence is splayed in an assorted splaying of scrap across the environment." />
     <tag Name="UD_FleshGolems_CorpseQuestStep_DisplayName" Value="Robot" />
@@ -112,7 +114,6 @@
   <object Name="UD_FleshGolems PlantCorpseHeroics">
     <tag Name="HeroNameTitleDescriptor" Value="Wilted,Composted,Blighted" />
     <tag Name="HeroNameTitleAdmirers" Value="Gardeners,Arborists" />
-    <tag Name="BaseObject" Value="*noinherit" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Plant Corpse" Inherits="Corpse">
@@ -138,7 +139,6 @@
       Skin="fibres"
       HarshAdjective="shorn,cracked,crooked"
       HardMaterial="wood" />
-    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Bush Corpse" Inherits="UD_FleshGolems Plant Corpse">
     <part Name="Render" DisplayName="Bush Corpse" />
@@ -148,7 +148,6 @@
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
       PoeticNoises="gurgles,slurps,squelches" />
-    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Cactus Corpse" Inherits="UD_FleshGolems Plant Corpse">
     <part Name="Render" DisplayName="Cactus Corpse" DetailColor="M" />
@@ -158,7 +157,6 @@
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
       PoeticNoises="gurgles,slurps,squelches" />
-    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Flower Corpse" Inherits="UD_FleshGolems Plant Corpse">
     <part Name="Render" DisplayName="Flower Corpse" />
@@ -169,7 +167,6 @@
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
       PoeticNoises="gurgles,slurps,squelches" />
-    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Vine Corpse" Inherits="UD_FleshGolems Plant Corpse">
     <part Name="Render" DisplayName="Vine Corpse" DetailColor="r" />
@@ -180,7 +177,6 @@
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
       PoeticNoises="gurgles,slurps,squelches" />
-    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Tree Corpse" Inherits="UD_FleshGolems Plant Corpse">
     <part Name="Render" DisplayName="Tree Corpse" />
@@ -193,7 +189,6 @@
       PoeticVerbs="tangling,stuttering,wriggling"
       PoeticAdjectives="damp,moist,mulchy"
       PoeticNoises="gurgles,slurps,squelches" />
-    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
   <object Name="UD_FleshGolems Fungus Corpse" Inherits="Corpse">
@@ -219,12 +214,18 @@
       Skin="reticulum"
       HarshAdjective="shorn,cracked,striated"
       HardMaterial="stipe" />
-    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
 
   <object Name="UD_FleshGolems Cragmensch Corpse" Inherits="Humanoid Corpse">
     <mixin Name="LargeBoulder" />
-    
+    <part Name="Render" DisplayName="boulder" Tile="Items/sw_largeboulder.bmp" RenderLayer="8" RenderString="007" />
+    <part Name="SizeAdjective" Adjective="large" />
+    <part Name="Physics" Weight="500" Solid="true" />
+    <stat Name="Hitpoints" Value="2500" />
+    <part Name="Description" Short="It's a large piece of rock, older than every idea." />
+    <tag Name="NoSparkingQuest" />
+    <tag Name="GiganticEquippable" />
+    <tag Name="Wall" />
   </object>
 
   <object Name="UD_FleshGolems Chute Crab Corpse" Inherits="Crab Corpse">
@@ -235,15 +236,15 @@
   </object>
 
   <object Name="Goatfolk Corpse" Load="Merge">
-    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:goatfolk" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:goatfolk:100" />
   </object>
 
   <object Name="Flayed Goatfolk Corpse" Load="Merge">
-    <tag Name="UD_FleshGolems PastLife CountsAs" Value="OtherCorpse:Goatfolk Corpse" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Blueprint:Goatfolk Thrall,Crazed Goatfolk Shaman 1,Crazed Goatfolk Shaman 2:100" />
   </object>
 
   <object Name="Charred Goatfolk Corpse" Load="Merge">
-    <tag Name="UD_FleshGolems PastLife CountsAs" Value="OtherCorpse:Goatfolk Corpse" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Blueprint:Goatfolk Thrall,Crazed Goatfolk Shaman 1,Crazed Goatfolk Shaman 2:100" />
   </object>
 
   <object Name="Charred Corpse" Load="Merge">
@@ -255,15 +256,15 @@
   </object>
 
   <object Name="Fresh Corpse" Load="Merge">
-    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Faction:New" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Faction:New:20" />
   </object>
 
   <object Name="ExileCorpse" Load="Merge">
-    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:human" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:human:10" />
   </object>
 
   <object Name="Black Puma Haunch" Load="Merge">
-    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:cat" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:cat:10" />
   </object>
 
   <object Name="Sated Dreamcrungle" Load="Merge">
@@ -277,7 +278,7 @@
   </object>
 
   <object Name="Overglutted Dreamslynth" Load="MergeIfExists">
-    <tag Name="UD_FleshGolems PastLife CountsAs" Value="OtherCorpse:Sated Dreamcrungle" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="OtherCorpse:Sated Dreamcrungle:0" />
   </object>
 
   <!--

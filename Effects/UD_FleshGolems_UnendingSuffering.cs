@@ -13,8 +13,10 @@ using XRL.World.Conversations;
 
 using UD_FleshGolems;
 using static UD_FleshGolems.Utils;
+using static UD_FleshGolems.Const;
 
 using SerializeField = UnityEngine.SerializeField;
+using UD_FleshGolems.Logging;
 
 namespace XRL.World.Effects
 {
@@ -24,9 +26,15 @@ namespace XRL.World.Effects
     {
         public const string ENDLESSLY_SUFFERING = "{{UD_FleshGolems_reanimated|endlessly suffering}}";
 
-        private int FrameOffset => (int.Parse(Object.ID) % 3) + 1;
+        private int _FrameOffset;
+        private int FrameOffset => int.TryParse(Object?.ID, out int result) 
+            ? _FrameOffset = (result % 3) + 1 
+            : Stat.RollCached("1d3");
 
-        private bool FlipRenderColors => (int.Parse(Object.ID) % 2) == 0;
+        private bool _FlipRenderColors;
+        private bool FlipRenderColors => int.TryParse(Object?.ID, out int result)
+            ? _FlipRenderColors = (result % 2) == 0
+            : Stat.RollCached("1d2") == 1;
 
         private List<int> FrameRanges => new()
         {
@@ -55,6 +63,9 @@ namespace XRL.World.Effects
 
         public UD_FleshGolems_UnendingSuffering()
         {
+            _FrameOffset = int.MinValue;
+            _FlipRenderColors = false;
+
             GracePeriod = GracePeriodTurns;
 
             SourceObject = null;
@@ -87,12 +98,12 @@ namespace XRL.World.Effects
             Initialize(Tier);
         }
 
-        public UD_FleshGolems_UnendingSuffering(string Damage, int Duration, GameObject Source, int ChanceToSmear, int ChanceToSplatter)
+        public UD_FleshGolems_UnendingSuffering(string Damage, int Duration, GameObject Source, int ChanceToSmear, int ChanceToSpatter)
             : this(Source)
         {
             this.Damage = Damage;
             this.ChanceToSmear = ChanceToSmear;
-            this.ChanceToSpatter = ChanceToSplatter;
+            this.ChanceToSpatter = ChanceToSpatter;
 
             this.Duration = Duration;
         }
@@ -100,6 +111,8 @@ namespace XRL.World.Effects
         public void Initialize(int Tier)
         {
             Tier = Capabilities.Tier.Constrain(Stat.Random(Tier - 1, Tier + 1));
+
+            Debug.LogMethod(out _, Debug.LogArg(nameof(Tier), Tier));
 
             if (Tier >= 7)
             {
@@ -129,6 +142,8 @@ namespace XRL.World.Effects
                 WorsenedMessage(Object);
             }
             CurrentTier = Tier;
+
+            Debug.DiscardIndent();
         }
 
         public override int GetEffectType()
@@ -155,12 +170,15 @@ namespace XRL.World.Effects
 
         public override bool Apply(GameObject Object)
         {
+            Debug.LogMethod(out Indent indent, Debug.LogArg(nameof(Object), Object?.DebugName ?? NULL));
             if (!Object.FireEvent(Event.New("Apply" + ClassName, "Effect", this)))
             {
+                Debug.DiscardIndent();
                 return false;
             }
             if (!ApplyEffectEvent.Check(Object, ClassName, this))
             {
+                Debug.DiscardIndent();
                 return false;
             }
 
@@ -172,6 +190,8 @@ namespace XRL.World.Effects
 
             StartMessage(Object);
 
+            Debug.Log("Calling base." + nameof(Apply), indent[1]);
+            Debug.DiscardIndent();
             return base.Apply(Object);
         }
         public override void Remove(GameObject Object)
@@ -182,15 +202,18 @@ namespace XRL.World.Effects
 
         public virtual void StartMessage(GameObject Object)
         {
+            Debug.LogMethod(out _, Debug.LogArg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated));
             if (UD_FleshGolems_Reanimated.HasWorldGenerated)
             {
                 Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
                 DidX(Verb: "begin", Extra: DisplayNameStripped, EndMark: "!", ColorAsBadFor: Object);
             }
+            Debug.DiscardIndent();
         }
 
         public virtual void WorsenedMessage(GameObject Object)
         {
+            Debug.LogMethod(out _, Debug.LogArg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated));
             if (UD_FleshGolems_Reanimated.HasWorldGenerated)
             {
                 Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
@@ -200,6 +223,11 @@ namespace XRL.World.Effects
 
         public void Suffer()
         {
+            if (Object == null)
+            {
+                return;
+            }
+
             string deathMessage = "=subject.name's= unending suffering... well, ended =subject.objective=."
                 .StartReplace()
                 .AddObject(Object)

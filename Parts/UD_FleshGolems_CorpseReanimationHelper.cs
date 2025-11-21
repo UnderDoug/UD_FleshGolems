@@ -656,7 +656,7 @@ namespace XRL.World.Parts
                 }
                 if (!proceedWithMakeLive)
                 {
-                    Debug.SetIndent(indent[0]);
+                    Debug.DiscardIndent();
                     return false;
                 }
 
@@ -1090,7 +1090,11 @@ namespace XRL.World.Parts
                     reanimatedCorpse.Reanimator = reanimationHelper.Reanimator;
                 }
 
-                Debug.Log(nameof(reanimatedCorpse) + "." + nameof(reanimatedCorpse.Reanimator) + " set", reanimatedCorpse?.Reanimator?.DebugName ?? NULL, indent[1]);
+                Debug.Log(
+                    nameof(reanimatedCorpse) + "." + 
+                    nameof(reanimatedCorpse.Reanimator) + " set", 
+                    reanimatedCorpse?.Reanimator?.DebugName ?? NULL, 
+                    indent[1]);
                 // reanimatedCorpse.AttemptToSuffer();
 
                 Debug.Log("Calling " + nameof(frankenBody) + "." + nameof(frankenBody.UpdateBodyParts), indent[1]);
@@ -1098,10 +1102,10 @@ namespace XRL.World.Parts
                 Debug.CheckYeh("Didn't fail, fortuantely!", indent[2]);
                 // Debug.CheckNah("Skipped Instead!", indent[2]);
 
-                Debug.SetIndent(indent[0]);
+                Debug.DiscardIndent();
                 return true;
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return false;
         }
 

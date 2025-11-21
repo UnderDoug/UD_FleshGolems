@@ -141,7 +141,7 @@ namespace UD_FleshGolems.Capabilities
                 {
                     Debug.Log(Debug.GetCallingTypeAndMethod(), "Cache finished... " + (success ? "success!" : "failure!"), indent[0]);
                 }
-                Debug.SetIndent(indent[0]);
+                Debug.DiscardIndent();
             }
         }
 
@@ -169,14 +169,14 @@ namespace UD_FleshGolems.Capabilities
             InitializeEntityPrimaryCorpses(out EntityPrimaryCorpsesInitialized);
             InititializeCorpseProducts(out CorpseProductsInitialized);
             InitializeCountsAsCorspes(out CountsAsCorspesInitialized);
-            InitializeInheritedCorspes(out InheritedCorspesInitialized);
+            // InitializeInheritedCorspes(out InheritedCorspesInitialized);
             Loading.SetLoadingStatus(null);
             sw.Stop();
             TimeSpan duration = sw.Elapsed;
             string timeUnit = duration.Minutes > 0 ? "minute" : "second";
             double timeDuration = duration.Minutes > 0 ? duration.TotalMinutes : duration.TotalSeconds;
             Debug.Log("Corpse Cache took " + timeDuration.Things(timeUnit) + ".", Indent: indent[0]);
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
         }
 
         public bool TryGetCorpseSheet(string Corpse, out CorpseSheet CorpseSheet)
@@ -192,19 +192,22 @@ namespace UD_FleshGolems.Capabilities
         }
         public CorpseSheet RequireCorpseSheet(string Blueprint)
         {
-            Debug.GetIndent(out Indent indent);
-            Debug.Log(Debug.GetCallingTypeAndMethod(), Blueprint, indent[1]);
+            Debug.LogMethod(out Indent indent, Debug.LogArg(Blueprint));
             if (!TryGetCorpseSheet(Blueprint, out CorpseSheet corpseSheet))
             {
                 Debug.Log("No existing CorpseSheet entry; creating new one...", indent[2]);
                 corpseSheet = new CorpseSheet(new CorpseBlueprint(Blueprint));
                 Necronomicon[Blueprint] = corpseSheet;
+                if (!corpseSheet.InheritedCorpsesInitialized)
+                {
+                    corpseSheet.InitializeInheritedCorpseList();
+                }
             }
             else
             {
                 Debug.Log("CorpseSheet entry retreived...", indent[2]);
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return corpseSheet;
         }
         public CorpseSheet RequireCorpseSheet(GameObjectBlueprint Blueprint)
@@ -242,7 +245,7 @@ namespace UD_FleshGolems.Capabilities
             {
                 Debug.Log("Entity entry retreived...", indent[2]);
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return entityBlueprint;
         }
         public EntityBlueprint RequireEntityBlueprint(GameObjectBlueprint Blueprint)
@@ -435,35 +438,35 @@ namespace UD_FleshGolems.Capabilities
 
             if (CorpseBlueprint == null)
             {
-                Debug.CheckNah("Corpse null", indent[2]);
-                Debug.SetIndent(indent[0]);
+                Debug.CheckNah("Corpse null", indent[1])
+                    .DiscardIndent();
                 return new();
             }
 
             if (!CorpseBlueprint.TryGetPartParameter(ProcessableType, OnSuccessFieldName, out string processedProductValue))
             {
-                Debug.CheckNah("No Products", indent[2]);
-                Debug.SetIndent(indent[0]);
+                Debug.CheckNah("No Products", indent[1])
+                    .DiscardIndent();
                 return new();
             }
             if (processedProductValue.IsNullOrEmpty())
             {
-                Debug.CheckNah("Product null or empty.", indent[2]);
-                Debug.SetIndent(indent[0]);
+                Debug.CheckNah("Product null or empty.", indent[1])
+                    .DiscardIndent();
                 return new();
             }
 
             List<GameObjectBlueprint> outputList = new();
-            Debug.Log(processedProductValue, indent[2]);
+            Debug.Log(processedProductValue, indent[1]);
             if (!processedProductValue.StartsWith('@'))
             {
                 if (processedProductValue.GetGameObjectBlueprint() is GameObjectBlueprint processedProductValueBlueprint
                     && (ProductFilter == null || ProductFilter(processedProductValueBlueprint)))
                 {
-                    Debug.Log(processedProductValue, indent[3]);
+                    Debug.Log(processedProductValue, indent[2]);
                     if (processedProductValueBlueprint.IsCorpse())
                     {
-                        Debug.CheckYeh("Added", indent[4]);
+                        Debug.CheckYeh("Added", indent[3]);
                         outputList.AddUnique(processedProductValueBlueprint);
                     }
                 }
@@ -479,14 +482,14 @@ namespace UD_FleshGolems.Capabilities
                         {
                             if (ProductFilter == null || ProductFilter(processedProductBlueprint))
                             {
-                                Debug.CheckYeh("Added", indent[5]);
                                 outputList.AddUnique(processedProductBlueprint);
+                                Debug.CheckYeh("Added", indent[2]);
                             }
                         }
                     }
                 }
             }
-            Debug.SetIndent(indent[0]);
+            Debug.DiscardIndent();
             return outputList;
         }
         public UD_FleshGolems_NecromancySystem InititializeCorpseProducts(out bool Initialized)
@@ -591,15 +594,17 @@ namespace UD_FleshGolems.Capabilities
             if (PropTag.Contains(":"))
             {
                 CountsAsParamaters = PropTag.Split(":").ToList();
-                return CountsAsParamaters[0].ToLower() switch
+                return CountsAsParamaters[0] switch
                 {
-                    "blueprint" => CountsAs.Blueprint,
-                    "population" => CountsAs.Population,
-                    "faction" => CountsAs.Faction,
-                    "species" => CountsAs.Species,
-                    "genotype" => CountsAs.Genotype,
-                    "subtype" => CountsAs.Subtype,
-                    "othercorpse" => CountsAs.OtherCorpse,
+                    "any" => CountsAs.Any,
+                    "*" => CountsAs.Any,
+                    "Blueprint" => CountsAs.Blueprint,
+                    "Population" => CountsAs.Population,
+                    "Faction" => CountsAs.Faction,
+                    "Species" => CountsAs.Species,
+                    "Genotype" => CountsAs.Genotype,
+                    "Subtype" => CountsAs.Subtype,
+                    "OtherCorpse" => CountsAs.OtherCorpse,
                     _ => CountsAs.None,
                 };
             }
@@ -611,14 +616,14 @@ namespace UD_FleshGolems.Capabilities
 
         private List<EntityWeightCountsAs> GetCorpseCountsAsBlueprints(GameObjectBlueprint CorpseBlueprint)
         {
-            Debug.LogMethod(out Indent indent, Debug.LogArg(nameof(CorpseBlueprint), CorpseBlueprint));
+            Debug.LogMethod(out Indent indent, Debug.LogArg(nameof(CorpseBlueprint), CorpseBlueprint.Name));
 
             List<EntityWeightCountsAs> countsAsBlueprintsList = new();
             if (CorpseBlueprint == null
                 || !CorpseBlueprint.TryGetStringPropertyOrTag(CORPSE_COUNTS_AS_PROPTAG, out string rawValue))
             {
                 Debug.Log("Blueprint null or doesn't have tag!", indent[2]);
-                Debug.SetIndent(indent[0]);
+                Debug.DiscardIndent();
                 return countsAsBlueprintsList;
             }
 
@@ -747,13 +752,18 @@ namespace UD_FleshGolems.Capabilities
                     if (countsAsParamaters[1] is string countsAsOtherCorpseParam
                         && countsAsOtherCorpseParam.CachedCommaExpansion() is List<string> countsAsOtherCorpseList)
                     {
-                        bool hasOneOfTheseCorpses(GameObjectBlueprint Entity)
+                        foreach (string countsAsOtherCorpse in countsAsOtherCorpseList)
                         {
-                            return Entity != null
-                                && Entity.TryGetCorpseBlueprint(out string corpseBlueprint)
-                                && countsAsOtherCorpseList.Contains(corpseBlueprint);
+                            if (RequireCorpseSheet(countsAsOtherCorpse)
+                                ?.GetEntities()
+                                ?.ToList()
+                                ?.ConvertAll(eb => eb.GetGameObjectBlueprint())
+                                is List<GameObjectBlueprint> countsAsOtherCorpseModels
+                                && !countsAsOtherCorpseModels.IsNullOrEmpty())
+                            {
+                                countsAsModels.AddRange(countsAsOtherCorpseModels);
+                            }
                         }
-                        countsAsModels = GetEntityModelsWithCorpse(hasOneOfTheseCorpses).ToList();
                     }
                     break;
 
@@ -768,12 +778,28 @@ namespace UD_FleshGolems.Capabilities
             else
             {
                 int weight = 0;
+                if (countsAs == CountsAs.Any)
+                {
+                    if (countsAsParamaters.Count > 1
+                        && int.TryParse(countsAsParamaters[1], out int countsAsAnyParamWeight))
+                    {
+                        weight = Math.Min(countsAsAnyParamWeight, 100);
+                    }
+                    else
+                    {
+                        weight = 100;
+                    }
+                }
                 if (countsAsParamaters.Count > 2
                     && int.TryParse(countsAsParamaters[2], out int countsAsParamWeight))
                 {
                     weight = Math.Min(countsAsParamWeight, 100);
                 }
-                countsAsBlueprintsList = countsAsModels.ConvertAll(bpm => new EntityWeightCountsAs(RequireEntityBlueprint(bpm.Name), weight, countsAs));
+                countsAsBlueprintsList = countsAsModels.ConvertAll(bpm 
+                    => new EntityWeightCountsAs(
+                        Entity: RequireEntityBlueprint(bpm.Name),
+                        Weight: weight,
+                        CountsAs: countsAs));
             }
             Debug.DiscardIndent();
             return countsAsBlueprintsList;

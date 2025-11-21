@@ -194,7 +194,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     return true;
                 }
                 // Debug.Log("Neither is null...", Indent: indent[1]);
-                // Debug.SetIndent(indent[0]);
+                // Debug.DiscardIndent();
                 return false;
             }
 
