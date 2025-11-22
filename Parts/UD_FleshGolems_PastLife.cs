@@ -34,6 +34,7 @@ using SerializeField = UnityEngine.SerializeField;
 using UD_FleshGolems.Capabilities;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using UD_FleshGolems.Capabilities.Necromancy;
+using XRL.World.Effects;
 
 namespace XRL.World.Parts
 {
@@ -46,22 +47,7 @@ namespace XRL.World.Parts
         [UD_FleshGolems_DebugRegistry]
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
         {
-            /*
-            Type thisType = typeof(UD_FleshGolems_PastLife);
-            MethodBase GetMethod(string methodName)
-            {
-                return thisType.GetMethod(methodName);
-            }
-            Registry.Register(GetMethod(nameof(GetProcessableCorpsesProducts)), false);
-            Registry.Register(GetMethod(nameof(GetProcessableCorpsesAndTheirProducts)), true);
-            Registry.Register(GetMethod(nameof(GetCorpsesThisProductComesFrom)), true);
-            Registry.Register(GetMethod(nameof(EntityCouldHaveComeFromThisCorpse)), true);
-            Registry.Register(GetMethod(nameof(GetBlueprintsWhoseCorpseThisCouldBe)), true);
-            Registry.Register(GetMethod(nameof(GetALivingBlueprintForCorpseWeighted)), true);
-            Registry.Register(GetMethod(nameof(GetALivingBlueprintForCorpse)), true);
-            */
             Registry.Register(nameof(GetCorpseBlueprints), true);
-            Registry.Register(nameof(GetBlueprintsWhoseCorpseThisCouldBe), true);
             Registry.Register(nameof(GetAnEntityForCorpseWeighted), true);
             Registry.Register(nameof(GetAnEntityForCorpse), true);
             return Registry;
@@ -88,9 +74,7 @@ namespace XRL.World.Parts
                 this.Y = Y;
             }
             public UD_FleshGolems_DeathAddress(string DeathZone, Location2D DeathLocation)
-                : this(DeathZone, DeathLocation.X, DeathLocation.Y)
-            {
-            }
+                : this(DeathZone, DeathLocation.X, DeathLocation.Y) { }
 
             public Location2D GetLocation() => new(X, Y);
 
@@ -99,9 +83,7 @@ namespace XRL.World.Parts
             public Cell GetCell() => The.ZoneManager?.GetZone(DeathZone)?.GetCell(X, Y);
 
             public static explicit operator Cell(UD_FleshGolems_DeathAddress Source)
-            {
-                return Source.GetCell();
-            }
+                => Source.GetCell();
         }
 
         [Serializable]
@@ -136,79 +118,23 @@ namespace XRL.World.Parts
             }
             public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic, BodyPart ImplantedPart)
                 : this(Cybernetic, ImplantedPart.Type) { }
+
             public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic, Body ImplantedBody)
                 : this(Cybernetic, ImplantedBody.FindCybernetics(Cybernetic)) { }
+
             public UD_FleshGolems_InstalledCybernetic(GameObject Cybernetic)
                 : this(Cybernetic, Cybernetic?.Implantee?.Body) { }
+
             public void Deconstruct(out GameObject Cybernetic, out string ImplantedLimbType)
             {
                 ImplantedLimbType = this.ImplantedLimbType;
                 Cybernetic = this.Cybernetic;
             }
 
-            public static implicit operator KeyValuePair<GameObject, string>(UD_FleshGolems_InstalledCybernetic Source) => new(Source.Cybernetic, Source.ImplantedLimbType);
-            public static implicit operator UD_FleshGolems_InstalledCybernetic(KeyValuePair<GameObject, string> Source) => new(Source.Key, Source.Value);
-        }
-
-        public class BlueprintWeightPair : IEquatable<KeyValuePair<string, int>>
-        {
-            public string Blueprint;
-            public int Weight;
-
-            public BlueprintWeightPair(string Blueprint, int Weight)
-            {
-                this.Blueprint = Blueprint;
-                this.Weight = Weight;
-            }
-
-            public GameObjectBlueprint GetGameObjectBlueprint()
-            {
-                return Blueprint.GetGameObjectBlueprint();
-            }
-
-            public override string ToString()
-            {
-                return Blueprint + ": " + Weight;
-            }
-
-            public void Deconstruct(out string Blueprint) => Blueprint = this.Blueprint;
-            public void Deconstruct(out int Weight) => Weight = this.Weight;
-            public void Deconstruct(out string Blueprint, out int Weight)
-            {
-                Deconstruct(out Blueprint);
-                Deconstruct(out Weight);
-            }
-            public void Deconstruct(out GameObjectBlueprint Blueprint) => Blueprint = GetGameObjectBlueprint();
-
-            public static implicit operator KeyValuePair<string, int>(BlueprintWeightPair Operand) => new(Operand.Blueprint, Operand.Weight);
-            public static implicit operator BlueprintWeightPair(KeyValuePair<string, int> Operand) => new(Operand.Key, Operand.Value);
-
-            public static explicit operator string(BlueprintWeightPair Operand) => Operand.Blueprint;
-            public static explicit operator int(BlueprintWeightPair Operand) => Operand.Weight;
-            public static explicit operator GameObjectBlueprint(BlueprintWeightPair Operand) => Operand.GetGameObjectBlueprint();
-
-            public override bool Equals(object obj)
-            {
-                if (obj is KeyValuePair<string, int> kvpObj)
-                {
-                    return Equals(kvpObj);
-                }
-                return base.Equals(obj);
-            }
-
-            public override int GetHashCode() => Blueprint.GetHashCode() ^ Weight.GetHashCode();
-
-            public bool Equals(KeyValuePair<string, int> other)
-            {
-                return Blueprint.Equals(other.Key)
-                    && Weight.Equals(other.Value);
-            }
-
-            public static bool operator ==(BlueprintWeightPair Operand1, KeyValuePair<string, int> Operand2) => Operand1.Equals(Operand2);
-            public static bool operator !=(BlueprintWeightPair Operand1, KeyValuePair<string, int> Operand2) => !(Operand1 == Operand2);
-
-            public static bool operator ==(KeyValuePair<string, int> Operand1, BlueprintWeightPair Operand2) => Operand2 == Operand1;
-            public static bool operator !=(KeyValuePair<string, int> Operand1, BlueprintWeightPair Operand2) => Operand2 != Operand1;
+            public static implicit operator KeyValuePair<GameObject, string>(UD_FleshGolems_InstalledCybernetic Source)
+                => new(Source.Cybernetic, Source.ImplantedLimbType);
+            public static implicit operator UD_FleshGolems_InstalledCybernetic(KeyValuePair<GameObject, string> Source)
+                => new(Source.Key, Source.Value);
         }
 
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
@@ -220,7 +146,8 @@ namespace XRL.World.Parts
         public bool Init { get; protected set; }
         public bool WasCorpse => (Blueprint?.IsCorpse()).GetValueOrDefault();
 
-        public bool WasPlayer => (!Blueprint.IsNullOrEmpty() && Blueprint.IsPlayerBlueprint()) 
+        public bool WasPlayer 
+            => (!Blueprint.IsNullOrEmpty() && Blueprint.IsPlayerBlueprint()) 
             || (BrainInAJar != null && BrainInAJar.HasPropertyOrTag("UD_FleshGolems_WasPlayer"));
 
         public int TimesReanimated;
@@ -295,59 +222,32 @@ namespace XRL.World.Parts
 
             InstalledCybernetics = new();
         }
+
         public UD_FleshGolems_PastLife(GameObject PastLife)
             : this()
-        {
-            Initialize(PastLife);
-        }
+            => Initialize(PastLife);
+
         public UD_FleshGolems_PastLife(UD_FleshGolems_PastLife PrevPastLife)
             : this()
-        {
-            Initialize(PrevPastLife);
-        }
+            => Initialize(PrevPastLife);
 
         private static GameObject GetNewBrainInAJar()
-        {
-            return GameObjectFactory.Factory.CreateUnmodifiedObject("UD_FleshGolems Brain In A Jar Widget");
-        }
-
-        // Make a few different predicate-likes here to make it easier to understand the mess below.
+            => GameObjectFactory.Factory.CreateUnmodifiedObject("UD_FleshGolems Brain In A Jar Widget");
 
         public static bool IsProcessableCorpse(GameObjectBlueprint Corpse, Predicate<GameObjectBlueprint> Filter)
-        {
-            return Corpse.IsCorpse(Filter)
-                && (Corpse.HasPart(nameof(Butcherable)) || Corpse.HasPart(nameof(Harvestable)));
-        }
+            => Corpse.IsCorpse(Filter)
+            && (Corpse.HasPart(nameof(Butcherable)) || Corpse.HasPart(nameof(Harvestable)));
+
         public static bool IsProcessableCorpse(GameObjectBlueprint Corpse, bool ExcludeBase)
-        {
-            return IsProcessableCorpse(Corpse, ExcludeBase ? IsNotBaseBlueprint : null);
-        }
+            => IsProcessableCorpse(Corpse, ExcludeBase ? IsNotBaseBlueprint : null);
+
         public static bool IsProcessableCorpse(GameObjectBlueprint Corpse)
-        {
-            return IsProcessableCorpse(Corpse, true);
-        }
+            => IsProcessableCorpse(Corpse, true);
 
         public static List<GameObjectBlueprint> GetCorpseBlueprints(Predicate<GameObjectBlueprint> Filter)
             => NecromancySystem
                 ?.GetCorpseBlueprints(Filter)
                 ?.ToList()?.ConvertAll(cbp => cbp.GetGameObjectBlueprint());
-
-        public static IReadOnlyList<EntityWeight> GetBlueprintsWhoseCorpseThisCouldBe(
-            string CorpseBlueprint,
-            bool Include0Chance = true,
-            Predicate<GameObjectBlueprint> Filter = null)
-        {
-            Debug.GetIndent(out Indent indent);
-            Debug.Log(Debug.GetCallingTypeAndMethod(true), CorpseBlueprint, indent[1]);
-            List<EntityWeight> blueprintsWeightedList = new();
-            if (!CorpseBlueprint.IsNullOrEmpty() && CorpseBlueprint.IsCorpse())
-            {
-                return NecromancySystem?.RequireCorpseSheet(CorpseBlueprint)?.GetEntityWeights(Filter);
-                // Add 0Chance and ExcludeDynamic filters in here.
-            }
-            Debug.DiscardIndent();
-            return blueprintsWeightedList;
-        }
 
         public static string GetAnEntityForCorpseWeighted(
             string CorpseBlueprint,
@@ -358,9 +258,9 @@ namespace XRL.World.Parts
             Debug.LogMethod(indent[1],
                 new Debug.ArgPair[]
                 {
-                    Debug.LogArg(CorpseBlueprint),
-                    Debug.LogArg(nameof(Include0Weight), Include0Weight),
-                    Debug.LogArg(nameof(GuaranteeBlueprint), GuaranteeBlueprint),
+                    Debug.Arg(CorpseBlueprint),
+                    Debug.Arg(nameof(Include0Weight), Include0Weight),
+                    Debug.Arg(nameof(GuaranteeBlueprint), GuaranteeBlueprint),
                 });
             
             Dictionary<string, int> weightedBlueprints = NecromancySystem
@@ -390,16 +290,12 @@ namespace XRL.World.Parts
             }
             if (weightedBlueprints.GetWeightedRandom(Include0Weight) is string entity)
             {
-                Debug.DiscardIndent();
                 return entity;
             }
             if (!Include0Weight && GuaranteeBlueprint)
             {
-                Debug.DiscardIndent();
                 return GetAnEntityForCorpseWeighted(CorpseBlueprint, true, false);
             }
-
-            Debug.DiscardIndent();
             return null;
         }
         public static string GetAnEntityForCorpse(string CorpseBlueprint, bool Include0Weight = true)
@@ -416,7 +312,7 @@ namespace XRL.World.Parts
             Debug.LogCaller(indent[1],
                 new Debug.ArgPair[]
                 {
-                    Debug.LogArg(nameof(PastLife), PastLife?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife?.DebugName ?? NULL),
                 });
 
             if (!Init)
@@ -463,19 +359,35 @@ namespace XRL.World.Parts
                         }
 
                         if (PastLife.GetBlueprint().InheritsFrom("UD_FleshGolems Brain In A Jar Widget")
-                            || PastLife.GetBlueprint().InheritsFrom("Corpse"))
+                            || PastLife.GetBlueprint().InheritsFrom("Corpse")
+                            || WasCorpse)
                         {
                             TimesReanimated++;
                         }
+                        Debug.Log(nameof(TimesReanimated), TimesReanimated, indent[2]);
 
-                        BrainInAJar.HasProperName = PastLife.HasProperName || PastLife.GetBlueprint().GetxTag("Grammar", "Proper").EqualsNoCase("true");
+                        BrainInAJar.HasProperName = PastLife.HasProperName 
+                            || PastLife.GetBlueprint().GetxTag("Grammar", "Proper").EqualsNoCase("true");
 
                         BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Titles>());
                         BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Epithets>());
                         BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Honorifics>());
 
-                        BrainInAJar._Property = PastLife._Property;
-                        BrainInAJar._IntProperty = PastLife._IntProperty;
+                        if (WasCorpse)
+                        {
+                            Titles bIAJ_Titles = BrainInAJar.RequirePart<Titles>();
+                            if (bIAJ_Titles.TitleList.IsNullOrEmpty()
+                                || !bIAJ_Titles.TitleList.Contains(UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE))
+                            {
+                                bIAJ_Titles.AddTitle(UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE);
+                            }
+                        }
+
+                        PastLife.RemoveAllEffects<LiquidCovered>();
+                        PastLife.RemoveAllEffects<LiquidStained>();
+
+                        BrainInAJar._Property = new(PastLife._Property);
+                        BrainInAJar._IntProperty = new(PastLife._IntProperty);
 
                         Render bIAJ_Render = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Render);
                         BrainInAJar.Render = bIAJ_Render;
@@ -747,8 +659,8 @@ namespace XRL.World.Parts
             Debug.LogMethod(indent[1],
                 new Debug.ArgPair[]
                 {
-                    Debug.LogArg(nameof(PastLife.ParentObject), PastLife.ParentObject?.DebugName ?? NULL),
-                    Debug.LogArg(nameof(oldIdentity), oldIdentity ?? NULL),
+                    Debug.Arg(nameof(PastLife.ParentObject), PastLife.ParentObject?.DebugName ?? NULL),
+                    Debug.Arg(nameof(oldIdentity), oldIdentity ?? NULL),
                 });
             if (PastLife.WasProperlyNamed)
             {
@@ -762,7 +674,7 @@ namespace XRL.World.Parts
                 }
                 else
                 {
-                    newIdentity = PastLife.BrainInAJar?.DisplayName ?? PastLife.BrainInAJar?.Render?.DisplayName;
+                    newIdentity = /*PastLife.BrainInAJar?.DisplayName ??*/ PastLife.BrainInAJar?.Render?.DisplayName;
                 }
             }
             Debug.Log(nameof(newIdentity), newIdentity ?? NULL, indent[1]);
@@ -780,13 +692,14 @@ namespace XRL.World.Parts
                 return null;
             }
             string oldDescription = PastLife.Description;
-            string postDescription = "In life this =subject.uD_xTag:TextFragments:CorpseDescription= was ";
+            string postDescription = "In life this =subject.uD_xTag:FleshGolems_CorpseText:CorpseDescription= was ";
             if (PastLife.WasPlayer)
             {
                 postDescription += "you.";
             }
             else
             {
+
                 string whoTheyWere = (PastLife?.RefName ?? PastLife.GetBlueprint().DisplayName());
                 if (!PastLife.WasProperlyNamed)
                 {
@@ -1085,7 +998,8 @@ namespace XRL.World.Parts
 
         public virtual void DebugOutput()
         {
-            Debug.ResetIndent(out Indent indent);
+            Debug.ResetIndent();
+            using Indent indent = new();
             try
             {
                 Debug.Log(nameof(UD_FleshGolems_PastLife), ParentObject.DebugName, indent[0]);
@@ -1179,10 +1093,6 @@ namespace XRL.World.Parts
             {
                 MetricsManager.LogException(Name + "." + nameof(DebugOutput), x, "game_mod_exception");
             }
-            finally
-            {
-                Debug.DiscardIndent();
-            }
         }
 
         [WishCommand("UD_FleshGolems debug PastLife")]
@@ -1218,58 +1128,6 @@ namespace XRL.World.Parts
             {
                 Popup.Show("nothing selected to debug " + nameof(UD_FleshGolems_PastLife));
             }
-            Debug.SetSilenceLogging(false);
-        }
-
-        [WishCommand("UD_FleshGolems wot creature")]
-        public static void Debug_WotDis_WishHandler()
-        {
-            Debug.SetSilenceLogging(true);
-            int startX = 40;
-            int startY = 12;
-            if (The.Player.CurrentCell is Cell playerCell)
-            {
-                startX = playerCell.X;
-                startY = playerCell.Y;
-            }
-            if (PickTarget.ShowPicker(
-                Style: PickTarget.PickStyle.EmptyCell,
-                StartX: startX,
-                StartY: startY,
-                VisLevel: AllowVis.Any,
-                ObjectTest: IsReanimatableCorpse,
-                Label: "pick a corpse to get a list of possible creatrues") is Cell pickCell)
-            {
-                List<GameObject> corpseList = pickCell.GetObjectsViaEventList(Filter: IsReanimatableCorpse);
-                GameObject targetCorpse = null;
-                if (corpseList.Count == 1)
-                {
-                    targetCorpse = corpseList[0];
-                }
-                if (targetCorpse == null
-                    && Popup.PickGameObject(
-                        Title: "which corpse?",
-                        Objects: corpseList,
-                        AllowEscape: true,
-                        ShortDisplayNames: true) is GameObject pickedObject)
-                {
-                    targetCorpse = pickedObject;
-                }
-                if (targetCorpse != null)
-                {
-                    List<string> possibleBlueprints = new(GetBlueprintsWhoseCorpseThisCouldBe(targetCorpse.Blueprint).ConvertToWeightedList().Keys);
-
-                    string corpseListLabel = 
-                        targetCorpse.IndicativeProximal + " " + targetCorpse.GetReferenceDisplayName(Short: true) + 
-                        " might have been any of the following:";
-
-                    string corpseListOutput = possibleBlueprints.GenerateBulletList(Label: corpseListLabel);
-                    Popup.Show(corpseListOutput);
-                }
-                Debug.SetSilenceLogging(false);
-                return;
-            }
-            Popup.Show("no corpse selected to get a creature list from");
             Debug.SetSilenceLogging(false);
         }
     }

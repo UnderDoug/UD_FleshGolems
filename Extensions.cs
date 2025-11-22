@@ -529,11 +529,6 @@ namespace UD_FleshGolems
                 && gameObjectBlueprint.IsChiliad();
         }
 
-        public static GameObjectBlueprint GetBlueprintIfExists(this PopulationItem PopItem)
-        {
-            return PopItem?.Name?.GetGameObjectBlueprint();
-        }
-
         public static IEnumerable<BodyPart> LoopParts(this Body Body, Predicate<BodyPart> Filter)
         {
             if (Body == null)
@@ -547,46 +542,6 @@ namespace UD_FleshGolems
                     yield return bodyPart;
                 }
             }
-        }
-
-        public static Dictionary<T, int> ConvertToWeightedList<T>(this List<KeyValuePair<T, int>> EntriesList)
-        {
-            Dictionary<T, int> weightedEntries = new();
-            if (!EntriesList.IsNullOrEmpty())
-            {
-                foreach ((T item, int weight) in EntriesList)
-                {
-                    if (!weightedEntries.ContainsKey(item))
-                    {
-                        weightedEntries.Add(item, weight);
-                    }
-                    else
-                    {
-                        weightedEntries[item] += weight;
-                    }
-                }
-            }
-            return weightedEntries;
-        }
-
-        public static Dictionary<string, int> ConvertToWeightedList<T>(this List<UD_FleshGolems_PastLife.BlueprintWeightPair> EntriesList)
-        {
-            Dictionary<string, int> weightedEntries = new();
-            if (!EntriesList.IsNullOrEmpty())
-            {
-                foreach ((string blueprint, int weight) in EntriesList)
-                {
-                    if (!weightedEntries.ContainsKey(blueprint))
-                    {
-                        weightedEntries.Add(blueprint, weight);
-                    }
-                    else
-                    {
-                        weightedEntries[blueprint] += weight;
-                    }
-                }
-            }
-            return weightedEntries;
         }
 
         public static Dictionary<T, int> ConvertToWeightedList<T>(this IEnumerable<T> Items)
@@ -734,30 +689,6 @@ namespace UD_FleshGolems
             }
             return outputList;
         }
-        public static List<string> ConvertToStringList<T>(this IEnumerable<T> Entries)
-        {
-            return ConvertToStringList(Entries, null);
-        }
-
-        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
-            this Dictionary<T, int> Entries)
-        {
-            foreach ((T item, int count) in Entries)
-            {
-                yield return count.Things(item.ToString());
-            }
-            yield break;
-        }
-        public static List<string> ConvertToStringList<T>(this StringMap<T>.ValueEnumerator Entries, Func<T, string> Proc)
-        {
-            List<string> outputList = new();
-            foreach (T entry in Entries)
-            {
-                string entryProc = Proc != null ? Proc(entry) : entry.ToString();
-                outputList.Add(entryProc);
-            }
-            return outputList;
-        }
 
         public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
             this IEnumerable<T> Entries)
@@ -767,34 +698,6 @@ namespace UD_FleshGolems
                 yield return count.Things(item.ToString());
             }
             yield break;
-        }
-        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
-            this IEnumerable<T> Entries,
-            Func<T, string> Proc)
-        {
-            foreach ((T item, int count) in Entries.ConvertToWeightedList())
-            {
-                string procItem = Proc != null ? Proc(item) : item.ToString();
-                yield return count.Things(procItem);
-            }
-            yield break;
-        }
-
-        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
-            this IEnumerable<KeyValuePair<T, int>> Entries,
-            Func<KeyValuePair<T, int>, string> Proc)
-        {
-            foreach (KeyValuePair<T, int> entry in Entries)
-            {
-                string procEntry = Proc != null ? Proc(entry) : entry.Value.Things(entry.Key.ToString());
-                yield return procEntry;
-            }
-            yield break;
-        }
-        public static IEnumerable<string> ConvertToStringListWithItemCount<T>(
-            this IEnumerable<KeyValuePair<T, int>> Entries)
-        {
-            return ConvertToStringListWithItemCount(Entries, null);
         }
 
         public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(
@@ -820,19 +723,6 @@ namespace UD_FleshGolems
             return Entries.ConvertToStringListWithKeyValue((Func<T, string>)null);
         }
 
-        public static IEnumerable<string> ConvertToStringListWithKeyValue(
-            this IEnumerable<KeyValuePair<string, GameObjectBlueprint>> Entries)
-        {
-            return ConvertToStringListWithKeyValue(Entries, bp => bp.Name);
-        }
-
-        public static IEnumerable<string> ConvertToStringListWithKeyValue(
-            this IEnumerable<KeyValuePair<string, List<UD_FleshGolems_PastLife.BlueprintWeightPair>>> Entries,
-            Func<List<UD_FleshGolems_PastLife.BlueprintWeightPair>, string> Proc)
-        {
-            return Entries.ConvertToStringListWithKeyValue(kvp => kvp.Key + ": " + (Proc != null ? Proc(kvp.Value) : kvp.Value.ToString()));
-        }
-
         public static T GetWeightedRandom<T>(this Dictionary<T, int> WeightedList, bool Include0Weight = true)
         {
             using Indent indent = new();
@@ -852,8 +742,8 @@ namespace UD_FleshGolems
             Debug.LogMethod(indent[1],
                 new Debug.ArgPair[]
                 {
-                    Debug.LogArg(nameof(rolledAmount), rolledAmount),
-                    Debug.LogArg(nameof(maxWeight), maxWeight)
+                    Debug.Arg(nameof(rolledAmount), rolledAmount),
+                    Debug.Arg(nameof(maxWeight), maxWeight)
                 });
 
             int cumulativeWeight = 0;

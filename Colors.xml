@@ -1,13 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <colors>
   <shaders>
-    <shader Name="UD_FleshGolems_reanimated" Type="distribution" Colors="r-r-w" ShowInPicker="true" />
+    <shader Name="UD_FleshGolems_reanimated" Type="distribution" Colors="r-r-r-R-w-w" ShowInPicker="true" />
     <shader Name="UD_FleshGolems_meat" Type="sequence" Colors="r-w-y-m-w-r-w" ShowInPicker="true" />
     
-    <shader Name="UD_FleshGolems_ragged" Type="distribution" Colors="K-W-w-r-r-r" ShowInPicker="true" />
-    <shader Name="UD_FleshGolems_jagged" Type="distribution" Colors="K-w-r-c-c-c" ShowInPicker="true" />
-    <shader Name="UD_FleshGolems_fettid" Type="distribution" Colors="K-W-w-g-g-g" ShowInPicker="true" />
-    <shader Name="UD_FleshGolems_decayed" Type="distribution" Colors="K-W-w-m-m-m" ShowInPicker="true" />
+    <shader Name="UD_FleshGolems_flower" Type="distribution" Colors="B-m-b-W-c" ShowInPicker="false" />
+    <shader Name="UD_FleshGolems_fungus" Type="distribution" Colors="m-m-b-w-C-C" ShowInPicker="false" />
+    
+    <shader Name="UD_FleshGolems_ragged" Type="sequence" Colors="r-K-r-R-w-r" ShowInPicker="true" />
+    <shader Name="UD_FleshGolems_jagged" Type="sequence" Colors="c-w-c-K-r-c" ShowInPicker="true" />
+    <shader Name="UD_FleshGolems_fettid" Type="sequence" Colors="g-K-w-g-W-g" ShowInPicker="true" />
+    <shader Name="UD_FleshGolems_decayed" Type="sequence" Colors="K-m-W-K-m-w-m" ShowInPicker="true" />
+    
+    <shader Name="UD_FleshGolems_ragged_r" Type="distribution" Colors="K-R-w-r-r-r" ShowInPicker="true" />
+    <shader Name="UD_FleshGolems_jagged_r" Type="distribution" Colors="K-w-r-c-c-c" ShowInPicker="true" />
+    <shader Name="UD_FleshGolems_fettid_r" Type="distribution" Colors="K-W-w-g-g-g" ShowInPicker="true" />
+    <shader Name="UD_FleshGolems_decayed_r" Type="distribution" Colors="K-W-w-m-m-m" ShowInPicker="true" />
     
   </shaders>
 </colors>

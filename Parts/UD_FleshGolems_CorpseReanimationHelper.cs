@@ -15,6 +15,8 @@ using XRL.World.Skills;
 using XRL.World.AI;
 
 using NanoNecroAnimation = XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
+using RaggedNaturalWeapon = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon;
+using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdjective;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
@@ -100,15 +102,17 @@ namespace XRL.World.Parts
 
         public bool Animate(out GameObject FrankenCorpse)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
+                });
+
             FrankenCorpse = null;
-            Debug.LogMethod1(null, out Indent indent, new Debug.ArgPair[]
-            {
-                Debug.LogArg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? null),
-            });
             if (ParentObject != null && !ParentObject.HasPart<AnimatedObject>())
             {
-                Debug.CheckYeh(nameof(ParentObject) + " not " + nameof(AnimatedObject), indent[1])
-                    .DiscardIndent();
+                Debug.CheckYeh(nameof(ParentObject) + " not " + nameof(AnimatedObject), indent[1]);
 
                 AnimateObject.Animate(ParentObject);
 
@@ -618,8 +622,8 @@ namespace XRL.World.Parts
             using Indent indent = new();
             Debug.LogMethod(indent[1],
                 new Debug.ArgPair[] {
-                    Debug.LogArg(nameof(Corpse), Corpse?.DebugName ?? "null"),
-                    Debug.LogArg(nameof(PastLife), (PastLife == null ? "null" : "not null")),
+                    Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? "null"),
+                    Debug.Arg(nameof(PastLife), (PastLife == null ? "null" : "not null")),
                 });
 
             if (Corpse is GameObject frankenCorpse
@@ -1042,7 +1046,13 @@ namespace XRL.World.Parts
 
                 if (BleedLiquid.IsNullOrEmpty())
                 {
-                    BleedLiquid = "blood-1000";
+                    BleedLiquid = RaggedNaturalWeapon.DetermineTaxonomyAdjective(frankenCorpse) switch
+                    {
+                        Taxonomy.Jagged => "oil-1000",
+                        Taxonomy.Fettid => "sap-1000",
+                        Taxonomy.Decayed => "proteangunk-1000",
+                        _ => "blood-1000",
+                    };
                 }
                 if (!BleedLiquid.IsNullOrEmpty())
                 {
@@ -1069,8 +1079,15 @@ namespace XRL.World.Parts
 
                     if (frankenCorpse.TryGetPart(out GenericInventoryRestocker frankenRestocker))
                     {
-                        frankenRestocker.PerformRestock();
-                        frankenRestocker.LastRestockTick = The.Game.TimeTicks;
+                        if (!UD_FleshGolems_Reanimated.HasWorldGenerated)
+                        {
+                            frankenRestocker.PerformRestock();
+                            frankenRestocker.LastRestockTick = 0L;
+                        }
+                        else
+                        {
+                            frankenRestocker.LastRestockTick = The.Game.TimeTicks;
+                        }
                     }
                 }
 
@@ -1142,22 +1159,26 @@ namespace XRL.World.Parts
                 && ParentObject == E.Object
                 && false)
             {
-                Debug.LogCaller(null, new Debug.ArgPair[]
+                using Indent indent = new();
+                Debug.LogCaller(indent, new Debug.ArgPair[]
                 {
-                    Debug.LogArg(nameof(BeforeObjectCreatedEvent)),
-                    Debug.LogArg(nameof(IsALIVE), IsALIVE),
+                    Debug.Arg(nameof(BeforeObjectCreatedEvent)),
+                    Debug.Arg(nameof(IsALIVE), IsALIVE),
                 });
             }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(AnimateEvent E)
         {
-            Debug.LogCaller1(out Indent indent, new Debug.ArgPair[]
-            {
-                Debug.LogArg(nameof(AnimateEvent)),
-                Debug.LogArg(nameof(E.Object), E.Object?.DebugName ?? NULL),
-                Debug.LogArg(nameof(IsALIVE), IsALIVE),
-            });
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(AnimateEvent)),
+                    Debug.Arg(nameof(E.Object), E.Object?.DebugName ?? NULL),
+                    Debug.Arg(nameof(IsALIVE), IsALIVE),
+                });
+
             if (!IsALIVE
                 && ParentObject == E.Object)
             {
@@ -1168,8 +1189,7 @@ namespace XRL.World.Parts
                 Reanimator = E.Actor;
                 IsALIVE = true;
                 MakeItALIVE(E.Object, pastLife);
-                Debug.Log("Definitely resolved called to " + nameof(MakeItALIVE), indent[1])
-                    .DiscardIndent();
+                Debug.Log("Definitely resolved called to " + nameof(MakeItALIVE), indent[1]);
             }
             return base.HandleEvent(E);
         }
@@ -1180,11 +1200,13 @@ namespace XRL.World.Parts
                 && ParentObject != null
                 && Animate(out GameObject corpse))
             {
-                Debug.LogCaller(null, new Debug.ArgPair[]
-                {
-                    Debug.LogArg(nameof(EnvironmentalUpdateEvent)),
-                    Debug.LogArg(nameof(IsALIVE), IsALIVE),
-                });
+                using Indent indent = new();
+                Debug.LogCaller(indent,
+                    new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(EnvironmentalUpdateEvent)),
+                        Debug.Arg(nameof(IsALIVE), IsALIVE),
+                    });
                 ProcessMoveToDeathCell(corpse, PastLife);
                 return true;
             }
@@ -1197,12 +1219,14 @@ namespace XRL.World.Parts
                 && extractionSource.TryGetPart(out UD_FleshGolems_PastLife pastLife)
                 && PastLife == null)
             {
-                Debug.LogCaller(null, new Debug.ArgPair[]
-                {
-                    Debug.LogArg(nameof(Event)),
-                    Debug.LogArg(nameof(E.ID), E.ID),
-                    Debug.LogArg(nameof(extractionSource), extractionSource?.DebugName ?? null),
-                });
+                using Indent indent = new();
+                Debug.LogCaller(indent,
+                    new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(Event)),
+                        Debug.Arg(nameof(E.ID), E.ID),
+                        Debug.Arg(nameof(extractionSource), extractionSource?.DebugName ?? null),
+                    });
                 extractionSource.RemovePart(pastLife);
                 ParentObject.AddPart(pastLife);
             }
@@ -1215,12 +1239,14 @@ namespace XRL.World.Parts
                 && E.Actor is GameObject dying
                 && dying.IsDying)
             {
-                Debug.LogCaller(null, new Debug.ArgPair[]
-                {
-                    Debug.LogArg(nameof(DroppedEvent)),
-                    Debug.LogArg(nameof(corpse), corpse?.DebugName ?? null),
-                    Debug.LogArg(nameof(dying), dying?.DebugName ?? null),
-                });
+                using Indent indent = new();
+                Debug.LogCaller(indent, 
+                    new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(DroppedEvent)),
+                        Debug.Arg(nameof(corpse), corpse?.DebugName ?? null),
+                        Debug.Arg(nameof(dying), dying?.DebugName ?? null),
+                    });
                 corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(dying);
             }
             if (AlwaysAnimate
@@ -1228,12 +1254,14 @@ namespace XRL.World.Parts
                 && ParentObject != null
                 && Animate())
             {
-                Debug.LogCaller(null, new Debug.ArgPair[]
-                {
-                    Debug.LogArg(nameof(DroppedEvent)),
-                    Debug.LogArg(nameof(AlwaysAnimate), AlwaysAnimate),
-                    Debug.LogArg(nameof(ParentObject), ParentObject?.DebugName ?? null),
-                });
+                using Indent indent = new();
+                Debug.LogCaller(indent,
+                    new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(DroppedEvent)),
+                        Debug.Arg(nameof(AlwaysAnimate), AlwaysAnimate),
+                        Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? null),
+                    });
                 return true;
             }
             return base.HandleEvent(E);

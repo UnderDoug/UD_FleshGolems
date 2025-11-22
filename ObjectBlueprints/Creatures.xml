@@ -49,7 +49,7 @@
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
     <tag Name="UD_FleshGolems_ReanimatedConversationID" Value="UD_FleshGolems Jofo Qudwufo" />
     <tag Name="UD_FleshGolems_ReanimatedEpithets" Value=", {{UD_FleshGolems_reanimated|reanimated}} snapjaw" />
-    <tag Name="PetResponse" Value="=subject.possessive= matted fur is slick with the grime of death.,Your hand squelches against =subject.possessive= disturbingly infirm scalp.,=subject.subjective= =subject.verb:stare:afterpronoun= seemingly through you but is nonetheless happy with the attention (probably; it's hard to tell...),What can only be described as a faint hacking cough can be heard from deep with =subject.possessive= mass." />
+    <tag Name="PetResponse" Value="=subject.possessive= matted fur is slick with the grime of death.,Your hand squelches against =subject.possessive= disturbingly infirm scalp.,=subject.subjective= =subject.verb:stare:afterpronoun= seemingly through you but is nonetheless happy with the attention (probably; it's hard to tell...),What can only be described as a faint hacking cough can be heard from deep within =subject.possessive= mass." />
     <part Name="Pettable" UseFactionForFeelingFloor="Player" />
     <part Name="UD_FleshGolems_HasCyberneticsButcherableCybernetic" UseImplantedAdjectiveIfImplanted="false"
           Cybernetics="BiologicalIndexer,PalladiumElectrodeposits,RapidReleaseFingerFlexors" />
@@ -114,7 +114,7 @@
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="BaseObject" Value="*noinherit" />
     <part Name="Corpse" CorpseChance="100" />
-    <part Name="CyberneticsHasRandomImplants" ImplantChance="80" ImplantTable="Cybernetics{ownertier}" LicensesAtLeast="6-42" />
+    <part Name="CyberneticsHasRandomImplants" ImplantChance="80" ImplantTable="Cybernetics8" LicensesAtLeast="6-42" />
   </object>
   <object Name="UD_FleshGolems BaseAncientEater" Inherits="NPC">
     <part Name="Render" DisplayName="acient eater" Tile="Creatures/sw_eater_7.bmp" ColorString="&amp;Y" TileColor="&amp;y" DetailColor="Y" RenderString="T" />
@@ -131,6 +131,7 @@
 
   <object Name="UD_FleshGolems Ancient Eater TrueKin" Inherits="UD_FleshGolems BaseAncientEaterTrueKin">
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="BaseObject" Value="*noinherit" />
     <part Name="Corpse" CorpseBlueprint="Ancient Corpse" />
   </object>
   <object Name="UD_FleshGolems Ancient Eater" Inherits="UD_FleshGolems BaseAncientEater">
@@ -138,13 +139,46 @@
     <part Name="Corpse" CorpseBlueprint="Ancient Corpse" />
   </object>
 
+  <object Name="UD_FleshGolems Ancient Eater TrueKin Low" Inherits="UD_FleshGolems Ancient Eater TrueKin">
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <part Name="CyberneticsHasRandomImplants" ImplantTable="Cybernetics3" LicensesAtLeast="6-12" />
+    <stat Name="Level" sValue="1-15" />
+  </object>
+  <object Name="UD_FleshGolems Ancient Eater TrueKin Med" Inherits="UD_FleshGolems Ancient Eater TrueKin">
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <part Name="CyberneticsHasRandomImplants" ImplantTable="Cybernetics6" LicensesAtLeast="13-30" />
+    <stat Name="Level" sValue="16-30" />
+  </object>
+  <object Name="UD_FleshGolems Ancient Eater TrueKin High" Inherits="UD_FleshGolems Ancient Eater TrueKin">
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <part Name="CyberneticsHasRandomImplants" ImplantTable="Cybernetics8" LicensesAtLeast="31-42" />
+    <stat Name="Level" sValue="16-30" />
+  </object>
+
   <object Name="UD_FleshGolems Moldering Ancient Eater TrueKin" Inherits="UD_FleshGolems BaseAncientEaterTrueKin">
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="BaseObject" Value="*noinherit" />
     <part Name="Corpse" CorpseBlueprint="Moldering Corpse" />
   </object>
   <object Name="UD_FleshGolems Moldering Ancient Eater" Inherits="UD_FleshGolems BaseAncientEater">
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <part Name="Corpse" CorpseBlueprint="Moldering Corpse" />
+  </object>
+
+  <object Name="UD_FleshGolems Moldering Ancient Eater TrueKin Low" Inherits="UD_FleshGolems Moldering Ancient Eater TrueKin">
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <part Name="CyberneticsHasRandomImplants" ImplantTable="Cybernetics3" LicensesAtLeast="6-12" />
+    <stat Name="Level" sValue="1-15" />
+  </object>
+  <object Name="UD_FleshGolems Moldering Ancient Eater TrueKin Med" Inherits="UD_FleshGolems Moldering Ancient Eater TrueKin">
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <part Name="CyberneticsHasRandomImplants" ImplantTable="Cybernetics6" LicensesAtLeast="13-30" />
+    <stat Name="Level" sValue="16-30" />
+  </object>
+  <object Name="UD_FleshGolems Moldering Ancient Eater TrueKin High" Inherits="UD_FleshGolems Moldering Ancient Eater TrueKin">
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <part Name="CyberneticsHasRandomImplants" ImplantTable="Cybernetics8" LicensesAtLeast="31-42" />
+    <stat Name="Level" sValue="16-30" />
   </object>
 
   <object Name="UD_FleshGolems Skref" Inherits="Argyve">
@@ -166,6 +200,7 @@
     <tag Name="AllowIdleBehavior" />
     <removetag Name="QuestGiver" />
     <removetag Name="Gender" />
+    <tag Name="RandomGender" Value="male,female,nonspecific" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding" />
     <removetag Name="NoSleep" />
@@ -278,6 +313,10 @@
   <object Name="Cragmensch" Load="Merge">
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Cragmensch Corpse" CorpseChance="100" />
     <removepartpart Name="DropOnDeath" />
+  </object>
+
+  <object Name="BaseSlynth" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Slynth Corpse" CorpseChance="20" />
   </object>
 
   <!--

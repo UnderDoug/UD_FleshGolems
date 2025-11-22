@@ -60,17 +60,18 @@ namespace UD_FleshGolems.Capabilities
         }
 
         [Serializable]
-        public enum CountsAs : int
+        public enum CountsAs
         {
-            None = -1,
-            Any = 0,
-            Blueprint = 1,
-            Population = 2,
-            Faction = 3,
-            Species = 4,
-            Genotype = 5,
-            Subtype = 6,
-            OtherCorpse = 7,
+            None,
+            Any,
+            Keyword,
+            Blueprint,
+            Population,
+            Faction,
+            Species,
+            Genotype,
+            Subtype,
+            OtherCorpse,
         }
 
         public const string IGNORE_EXCLUDE_PROPTAG = "UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding";
@@ -160,12 +161,13 @@ namespace UD_FleshGolems.Capabilities
 
         private void Init()
         {
+            Debug.ResetIndent();
 
             Stopwatch sw = new();
             sw.Start();
 
             using Indent indent = new();
-            Debug.LogCaller("Starting Corpse Cache...", indent[1]);
+            Debug.LogCaller("Starting Corpse Cache...", indent);
             InitializeCorpseSheetsCorpses(out CorpseSheetsInitialized);
             InitializeEntityPrimaryCorpses(out EntityPrimaryCorpsesInitialized);
             InititializeCorpseProducts(out CorpseProductsInitialized);
@@ -177,6 +179,8 @@ namespace UD_FleshGolems.Capabilities
             string timeUnit = duration.Minutes > 0 ? "minute" : "second";
             double timeDuration = duration.Minutes > 0 ? duration.TotalMinutes : duration.TotalSeconds;
             Debug.Log("Corpse Cache took " + timeDuration.Things(timeUnit) + ".", Indent: indent[0]);
+            indent.Dispose();
+            Debug.ResetIndent();
         }
 
         public bool TryGetCorpseSheet(string Corpse, out CorpseSheet CorpseSheet)
@@ -193,7 +197,7 @@ namespace UD_FleshGolems.Capabilities
         public CorpseSheet RequireCorpseSheet(string Blueprint)
         {
             using Indent indent = new();
-            Debug.LogMethod(indent[1], Debug.LogArg(Blueprint));
+            Debug.LogMethod(indent[1], Debug.Arg(Blueprint));
             if (!TryGetCorpseSheet(Blueprint, out CorpseSheet corpseSheet))
             {
                 Debug.Log("No existing CorpseSheet entry; creating new one...", indent[2]);
@@ -233,7 +237,7 @@ namespace UD_FleshGolems.Capabilities
         public EntityBlueprint RequireEntityBlueprint(string Blueprint)
         {
             using Indent indent = new();
-            Debug.LogCaller(indent[1], Debug.LogArg(Blueprint));
+            Debug.LogCaller(indent[1], Debug.Arg(Blueprint));
 
             if (!TryGetEntityBluprint(Blueprint, out EntityBlueprint entityBlueprint))
             {
@@ -431,10 +435,10 @@ namespace UD_FleshGolems.Capabilities
             Debug.LogMethod(indent[1],
                 new ArgPair[] 
                 {
-                    Debug.LogArg(CorpseBlueprint.Name),
-                    Debug.LogArg(ProcessableType),
-                    Debug.LogArg(OnSuccessFieldName),
-                    Debug.LogArg(nameof(ProductFilter), ProductFilter != null),
+                    Debug.Arg(CorpseBlueprint.Name),
+                    Debug.Arg(ProcessableType),
+                    Debug.Arg(OnSuccessFieldName),
+                    Debug.Arg(nameof(ProductFilter), ProductFilter != null),
                 });
 
             if (CorpseBlueprint == null)
@@ -581,54 +585,17 @@ namespace UD_FleshGolems.Capabilities
 
         public bool IsEntityWithCorpse(GameObjectBlueprint Entity) => GetEntityModelsWithCorpse().Contains(Entity);
 
-        private static CountsAs ProcessCountsAsPropTag(string PropTag, out List<string> CountsAsParamaters)
-        {
-            CountsAsParamaters = new();
-            if (PropTag.EqualsNoCase("any") || PropTag.Equals("*"))
-            {
-                return CountsAs.Any;
-            }
-            else
-            if (PropTag.Contains(":"))
-            {
-                CountsAsParamaters = PropTag.Split(":").ToList();
-                return CountsAsParamaters[0] switch
-                {
-                    "any" => CountsAs.Any,
-                    "*" => CountsAs.Any,
-                    "Blueprint" => CountsAs.Blueprint,
-                    "Population" => CountsAs.Population,
-                    "Faction" => CountsAs.Faction,
-                    "Species" => CountsAs.Species,
-                    "Genotype" => CountsAs.Genotype,
-                    "Subtype" => CountsAs.Subtype,
-                    "OtherCorpse" => CountsAs.OtherCorpse,
-                    _ => CountsAs.None,
-                };
-            }
-            else
-            {
-                return CountsAs.None;
-            }
-        }
-
-        private List<EntityWeightCountsAs> GetCorpseCountsAsBlueprints(GameObjectBlueprint CorpseBlueprint)
+        private List<EntityWeightCountsAs> GetCorpseCountsAsEntityWeights(
+            CountsAs countsAs,
+            List<string> countsAsParamaters)
         {
             using Indent indent = new();
-            Debug.LogMethod(indent[1], Debug.LogArg(nameof(CorpseBlueprint), CorpseBlueprint.Name));
-
-            List<EntityWeightCountsAs> countsAsBlueprintsList = new();
-            if (CorpseBlueprint == null
-                || !CorpseBlueprint.TryGetStringPropertyOrTag(CORPSE_COUNTS_AS_PROPTAG, out string rawValue))
-            {
-                Debug.Log("Blueprint null or doesn't have tag!", indent[2]);
-                return countsAsBlueprintsList;
-            }
-
-            Debug.Log(nameof(rawValue), rawValue, indent[2]);
-            CountsAs countsAs = ProcessCountsAsPropTag(rawValue, out List<string> countsAsParamaters);
-
-            Debug.Log(nameof(CountsAs), countsAs, indent[2]);
+            Debug.LogMethod(indent[1], 
+                new ArgPair[]
+                {
+                    Debug.Arg(nameof(countsAs), countsAs),
+                    Debug.Arg(nameof(countsAsParamaters), "\"" + countsAsParamaters.Join() + "\""),
+                });
 
             List<GameObjectBlueprint> entitiesWithCorpses = new();
             foreach (EntityBlueprint entityBlueprint in EntityBlueprints.Values)
@@ -666,14 +633,25 @@ namespace UD_FleshGolems.Capabilities
                 }
             }
             GameObjectBlueprint toGameObjectBlueprint(string blueprint) => blueprint.GetGameObjectBlueprint();
+            bool isNot = false;
+            string primaryCountsAsParam = countsAsParamaters[1];
+            if (primaryCountsAsParam.EqualsNoCase("not"))
+            {
+                primaryCountsAsParam = countsAsParamaters[2];
+                isNot = true;
+            }
             switch (countsAs)
             {
                 case CountsAs.Any:
                     countsAsModels = entitiesWithCorpses;
                     break;
 
+                case CountsAs.Keyword:
+                    countsAsModels = ProcessCountsAsKeyword(countsAsParamaters);
+                    break;
+
                 case CountsAs.Blueprint:
-                    if (countsAsParamaters[1] is string countsAsBlueprintParam)
+                    if (primaryCountsAsParam is string countsAsBlueprintParam)
                     {
                         countsAsModels = countsAsBlueprintParam
                             .CachedCommaExpansion()
@@ -682,7 +660,7 @@ namespace UD_FleshGolems.Capabilities
                     break;
 
                 case CountsAs.Population:
-                    if (countsAsParamaters[1] is string countsAsPopulationParam)
+                    if (primaryCountsAsParam is string countsAsPopulationParam)
                     {
                         foreach (string countsAsPopulation in countsAsPopulationParam.CachedCommaExpansion())
                         {
@@ -692,7 +670,7 @@ namespace UD_FleshGolems.Capabilities
                     break;
 
                 case CountsAs.Faction:
-                    if (countsAsParamaters[1] is string countsAsFactionParam)
+                    if (primaryCountsAsParam is string countsAsFactionParam)
                     {
                         List<Faction> countsAsFactions = new();
                         bool countsAsFactionParamNew = countsAsFactionParam.ToLower() == "new";
@@ -735,19 +713,19 @@ namespace UD_FleshGolems.Capabilities
                     break;
 
                 case CountsAs.Species:
-                    addPropTagModels(CountsAs.Species.ToString(), countsAsParamaters[1]);
+                    addPropTagModels(CountsAs.Species.ToString(), primaryCountsAsParam);
                     break;
 
                 case CountsAs.Genotype:
-                    addPropTagModels(CountsAs.Genotype.ToString(), countsAsParamaters[1]);
+                    addPropTagModels(CountsAs.Genotype.ToString(), primaryCountsAsParam);
                     break;
 
                 case CountsAs.Subtype:
-                    addPropTagModels(CountsAs.Subtype.ToString(), countsAsParamaters[1]);
+                    addPropTagModels(CountsAs.Subtype.ToString(), primaryCountsAsParam);
                     break;
 
                 case CountsAs.OtherCorpse:
-                    if (countsAsParamaters[1] is string countsAsOtherCorpseParam
+                    if (primaryCountsAsParam is string countsAsOtherCorpseParam
                         && countsAsOtherCorpseParam.CachedCommaExpansion() is List<string> countsAsOtherCorpseList)
                     {
                         foreach (string countsAsOtherCorpse in countsAsOtherCorpseList)
@@ -779,7 +757,7 @@ namespace UD_FleshGolems.Capabilities
                 if (countsAs == CountsAs.Any)
                 {
                     if (countsAsParamaters.Count > 1
-                        && int.TryParse(countsAsParamaters[1], out int countsAsAnyParamWeight))
+                        && int.TryParse(primaryCountsAsParam, out int countsAsAnyParamWeight))
                     {
                         weight = Math.Min(countsAsAnyParamWeight, 100);
                     }
@@ -789,49 +767,119 @@ namespace UD_FleshGolems.Capabilities
                     }
                 }
                 if (countsAsParamaters.Count > 2
-                    && int.TryParse(countsAsParamaters[2], out int countsAsParamWeight))
+                    && int.TryParse(countsAsParamaters[^1], out int countsAsParamWeight))
                 {
                     weight = Math.Min(countsAsParamWeight, 100);
                 }
-                countsAsBlueprintsList = countsAsModels.ConvertAll(bpm 
+                if (isNot)
+                {
+                    return entitiesWithCorpses.Where(bp => !countsAsModels.Contains(bp))
+                        .ToList()
+                        .ConvertAll(bpm
+                        => new EntityWeightCountsAs(
+                            Entity: RequireEntityBlueprint(bpm.Name),
+                            Weight: weight,
+                            CountsAs: countsAs));
+                }
+                return countsAsModels.ConvertAll(bpm 
                     => new EntityWeightCountsAs(
                         Entity: RequireEntityBlueprint(bpm.Name),
                         Weight: weight,
                         CountsAs: countsAs));
             }
-            return countsAsBlueprintsList;
+            return new();
+        }
+
+        public List<GameObjectBlueprint> ProcessCountsAsKeyword(List<string> CountsAsParamaters)
+        {
+            List<GameObjectBlueprint> keywordBlueprintList = new();
+            if (CountsAsParamaters.IsNullOrEmpty()
+                || CountsAsParamaters.Count < 2)
+            {
+                return keywordBlueprintList;
+            }
+            List<GameObjectBlueprint> entitiesWithCorpses = new();
+            foreach (EntityBlueprint entityBlueprint in EntityBlueprints.Values)
+            {
+                entitiesWithCorpses.Add(entityBlueprint.GetGameObjectBlueprint());
+            }
+            bool isNot = false;
+            string keyword = CountsAsParamaters[1];
+
+            if (keyword.EqualsNoCase("not"))
+            {
+                keyword = CountsAsParamaters[2];
+                isNot = true;
+            }
+
+            switch (keyword)
+            {
+                case "Living":
+                    keywordBlueprintList = entitiesWithCorpses.Where(bp => !bp.IsCorpse()).ToList();
+                    break;
+                case "Dead":
+                case "Corpse":
+                    keywordBlueprintList = entitiesWithCorpses.Where(bp => bp.IsCorpse()).ToList();
+                    break;
+            }
+            if (isNot)
+            {
+                return entitiesWithCorpses.Where(bp => !keywordBlueprintList.Contains(bp)).ToList();
+            }
+            return keywordBlueprintList;
         }
 
         private UD_FleshGolems_NecromancySystem InitializeCountsAsCorspes(out bool Initialized)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[1]);
+            using Indent indent = new(1);
+            Debug.LogMethod(indent);
 
             int counter = 0;
+            List<CorpseCountsAs> corpseCountsAsList = new();
             foreach (CorpseBlueprint corpseBlueprint in GetCorpseBlueprints())
             {
                 Debug.Log(nameof(corpseBlueprint), corpseBlueprint.ToString(), indent[1]);
-                CorpseSheet corpseSheet = RequireCorpseSheet(corpseBlueprint.ToString());
-                List<EntityWeightCountsAs> countsAsModels = GetCorpseCountsAsBlueprints(corpseBlueprint.GetGameObjectBlueprint());
 
+                if (corpseBlueprint?.GetGameObjectBlueprint() is not GameObjectBlueprint corpseModel
+                    || !corpseModel.TryGetStringPropertyOrTag(CORPSE_COUNTS_AS_PROPTAG, out string rawCountsAsParams))
+                {
+                    Debug.CheckNah("Blueprint null or doesn't have tag!", indent[2]);
+                    continue;
+                }
+                Debug.Log(nameof(rawCountsAsParams), rawCountsAsParams, indent[2]);
+                if (CorpseCountsAs.GetCorpseCountsAs(corpseBlueprint, rawCountsAsParams) is CorpseCountsAs corpseCoutnasAs
+                    && corpseCoutnasAs.CountasAs != CountsAs.None)
+                {
+                    Debug.CheckYeh(corpseCoutnasAs.ToString(), indent[2]);
+                    corpseCountsAsList.Add(corpseCoutnasAs);
+                }
+            }
+            foreach ((string name, string value) in GameObjectFactory.Factory?.GetBlueprintIfExists("UD_FleshGolems_PostLoad_CountsAs")?.Tags)
+            {
+                if (name.GetGameObjectBlueprint() is var corpseModel
+                    && corpseModel.IsCorpse()
+                    && RequireCorpseSheet(corpseModel) is CorpseSheet postLoadCorpseSheet
+                    && CorpseCountsAs.GetCorpseCountsAs(postLoadCorpseSheet.GetCorpse(), value) is CorpseCountsAs corpseCoutnasAs
+                    && corpseCoutnasAs.CountasAs != CountsAs.None)
+                {
+                    Debug.CheckYeh(corpseCoutnasAs.ToString(), indent[2]);
+                    corpseCountsAsList.Add(corpseCoutnasAs);
+                }
+            }
+            foreach (CorpseCountsAs corpseCountsAs in corpseCountsAsList)
+            {
+                List<EntityWeightCountsAs> countsAsModels = GetCorpseCountsAsEntityWeights(corpseCountsAs.CountasAs, corpseCountsAs.Paramaters);
                 if (countsAsModels.IsNullOrEmpty())
                 {
                     Debug.CheckNah(nameof(countsAsModels) + " empty!", indent[2]);
                     continue;
                 }
+                CorpseSheet corpseSheet = RequireCorpseSheet(corpseCountsAs.Blueprint);
                 Debug.CheckYeh(nameof(countsAsModels) + "." + nameof(countsAsModels.Count) + ": " + countsAsModels.Count, indent[2]);
                 foreach ((EntityBlueprint entityBlueprint, int weight, CountsAs countsAs) in countsAsModels)
                 {
                     SetLoadingStatusCorpses(counter++ % 5 == 0);
                     corpseSheet.AddCountsAsEntity(new EntityWeight(entityBlueprint, weight));
-                    /*
-                    Debug.Log("Added "+ 
-                        entityBlueprint.ToString() + ", " + 
-                        nameof(countsAs) + "." + countsAs + " for " + 
-                        corpseBlueprint + ": " + 
-                        weight,
-                        indent[3]);
-                    */
                 }
             }
             Initialized = true;

@@ -1,6 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <objects>
+  
   <object Name="UD_FleshGolems_TileMappings" Inherits="DataBucket">
     <tag Name="UD_FleshGolems_AlternateTileFor:Human" Value="FleshGolems/ud_flesh_golem_human.png" />
   </object>
+  
+  <object Name="UD_FleshGolems_PostLoad_CountsAs" Inherits="DataBucket">
+    <!--tag Name="Overglutted Dreamslynth" Value="OtherCorpse:Sated Dreamcrungle:0" /-->
+    <tag Name="Black Puma Haunch" Value="OtherCorpse:Sated Dreamcrungle:0" />
+  </object>
+  
 </objects>
