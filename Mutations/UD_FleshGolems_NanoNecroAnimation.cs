@@ -509,7 +509,8 @@ namespace XRL.World.Parts.Mutation
                     {
                         pastLifeName = Grammar.A(pastLife.BaseDisplayName);
                     }
-                    corpseListLabel += " was\n" + pastLifeName + "\nbut, if they weren't...\n\n" +
+                    corpseListLabel += " was\n" + pastLifeName.PrependBullet() + "\n\n" +
+                        "but, if they weren't...\n" +
                         "...they ";
                 }
                 corpseListLabel += " might have been any of the following:";

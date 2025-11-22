@@ -23,5 +23,6 @@ namespace UD_FleshGolems
 
         public const int MAX_DIST = 9999999;
 
+        public const string GAME_MOD_EXCEOPTION = "game_mod_exception";
     }
 }

@@ -354,7 +354,9 @@ namespace XRL.World.Parts
             bool Include0Weight = true,
             bool GuaranteeBlueprint = true)
         {
-            Debug.LogMethod(out Indent indent, new Debug.ArgPair[]
+            using Indent indent = new();
+            Debug.LogMethod(indent[1],
+                new Debug.ArgPair[]
                 {
                     Debug.LogArg(CorpseBlueprint),
                     Debug.LogArg(nameof(Include0Weight), Include0Weight),
@@ -376,6 +378,15 @@ namespace XRL.World.Parts
                         Include0Weight: Include0Weight,
                         Filter: IsNotBaseBlueprintOrPossiblyExcludedFromDynamicEncounters,
                         DrillIntoInheritance: true);
+            }
+            if (GuaranteeBlueprint && weightedBlueprints.IsNullOrEmpty())
+            {
+                weightedBlueprints = NecromancySystem
+                    ?.GetWeightedEntityStringsThisCorpseCouldBe(
+                        CorpseBlueprint: CorpseBlueprint,
+                        Include0Weight: Include0Weight,
+                        Filter: IsNotBaseBlueprint,
+                        DrillIntoInheritance: false);
             }
             if (weightedBlueprints.GetWeightedRandom(Include0Weight) is string entity)
             {
@@ -401,7 +412,13 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_PastLife Initialize(GameObject PastLife = null)
         {
-            Debug.LogHeader(nameof(PastLife) + ": " + (PastLife?.DebugName ?? NULL), out Indent indent);
+            using Indent indent = new();
+            Debug.LogCaller(indent[1],
+                new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(PastLife), PastLife?.DebugName ?? NULL),
+                });
+
             if (!Init)
             {
                 bool obliteratePastLife = false;
@@ -415,7 +432,7 @@ namespace XRL.World.Parts
                             ?? PastLife?.Blueprint
                             ?? GetAnEntityForCorpseWeighted(ParentObject.Blueprint);
 
-                        Debug.Log(nameof(Blueprint), Blueprint ?? NULL, indent[1]);
+                        Debug.Log(nameof(Blueprint), Blueprint ?? NULL, indent[2]);
 
                         obliteratePastLife = PastLife == null;
                         PastLife ??= GameObject.CreateSample(Blueprint);
@@ -432,7 +449,7 @@ namespace XRL.World.Parts
 
                         Blueprint ??= PastLife?.Blueprint;
 
-                        Debug.Log(nameof(PastLife), PastLife?.DebugName ?? NULL, indent[1]);
+                        Debug.Log(nameof(PastLife), PastLife?.DebugName ?? NULL, indent[2]);
 
                         if (PastLife.TryGetPart(out UD_FleshGolems_PastLife prevPastLife)
                             && prevPastLife.DeepCopy(BrainInAJar, DeepCopyMapInventory) is UD_FleshGolems_PastLife prevPastLifeCopy)
@@ -619,10 +636,8 @@ namespace XRL.World.Parts
                     {
                         PastLife?.Obliterate();
                     }
-                    Debug.DiscardIndent();
                 }
             }
-            Debug.DiscardIndent();
             return this;
         }
 
@@ -726,8 +741,15 @@ namespace XRL.World.Parts
             {
                 return null;
             }
-            string oldIdentity = PastLife.RefName;
+            string oldIdentity = PastLife?.RefName;
             string newIdentity;
+            using Indent indent = new();
+            Debug.LogMethod(indent[1],
+                new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(PastLife.ParentObject), PastLife.ParentObject?.DebugName ?? NULL),
+                    Debug.LogArg(nameof(oldIdentity), oldIdentity ?? NULL),
+                });
             if (PastLife.WasProperlyNamed)
             {
                 newIdentity = "corpse of " + oldIdentity;
@@ -740,9 +762,10 @@ namespace XRL.World.Parts
                 }
                 else
                 {
-                    newIdentity = PastLife.ParentObject.DisplayName;
+                    newIdentity = PastLife.BrainInAJar?.DisplayName ?? PastLife.BrainInAJar?.Render?.DisplayName;
                 }
             }
+            Debug.Log(nameof(newIdentity), newIdentity ?? NULL, indent[1]);
             return newIdentity;
         }
         public string GenerateDisplayName()

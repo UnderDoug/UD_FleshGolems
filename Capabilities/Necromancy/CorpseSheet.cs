@@ -58,8 +58,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
             => Corpse?.GetGameObjectBlueprint() is GameObjectBlueprint corpseModel
             && (corpseModel.Name == "Corpse" 
                 || (corpseModel.GetBlueprintInheritsList().Any(bp => bp.Name == "Corpse")
-                    && InheritedCorpses.IsNullOrEmpty()
-                    && InheritedCorpses.Count > 1));
+                    && !InheritedCorpses.IsNullOrEmpty()));
 
         protected CorpseSheet()
         {
@@ -234,7 +233,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
 
         private IReadOnlyList<CorpseBlueprint> GetInheritedCorpses()
         {
-            Debug.LogMethod(out Indent indent, Debug.LogArg(nameof(Corpse), Corpse.ToString()));
+            Debug.LogMethod1(out Indent indent, Debug.LogArg(nameof(Corpse), Corpse.ToString()));
             List<CorpseBlueprint> outputList = new();
             foreach (GameObjectBlueprint inheritedCorpse in Corpse.GetGameObjectBlueprint().GetBlueprintInherits())
             {
@@ -305,11 +304,12 @@ namespace UD_FleshGolems.Capabilities.Necromancy
             int Weight,
             Relationship Relationship)
         {
-            Debug.LogMethod("for corpse " + Corpse.ToString(), out Indent indent, new ArgPair[]
+            using Indent indent = new();
+            Debug.LogMethod("for corpse " + Corpse.ToString(), indent[1], new ArgPair[]
                 {
-                    Debug.LogArg(nameof(EntityBlueprint), EntityBlueprint),
-                    Debug.LogArg(nameof(Weight), Weight),
-                    Debug.LogArg(nameof(Relationship), Relationship),
+                    Debug.LogArg(EntityBlueprint),
+                    Debug.LogArg(Weight),
+                    Debug.LogArg(Relationship),
                 });
             EntityWeight entityWeight = new(NecromancySystem?.RequireEntityBlueprint(EntityBlueprint), Weight);
             EntityBlueprint entityBlueprint = entityWeight.GetBlueprint();
@@ -337,7 +337,6 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     inheritedCorpseSheet.AddInheritedEntity(entityWeight);
                 }
             }
-            Debug.DiscardIndent();
             return this;
         }
 

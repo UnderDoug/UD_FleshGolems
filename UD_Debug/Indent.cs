@@ -6,7 +6,7 @@ using XRL;
 
 namespace UD_FleshGolems.Logging
 {
-    public class Indent
+    public class Indent : IDisposable
     {
         public static int MaxIndent = 12;
 
@@ -24,18 +24,40 @@ namespace UD_FleshGolems.Logging
             LastValue = 0;
             Factor = 4;
             Char = ' ';
+            if (Debug.HaveIndents())
+            {
+                BaseValue = Debug.LastIndent.LastValue;
+                LastValue = Debug.LastIndent.LastValue;
+                Factor = Debug.LastIndent.Factor;
+                Char = Debug.LastIndent.Char;
+            }
+            Debug.PushToIndents(this);
         }
-        public Indent(int Value)
-            : this()
+        public Indent(Indent Source) 
+            : this() 
         {
-            BaseValue = Value;
-            LastValue = Value;
+            BaseValue = Source.LastValue;
+            LastValue = Source.LastValue;
+            Factor = Source.Factor;
+            Char = Source.Char;
         }
-        public Indent(int Value, char Char) : this(Value) => this.Char = Char;
-        public Indent(int Value, int Factor) : this(Value) => this.Factor = Factor;
-        public Indent(int Value, int Factor, char Char) : this(Value, Factor) => this.Char = Char;
-        public Indent(Indent Source) : this(Source.LastValue, Source.Factor, Source.Char) { }
-        public Indent(int offset, Indent Source) : this(Source.LastValue + offset, Source.Factor, Source.Char) { }
+        public Indent(int Offset) 
+            : this() 
+        {
+            BaseValue += Offset;
+            LastValue += BaseValue;
+        }
+        public Indent(Indent Source, bool Store)
+        {
+            BaseValue = Source.LastValue;
+            LastValue = Source.LastValue;
+            Factor = Source.Factor;
+            Char = Source.Char;
+            if (Store)
+            {
+                Debug.PushToIndents(this);
+            }
+        }
 
         public Indent this[int Indent]
         {
@@ -46,8 +68,7 @@ namespace UD_FleshGolems.Logging
             }
             protected set
             {
-                BaseValue = CapIndent(value + Indent);
-                LastValue = BaseValue;
+                SetIndent(value + Indent);
             }
         }
 
@@ -66,9 +87,13 @@ namespace UD_FleshGolems.Logging
             return Indent = this;
         }
         public Indent SetIndent(int Offset)
-            => this[Offset] = 0;
+        {
+            BaseValue = CapIndent(Offset);
+            LastValue = BaseValue;
+            return this;
+        }
 
-        public Indent GetBaseValue()
+        public int GetBaseValue()
             => BaseValue;
 
         public override string ToString()
@@ -76,11 +101,13 @@ namespace UD_FleshGolems.Logging
 
         public static implicit operator int(Indent Operand)
             => Operand.LastValue;
-        public static implicit operator Indent(int Operand)
-            => new(Operand);
 
         public Indent DiscardIndent()
             => Debug.DiscardIndent();
 
+        public void Dispose()
+        {
+            DiscardIndent();
+        }
     }
 }

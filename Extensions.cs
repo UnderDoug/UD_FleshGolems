@@ -835,7 +835,7 @@ namespace UD_FleshGolems
 
         public static T GetWeightedRandom<T>(this Dictionary<T, int> WeightedList, bool Include0Weight = true)
         {
-            Debug.GetIndent(out Indent indent);
+            using Indent indent = new();
 
             int maxWeight = 0;
             List<T> tickets = new(WeightedList.Keys);
@@ -849,7 +849,8 @@ namespace UD_FleshGolems
             }
             int rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
 
-            Debug.LogMethod(indent[1], new Debug.ArgPair[]
+            Debug.LogMethod(indent[1],
+                new Debug.ArgPair[]
                 {
                     Debug.LogArg(nameof(rolledAmount), rolledAmount),
                     Debug.LogArg(nameof(maxWeight), maxWeight)
@@ -865,11 +866,9 @@ namespace UD_FleshGolems
                 cumulativeWeight += weight;
                 if (rolledAmount < cumulativeWeight)
                 {
-                    Debug.DiscardIndent();
                     return ticket;
                 }
             }
-            Debug.DiscardIndent();
             return default;
         }
 

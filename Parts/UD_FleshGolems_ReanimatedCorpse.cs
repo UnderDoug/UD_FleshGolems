@@ -88,14 +88,13 @@ namespace XRL.World.Parts
         {
             _Reanimator = null;
             _NewDisplayName = null;
-            _NewDisplayName = null;
             BleedLiquid = null;
             BleedLiquidPortions = null;
         }
 
         public override void Attach()
         {
-            Debug.LogCaller(out Indent indent, Debug.LogArg(nameof(ParentObject), ParentObject?.DebugName ?? NULL));
+            Debug.LogCaller1(out Indent indent, Debug.LogArg(nameof(ParentObject), ParentObject?.DebugName ?? NULL));
             if (ParentObject?.GetBlueprint() is GameObjectBlueprint parentBlueprint)
             {
                 Debug.Log(parentBlueprint.Name, indent[1]);
@@ -187,7 +186,7 @@ namespace XRL.World.Parts
                         Debug.LogArg(nameof(unendingSuffering), unendingSuffering != null), 
                         Debug.LogArg(nameof(tier), tier));
                     Debug.DiscardIndent();
-                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier));
+                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier), Reanimator);
                 }
                 else
                 if (unendingSuffering?.SourceObject != Reanimator)
@@ -227,7 +226,7 @@ namespace XRL.World.Parts
             {
                 E.ReplacePrimaryBase(NewDisplayName);
             }
-            if (int.TryParse(E.Object.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
+            if (int.TryParse(E.Object?.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
                 && NoReanimatedNamePrefix < 1)
             {
                 E.AddAdjective(REANIMATED_ADJECTIVE, 5);

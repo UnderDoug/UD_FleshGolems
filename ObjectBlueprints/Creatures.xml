@@ -282,14 +282,19 @@
 
   <!--
   
-  Modded Corpse Reassignments
+  Modded Corpse Reassignments/Adjustments
   
   -->
   <object Name="Donquixote_IssachariSniper_Issachari Sniper" Load="MergeIfExists">
     <part Name="Corpse" CorpseBlueprint="Human Corpse" />
   </object>
+  
   <object Name="Issachari Wyrdwalker" Load="MergeIfExists">
     <part Name="Corpse" CorpseBlueprint="Human Corpse" />
+  </object>
+  
+  <object Name="Menumnam" Load="MergeIfExists">
+    <tag Name="UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding" />
   </object>
 
   <!-- Flesh Golem natural weapons -->

@@ -112,7 +112,7 @@ namespace XRL.World.Effects
         {
             Tier = Capabilities.Tier.Constrain(Stat.Random(Tier - 1, Tier + 1));
 
-            Debug.LogMethod(out _, Debug.LogArg(nameof(Tier), Tier));
+            Debug.LogMethod1(out _, Debug.LogArg(nameof(Tier), Tier));
 
             if (Tier >= 7)
             {
@@ -170,17 +170,7 @@ namespace XRL.World.Effects
 
         public override bool Apply(GameObject Object)
         {
-            Debug.LogMethod(out Indent indent, Debug.LogArg(nameof(Object), Object?.DebugName ?? NULL));
-            if (!Object.FireEvent(Event.New("Apply" + ClassName, "Effect", this)))
-            {
-                Debug.DiscardIndent();
-                return false;
-            }
-            if (!ApplyEffectEvent.Check(Object, ClassName, this))
-            {
-                Debug.DiscardIndent();
-                return false;
-            }
+            Debug.LogMethod1(out Indent indent, Debug.LogArg(nameof(Object), Object?.DebugName ?? NULL));
 
             StatShifter.SetStatShift(
                 target: Object,
@@ -202,22 +192,27 @@ namespace XRL.World.Effects
 
         public virtual void StartMessage(GameObject Object)
         {
-            Debug.LogMethod(out _, Debug.LogArg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated));
             if (UD_FleshGolems_Reanimated.HasWorldGenerated)
             {
+                Debug.LogMethod1(out Indent indent, Debug.LogArg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated));
+                Debug.Log(nameof(Object), Object?.DebugName ?? NULL, indent[1]);
+                Debug.Log(nameof(DisplayNameStripped), DisplayNameStripped, indent[1]);
                 Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
                 DidX(Verb: "begin", Extra: DisplayNameStripped, EndMark: "!", ColorAsBadFor: Object);
+                Debug.DiscardIndent();
             }
-            Debug.DiscardIndent();
         }
 
         public virtual void WorsenedMessage(GameObject Object)
         {
-            Debug.LogMethod(out _, Debug.LogArg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated));
             if (UD_FleshGolems_Reanimated.HasWorldGenerated)
             {
+                Debug.LogMethod1(out Indent indent, Debug.LogArg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated));
+                Debug.Log(nameof(Object), Object?.DebugName ?? NULL, indent[1]);
+                Debug.Log(nameof(DisplayNameStripped), DisplayNameStripped, indent[1]);
                 Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
                 DidX(Verb: "start", Extra: DisplayNameStripped + " even worse", EndMark: "!", ColorAsBadFor: Object);
+                Debug.DiscardIndent();
             }
         }
 

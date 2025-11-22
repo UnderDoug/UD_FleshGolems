@@ -108,7 +108,8 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_xTagSingle(DelegateContext Context)
         {
-            Debug.LogCaller();
+            using Indent indent = new();
+            Debug.LogMethod(indent[1]);
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 1
@@ -128,7 +129,8 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_xTagMulti(DelegateContext Context)
         {
-            Debug.LogCaller();
+            using Indent indent = new();
+            Debug.LogMethod(indent[1]);
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 2
@@ -165,9 +167,8 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_xTagMultiU(DelegateContext Context)
         {
-            Debug.GetIndent(out Indent oldIndent);
-            Indent indent = new(Debug.GetNewIndent());
-            Debug.LogCaller(indent);
+            using Indent indent = new();
+            Debug.LogMethod(indent[1]);
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 3
@@ -179,12 +180,12 @@ namespace UD_FleshGolems
                 && multixTag.CachedCommaExpansion() is List<string> multiTagList)
             {
                 List<string> andList = new();
-                Debug.Log(nameof(multiTagList) + " Entries:", indent[1]);
+                Debug.Log(nameof(multiTagList) + " Entries:", indent[2]);
                 for (int i = 0; i < count; i++)
                 {
                     if (multiTagList.GetRandomElementCosmeticExcluding(Exclude: s => andList.Contains(s)) is string entry)
                     {
-                        Debug.Log(entry, indent[2]);
+                        Debug.Log(entry, indent[3]);
                         andList.Add(entry);
                     }
                     else
@@ -202,17 +203,18 @@ namespace UD_FleshGolems
                     output = output.Capitalize();
                 }
             }
-            Debug.SetIndent(oldIndent[0]);
             return output;
         }
 
         [VariableObjectReplacer]
         public static string UD_xTag(DelegateContext Context)
         {
-            Debug.GetIndent(out Indent oldIndent);
-            Indent indent = new(Debug.GetNewIndent());
-            Debug.LogCaller(indent);
-            Debug.Log(nameof(UD_xTag) + "." + nameof(Context.Target), Context?.Target?.DebugName ?? NULL, indent);
+            using Indent indent = new();
+            Debug.LogCaller(indent[1],
+                new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(Context.Target), Context?.Target?.DebugName ?? NULL),
+                });
             string parameters = null;
             foreach (string parameter in Context.Parameters)
             {
@@ -222,7 +224,7 @@ namespace UD_FleshGolems
                 }
                 parameters += parameter;
             }
-            Debug.Log(nameof(Context.Parameters), parameters, indent[1]);
+            Debug.Log(nameof(Context.Parameters), parameters, indent[2]);
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Target is GameObject target)
@@ -231,31 +233,30 @@ namespace UD_FleshGolems
                 {
                     case 0:
                     case 1:
-                        Debug.Log("Uh-oh!", indent[1]);
+                        Debug.Log("Uh-oh!", indent[3]);
                         break;
 
                     case 2:
                         output = UD_xTagSingle(Context);
-                        Debug.Log(nameof(UD_xTagSingle), indent[1]);
+                        Debug.Log(nameof(UD_xTagSingle), indent[3]);
                         break;
 
                     case 3:
                         output = UD_xTagMulti(Context);
-                        Debug.Log(nameof(UD_xTagMulti), indent[1]);
+                        Debug.Log(nameof(UD_xTagMulti), indent[3]);
                         break;
 
                     default: // 4
                         output = UD_xTagMultiU(Context);
-                        Debug.Log(nameof(UD_xTagMultiU), indent[1]);
+                        Debug.Log(nameof(UD_xTagMultiU), indent[3]);
                         break;
                 }
                 if (Context.Capitalize)
                 {
-                    Debug.Log(nameof(Context.Capitalize), indent[1]);
+                    Debug.Log(nameof(Context.Capitalize), indent[3]);
                     output = output.Capitalize();
                 }
             }
-            Debug.SetIndent(oldIndent[0]);
             return output;
         }
 
@@ -355,14 +356,15 @@ namespace UD_FleshGolems
             Dictionary<string, string> vars = null,
             string defaultIfNull = null)
         {
-            Debug.GetIndent(out Indent indent);
-            Debug.Log(
-                Debug.GetCallingTypeAndMethod() + "(" +
-                nameof(TableName) + ": " + TableName + ", " +
-                nameof(n) + ": " + n + ", " +
-                nameof(vars) + ": " + (vars == null ? 0 : vars.Count) + ", " +
-                nameof(defaultIfNull) + ": " + defaultIfNull + ")",
-                indent[1]);
+            using Indent indent = new();
+            Debug.LogCaller(indent[1],
+                new Debug.ArgPair[]
+                {
+                    Debug.LogArg(nameof(TableName), TableName),
+                    Debug.LogArg(nameof(n), n),
+                    Debug.LogArg(nameof(vars), vars == null ? 0 : vars.Count),
+                    Debug.LogArg(nameof(defaultIfNull), defaultIfNull)
+                });
 
             List<string> returnList = new();
             if (PopulationManager.RollDistinctFrom(TableName, n, vars, defaultIfNull) is List<List<PopulationResult>> populationResultsList)

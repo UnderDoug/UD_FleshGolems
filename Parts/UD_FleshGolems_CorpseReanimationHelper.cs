@@ -45,20 +45,22 @@ namespace XRL.World.Parts
 
         public static List<string> IPartsToSkipWhenReanimating => new()
         {
+            nameof(SizeAdjective),
             nameof(Titles),
             nameof(Epithets),
             nameof(Honorifics),
-            nameof(Lovely),
+            // nameof(Lovely),
             nameof(SecretObject),
             nameof(ConvertSpawner),
-            nameof(Leader),
-            nameof(Followers),
+            // nameof(Leader),
+            // nameof(Followers),
             nameof(DromadCaravan),
             nameof(HasGuards),
             nameof(SnapjawPack1),
             nameof(BaboonHero1Pack),
             nameof(GoatfolkClan1),
             nameof(EyelessKingCrabSkuttle1),
+            nameof(SizeAdjective),
         };
 
         public static List<string> BlueprintsToSkipCheckingForCorpses => new()
@@ -99,7 +101,7 @@ namespace XRL.World.Parts
         public bool Animate(out GameObject FrankenCorpse)
         {
             FrankenCorpse = null;
-            Debug.LogMethod(null, out Indent indent, new Debug.ArgPair[]
+            Debug.LogMethod1(null, out Indent indent, new Debug.ArgPair[]
             {
                 Debug.LogArg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? null),
             });
@@ -613,7 +615,8 @@ namespace XRL.World.Parts
             GameObject Corpse,
             UD_FleshGolems_PastLife PastLife)
         {
-            Debug.LogMethod(out Indent indent,
+            using Indent indent = new();
+            Debug.LogMethod(indent[1],
                 new Debug.ArgPair[] {
                     Debug.LogArg(nameof(Corpse), Corpse?.DebugName ?? "null"),
                     Debug.LogArg(nameof(PastLife), (PastLife == null ? "null" : "not null")),
@@ -633,7 +636,7 @@ namespace XRL.World.Parts
                         reanimationHelper.Reanimator ??= GameObject.FindByBlueprint(reanimatorFallback);
                     }
                 }
-                Debug.Log(nameof(PastLife) + "?." + nameof(PastLife.Blueprint), PastLife?.Blueprint, indent[1]);
+                Debug.Log(nameof(PastLife) + "?." + nameof(PastLife.Blueprint), PastLife?.Blueprint, indent[2]);
 
                 bool proceedWithMakeLive = true;
                 try
@@ -656,7 +659,6 @@ namespace XRL.World.Parts
                 }
                 if (!proceedWithMakeLive)
                 {
-                    Debug.DiscardIndent();
                     return false;
                 }
 
@@ -664,8 +666,8 @@ namespace XRL.World.Parts
 
                 bool excludedFromDynamicEncounters = PastLife.ExcludeFromDynamicEncounters;
 
-                Debug.YehNah(nameof(wasPlayer), wasPlayer, indent[1]);
-                Debug.YehNah(nameof(excludedFromDynamicEncounters), excludedFromDynamicEncounters, indent[1]);
+                Debug.YehNah(nameof(wasPlayer), wasPlayer, indent[2]);
+                Debug.YehNah(nameof(excludedFromDynamicEncounters), excludedFromDynamicEncounters, indent[2]);
 
                 frankenCorpse.SetIntProperty("NoAnimatedNamePrefix", 1);
                 frankenCorpse.SetIntProperty("Bleeds", 1);
@@ -735,7 +737,7 @@ namespace XRL.World.Parts
                 int guaranteedNaturalWeapons = 3;
                 int bestowedNaturalWeapons = 0;
                 bool guaranteeNaturalWeapon() => guaranteedNaturalWeapons >= bestowedNaturalWeapons;
-                Debug.Log("Getting SourceBlueprint Natural Equipment...", indent[1]);
+                Debug.Log("Getting SourceBlueprint Natural Equipment...", indent[2]);
                 if (GameObjectFactory.Factory.GetBlueprintIfExists(PastLife?.Blueprint) is GameObjectBlueprint sourceBlueprint)
                 {
                     bool isProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
@@ -824,10 +826,10 @@ namespace XRL.World.Parts
                         }
                     }
 
-                    Debug.Log("Getting Golem Anatomy...", indent[1]);
+                    Debug.Log("Getting Golem Anatomy...", indent[2]);
                     if (GolemBodySelection.GetBodyBlueprintFor(sourceBlueprint) is GameObjectBlueprint golemBodyBlueprint)
                     {
-                        Debug.Log(nameof(golemBodyBlueprint), golemBodyBlueprint.Name, indent[2]);
+                        Debug.Log(nameof(golemBodyBlueprint), golemBodyBlueprint.Name, indent[3]);
                         if (golemBodyBlueprint.TryGetPartParameter(nameof(Body), nameof(Body.Anatomy), out string golemAnatomy))
                         {
                             if (frankenCorpse.Body == null)
@@ -861,20 +863,20 @@ namespace XRL.World.Parts
                     }
                     else
                     {
-                        Debug.Log("Uh-oh! Something went wrong!", indent[2]);
-                        Debug.Log("Changing tile to the PastLife Tile", indent[2]);
+                        Debug.Log("Uh-oh! Something went wrong!", indent[3]);
+                        Debug.Log("Changing tile to the PastLife Tile", indent[4]);
                         if (PastLife?.PastRender?.Tile is string pastTile)
                         {
-                            Debug.Log("Tile changed", "\"" + pastTile + "\"", indent[3]);
+                            Debug.Log("Tile changed", "\"" + pastTile + "\"", indent[4]);
                             frankenCorpse.Render.Tile = pastTile;
                         }
                         else
                         {
-                            Debug.Log("Uh-oh! Something went wrong!", indent[3]);
-                            Debug.Log("Changing tile to the sourceBlueprint Tile", indent[3]);
+                            Debug.Log("Uh-oh! Something went wrong!", indent[4]);
+                            Debug.Log("Changing tile to the sourceBlueprint Tile", indent[4]);
                             if (sourceBlueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.Tile), out string sourceTile))
                             {
-                                Debug.Log("Tile changed", "\"" + sourceTile + "\"", indent[4]);
+                                Debug.Log("Tile changed", "\"" + sourceTile + "\"", indent[5]);
                                 frankenCorpse.Render.Tile = sourceTile;
                             }
                         }
@@ -884,8 +886,8 @@ namespace XRL.World.Parts
                         frankenCorpse.Render.Tile = tileOverride;
                     }
 
-                    Debug.Log("Granting SourceBlueprint Natural Equipment...", indent[1]);
-                    Debug.Log(nameof(sourceBlueprint), nameof(sourceBlueprint.Inventory), indent[2]);
+                    Debug.Log("Granting SourceBlueprint Natural Equipment...", indent[2]);
+                    Debug.Log(nameof(sourceBlueprint), nameof(sourceBlueprint.Inventory), indent[3]);
                     if (sourceBlueprint.Inventory != null)
                     {
                         foreach (InventoryObject inventoryObject in sourceBlueprint.Inventory)
@@ -919,7 +921,7 @@ namespace XRL.World.Parts
                                                     }
                                                     bestowedNaturalWeapons++;
 
-                                                    Debug.CheckYeh(itemLabel + debugOutput, Indent: indent[3]);
+                                                    Debug.CheckYeh(itemLabel + debugOutput, Indent: indent[4]);
                                                     anyAssigned = true;
                                                     break;
                                                 }
@@ -927,7 +929,7 @@ namespace XRL.World.Parts
                                             if (!anyAssigned
                                                 && GameObject.Validate(ref raggedWeaponObject))
                                             {
-                                                Debug.CheckNah(itemLabel + debugOutput, Indent: indent[3]);
+                                                Debug.CheckNah(itemLabel + debugOutput, Indent: indent[4]);
                                                 raggedWeaponObject.Obliterate();
                                             }
                                         }
@@ -940,7 +942,7 @@ namespace XRL.World.Parts
                             }
                             else
                             {
-                                Debug.CheckNah(itemLabel + "Not Natural'", Indent: indent[3]);
+                                Debug.CheckNah(itemLabel + "Not Natural'", Indent: indent[4]);
                             }
                         }
                     }
@@ -948,8 +950,8 @@ namespace XRL.World.Parts
                 PastLife?.RestoreAdditionalLimbs();
 
                 frankenBody ??= frankenCorpse.Body;
-                Debug.Log("Granting Additional Natural Equipment...", indent[1]);
-                Debug.Log(nameof(frankenBody), nameof(frankenBody.LoopParts), indent[2]);
+                Debug.Log("Granting Additional Natural Equipment...", indent[2]);
+                Debug.Log(nameof(frankenBody), nameof(frankenBody.LoopParts), indent[3]);
                 List<BodyPart> frankenLimbs = new(frankenBody.LoopParts());
                 frankenLimbs.ShuffleInPlace();
                 foreach (BodyPart frankenLimb in frankenBody.LoopParts())
@@ -974,7 +976,7 @@ namespace XRL.World.Parts
                             string debugOutput =
                                 nameof(frankenNaturalGear) + ": " + (frankenNaturalGear?.DebugName ?? NULL) + " | " +
                                 nameof(raggedWeaponObject) + ": " + (raggedWeaponObject.DebugName ?? NULL);
-                            Debug.CheckYeh(limbLabel + debugOutput, Indent: indent[3]);
+                            Debug.CheckYeh(limbLabel + debugOutput, Indent: indent[4]);
 
                             if (GameObject.Validate(ref frankenNaturalGear))
                             {
@@ -995,11 +997,11 @@ namespace XRL.World.Parts
                         bestowedNaturalWeapons++;
 
                         string debugOutput = "Rolled 1 in 4 | " + nameof(raggedWeaponObject) + ": " + (raggedWeaponObject?.DebugName ?? NULL);
-                        Debug.CheckYeh(limbLabel + debugOutput, Indent: indent[3]);
+                        Debug.CheckYeh(limbLabel + debugOutput, Indent: indent[4]);
                     }
                     else
                     {
-                        Debug.CheckNah(limbLabel + "nuffin'", Indent: indent[3]);
+                        Debug.CheckNah(limbLabel + "nuffin'", Indent: indent[4]);
                     }
                 }
 
@@ -1075,14 +1077,13 @@ namespace XRL.World.Parts
                 if (frankenCorpse.GetStat("Hitpoints") is Statistic frankenHitpoints)
                 {
                     int minHitpoints = Stat.RollCached("4d3+5");
-                    Debug.Log(nameof(frankenHitpoints) + " " + nameof(minHitpoints), minHitpoints, Indent: indent[1]);
+                    Debug.Log(nameof(frankenHitpoints) + " " + nameof(minHitpoints), minHitpoints, Indent: indent[2]);
                     frankenHitpoints.BaseValue = Math.Max(minHitpoints, frankenHitpoints.BaseValue);
                     frankenHitpoints.Penalty = 0;
-                    Debug.Log(nameof(frankenHitpoints), frankenHitpoints.Value + "/" + frankenHitpoints.BaseValue, Indent: indent[1]);
+                    Debug.Log(nameof(frankenHitpoints), frankenHitpoints.Value + "/" + frankenHitpoints.BaseValue, Indent: indent[2]);
                 }
 
-                // frankenBrain?.WantToReequip();
-                Debug.Log(nameof(frankenBrain.WantToReequip), "skipped", indent[1]);
+                frankenBrain?.WantToReequip();
 
                 var reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
                 if (GameObject.Validate(ref reanimationHelper.Reanimator))
@@ -1095,17 +1096,14 @@ namespace XRL.World.Parts
                     nameof(reanimatedCorpse.Reanimator) + " set", 
                     reanimatedCorpse?.Reanimator?.DebugName ?? NULL, 
                     indent[1]);
-                // reanimatedCorpse.AttemptToSuffer();
+                reanimatedCorpse.AttemptToSuffer();
 
-                Debug.Log("Calling " + nameof(frankenBody) + "." + nameof(frankenBody.UpdateBodyParts), indent[1]);
+                Debug.Log("Calling " + nameof(frankenBody) + "." + nameof(frankenBody.UpdateBodyParts), indent[2]);
                 frankenBody?.UpdateBodyParts();
                 Debug.CheckYeh("Didn't fail, fortuantely!", indent[2]);
-                // Debug.CheckNah("Skipped Instead!", indent[2]);
 
-                Debug.DiscardIndent();
                 return true;
             }
-            Debug.DiscardIndent();
             return false;
         }
 
@@ -1154,7 +1152,7 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(AnimateEvent E)
         {
-            Debug.LogCaller(out Indent indent, new Debug.ArgPair[]
+            Debug.LogCaller1(out Indent indent, new Debug.ArgPair[]
             {
                 Debug.LogArg(nameof(AnimateEvent)),
                 Debug.LogArg(nameof(E.Object), E.Object?.DebugName ?? NULL),

@@ -218,14 +218,10 @@
 
   <object Name="UD_FleshGolems Cragmensch Corpse" Inherits="Humanoid Corpse">
     <mixin Name="LargeBoulder" />
-    <part Name="Render" DisplayName="boulder" Tile="Items/sw_largeboulder.bmp" RenderLayer="8" RenderString="007" />
-    <part Name="SizeAdjective" Adjective="large" />
-    <part Name="Physics" Weight="500" Solid="true" />
-    <stat Name="Hitpoints" Value="2500" />
-    <part Name="Description" Short="It's a large piece of rock, older than every idea." />
-    <tag Name="NoSparkingQuest" />
-    <tag Name="GiganticEquippable" />
-    <tag Name="Wall" />
+    <removebuilder Name="RandomTile" />
+    <removepart Name="Food" />
+    <removetag Name="CanCookTemporary" />
+    <tag Name="Breakable" />
   </object>
 
   <object Name="UD_FleshGolems Chute Crab Corpse" Inherits="Crab Corpse">
@@ -260,6 +256,10 @@
   </object>
 
   <object Name="ExileCorpse" Load="Merge">
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:human:10" />
+  </object>
+
+  <object Name="JoppaCorpse" Load="Merge">
     <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:human:10" />
   </object>
 
