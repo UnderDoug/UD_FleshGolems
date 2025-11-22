@@ -136,20 +136,20 @@ namespace UD_FleshGolems.Logging
         [GameBasedStaticCache(ClearInstance = false)]
         private static Stack<Indent> Indents = new();
 
-        public static Indent LastIndent => Indents.TryPeek(out Indent peek) ? peek : ResetIndent();
+        public static Indent LastIndent
+            => Indents.TryPeek(out Indent peek)
+            ? peek
+            : ResetIndent();
 
         public static Indent GetNewIndent(int Offset)
-        {
-            return new();
-        }
+            => new(Offset);
+
         public static Indent GetNewIndent()
-        {
-            return GetNewIndent(0);
-        }
+            => GetNewIndent(0);
+
         public static bool HaveIndents()
-        {
-            return !Indents.IsNullOrEmpty();
-        }
+            => !Indents.IsNullOrEmpty();
+
         public static void PushToIndents(Indent Indent)
         {
             Indents.Push(Indent);
@@ -163,11 +163,6 @@ namespace UD_FleshGolems.Logging
             Indents.Clear();
             return GetNewIndent();
         }
-        public static Indent ResetIndent(out Indent Indent)
-        {
-            ResetIndent();
-            return Indent = LastIndent;
-        }
 
         public static Indent DiscardIndent()
         {
@@ -177,16 +172,8 @@ namespace UD_FleshGolems.Logging
             }
             return LastIndent;
         }
-        public static Indent SetIndent(Indent Indent)
-        {
-            DiscardIndent();
-            return LastIndent.SetIndent(Indent);
-        }
-
-        public static Indent GetIndent(out Indent Indent)
-        {
-            return Indent = GetNewIndent(LastIndent);
-        }
+        public static bool HasIndent(Indent Indent)
+            => Indents.Contains(Indent);
 
         public static string GetCallingTypeAndMethod(bool AppendSpace = false, bool TrimModPrefix = true)
         {
@@ -252,15 +239,8 @@ namespace UD_FleshGolems.Logging
             UnityEngine.Debug.Log(Indent.ToString() + output);
             return Indent;
         }
-        public static Indent Log<T>(string Field, T Value, out Indent Indent)
-        {
-            GetIndent(out Indent);
-            return Log(Field, Value, Indent);
-        }
         public static Indent Log(string Message, Indent Indent = null)
-        {
-            return Log(Message, (string)null, Indent);
-        }
+            => Log(Message, (string)null, Indent);
 
         public readonly struct ArgPair
         {
@@ -271,28 +251,27 @@ namespace UD_FleshGolems.Logging
                 this.Name = Name;
                 this.Value = Value;
             }
+
             public override readonly string ToString()
-            {
-                if (Name.IsNullOrEmpty())
-                {
-                    return Value?.ToString();
-                }
-                return Name + ": " + Value?.ToString();
-            }
+                => Name.IsNullOrEmpty() 
+                ? Value?.ToString() 
+                : Name + ": " + Value?.ToString();
+
+            public Indent Log(Indent Indent)
+                => Debug.Log(Name, Value, Indent ?? LastIndent);
+            public Indent Log()
+                => Log(null);
+            public Indent Log(int Offset)
+                => Log(LastIndent[Offset]);
         }
-        public static ArgPair LogArg(string Name, object Value)
+        public static ArgPair Arg(string Name, object Value)
         {
             return new ArgPair(Name, Value);
         }
-        public static ArgPair LogArg(object Value)
+        public static ArgPair Arg(object Value)
         {
-            return LogArg(null, Value);
+            return Arg(null, Value);
         }
-        public static Indent LogCaller(Indent Indent = null)
-        {
-            return Log(GetCallingTypeAndMethod(), Indent);
-        }
-
         public static Indent LogCaller(string MessageAfter, Indent Indent = null, params ArgPair[] ArgPairs)
         {
             string output = "";
@@ -309,24 +288,6 @@ namespace UD_FleshGolems.Logging
         public static Indent LogCaller(Indent Indent = null, params ArgPair[] ArgPairs)
         {
             return LogCaller(null, Indent, ArgPairs);
-        }
-        public static Indent LogCaller(string MessageAfter, out Indent Indent, params ArgPair[] ArgPairs)
-        {
-            GetIndent(out Indent);
-            return LogCaller(MessageAfter, Indent, ArgPairs);
-        }
-        public static Indent LogCaller(out Indent Indent, params ArgPair[] ArgPairs)
-        {
-            return LogCaller(null, out Indent, ArgPairs);
-        }
-        public static Indent LogCaller1(string MessageAfter, out Indent Indent, params ArgPair[] ArgPairs)
-        {
-            GetIndent(out Indent);
-            return LogCaller(MessageAfter, Indent.SetIndent(1), ArgPairs);
-        }
-        public static Indent LogCaller1(out Indent Indent, params ArgPair[] ArgPairs)
-        {
-            return LogCaller1(null, out Indent, ArgPairs);
         }
 
         public static Indent LogMethod(string MessageAfter, Indent Indent = null, params ArgPair[] ArgPairs)
@@ -346,30 +307,7 @@ namespace UD_FleshGolems.Logging
         {
             return LogMethod(null, Indent, ArgPairs);
         }
-        public static Indent LogMethod(string MessageAfter, out Indent Indent, params ArgPair[] ArgPairs)
-        {
-            GetIndent(out Indent);
-            return LogMethod(MessageAfter, Indent, ArgPairs);
-        }
-        public static Indent LogMethod(out Indent Indent, params ArgPair[] ArgPairs)
-        {
-            return LogMethod(null, out Indent, ArgPairs);
-        }
-        public static Indent LogMethod1(string MessageAfter, out Indent Indent, params ArgPair[] ArgPairs)
-        {
-            GetIndent(out Indent);
-            return LogMethod(MessageAfter, Indent.SetIndent(1), ArgPairs);
-        }
-        public static Indent LogMethod1(out Indent Indent, params ArgPair[] ArgPairs)
-        {
-            return LogMethod1(null, out Indent, ArgPairs);
-        }
 
-        public static Indent LogHeader(string Message, out Indent Indent)
-        {
-            GetIndent(out Indent);
-            return Log(GetCallingTypeAndMethod(true) + Message, Indent);
-        }
         public static Indent YehNah(string Message, object Value, bool? Good = null, Indent Indent = null)
         {
             string append;
@@ -434,89 +372,6 @@ namespace UD_FleshGolems.Logging
             {
                 return StringToPad.PadRight(20, ' ');
             }
-
-            ResetIndent();
-
-            UnityEngine.Debug.Log("Indent Test (Old)");
-
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-
-            GetIndent(out Indent indent);
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + "[1]: ") + "\"" + indent[1].ToString() + "\"(" + (int)indent[1] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + "[2]: ") + "\"" + indent[2].ToString() + "\"(" + (int)indent[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + "[3]: ") + "\"" + indent[3].ToString() + "\"(" + (int)indent[3] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + "[2]: ") + "\"" + indent[2].ToString() + "\"(" + (int)indent[2] + ")");
-
-            GetIndent(out Indent indent2);
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-
-            UnityEngine.Debug.Log(padthisString(nameof(indent2) + ": ") + "\"" + indent2.ToString() + "\"(" + (int)indent2 + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2) + "[1]: ") + "\"" + indent2[1].ToString() + "\"(" + (int)indent2[1] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2) + "[2]: ") + "\"" + indent2[2].ToString() + "\"(" + (int)indent2[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2) + "[3]: ") + "\"" + indent2[3].ToString() + "\"(" + (int)indent2[3] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2) + "[2]: ") + "\"" + indent2[2].ToString() + "\"(" + (int)indent2[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2) + ": ") + "\"" + indent2.ToString() + "\"(" + (int)indent2 + ")");
-
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + "[2]: ") + "\"" + indent[2].ToString() + "\"(" + (int)indent[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + "[3]: ") + "\"" + indent[3].ToString() + "\"(" + (int)indent[3] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-
-            DiscardIndent();
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-
-            GetIndent(out Indent indent2_2);
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-
-            UnityEngine.Debug.Log(padthisString(nameof(indent2_2) + ": ") + "\"" + indent2_2.ToString() + "\"(" + (int)indent2_2 + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2_2) + "[1]: ") + "\"" + indent2_2[1].ToString() + "\"(" + (int)indent2_2[1] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2_2) + "[2]: ") + "\"" + indent2_2[2].ToString() + "\"(" + (int)indent2_2[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2_2) + "[3]: ") + "\"" + indent2_2[3].ToString() + "\"(" + (int)indent2_2[3] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2_2) + ": ") + "\"" + indent2_2.ToString() + "\"(" + (int)indent2_2 + ")");
-
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + "[4]: ") + "\"" + indent[4].ToString() + "\"(" + (int)indent[4] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + "[5]: ") + "\"" + indent[5].ToString() + "\"(" + (int)indent[5] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-
-            GetIndent(out Indent indent3);
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2_2) + ": ") + "\"" + indent2_2.ToString() + "\"(" + (int)indent2_2 + ")");
-
-            UnityEngine.Debug.Log(padthisString(nameof(indent3) + ": ") + "\"" + indent3.ToString() + "\"(" + (int)indent3 + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent3) + "[1]: ") + "\"" + indent3[1].ToString() + "\"(" + (int)indent3[1] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent3) + "[2]: ") + "\"" + indent3[2].ToString() + "\"(" + (int)indent3[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent3) + "[3]: ") + "\"" + indent3[3].ToString() + "\"(" + (int)indent3[3] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent3) + ": ") + "\"" + indent3.ToString() + "\"(" + (int)indent3 + ")");
-
-            DiscardIndent();
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-
-            UnityEngine.Debug.Log(padthisString(nameof(indent2_2) + ": ") + "\"" + indent2_2.ToString() + "\"(" + (int)indent2_2 + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2_2) + "[5]: ") + "\"" + indent2_2[5].ToString() + "\"(" + (int)indent2_2[5] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent2_2) + ": ") + "\"" + indent2_2.ToString() + "\"(" + (int)indent2_2 + ")");
-
-            DiscardIndent();
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(indent) + ": ") + "\"" + indent.ToString() + "\"(" + (int)indent + ")");
-
-            DiscardIndent();
 
             ResetIndent();
 

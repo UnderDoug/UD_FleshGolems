@@ -112,7 +112,8 @@ namespace XRL.World.Effects
         {
             Tier = Capabilities.Tier.Constrain(Stat.Random(Tier - 1, Tier + 1));
 
-            Debug.LogMethod1(out _, Debug.LogArg(nameof(Tier), Tier));
+            using Indent indent = new(1);
+            Debug.LogMethod(indent, Debug.Arg(nameof(Tier), Tier));
 
             if (Tier >= 7)
             {
@@ -142,8 +143,6 @@ namespace XRL.World.Effects
                 WorsenedMessage(Object);
             }
             CurrentTier = Tier;
-
-            Debug.DiscardIndent();
         }
 
         public override int GetEffectType()
@@ -170,7 +169,8 @@ namespace XRL.World.Effects
 
         public override bool Apply(GameObject Object)
         {
-            Debug.LogMethod1(out Indent indent, Debug.LogArg(nameof(Object), Object?.DebugName ?? NULL));
+            using Indent indent = new(1);
+            Debug.LogMethod(indent, Debug.Arg(nameof(Object), Object?.DebugName ?? NULL));
 
             StatShifter.SetStatShift(
                 target: Object,
@@ -181,7 +181,6 @@ namespace XRL.World.Effects
             StartMessage(Object);
 
             Debug.Log("Calling base." + nameof(Apply), indent[1]);
-            Debug.DiscardIndent();
             return base.Apply(Object);
         }
         public override void Remove(GameObject Object)
@@ -194,12 +193,17 @@ namespace XRL.World.Effects
         {
             if (UD_FleshGolems_Reanimated.HasWorldGenerated)
             {
-                Debug.LogMethod1(out Indent indent, Debug.LogArg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated));
-                Debug.Log(nameof(Object), Object?.DebugName ?? NULL, indent[1]);
-                Debug.Log(nameof(DisplayNameStripped), DisplayNameStripped, indent[1]);
+                using Indent indent = new(1);
+                Debug.LogMethod(indent, 
+                    new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated),
+                    });
+                Debug.Arg(nameof(Object), Object?.DebugName ?? NULL).Log(1);
+                Debug.Arg(nameof(DisplayNameStripped), DisplayNameStripped).Log(1);
+
                 Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
                 DidX(Verb: "begin", Extra: DisplayNameStripped, EndMark: "!", ColorAsBadFor: Object);
-                Debug.DiscardIndent();
             }
         }
 
@@ -207,12 +211,17 @@ namespace XRL.World.Effects
         {
             if (UD_FleshGolems_Reanimated.HasWorldGenerated)
             {
-                Debug.LogMethod1(out Indent indent, Debug.LogArg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated));
-                Debug.Log(nameof(Object), Object?.DebugName ?? NULL, indent[1]);
-                Debug.Log(nameof(DisplayNameStripped), DisplayNameStripped, indent[1]);
+                using Indent indent = new(1);
+                Debug.LogMethod(indent,
+                    new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated),
+                    });
+                Debug.Arg(nameof(Object), Object?.DebugName ?? NULL).Log(1);
+                Debug.Arg(nameof(DisplayNameStripped), DisplayNameStripped).Log(1);
+
                 Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
                 DidX(Verb: "start", Extra: DisplayNameStripped + " even worse", EndMark: "!", ColorAsBadFor: Object);
-                Debug.DiscardIndent();
             }
         }
 

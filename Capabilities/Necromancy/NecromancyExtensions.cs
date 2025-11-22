@@ -41,50 +41,6 @@ namespace UD_FleshGolems.Capabilities.Necromancy
 {
     public static class NecromancyExtensions
     {
-        public static bool HasType(this int Type, CompareType CompareType)
-        {
-            if (!Type.HasBit((int)CompareType))
-            {
-                return false;
-            }
-            return true;
-        }
 
-        public static bool HasAllTypes(this int Type, params CompareType[] CompareType)
-        {
-            if (CompareType.IsNullOrEmpty())
-            {
-                return false;
-            }
-            foreach (CompareType type in CompareType)
-            {
-                if (Type.HasType(type))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        public static bool HasAnyTypes(this int Type, params CompareType[] CompareType)
-        {
-            if (CompareType.IsNullOrEmpty())
-            {
-                return false;
-            }
-            foreach (CompareType type in CompareType)
-            {
-                if (Type.HasType(type))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static bool HasOnlyType(this int Type, CompareType CompareType)
-        {
-            return Type == (int)CompareType;
-        }
     }
 }

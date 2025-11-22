@@ -340,10 +340,16 @@ namespace XRL.World.Parts.Mutation
             {
                 Corpse = corpseObject;
                 int corpseRadius = Math.Min(40, CorpseRadius);
-                Summoner.CurrentCell
-                    .GetAdjacentCells(corpseRadius)
-                    .GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject))
-                    .AddObject(Corpse);
+
+                Cell placementCell = Summoner?.CurrentCell
+                    ?.GetAdjacentCells(corpseRadius)
+                    ?.GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject) && c.HasObject(GO => GO.IsCorpse()));
+
+                placementCell ??= Summoner?.CurrentCell
+                    ?.GetAdjacentCells(corpseRadius)
+                    ?.GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject));
+
+                placementCell?.AddObject(Corpse);
 
                 if (Corpse.CurrentCell != null)
                 {
@@ -380,8 +386,8 @@ namespace XRL.World.Parts.Mutation
 
         public bool ProcessReanimateOne(GameObject TargetCorpse = null)
         {
-            Debug.GetIndent(out Indent indent);
-            Debug.LogMethod(indent[1], Debug.LogArg(nameof(TargetCorpse), TargetCorpse?.DebugName));
+            using Indent indent = new();
+            Debug.LogMethod(indent[0], Debug.Arg(nameof(TargetCorpse), TargetCorpse?.DebugName));
 
             if (TargetCorpse == null
                 && IsReanimatableCorpse(ParentObject?.Target))
@@ -441,17 +447,15 @@ namespace XRL.World.Parts.Mutation
                     TargetCorpse?.SetAlliedLeader<AllyProselytize>(ParentObject);
                     TargetCorpse?.SmallTeleportSwirl(Color: "&m", IsOut: true);
                 }
-                Debug.DiscardIndent();
                 return true;
             }
-            Debug.DiscardIndent();
             return false;
         }
 
         public bool ProcessAssessCorpse(GameObject TargetCorpse = null)
         {
-            Debug.GetIndent(out Indent indent);
-            Debug.LogMethod(indent[1], Debug.LogArg(nameof(TargetCorpse), TargetCorpse?.DebugName));
+            using Indent indent = new();
+            Debug.LogMethod(indent[0], Debug.Arg(nameof(TargetCorpse), TargetCorpse?.DebugName));
 
             if (TargetCorpse == null
                 && IsReanimatableCorpse(ParentObject?.Target))
@@ -509,9 +513,9 @@ namespace XRL.World.Parts.Mutation
                     {
                         pastLifeName = Grammar.A(pastLife.BaseDisplayName);
                     }
-                    corpseListLabel += " was\n" + pastLifeName.PrependBullet() + "\n\n" +
-                        "but, if they weren't...\n" +
-                        "...they ";
+                    corpseListLabel += (" was\n" + pastLifeName.PrependBullet() + "\n\n" +
+                        "but, if =subject.subjective= =subject.verb:wasn't:afterpronoun=...\n" +
+                        "=ud_nbsp:8=...=subject.subjective= ").StartReplace().ToString();
                 }
                 corpseListLabel += " might have been any of the following:";
 
@@ -521,21 +525,19 @@ namespace XRL.World.Parts.Mutation
                     ?.GenerateBulletList(Label: corpseListLabel);
 
                 Popup.Show(corpseListOutput);
-                Debug.DiscardIndent();
                 return true;
             }
             else
             {
                 Popup.Show("No corpse selected to get a creature list from.");
             }
-            Debug.DiscardIndent();
             return false;
         }
 
         public bool ProcessPowerWordKill(GameObject TargetCreature = null)
         {
-            Debug.GetIndent(out Indent indent);
-            Debug.LogMethod(indent[1], Debug.LogArg(nameof(TargetCreature), TargetCreature?.DebugName));
+            using Indent indent = new();
+            Debug.LogMethod(indent[0], Debug.Arg(nameof(TargetCreature), TargetCreature?.DebugName));
             if (TargetCreature == null
                 && HasCorpse(ParentObject.Target))
             {
@@ -613,7 +615,6 @@ namespace XRL.World.Parts.Mutation
                     targetCreatureCorpse.CorpseChance = corpseChanceBefore;
                     ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_fail");
                     Popup.Show("you words hang impotently in the air before dissipating without effect...");
-                    Debug.DiscardIndent();
                     return true;
                 }
             }
@@ -621,7 +622,6 @@ namespace XRL.World.Parts.Mutation
             {
                 Popup.Show("no creatures selected to make instantly die");
             }
-            Debug.DiscardIndent();
             return false;
         }
 
@@ -690,7 +690,11 @@ namespace XRL.World.Parts.Mutation
             else
             if (E.Command == COMMAND_NAME_SUMMON_CORPSES)
             {
-                if (Popup.AskNumber("How many corpses do you want?", Start: 20, Min: 0, Max: 1000) is int corpseCount
+                if (Popup.AskNumber(
+                    Message: "How many corpses do you want?",
+                    Start: 20,
+                    Min: 0,
+                    Max: 1000) is int corpseCount
                     && corpseCount > 0)
                 {
                     string excessiveCorpsesMsg = corpseCount + " is ";

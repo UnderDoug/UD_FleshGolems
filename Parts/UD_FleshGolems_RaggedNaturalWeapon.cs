@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 
+using UD_FleshGolems;
+
 using SerializeField = UnityEngine.SerializeField;
 
 namespace XRL.World.Parts
@@ -103,16 +105,12 @@ namespace XRL.World.Parts
                     output = TaxonomyAdjective.Jagged;
                 }
                 else
-                if (pastLifeBlueprint.InheritsFrom("Plant")
-                    || pastLifeBlueprint.InheritsFrom("BasePlant")
-                    || pastLifeBlueprint.InheritsFrom("MutatedPlant"))
+                if (pastLifeBlueprint.InheritsFromAny("Plant", "BasePlant", "MutatedPlant", "BaseSlynth"))
                 {
                     output = TaxonomyAdjective.Fettid;
                 }
                 else
-                if (pastLifeBlueprint.InheritsFrom("Fungus")
-                    || pastLifeBlueprint.InheritsFrom("ActiveFungus")
-                    || pastLifeBlueprint.InheritsFrom("MutatedFungus"))
+                if (pastLifeBlueprint.InheritsFromAny("Fungus", "ActiveFungus", "MutatedFungus"))
                 {
                     output = TaxonomyAdjective.Decayed;
                 }
@@ -121,8 +119,7 @@ namespace XRL.World.Parts
                     output = TaxonomyAdjective.Ragged;
                 }
             }
-            else
-            if (Wielder?.GetBlueprint() is var wielderBlueprint)
+            if (output == TaxonomyAdjective.Ragged && Wielder?.GetBlueprint() is var wielderBlueprint)
             {
                 string taxonomyPropTag = wielderBlueprint.GetPropertyOrTag(TAXONOMY_PROPTAG);
                 if (wielderBlueprint.InheritsFrom("Robot Corpse")

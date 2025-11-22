@@ -15,6 +15,7 @@ using UD_FleshGolems;
 using UD_FleshGolems.Logging;
 using static UD_FleshGolems.Const;
 using System.Linq;
+using XRL.Rules;
 
 namespace XRL.World.Parts
 {
@@ -94,7 +95,9 @@ namespace XRL.World.Parts
 
         public override void Attach()
         {
-            Debug.LogCaller1(out Indent indent, Debug.LogArg(nameof(ParentObject), ParentObject?.DebugName ?? NULL));
+            using Indent indent = new(1);
+            Debug.LogCaller(indent, Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL));
+
             if (ParentObject?.GetBlueprint() is GameObjectBlueprint parentBlueprint)
             {
                 Debug.Log(parentBlueprint.Name, indent[1]);
@@ -116,7 +119,6 @@ namespace XRL.World.Parts
                     indent[3]);
             }
             AttemptToSuffer();
-            Debug.DiscardIndent();
             base.Attach();
         }
 
@@ -176,30 +178,27 @@ namespace XRL.World.Parts
 
         public bool AttemptToSuffer()
         {
-            Debug.GetIndent(out Indent indent);
+            using Indent indent = new();
             if (ParentObject is GameObject frankenCorpse)
             {
                 if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
                 {
                     int tier = GetTierFromLevel(frankenCorpse);
                     Debug.LogMethod(indent[1],
-                        Debug.LogArg(nameof(unendingSuffering), unendingSuffering != null), 
-                        Debug.LogArg(nameof(tier), tier));
-                    Debug.DiscardIndent();
+                        Debug.Arg(nameof(unendingSuffering), unendingSuffering != null), 
+                        Debug.Arg(nameof(tier), tier));
                     return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier), Reanimator);
                 }
                 else
                 if (unendingSuffering?.SourceObject != Reanimator)
                 {
                     Debug.LogMethod(indent[1],
-                        Debug.LogArg(nameof(unendingSuffering.SourceObject), unendingSuffering?.SourceObject?.DebugName ?? NULL),
-                        Debug.LogArg(nameof(Reanimator), Reanimator?.DebugName ?? NULL));
+                        Debug.Arg(nameof(unendingSuffering.SourceObject), unendingSuffering?.SourceObject?.DebugName ?? NULL),
+                        Debug.Arg(nameof(Reanimator), Reanimator?.DebugName ?? NULL));
                     unendingSuffering.SourceObject = Reanimator;
-                    Debug.DiscardIndent();
                     return true;
                 }
             }
-            Debug.DiscardIndent();
             return false;
         }
 
@@ -217,6 +216,7 @@ namespace XRL.World.Parts
                 || ID == DecorateDefaultEquipmentEvent.ID
                 || ID == EndTurnEvent.ID
                 || ID == GetBleedLiquidEvent.ID
+                || ID == BeforeTakeActionEvent.ID
                 || ID == BeforeDeathRemovalEvent.ID
                 || ID == GetDebugInternalsEvent.ID;
         }
@@ -248,8 +248,8 @@ namespace XRL.World.Parts
             {
                 Debug.LogCaller(null, new Debug.ArgPair[]
                 {
-                    Debug.LogArg(nameof(DecorateDefaultEquipmentEvent)),
-                    Debug.LogArg(ParentObject?.DebugName ?? NULL),
+                    Debug.Arg(nameof(DecorateDefaultEquipmentEvent)),
+                    Debug.Arg(ParentObject?.DebugName ?? NULL),
                 });
                 foreach (BodyPart bodyPart in frankenBody.LoopParts(BodyPartHasRaggedNaturalWeapon))
                 {
@@ -328,6 +328,14 @@ namespace XRL.World.Parts
                 }
             }
             E.Liquid = BleedLiquid;
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(BeforeTakeActionEvent E)
+        {
+            if (ParentObject.TryGetPart(out Stomach undeadStomach))
+            {
+                undeadStomach.Water = RuleSettings.WATER_MAXIMUM - 1000;
+            }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(BeforeDeathRemovalEvent E)

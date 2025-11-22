@@ -233,7 +233,9 @@ namespace UD_FleshGolems.Capabilities.Necromancy
 
         private IReadOnlyList<CorpseBlueprint> GetInheritedCorpses()
         {
-            Debug.LogMethod1(out Indent indent, Debug.LogArg(nameof(Corpse), Corpse.ToString()));
+            using Indent indent = new(1);
+            Debug.LogMethod(indent, Debug.Arg(nameof(Corpse), Corpse.ToString()));
+
             List<CorpseBlueprint> outputList = new();
             foreach (GameObjectBlueprint inheritedCorpse in Corpse.GetGameObjectBlueprint().GetBlueprintInherits())
             {
@@ -244,7 +246,6 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     Debug.Log(inheritedCorpseBlueprint.ToString(), indent[1]);
                 }
             }
-            Debug.DiscardIndent();
             return outputList;
         }
         public CorpseSheet InitializeInheritedCorpseList()
@@ -307,9 +308,9 @@ namespace UD_FleshGolems.Capabilities.Necromancy
             using Indent indent = new();
             Debug.LogMethod("for corpse " + Corpse.ToString(), indent[1], new ArgPair[]
                 {
-                    Debug.LogArg(EntityBlueprint),
-                    Debug.LogArg(Weight),
-                    Debug.LogArg(Relationship),
+                    Debug.Arg(EntityBlueprint),
+                    Debug.Arg(Weight),
+                    Debug.Arg(Relationship),
                 });
             EntityWeight entityWeight = new(NecromancySystem?.RequireEntityBlueprint(EntityBlueprint), Weight);
             EntityBlueprint entityBlueprint = entityWeight.GetBlueprint();

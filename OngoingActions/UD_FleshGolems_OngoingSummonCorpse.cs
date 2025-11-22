@@ -25,7 +25,7 @@ namespace UD_FleshGolems
         public int NumberWanted;
 
         public int _SummonRadius;
-        public int SummonRadius => _SummonRadius == 0 ? (_SummonRadius = Math.Max(5, NumberWanted / 4)) : _SummonRadius;
+        public int SummonRadius => _SummonRadius == 0 ? (_SummonRadius = Math.Max(5, (int)(NumberWanted * 0.4))) : _SummonRadius;
 
         public int NumberDone;
 

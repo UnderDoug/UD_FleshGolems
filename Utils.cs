@@ -213,7 +213,7 @@ namespace UD_FleshGolems
             Debug.LogCaller(indent[1],
                 new Debug.ArgPair[]
                 {
-                    Debug.LogArg(nameof(Context.Target), Context?.Target?.DebugName ?? NULL),
+                    Debug.Arg(nameof(Context.Target), Context?.Target?.DebugName ?? NULL),
                 });
             string parameters = null;
             foreach (string parameter in Context.Parameters)
@@ -360,10 +360,10 @@ namespace UD_FleshGolems
             Debug.LogCaller(indent[1],
                 new Debug.ArgPair[]
                 {
-                    Debug.LogArg(nameof(TableName), TableName),
-                    Debug.LogArg(nameof(n), n),
-                    Debug.LogArg(nameof(vars), vars == null ? 0 : vars.Count),
-                    Debug.LogArg(nameof(defaultIfNull), defaultIfNull)
+                    Debug.Arg(nameof(TableName), TableName),
+                    Debug.Arg(nameof(n), n),
+                    Debug.Arg(nameof(vars), vars == null ? 0 : vars.Count),
+                    Debug.Arg(nameof(defaultIfNull), defaultIfNull)
                 });
 
             List<string> returnList = new();
