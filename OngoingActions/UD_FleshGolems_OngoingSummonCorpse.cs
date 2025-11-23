@@ -9,11 +9,8 @@ using Qud.API;
 
 using XRL;
 using XRL.Language;
-using XRL.Messages;
-using XRL.Rules;
 using XRL.UI;
 using XRL.World;
-using XRL.World.AI;
 using XRL.World.Parts.Mutation;
 using XRL.World.Text;
 
@@ -175,33 +172,30 @@ namespace UD_FleshGolems
 
         public override bool Continue()
         {
-            var SB = Event.NewStringBuilder();
-            var RB = GameText.StartReplace(SB);
-            RB.AddObject(Summoner, "summoner");
-
             bool interrupt = false;
+            string interruptBecause = null;
             if (!interrupt && SummoningMutation == null)
             {
-                SB.Append("=summoner.subjective= is no longer capable of summoning corpses");
+                interruptBecause = "=summoner.subjective= is no longer capable of summoning corpses";
                 interrupt = true;
             }
             if (!interrupt && !Summoner.CanMoveExtremities("Summon", AllowTelekinetic: true))
             {
-                SB.Append("=summoner.subjective= can no longer move =summoner.possessive= extremities");
+                interruptBecause = "=summoner.subjective= can no longer move =summoner.possessive= extremities";
                 interrupt = true;
             }
             if (!interrupt && Summoner.ArePerceptibleHostilesNearby(logSpot: true, popSpot: true, Action: this))
             {
-                // SB.Append($"=summoner.subjective= can no longer summon safely");
+                // interruptBecause = "=summoner.subjective= can no longer summon safely";
                 // interrupt = true;
             }
-            if (!interrupt)
+            if (interrupt)
             {
-                ReplaceBuilder.Return(RB);
-            }
-            else
-            {
-                InterruptBecause = RB.ToString();
+                InterruptBecause = interruptBecause
+                    .StartReplace()
+                    .AddObject(Summoner, nameof(Summoner).ToLower())
+                    .ToString();
+
                 return false;
             }
             bool useEnergy = false;
@@ -245,11 +239,12 @@ namespace UD_FleshGolems
                     }
                     if (!interrupt)
                     {
-                        InterruptBecause = ("=summoner.subjective= failed to to summon " + 
-                            Grammar.A(pickedCorpseBlueprint?.GetGameObjectBlueprint()?.DisplayName()))
+                        string summonSomething = Grammar.A(pickedCorpseBlueprint?.GetGameObjectBlueprint()?.DisplayName());
+                        InterruptBecause = ("=summoner.subjective= failed to to summon " + summonSomething)
                                 .StartReplace()
-                                .AddObject(Summoner, "summoner")
+                                .AddObject(Summoner, nameof(Summoner).ToLower())
                                 .ToString();
+                        return false;
                     }
                 }
                 if (NumberDone < NumberWanted)
@@ -262,7 +257,13 @@ namespace UD_FleshGolems
                     {
                         if (Summoner.HasRegisteredEvent("UD_FleshGolems_ObjectSummonedCorpse"))
                         {
-                            Event @event = Event.New("UD_FleshGolems_ObjectSummonedCorpse", "Corpse", summonedCorpse, "SourcePart", SummoningMutation);
+                            Event @event = Event.New(
+                                ID: "UD_FleshGolems_ObjectSummonedCorpse",
+                                Name1: "Corpse",
+                                Value1: summonedCorpse,
+                                Name2: "SourcePart",
+                                Value2: SummoningMutation);
+
                             Summoner.FireEvent(@event);
                         }
                     }

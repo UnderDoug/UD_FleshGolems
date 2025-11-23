@@ -6,8 +6,6 @@ using ConsoleLib.Console;
 
 using XRL;
 using XRL.Language;
-using XRL.Messages;
-using XRL.Rules;
 using XRL.UI;
 using XRL.World;
 using XRL.World.AI;
@@ -116,48 +114,50 @@ namespace UD_FleshGolems
             RB.AddObject(Corpse, "corpse");
 
             bool interrupt = false;
+            string interruptBecause = null;
             if (!interrupt && (!GameObject.Validate(ref Corpse) || Corpse.IsNowhere()))
             {
-                SB.Append("the corpse =reanimator.subjective= =verb:were:afterpronoun= ranimating disappeared");
+                interruptBecause = "the corpse =reanimator.subjective= =verb:were:afterpronoun= ranimating disappeared";
                 interrupt = true;
             }
             if (!interrupt && Corpse.IsInGraveyard())
             {
-                SB.Append($"the corpse =reanimator.subjective= =verb:were:afterpronoun= ranimating was destroyed");
+                interruptBecause = "the corpse =reanimator.subjective= =verb:were:afterpronoun= ranimating was destroyed";
                 interrupt = true;
             }
             if (!interrupt && Corpse.IsInStasis())
             {
-                SB.Append($"=reanimator.subjective= can no longer interact with =corpse.t=");
+                interruptBecause = "=reanimator.subjective= can no longer interact with =corpse.t=";
                 interrupt = true;
             }
             if (!interrupt && ReanimationMutation == null)
             {
-                SB.Append($"=reanimator.subjective= is no longer capable of reanimating corpses");
+                interruptBecause = "=reanimator.subjective= is no longer capable of reanimating corpses";
                 interrupt = true;
             }
             if (!interrupt && !UD_FleshGolems_NanoNecroAnimation.IsReanimatableCorpse(Corpse))
             {
-                SB.Append($"=corpse.t= can no longer be reanimated");
+                interruptBecause = "=corpse.t= can no longer be reanimated";
                 interrupt = true;
             }
             if (!interrupt && !Reanimator.CanMoveExtremities("Reanimate", AllowTelekinetic: true))
             {
-                SB.Append($"=reanimator.subjective= can no longer move =reanimator.possessive= extremities");
+                interruptBecause = "=reanimator.subjective= can no longer move =reanimator.possessive= extremities";
                 interrupt = true;
             }
             if (!interrupt && Reanimator.ArePerceptibleHostilesNearby(logSpot: true, popSpot: true, Action: this))
             {
-                // SB.Append($"=reanimator.subjective= can no longer reanimate safely");
+                // interruptBecause = "=reanimator.subjective= can no longer reanimate safely";
                 // interrupt = true;
             }
-            if (!interrupt)
+            if (interrupt)
             {
-                ReplaceBuilder.Return(RB);
-            }
-            else
-            {
-                InterruptBecause = RB.ToString();
+                InterruptBecause = interruptBecause
+                    .StartReplace()
+                    .AddObject(Reanimator, nameof(Reanimator).ToLower())
+                    .AddObject(Corpse, nameof(Corpse).ToLower())
+                    .ToString();
+
                 return false;
             }
             bool useEnergy = false;
@@ -222,15 +222,11 @@ namespace UD_FleshGolems
 
         public override void Interrupt()
         {
-            MessageQueue.AddPlayerMessage(Event.NewStringBuilder()
-                .Append(Reanimator.T())
-                .Append(Reanimator.GetVerb("stop"))
-                .Append(" ")
-                .Append(GetDescription())
-                .Append(" because ")
-                .Append(GetInterruptBecause())
-                .Append(".")
-                .ToString());
+            ("=reanimator.T= =reanimator.verb:stop= " + GetDescription() + " because " + GetInterruptBecause() + ".")
+                .StartReplace()
+                .AddObject(Reanimator, nameof(Reanimator).ToLower())
+                .EmitMessage();
+
             if (NumberWanted > 1)
             {
                 Loading.SetLoadingStatus("Interrupted!");
