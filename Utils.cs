@@ -458,6 +458,10 @@ namespace UD_FleshGolems
 
         public static string Bullet(string Bullet = "\u0007", string BulletColor = "K")
         {
+            if (BulletColor.IsNullOrEmpty())
+            {
+                return Bullet;
+            }
             return "{{" + BulletColor + "|" + Bullet + "}}";
         }
 

@@ -310,13 +310,11 @@ namespace XRL.World.Parts.Mutation
             Corpse?.SmallTeleportSwirl(Color: "&r", Sound: "Sounds/StatusEffects/sfx_statusEffect_positiveVitality", IsOut: true);
             AnimateObject.Animate(Corpse, ParentObject, ParentObject);
 
-            string summonedMsg = "=subject.Name= =subject.verb:ranimate= =object.refname=."
+            "=subject.Name= =subject.verb:ranimate= =object.refname=."
                 .StartReplace()
                 .AddObject(ParentObject)
                 .AddObject(Corpse)
-                .ToString();
-
-            MessageQueue.AddPlayerMessage(summonedMsg);
+                .EmitMessage();
 
             return true;
         }
@@ -669,10 +667,9 @@ namespace XRL.World.Parts.Mutation
                 int corpsesInZoneCount = corpsesInZone.Count;
                 if (corpsesInZoneCount < 21
                     || Popup.ShowYesNoCancel(
-                        Message: 
-                        "You sense there are " + corpsesInZoneCount + " corpses in the vacinity.\n\n" +
-                        "It may take some time to reanimate them all.\n\n" +
-                        "Proceed?") == DialogResult.Yes)
+                        Message: "You sense there are " + corpsesInZoneCount + " corpses in the vacinity.\n\n" +
+                            "It may take some time to reanimate them all.\n\n" +
+                            "Proceed?") == DialogResult.Yes)
                 {
                     ParentObject?.SmallTeleportSwirl(Color: "&K", Sound: "Sounds/StatusEffects/sfx_statusEffect_negativeVitality", IsOut: true);
                     UD_FleshGolems_OngoingReanimate ongoingReanimate = new(ParentObject, corpsesInZone, 100);

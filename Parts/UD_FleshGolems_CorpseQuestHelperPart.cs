@@ -47,24 +47,30 @@ namespace XRL.World.Parts
         }
 
         public static bool ObjectIsCorpse(GameObject GO)
-        {
-            return GO.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
-                && corpseQuestHelperPart.IsBrainBrine;
-        }
+            => GO.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
+            && corpseQuestHelperPart.IsCorpse;
+
         public static bool ObjectIsBrainBrine(GameObject GO)
-        {
-            return GO.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
-                && corpseQuestHelperPart.IsBrainBrine;
-        }
+            => GO.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
+            && corpseQuestHelperPart.IsBrainBrine;
+
         public static bool ObjectIsMedicalBed(GameObject GO)
-        {
-            return GO.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
-                && corpseQuestHelperPart.IsMedicalBed;
-        }
+            => GO.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
+            && corpseQuestHelperPart.IsMedicalBed;
+
         public static bool ObjectIsBrainBrineOrMedicalBed(GameObject GO)
-        {
-            return ObjectIsBrainBrine(GO) || ObjectIsMedicalBed(GO);
-        }
+            => ObjectIsBrainBrine(GO)
+            || ObjectIsMedicalBed(GO);
+
+        public static bool CellHasMedicalBed(Cell Cell)
+            => !Cell.GetObjects(ObjectIsMedicalBed).IsNullOrEmpty();
+
+        public static bool CellHasBrainBrine(Cell Cell)
+            => !Cell.GetObjects(ObjectIsBrainBrine).IsNullOrEmpty();
+
+        public static bool CellHasBrainBrineOrMedicalBed(Cell Cell)
+            => CellHasMedicalBed(Cell)
+            || CellHasBrainBrine(Cell);
 
         public override bool WantEvent(int ID, int Cascade) => base.WantEvent(ID, Cascade)
             || ID == EnteredCellEvent.ID
@@ -74,10 +80,12 @@ namespace XRL.World.Parts
         {
             if (E.Object == ParentObject)
             {
-                if ((IsCorpse && !E.Cell.GetObjects(ObjectIsBrainBrineOrMedicalBed).IsNullOrEmpty())
-                    || (IsBrainBrine && E.Cell.GetObjects(ObjectIsCorpse).Count > 2 && !E.Cell.GetObjects(ObjectIsMedicalBed).IsNullOrEmpty())
-                    || (IsMedicalBed && E.Cell.GetObjects(ObjectIsCorpse).Count > 2 && !E.Cell.GetObjects(ObjectIsBrainBrine).IsNullOrEmpty()))
-                Primed = true;
+                if ((IsCorpse && CellHasBrainBrineOrMedicalBed(E.Cell))
+                    || (IsBrainBrine && E.Cell.GetObjects(ObjectIsCorpse).Count > 2 && CellHasMedicalBed(E.Cell))
+                    || (IsMedicalBed && E.Cell.GetObjects(ObjectIsCorpse).Count > 2 && CellHasBrainBrine(E.Cell)))
+                {
+                    Primed = true;
+                }
             }
             return base.HandleEvent(E);
         }
@@ -85,7 +93,7 @@ namespace XRL.World.Parts
         {
             if (E.Damage.IsElectricDamage())
             {
-                if (Primed || (IsElectrothing && ParentObject.CurrentCell.AnyAdjacentCell(c => !c.GetObjects(ObjectIsMedicalBed).IsNullOrEmpty())))
+                if (Primed || (IsElectrothing && ParentObject.CurrentCell.AnyAdjacentCell(CellHasMedicalBed)))
                 {
                     E.Damage.Amount = Math.Min(ParentObject.GetStat("Hitpoints").Value - 1, E.Damage.Amount);
                 }

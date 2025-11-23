@@ -62,7 +62,6 @@ namespace XRL.World.Parts
             nameof(BaboonHero1Pack),
             nameof(GoatfolkClan1),
             nameof(EyelessKingCrabSkuttle1),
-            nameof(SizeAdjective),
         };
 
         public static List<string> BlueprintsToSkipCheckingForCorpses => new()
@@ -135,15 +134,7 @@ namespace XRL.World.Parts
             bool Override = true,
             Dictionary<string, int> StatAdjustments = null)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
-                    Debug.Arg(nameof(Statistics), Statistics?.Count ?? 0),
-                    Debug.Arg(nameof(Override), Override),
-                    Debug.Arg(nameof(StatAdjustments), StatAdjustments?.Count ?? 0),
-                });
+            using Indent indent = new();
             bool any = false;
             if (FrankenCorpse == null || Statistics.IsNullOrEmpty())
             {
@@ -197,6 +188,16 @@ namespace XRL.World.Parts
             int PhysicalAdjustment = 0,
             int MentalAdjustment = 0)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                    Debug.Arg(nameof(Override), Override),
+                    Debug.Arg(nameof(PhysicalAdjustment), PhysicalAdjustment),
+                    Debug.Arg(nameof(MentalAdjustment), MentalAdjustment),
+                });
             return AssignStatsFromStatistics(FrankenCorpse, PastLife.Stats, Override, new()
             {
                 { "Strength", PhysicalAdjustment },
@@ -214,6 +215,16 @@ namespace XRL.World.Parts
             float PhysicalAdjustmentFactor = 1f,
             float MentalAdjustmentFactor = 1f)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                    Debug.Arg(nameof(Override), Override),
+                    Debug.Arg(nameof(PhysicalAdjustmentFactor), PhysicalAdjustmentFactor),
+                    Debug.Arg(nameof(MentalAdjustmentFactor), MentalAdjustmentFactor),
+                });
             if (FrankenCorpse == null || PastLife == null || PastLife.Stats.IsNullOrEmpty())
             {
                 return false;
@@ -233,9 +244,11 @@ namespace XRL.World.Parts
                     {
                         adjustmentFactor = MentalAdjustmentFactor;
                     }
-                    if (adjustmentFactor != 0f)
+                    if (adjustmentFactor != 1f)
                     {
-                        StatAdjustments.Add(statName, (int)(stat.BaseValue * adjustmentFactor) - stat.BaseValue);
+                        int adjustmentValue = (int)(stat.BaseValue * adjustmentFactor) - stat.BaseValue;
+                        StatAdjustments.Add(statName, adjustmentValue);
+                        Debug.Log(statName, adjustmentValue.Signed(), indent[1]);
                     }
                 }
             }
@@ -551,7 +564,7 @@ namespace XRL.World.Parts
         {
             return PastLife == null
                 || (corpse != null
-                    && PastLife?.DeathAddress is UD_FleshGolems_PastLife.UD_FleshGolems_DeathAddress deathAddress
+                    && PastLife?.DeathAddress is UD_FleshGolems_PastLife.DeathCoordinates deathAddress
                     && deathAddress.DeathZone == corpse.CurrentZone?.ZoneID
                     && deathAddress.GetLocation() != corpse.CurrentCell.Location
                     && corpse.Physics is Physics corpsePhysics
@@ -734,8 +747,8 @@ namespace XRL.World.Parts
             using Indent indent = new();
             Debug.LogMethod(indent[1],
                 new Debug.ArgPair[] {
-                    Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? "null"),
-                    Debug.Arg(nameof(PastLife), (PastLife == null ? "null" : "not null")),
+                    Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife == null ? NULL : ("not " + NULL)),
                 });
 
             if (Corpse is GameObject frankenCorpse
@@ -776,6 +789,18 @@ namespace XRL.World.Parts
                 if (!proceedWithMakeLive)
                 {
                     return false;
+                }
+
+                if (UD_FleshGolems_Reanimated.HasWorldGenerated)
+                {
+                    foreach ((string intProp, int value) in PastLife.IntProperties)
+                    {
+                        frankenCorpse.SetIntProperty(intProp, value);
+                    }
+                    foreach ((string stringProp, string value) in PastLife.StringProperties)
+                    {
+                        frankenCorpse.SetStringProperty(stringProp, value);
+                    }
                 }
 
                 bool wasPlayer = PastLife != null && PastLife.WasPlayer;
@@ -858,7 +883,10 @@ namespace XRL.World.Parts
                 Debug.Log("Getting SourceBlueprint...", indent[2]);
                 if (GameObjectFactory.Factory.GetBlueprintIfExists(PastLife?.Blueprint) is GameObjectBlueprint sourceBlueprint)
                 {
-                    CollectProspectiveTiles(ref prospectiveTiles, TileMappingKeyword.Blueprint, sourceBlueprint.Name);
+                    CollectProspectiveTiles(
+                        Dictionary: ref prospectiveTiles,
+                        Keyword: TileMappingKeyword.Blueprint,
+                        Lookup: sourceBlueprint.Name);
 
                     bool isProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
                     {
@@ -868,11 +896,15 @@ namespace XRL.World.Parts
                                 && propertyPartExclusions.CachedCommaExpansion() is List<string> partExclusionsList
                                 && partExclusionsList.Contains(p.Name));
                     }
-                    AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
 
+                    AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
                     float physicalAdjustmentFactor = 1.2f; // wasPlayer ? 1.0f : 1.2f;
                     float mentalAdjustmentFactor = 0.80f; // wasPlayer ? 1.0f : 0.80f;
-                    AssignStatsFromPastLifeWithFactor(frankenCorpse, PastLife, PhysicalAdjustmentFactor: physicalAdjustmentFactor, MentalAdjustmentFactor: mentalAdjustmentFactor);
+                    AssignStatsFromPastLifeWithFactor(
+                        FrankenCorpse: frankenCorpse,
+                        PastLife: PastLife,
+                        PhysicalAdjustmentFactor: physicalAdjustmentFactor,
+                        MentalAdjustmentFactor: mentalAdjustmentFactor);
 
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
 
@@ -880,7 +912,9 @@ namespace XRL.World.Parts
 
                     AssignSkillsFromBlueprint(frankenSkills, sourceBlueprint);
 
-                    excludedFromDynamicEncounters = PastLife != null && !PastLife.Tags.IsNullOrEmpty() && PastLife.Tags.ContainsKey("ExcludeFromDynamicEncounters");
+                    excludedFromDynamicEncounters = PastLife != null
+                        && !PastLife.Tags.IsNullOrEmpty()
+                        && PastLife.Tags.ContainsKey("ExcludeFromDynamicEncounters");
 
                     if (frankenCorpse.TryGetPart(out Leveler frankenLeveler))
                     {
@@ -903,7 +937,10 @@ namespace XRL.World.Parts
                         frankenCorpse.SetStringProperty("Species", sourceBlueprint.Tags["Species"]);
                     }
 
-                    CollectProspectiveTiles(ref prospectiveTiles, TileMappingKeyword.Species, sourceBlueprint.Name);
+                    CollectProspectiveTiles(
+                        Dictionary: ref prospectiveTiles,
+                        Keyword: TileMappingKeyword.Species,
+                        Lookup: sourceBlueprint.Name);
 
                     if (sourceBlueprint.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG) is string sourceCreatureConvoID
                         && convo != null)
@@ -964,7 +1001,10 @@ namespace XRL.World.Parts
                         }
 
                         string golemSpecies = golemBodyBlueprint.Name.Replace(" Golem", "");
-                        CollectProspectiveTiles(ref prospectiveTiles, TileMappingKeyword.Golem, golemSpecies);
+                        CollectProspectiveTiles(
+                            Dictionary: ref prospectiveTiles,
+                            Keyword: TileMappingKeyword.Golem,
+                            Lookup: golemSpecies);
 
                         if (prospectiveTiles.ContainsKey(TileMappingKeyword.Golem)
                             && prospectiveTiles[TileMappingKeyword.Golem].IsNullOrEmpty()
@@ -986,7 +1026,10 @@ namespace XRL.World.Parts
                         AssignSkillsFromBlueprint(frankenSkills, golemBodyBlueprint);
                     }
 
-                    CollectProspectiveTiles(ref prospectiveTiles, TileMappingKeyword.Override, frankenCorpse.GetPropertyOrTag(REANIMATED_TILE_PROPTAG, Default: null));
+                    CollectProspectiveTiles(
+                        Dictionary: ref prospectiveTiles,
+                        Keyword: TileMappingKeyword.Override,
+                        Lookup: frankenCorpse.GetPropertyOrTag(REANIMATED_TILE_PROPTAG, Default: null));
 
                     Debug.Log("Getting New Tile!", indent[2]);
                     string chosenTile = null;

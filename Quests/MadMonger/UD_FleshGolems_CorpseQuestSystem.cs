@@ -20,6 +20,7 @@ using CorpseTaxonomy = XRL.World.QuestManagers.UD_FleshGolems_CorpseQuestStep.Co
 using UD_FleshGolems;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
+using UD_FleshGolems.Logging;
 
 namespace XRL.World.QuestManagers
 {
@@ -402,18 +403,6 @@ namespace XRL.World.QuestManagers
             return CreateAnAnyCorpseQuestStep(this);
         }
 
-        static void debugLog(string Field, object Value = null, int Indent = 0)
-        {
-            string indent = " ".ThisManyTimes(Math.Min(12, Indent) * 4);
-            string output = indent + Field;
-            if (Value != null &&
-                !Value.ToString().IsNullOrEmpty())
-            {
-                output += ": " + Value;
-            }
-            // UnityEngine.Debug.Log(output);
-        }
-
         public void Init()
         {
             if (Steps != null && Steps.Count > 0)
@@ -422,9 +411,12 @@ namespace XRL.World.QuestManagers
             }
             Steps ??= new();
 
+            using Indent indent = new();
+            Debug.LogCaller(indent);
+
             int desiredCorpsSteps = 10;
             bool haveAnAnyQuestStep = false;
-            debugLog(nameof(UD_FleshGolems_CorpseQuestSystem) + "." + nameof(Init));
+
             while (Steps.Count < desiredCorpsSteps)
             {
                 UD_FleshGolems_CorpseQuestStep corpseQuestStep = null;
@@ -437,8 +429,9 @@ namespace XRL.World.QuestManagers
                 }
                 else
                 {
-                    CorpseTaxonomy questStepTaxonomy = (CorpseTaxonomy)((questStepRoll % 3) + 1);
-                    debugLog(nameof(questStepTaxonomy) + " roll " + ((questStepRoll % 3) + 1));
+                    int processedRoll = (questStepRoll % 3) + 1;
+                    CorpseTaxonomy questStepTaxonomy = (CorpseTaxonomy)processedRoll;
+                    Debug.Log(nameof(questStepTaxonomy) + " roll " + processedRoll, indent[1]);
                     corpseQuestStep = (questStepTaxonomy) switch
                     {
                         CorpseTaxonomy.Species => CreateASpeciesCorpseQuestStep(),
@@ -447,7 +440,7 @@ namespace XRL.World.QuestManagers
                         _ => CreateAnAnyCorpseQuestStep(),
                     };
                 }
-                debugLog(corpseQuestStep.Corpse.Taxonomy.ToString(), corpseQuestStep.Name, 1);
+                Debug.Log(corpseQuestStep.Corpse.Taxonomy.ToString(), corpseQuestStep.Name, indent[2]);
                 if (!HasStepWithName(corpseQuestStep.Name))
                 {
                     Steps.Add(corpseQuestStep);
@@ -552,10 +545,11 @@ namespace XRL.World.QuestManagers
         {
             try
             {
+                using Indent indent = new();
+                Debug.LogCaller(indent);
                 var corpseQuestSystem = The.Game.RequireSystem<UD_FleshGolems_CorpseQuestSystem>();
                 corpseQuestSystem.ParentQuest = ParentQuest;
                 corpseQuestSystem.ParentSystem = ParentSystem;
-                debugLog(nameof(UD_FleshGolems_CorpseQuestSystem) + "." + nameof(StartQuest));
                 corpseQuestSystem.Init();
                 Quest quest = new()
                 {
@@ -606,7 +600,8 @@ namespace XRL.World.QuestManagers
 
         public override void Finish()
         {
-            debugLog(nameof(UD_FleshGolems_CorpseQuestSystem) + "." + nameof(Finish));
+            using Indent indent = new();
+            Debug.LogCaller(indent);
             if (ParentQuest == null)
             {
                 Game.TryGetQuest(UD_FleshGolems_YouRaiseMeUpQuestSystem.MongerQuestID, out ParentQuest);
@@ -691,23 +686,25 @@ namespace XRL.World.QuestManagers
         [WishCommand(Command = "UD_FleshGolems debug quest species")]
         public static void DebugQuestSpecies_Wish()
         {
-            UnityEngine.Debug.Log("All species (included or not)...");
+            using Indent indent = new();
+            Debug.Log("All species (included or not)...", indent);
             foreach (string species in GetAllSpecies())
             {
-                UnityEngine.Debug.Log(AppendYehNah("    ", SpeciesIsNotExcluded(species)) + species);
+                Debug.YehNah(species, SpeciesIsNotExcluded(species), indent[1]);
             }
         }
         [WishCommand(Command = "UD_FleshGolems debug quest species corpses")]
         public static void DebugQuestSpeciesCorpses_Wish()
         {
+            using Indent indent = new();
             if (Popup.PickOption("pick which species", Options: AllSpecies, AllowEscape: true) is int pickedOption)
             {
                 if (AllFactions.Count > pickedOption)
                 {
-                    UnityEngine.Debug.Log("All " + AllSpecies[pickedOption] + " corpses...");
+                    Debug.Log("All " + AllSpecies[pickedOption] + " corpses...", indent);
                     foreach (string corpse in GetAllCorpsesOfSpecies(AllSpecies[pickedOption]))
                     {
-                        UnityEngine.Debug.Log(AppendYehNah("    ", SpeciesIsNotExcluded(corpse)) + corpse);
+                        Debug.CheckYeh(SpeciesIsNotExcluded(corpse) + corpse, indent[1]);
                     }
                 }
                 else
@@ -719,15 +716,18 @@ namespace XRL.World.QuestManagers
         [WishCommand(Command = "UD_FleshGolems debug quest base")]
         public static void DebugQuestBases_Wish()
         {
-            UnityEngine.Debug.Log("All Base Corpse blueprints...");
+            using Indent indent = new();
+            Debug.Log("All Base Corpse blueprints...", indent);
             foreach (string baseCorpse in GetAllBaseCorpses())
             {
-                UnityEngine.Debug.Log("    " + baseCorpse);
+                Debug.Log(baseCorpse, indent[1]);
             }
         }
         [WishCommand(Command = "UD_FleshGolems debug quest faction corpses")]
         public static void DebugQuestFactionCorpses_Wish()
         {
+            using Indent indent = new();
+
             List<string> factionNames = new();
             foreach (string factionName in AllFactions)
             {
@@ -737,10 +737,10 @@ namespace XRL.World.QuestManagers
             {
                 if (AllFactions.Count < pickedOption)
                 {
-                    UnityEngine.Debug.Log("All " + AllFactions[pickedOption] + " corpses...");
+                    Debug.Log("All " + AllFactions[pickedOption] + " corpses...", indent);
                     foreach (string corpse in GetAllCorpsesOfSpecies(AllFactions[pickedOption]))
                     {
-                        UnityEngine.Debug.Log("    " + corpse);
+                        Debug.Log(corpse, indent[1]);
                     }
                 }
                 else
@@ -752,24 +752,31 @@ namespace XRL.World.QuestManagers
         [WishCommand(Command = "UD_FleshGolems debug quest corpses")]
         public static void DebugQuestCorpses_Wish()
         {
+            using Indent indent = new();
+
             if (The.Game.HasQuest("UD_FleshGolems You Raise Me Up")
                 && The.Game.GetSystem<UD_FleshGolems_CorpseQuestSystem>() is UD_FleshGolems_CorpseQuestSystem corpseQuestSystem
                 && !corpseQuestSystem.Steps.IsNullOrEmpty())
             {
-                debugLog(nameof(corpseQuestSystem.ParentQuest), corpseQuestSystem.ParentQuest.ID);
-                debugLog(nameof(corpseQuestSystem.Quest), corpseQuestSystem.Quest.ID);
-                debugLog("UD_FleshGolems debug quest corpses...");
+                Debug.LogMethod(indent,
+                    new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(corpseQuestSystem.ParentQuest), corpseQuestSystem?.ParentQuest?.ID ?? NULL),
+                        Debug.Arg(nameof(corpseQuestSystem.Quest), corpseQuestSystem?.Quest?.ID ?? NULL),
+                        Debug.Arg("UD_FleshGolems debug quest corpses..."),
+                    });
+
                 foreach (UD_FleshGolems_CorpseQuestStep questStep in corpseQuestSystem.Steps)
                 {
                     if (questStep.Corpse is CorpseItem corpseItem)
                     {
-                        debugLog(corpseItem.Taxonomy.ToString(), corpseItem.Value, 1);
+                        Debug.Log(corpseItem.Taxonomy.ToString(), corpseItem.Value, indent[1]);
                         for (int i = 0; i < 3; i++)
                         {
 
                             if (corpseItem.GetACorpseForThisStep() is string corpseBlueprint)
                             {
-                                debugLog(i.ToString(), corpseBlueprint, 2);
+                                Debug.Log(i.ToString(), corpseBlueprint, indent[2]);
                                 if (GameObject.Create(corpseBlueprint) is GameObject corpseObject)
                                 {
                                     The.Player.CurrentCell

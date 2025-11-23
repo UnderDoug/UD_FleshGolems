@@ -613,7 +613,7 @@ namespace UD_FleshGolems
             Func<string,string> ItemPreProc = null,
             Func<string,string> ItemPostProc = null)
         {
-            Label = Label.IsNullOrEmpty() ? "" : Label + "\n";
+            Label = Label == null ? "" : Label + "\n";
             string output = "";
             foreach (string item in Items)
             {
