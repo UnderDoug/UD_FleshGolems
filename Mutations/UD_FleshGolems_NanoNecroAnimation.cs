@@ -333,10 +333,10 @@ namespace XRL.World.Parts.Mutation
                 && IsCorpse(corpseBlueprint.GetGameObjectBlueprint());
         }
 
-        public static bool TrySummonCorpse(GameObject Summoner, int CorpseRadius, out GameObject Corpse)
+        public static bool TrySummonCorpse(GameObject Summoner, CorpseBlueprint CorpseBlueprint, int CorpseRadius, out GameObject Corpse)
         {
             Corpse = null;
-            if (GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(IsReanimatableCorpse)) is GameObject corpseObject)
+            if (GameObject.CreateSample(CorpseBlueprint.ToString()) is GameObject corpseObject)
             {
                 Corpse = corpseObject;
                 int corpseRadius = Math.Min(40, CorpseRadius);
@@ -357,13 +357,11 @@ namespace XRL.World.Parts.Mutation
 
                     Corpse?.SmallTeleportSwirl(Color: "&r", IsOut: true);
 
-                    string summonedMsg = "=subject.Name= =subject.verb:summon= =object.an==object.name=."
+                     "=subject.Name= =subject.verb:summon= =object.an==object.name=."
                         .StartReplace()
                         .AddObject(Summoner)
                         .AddObject(Corpse)
-                        .ToString();
-
-                    MessageQueue.AddPlayerMessage(summonedMsg);
+                        .EmitMessage();
 
                     return true;
                 }
@@ -379,9 +377,9 @@ namespace XRL.World.Parts.Mutation
             return false;
         }
 
-        public bool TrySummonCorpse(int CorpseRadius, out GameObject Corpse)
+        public bool TrySummonCorpse(int CorpseRadius, CorpseBlueprint CorpseBlueprint, out GameObject Corpse)
         {
-            return TrySummonCorpse(ParentObject, CorpseRadius, out Corpse);
+            return TrySummonCorpse(ParentObject, CorpseBlueprint, CorpseRadius, out Corpse);
         }
 
         public bool ProcessReanimateOne(GameObject TargetCorpse = null)
@@ -712,8 +710,13 @@ namespace XRL.World.Parts.Mutation
                     {
                         return false;
                     }
-                    ParentObject?.SmallTeleportSwirl(Color: "&K", Sound: "Sounds/StatusEffects/sfx_statusEffect_negativeVitality");
-                    UD_FleshGolems_OngoingSummonCorpse ongoingSummon = new(ParentObject, corpseCount, EnergyCostPer: 100);
+
+                    UD_FleshGolems_OngoingSummonCorpse ongoingSummon = new(
+                        Summoner: ParentObject,
+                        NumberWanted: corpseCount,
+                        EnergyCostPer: 100,
+                        Unique: Popup.ShowYesNoCancel(
+                            "Unique corpses for as many corpses as possible?") == DialogResult.Yes);
 
                     AutoAct.Action = ongoingSummon;
                     AutoAct.Setting = "o";

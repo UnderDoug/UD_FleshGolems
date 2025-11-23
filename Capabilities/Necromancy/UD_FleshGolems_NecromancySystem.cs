@@ -141,7 +141,7 @@ namespace UD_FleshGolems.Capabilities
             {
                 if (The.Game != null)
                 {
-                    Debug.LogCaller("Cache finished... " + (success ? "success!" : "failure!"), indent[1]);
+                    Debug.LogCaller("Cache finished... " + (success ? "success!" : "failure!"), indent[0]);
                 }
             }
         }
@@ -263,8 +263,8 @@ namespace UD_FleshGolems.Capabilities
 
         public UD_FleshGolems_NecromancySystem InitializeCorpseSheetsCorpses(out bool Initialized)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[1]);
+            using Indent indent = new(1);
+            Debug.LogMethod(indent);
             int counter = 0;
             foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList.Where(IsReanimatableCorpse))
             {
@@ -311,8 +311,8 @@ namespace UD_FleshGolems.Capabilities
 
         public UD_FleshGolems_NecromancySystem InitializeEntityPrimaryCorpses(out bool Initialized)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[1]);
+            using Indent indent = new(1);
+            Debug.LogMethod(indent);
             int counter = 0;
             foreach (GameObjectBlueprint corpseHavingEntity in GameObjectFactory.Factory.GetBlueprints(BlueprintHasCorpse))
             {
@@ -326,16 +326,16 @@ namespace UD_FleshGolems.Capabilities
                 {
                     RequireCorpseSheet(corpseBlueprint)
                         .AddPrimaryEntity(corpseHavingEntity, corpseChance);
-                    Debug.CheckYeh(corpseHavingEntity.Name + " added " + nameof(corpseBlueprint), corpseBlueprint, indent[2]);
+                    Debug.CheckYeh(corpseHavingEntity.Name + " added " + nameof(corpseBlueprint), corpseBlueprint, indent[1]);
                 }
                 else
                 {
-                    Debug.CheckNah(corpseHavingEntity.Name + " skipped, doesn't pass.", indent[2]);
+                    Debug.CheckNah(corpseHavingEntity.Name + " skipped, doesn't pass.", indent[1]);
                 }
             }
             Initialized = true;
 
-            Debug.CheckYeh(nameof(EntityPrimaryCorpsesInitialized), indent[1]);
+            Debug.CheckYeh(nameof(EntityPrimaryCorpsesInitialized), indent[0]);
             return this;
         }
 
@@ -365,7 +365,7 @@ namespace UD_FleshGolems.Capabilities
             if (!CorpseSheetsInitialized)
             {
                 string cacheName = nameof(UD_FleshGolems_NecromancySystem) + "." + nameof(Necronomicon);
-                MetricsManager.LogModError(ThisMod, "Attempted to iterate " + cacheName + " before it was initialized");
+                Debug.MetricsManager_LogCallingModError("Attempted to iterate " + cacheName + " before it was initialized");
                 yield break;
             }
             foreach ((_, CorpseSheet corpseSheet) in Necronomicon)
@@ -495,13 +495,13 @@ namespace UD_FleshGolems.Capabilities
         }
         public UD_FleshGolems_NecromancySystem InititializeCorpseProducts(out bool Initialized)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[1]);
+            using Indent indent = new(1);
+            Debug.LogMethod(indent);
 
             foreach (CorpseBlueprint corpseBlueprint in GetCorpseBlueprints(IsProcessableCorpse))
             {
                 List<GameObjectBlueprint> possibleProducts = new();
-                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.ToString(), indent[2]);
+                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.ToString(), indent[1]);
                 
                 List<GameObjectBlueprint> butcherableProducts = new(GetProcessableCorpsesProducts(
                     CorpseBlueprint: corpseBlueprint.GetGameObjectBlueprint(),
@@ -510,10 +510,10 @@ namespace UD_FleshGolems.Capabilities
 
                 if (!butcherableProducts.IsNullOrEmpty())
                 {
-                    Debug.Log(nameof(butcherableProducts), indent[3]);
+                    Debug.Log(nameof(butcherableProducts), indent[2]);
                     foreach (GameObjectBlueprint butcherableProduct in butcherableProducts)
                     {
-                        Debug.Log(butcherableProduct.Name, indent[4]);
+                        Debug.Log(butcherableProduct.Name, indent[3]);
                         possibleProducts.Add(butcherableProduct);
                     }
                 }
@@ -525,21 +525,21 @@ namespace UD_FleshGolems.Capabilities
 
                 if (!harvestableProducts.IsNullOrEmpty())
                 {
-                    Debug.Log(nameof(harvestableProducts), indent[3]);
+                    Debug.Log(nameof(harvestableProducts), indent[2]);
                     foreach (GameObjectBlueprint harvestableProduct in harvestableProducts)
                     {
-                        Debug.Log(harvestableProduct.Name, indent[4]);
+                        Debug.Log(harvestableProduct.Name, indent[3]);
                         possibleProducts.Add(harvestableProduct);
                     }
                 }
                 if (!possibleProducts.IsNullOrEmpty())
                 {
-                    Debug.Log(nameof(possibleProducts), possibleProducts.Count, indent[3]);
+                    Debug.Log(nameof(possibleProducts), possibleProducts.Count, indent[2]);
                 }
                 int counter = 0;
                 foreach (GameObjectBlueprint possibleProduct in possibleProducts)
                 {
-                    Debug.Log(nameof(possibleProduct), possibleProduct.Name, indent[4]);
+                    Debug.Log(nameof(possibleProduct), possibleProduct.Name, indent[3]);
                     SetLoadingStatusCorpses(counter++ % 5 == 0);
                     if (possibleProduct.IsCorpse())
                     {
@@ -549,11 +549,11 @@ namespace UD_FleshGolems.Capabilities
                         // add the corpse we got the product from to the corpseProduct's list.
                         if (productCorpseSheet.AddProductOriginCorpse(corpseBlueprint))
                         {
-                            Debug.CheckYeh("Added " + corpseBlueprint + " to ProductOriginCorpses list", indent[5]);
+                            Debug.CheckYeh("Added " + corpseBlueprint + " to ProductOriginCorpses list", indent[4]);
                         }
                         else
                         {
-                            Debug.CheckNah(corpseBlueprint + " is  already in ProductOriginCorpses list", indent[5]);
+                            Debug.CheckNah(corpseBlueprint + " is  already in ProductOriginCorpses list", indent[4]);
                         }
 
                         // add the entity weight entries for the corpse we got the product from to the product's corpse sheet.
@@ -567,14 +567,14 @@ namespace UD_FleshGolems.Capabilities
                         foreach (EntityWeight entityWeight in corpseSheet.GetEntityWeights())
                         {
                             productCorpseSheet.AddProductEntity(entityWeight);
-                            Debug.CheckYeh("Added " + entityWeight + " to " + nameof(productCorpseSheet), indent[5]);
+                            Debug.CheckYeh("Added " + entityWeight + " to " + nameof(productCorpseSheet), indent[4]);
                         }
                     }
                 }
             }
             Initialized = true;
 
-            Debug.CheckYeh(nameof(CorpseProductsInitialized), indent[1]);
+            Debug.CheckYeh(nameof(CorpseProductsInitialized), indent[0]);
             return this;
         }
 
@@ -590,7 +590,7 @@ namespace UD_FleshGolems.Capabilities
             List<string> countsAsParamaters)
         {
             using Indent indent = new();
-            Debug.LogMethod(indent[1], 
+            Debug.LogMethod(indent, 
                 new ArgPair[]
                 {
                     Debug.Arg(nameof(countsAs), countsAs),
@@ -749,7 +749,7 @@ namespace UD_FleshGolems.Capabilities
             }
             if (countsAsModels.IsNullOrEmpty())
             {
-                Debug.Log(nameof(countsAsModels), "empty!", indent[2]);
+                Debug.Log(nameof(countsAsModels), "empty!", indent[1]);
             }
             else
             {
@@ -889,25 +889,25 @@ namespace UD_FleshGolems.Capabilities
         }
         private UD_FleshGolems_NecromancySystem InitializeInheritedCorspes(out bool Initialized)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[1]);
+            using Indent indent = new(1);
+            Debug.LogMethod(indent);
 
             int counter = 0;
             foreach (CorpseBlueprint corpseBlueprint in GetCorpseBlueprints())
             {
-                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.ToString(), indent[2]);
+                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.ToString(), indent[1]);
                 CorpseSheet corpseSheet = RequireCorpseSheet(corpseBlueprint.ToString());
                 List<EntityWeight> corpseSheetEntityWeightList = corpseSheet.GetEntityWeights().ToList();
                 foreach (CorpseBlueprint inheritedCorpse in corpseSheet.GetInheritedCorpseList())
                 {
                     SetLoadingStatusCorpses(counter++ % 5 == 0);
-                    Debug.Log("Adding EntityWeights for " + nameof(inheritedCorpse) + " " + inheritedCorpse.ToString(), indent[4]);
+                    Debug.Log("Adding EntityWeights for " + nameof(inheritedCorpse) + " " + inheritedCorpse.ToString(), indent[2]);
                     RequireCorpseSheet(inheritedCorpse).AddInheritedEntities(corpseSheetEntityWeightList);
                 }
             }
             Initialized = true;
 
-            Debug.CheckYeh(nameof(InheritedCorspesInitialized), indent[1]);
+            Debug.CheckYeh(nameof(InheritedCorspesInitialized), indent[0]);
             return this;
         }
 

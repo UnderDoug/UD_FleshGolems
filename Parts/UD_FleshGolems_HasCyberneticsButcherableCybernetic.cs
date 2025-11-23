@@ -277,7 +277,7 @@ namespace XRL.World.Parts
                 UnityEngine.Debug.Log(
                     nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsForLimb) + ", " +
                     nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
-                    nameof(ForLimb) + ": \"" + (ForLimb ?? NULL)+ "\"" + ", " +
+                    nameof(ForLimb) + ": \"" + ForLimb + "\"" + ", " +
                     nameof(rolledCount) + ": " + rolledCount);
                 butcherableCybernetic.Cybernetics ??= new();
 
@@ -406,8 +406,10 @@ namespace XRL.World.Parts
                 {
                     GameObjectBlueprint randomCreatureBlueprint = GetCreatureBlueprintFromSpec(Tag: "UD_FleshGolems_NonRobot", Base: Base);
                     randomCreatureBlueprint ??= EncountersAPI.GetACreatureBlueprintModel(bp => bp.HasTagOrProperty("UD_FleshGolems_NonRobot") && Base == null || bp.InheritsFrom(Base));
-                    if (randomCreatureBlueprint != null
-                        && ParentObject.Render is Render render)
+                    if ((!E.Object.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper)
+                            || !reanimationHelper.AlwaysAnimate)
+                        && randomCreatureBlueprint != null
+                        && E.Object.Render is Render render)
                     {
                         render.DisplayName = render.DisplayName.Replace(" ", " " + randomCreatureBlueprint.DisplayName() + " ");
                     }
@@ -416,7 +418,7 @@ namespace XRL.World.Parts
                         var cyberneticsHasRandomImplants = new CyberneticsHasRandomImplants();
                         E.Object.RequirePart<DisplayNameAdjectives>().AddAdjective(cyberneticsHasRandomImplants.Adjective);
                     }
-                    ParentObject.RemovePart<Food>();
+                    E.Object.RemovePart<Food>();
                     AdjustCommerceValue(Commerce, BlurValueAmount, BlurValueMargin);
                 }
                 else

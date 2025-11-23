@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 using ConsoleLib.Console;
+
+using Qud.API;
 
 using XRL;
 using XRL.Language;
@@ -14,10 +17,19 @@ using XRL.World.AI;
 using XRL.World.Parts.Mutation;
 using XRL.World.Text;
 
+
+using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
+
+using UD_FleshGolems.Capabilities;
+using UD_FleshGolems.Capabilities.Necromancy;
+using static UD_FleshGolems.Utils;
+
 namespace UD_FleshGolems
 {
     public class UD_FleshGolems_OngoingSummonCorpse : OngoingAction
     {
+        public static UD_FleshGolems_NecromancySystem NecromancySystem => UD_FleshGolems_NecromancySystem.System;
+
         public GameObject Summoner;
 
         public UD_FleshGolems_NanoNecroAnimation SummoningMutation => Summoner?.GetFirstPartDescendedFrom<UD_FleshGolems_NanoNecroAnimation>();
@@ -26,6 +38,10 @@ namespace UD_FleshGolems
 
         public int _SummonRadius;
         public int SummonRadius => _SummonRadius == 0 ? (_SummonRadius = Math.Max(5, (int)(NumberWanted * 0.4))) : _SummonRadius;
+
+        public BallBag<CorpseBlueprint> BlueprintBag;
+
+        public bool Unique;
 
         public int NumberDone;
 
@@ -45,6 +61,8 @@ namespace UD_FleshGolems
 
             NumberWanted = 0;
             _SummonRadius = 0;
+            BlueprintBag = new();
+            Unique = false;
             NumberDone = 0;
             OriginalCount = 0;
 
@@ -68,15 +86,58 @@ namespace UD_FleshGolems
 
         public UD_FleshGolems_OngoingSummonCorpse(GameObject Summoner, int NumberWanted, int EnergyCostPer)
             : this(Summoner, NumberWanted)
-        {
-            this.EnergyCostPer = EnergyCostPer;
-        }
+            => this.EnergyCostPer = EnergyCostPer;
 
-        public UD_FleshGolems_OngoingSummonCorpse(GameObject Summoner, int NumberWanted, int EnergyCostPer, int SummonRadius)
-            : this(Summoner, NumberWanted, EnergyCostPer)
-        {
-            _SummonRadius = SummonRadius;
-        }
+        public UD_FleshGolems_OngoingSummonCorpse(
+            GameObject Summoner,
+            int NumberWanted,
+            int EnergyCostPer,
+            int SummonRadius)
+            : this(
+                  Summoner: Summoner,
+                  NumberWanted: NumberWanted,
+                  EnergyCostPer: EnergyCostPer)
+            => _SummonRadius = SummonRadius;
+
+        public UD_FleshGolems_OngoingSummonCorpse(
+            GameObject Summoner,
+            int NumberWanted,
+            int EnergyCostPer,
+            int SummonRadius,
+            bool Unique)
+            : this(
+                  Summoner: Summoner, 
+                  NumberWanted: NumberWanted, 
+                  EnergyCostPer: EnergyCostPer, 
+                  SummonRadius: SummonRadius)
+            => this.Unique = Unique;
+
+        public UD_FleshGolems_OngoingSummonCorpse(
+            GameObject Summoner,
+            int NumberWanted,
+            int EnergyCostPer,
+            bool Unique)
+            : this(
+                  Summoner: Summoner,
+                  NumberWanted: NumberWanted,
+                  EnergyCostPer: EnergyCostPer,
+                  SummonRadius: 0,
+                  Unique: Unique) { }
+
+        public UD_FleshGolems_OngoingSummonCorpse(
+            GameObject Summoner,
+            int NumberWanted,
+            int EnergyCostPer,
+            int SummonRadius,
+            BallBag<CorpseBlueprint> BlueprintList,
+            bool Unique = false)
+            : this(
+                  Summoner: Summoner, 
+                  NumberWanted: NumberWanted, 
+                  EnergyCostPer: EnergyCostPer, 
+                  SummonRadius: SummonRadius,
+                  Unique: Unique)
+            => this.BlueprintBag = BlueprintList;
 
         public override string GetDescription()
         {
@@ -95,6 +156,23 @@ namespace UD_FleshGolems
 
         public override bool IsRateLimited() => false;
 
+        public bool RefillBluepritBag()
+        {
+            if (BlueprintBag.IsNullOrEmpty())
+            {
+                BlueprintBag ??= new();
+                foreach (CorpseBlueprint corpseBlueprint in NecromancySystem.GetCorpseBlueprints())
+                {
+                    BlueprintBag.Add(corpseBlueprint, 100);
+                }
+            }
+            return !BlueprintBag.IsNullOrEmpty();
+        }
+
+        public static bool IsEligibleForEncounter(GameObjectBlueprint Blueprint)
+            => !Blueprint.IsBaseBlueprint()
+            && !Blueprint.IsExcludedFromDynamicEncounters();
+
         public override bool Continue()
         {
             var SB = Event.NewStringBuilder();
@@ -104,12 +182,12 @@ namespace UD_FleshGolems
             bool interrupt = false;
             if (!interrupt && SummoningMutation == null)
             {
-                SB.Append($"=summoner.subjective= is no longer capable of reanimating corpses");
+                SB.Append("=summoner.subjective= is no longer capable of summoning corpses");
                 interrupt = true;
             }
             if (!interrupt && !Summoner.CanMoveExtremities("Summon", AllowTelekinetic: true))
             {
-                SB.Append($"=summoner.subjective= can no longer move =summoner.possessive= extremities");
+                SB.Append("=summoner.subjective= can no longer move =summoner.possessive= extremities");
                 interrupt = true;
             }
             if (!interrupt && Summoner.ArePerceptibleHostilesNearby(logSpot: true, popSpot: true, Action: this))
@@ -129,7 +207,25 @@ namespace UD_FleshGolems
             bool useEnergy = false;
             try
             {
-                if (SummoningMutation.TrySummonCorpse(SummonRadius, out GameObject summonedCorpse))
+                if (NumberDone == 0)
+                {
+                    Summoner?.SmallTeleportSwirl(Color: "&K", Sound: "Sounds/StatusEffects/sfx_statusEffect_negativeVitality");
+                }
+                if (BlueprintBag.IsNullOrEmpty())
+                {
+                    BlueprintBag ??= new();
+                    foreach (CorpseBlueprint corpseBlueprint in NecromancySystem.GetCorpseBlueprints(IsEligibleForEncounter))
+                    {
+                        BlueprintBag.Add(corpseBlueprint, 100);
+                    }
+                    if (NumberDone > 0)
+                    {
+                        Unique = false;
+                    }
+                }
+                CorpseBlueprint pickedCorpseBlueprint = Unique ? BlueprintBag.PickOne() : BlueprintBag.PluckOne();
+                bool summonSuccessful = false;
+                if (SummoningMutation.TrySummonCorpse(SummonRadius, pickedCorpseBlueprint, out GameObject summonedCorpse))
                 {
                     if (NumberDone % 3 == 0)
                     {
@@ -138,13 +234,29 @@ namespace UD_FleshGolems
                     bool multipleObjects = NumberWanted > 1 && OriginalCount > 1;
                     SummonedList ??= new();
                     SummonedList.Add(summonedCorpse);
+                    NumberDone++;
+                    summonSuccessful = true;
+                }
+                if (!summonSuccessful)
+                {
+                    if (!Unique)
+                    {
+                        BlueprintBag.Remove(pickedCorpseBlueprint);
+                    }
+                    if (!interrupt)
+                    {
+                        InterruptBecause = ("=summoner.subjective= failed to to summon " + 
+                            Grammar.A(pickedCorpseBlueprint?.GetGameObjectBlueprint()?.DisplayName()))
+                                .StartReplace()
+                                .AddObject(Summoner, "summoner")
+                                .ToString();
+                    }
                 }
                 if (NumberDone < NumberWanted)
                 {
-                    NumberDone++;
                     if (NumberWanted > 1)
                     {
-                        Loading.SetLoadingStatus($"Summoned {NumberDone.Things("corpse")} of {NumberWanted}...");
+                        Loading.SetLoadingStatus("Summoned " + NumberDone.Things("corpse") + " of " + NumberWanted + "...");
                     }
                     if (!Abort)
                     {

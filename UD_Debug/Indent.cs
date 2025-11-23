@@ -44,7 +44,7 @@ namespace UD_FleshGolems.Logging
         public Indent(int Offset) 
             : this() 
         {
-            BaseValue = Offset;
+            BaseValue += Offset;
             LastValue = BaseValue;
         }
         public Indent(Indent Source, bool Store)

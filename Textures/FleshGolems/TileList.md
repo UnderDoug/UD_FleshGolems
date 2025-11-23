@@ -1,22 +1,22 @@
 # Types of Thing That Need a Tile
 
-- Antelope
-- Ape
-- Baboon
-- Baetyl
-- Bat
-- Bear
-- Bed
-- Bipedal Robot
-- Bird
-- Bush
-- Cat
-- Chair
-- Clam
-- Crab
-- Cragmensch
-- Crystal
-- Dawnglider
+- Antelope (brothers)
+- Ape (brothers)
+- Baboon (brothers)
+- Baetyl (brothers)
+- Bat (brothers)
+- Bear (brothers)
+- Bed (brothers)
+- Bipedal Robot (brothers)
+- Bird (brothers)
+- Bush (brothers)
+- Cat (brothers)
+- Chair (brothers)
+- Clam (brothers)
+- Crab (brothers)
+- Cragmensch (brothers)
+- Crystal (brothers)
+- Dawnglider (brothers)
 - Dog
 - Door
 - Dromad
@@ -31,7 +31,7 @@
 - Hexapodal Robot
 - Hindren
 - Hover
-- Human (done)
+- Human (ud)
 - Humanoid Robot
 - Infrastructure
 - Insect

@@ -270,7 +270,7 @@
   </object>
 
   <object Name="ExileCorpse" Load="Merge">
-    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:human:10" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Faction:Old:10" />
   </object>
 
   <object Name="JoppaCorpse" Load="Merge">

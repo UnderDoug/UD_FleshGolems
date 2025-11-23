@@ -441,7 +441,8 @@ namespace XRL.World.Parts
                         }
                         bestMatch ??= dropItem;
                     }
-                    if (Dying.GetSpecies() == dropItem.Blueprint.Replace(" Corpse", "").Replace("UD_FleshGolems ", ""))
+                    string dropItemBlueprint = dropItem.Blueprint;
+                    if (Dying.GetSpecies() == dropItemBlueprint.Replace(" Corpse", "").Replace("UD_FleshGolems ", ""))
                     {
                         if (secondBestMatch != null)
                         {
@@ -591,24 +592,16 @@ namespace XRL.World.Parts
                 && soonToBeCorpse == E.Object
                 && Corpse is GameObject soonToBeCreature)
             {
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(BeforeObjectCreatedEvent) + ", " +
-                    nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
-                    nameof(soonToBeCreature) + ": " + (soonToBeCreature?.DebugName ?? NULL));
-                */
-                bool reanimated = false;
                 if (soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
                 {
                     if (!soonToBeCorpse.IsPlayer()
                         && !soonToBeCorpse.Blueprint.IsPlayerBlueprint())
                     {
-                        reanimated = reanimationHelper.Animate();
+                        reanimationHelper.Animate();
                         E.ReplacementObject = soonToBeCreature;
                         Attempted = true;
                     }
                 }
-                // UnityEngine.Debug.Log("    [" + (reanimated ? TICK : CROSS) + "] " + (reanimated ? "Success" : "Fail") + "!");
             }
             return base.HandleEvent(E);
         }

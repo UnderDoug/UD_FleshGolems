@@ -773,5 +773,11 @@ namespace UD_FleshGolems
             List.ForEach(Action);
             return Return;
         }
+
+        public static string Pluralize<T>(this T EnumEntry)
+            where T : struct, Enum
+        {
+            return EnumEntry.ToString().Pluralize();
+        }
     }
 }

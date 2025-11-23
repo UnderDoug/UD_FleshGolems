@@ -164,6 +164,7 @@ namespace XRL.World.Parts
         private string _RefName;
         public string RefName => _RefName ??= BrainInAJar?.GetReferenceDisplayName(Short: true);
         public bool WasProperlyNamed => (BrainInAJar?.HasProperName).GetValueOrDefault();
+        public DisplayNameAdjectives DisplayNameAdjectives => BrainInAJar?.GetPart<DisplayNameAdjectives>();
         public Titles Titles => BrainInAJar?.GetPart<Titles>();
         public Epithets Epithets => BrainInAJar?.GetPart<Epithets>();
         public Honorifics Honorifics => BrainInAJar?.GetPart<Honorifics>();
@@ -369,17 +370,18 @@ namespace XRL.World.Parts
                         BrainInAJar.HasProperName = PastLife.HasProperName 
                             || PastLife.GetBlueprint().GetxTag("Grammar", "Proper").EqualsNoCase("true");
 
+                        BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<DisplayNameAdjectives>());
                         BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Titles>());
                         BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Epithets>());
                         BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Honorifics>());
 
                         if (WasCorpse)
                         {
-                            Titles bIAJ_Titles = BrainInAJar.RequirePart<Titles>();
-                            if (bIAJ_Titles.TitleList.IsNullOrEmpty()
-                                || !bIAJ_Titles.TitleList.Contains(UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE))
+                            DisplayNameAdjectives bIAJ_Adjectives = BrainInAJar.RequirePart<DisplayNameAdjectives>();
+                            if (bIAJ_Adjectives.AdjectiveList.IsNullOrEmpty()
+                                || !bIAJ_Adjectives.AdjectiveList.Contains(UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE))
                             {
-                                bIAJ_Titles.AddTitle(UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE);
+                                bIAJ_Adjectives.AddAdjective(UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE);
                             }
                         }
 
@@ -490,7 +492,7 @@ namespace XRL.World.Parts
                         if (PastLife.Statistics.IsNullOrEmpty())
                         {
                             BrainInAJar.Statistics = new();
-                            foreach ((string statName, Statistic stat) in PastLife.Statistics)
+                            foreach ((string statName, Statistic stat) in PastLife?.Statistics)
                             {
                                 Statistic newStat = new(stat);
                                 if (statName == "Hitpoints")
@@ -692,7 +694,7 @@ namespace XRL.World.Parts
                 return null;
             }
             string oldDescription = PastLife.Description;
-            string postDescription = "In life this =subject.uD_xTag:FleshGolems_CorpseText:CorpseDescription= was ";
+            string postDescription = "In life this =subject.uD_xTag:UD_FleshGolems_CorpseText:CorpseDescription= was ";
             if (PastLife.WasPlayer)
             {
                 postDescription += "you.";
@@ -990,6 +992,16 @@ namespace XRL.World.Parts
             return RestoreCybernetics(ParentObject, this, out WereCyberneticsInstalled);
         }
 
+        public override bool WantEvent(int ID, int Cascade)
+            => base.WantEvent(ID, Cascade)
+            || ID == GetDebugInternalsEvent.ID;
+
+        public override bool HandleEvent(GetDebugInternalsEvent E)
+        {
+            E.AddEntry(this, nameof(Init), Init);
+            return base.HandleEvent(E);
+        }
+
         /*
          * 
          * Wishes!
@@ -1002,7 +1014,7 @@ namespace XRL.World.Parts
             using Indent indent = new();
             try
             {
-                Debug.Log(nameof(UD_FleshGolems_PastLife), ParentObject.DebugName, indent[0]);
+                Debug.Log(nameof(UD_FleshGolems_PastLife), ParentObject.DebugName, indent);
 
                 Debug.Log(nameof(Init), Init, indent[1]);
                 Debug.Log(nameof(WasCorpse), WasCorpse, indent);
@@ -1012,7 +1024,10 @@ namespace XRL.World.Parts
 
                 Debug.Log(nameof(Blueprint), Blueprint, indent);
                 Debug.Log(nameof(BaseDisplayName), BaseDisplayName, indent);
+                Debug.Log(nameof(RefName), RefName, indent);
+                Debug.Log(nameof(WasProperlyNamed), WasProperlyNamed, indent);
 
+                Debug.Log(nameof(DisplayNameAdjectives), DisplayNameAdjectives, indent);
                 Debug.Log(nameof(Titles), Titles, indent);
                 Debug.Log(nameof(Epithets), Epithets, indent);
                 Debug.Log(nameof(Honorifics), Honorifics, indent);

@@ -1,8 +1,44 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <objects>
+
+  <!--
   
+  #
+  # Alternate Tile Mappings
+  #
+  
+  Tag: determines what the target is.
+  Value: comma separated tile filepaths, randomly selected from.
+  
+  Priority:
+  1. UD_FleshGolems_PastLife_TileOverride: tag goes directly on the corpse blueprint is whatever file the corpse is defined in.
+      a. See Creatures.xml, UD_FleshGolems Jofo Qudwufo
+  2. Blueprint: comma separated list. Targets any past life with a listed blueprint.
+  3. Species: targets a specific species, in the event that there's no golem equivalent and "oddity" doesn't make sense.
+  4. Golem: aligns with a specific type of golem.
+  
+  -->
   <object Name="UD_FleshGolems_TileMappings" Inherits="DataBucket">
-    <tag Name="UD_FleshGolems_AlternateTileFor:Human" Value="FleshGolems/ud_flesh_golem_human.png" />
+    <!--tag Name="UD_FleshGolems_AlternateTileFor:Blueprint:Argyve" Value="FleshGolems/ud_flesh_golem_human.png" /-->
+    <!--tag Name="UD_FleshGolems_AlternateTileFor:Species:human" Value="FleshGolems/ud_flesh_golem_human.png" /-->
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Antelope" Value="FleshGolems/brothers_flesh_golem_antelope.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Ape" Value="FleshGolems/brothers_flesh_golem_ape.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Baboon" Value="FleshGolems/brothers_flesh_golem_baboon.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Baetyl" Value="FleshGolems/brothers_flesh_golem_baetyl.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Bat" Value="FleshGolems/brothers_flesh_golem_bat.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Bear" Value="FleshGolems/brothers_flesh_golem_bear.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Bed" Value="FleshGolems/brothers_flesh_golem_bed.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Bipedal Robot" Value="FleshGolems/brothers_flesh_golem_bipedal_robot.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Bird" Value="FleshGolems/brothers_flesh_golem_bird.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Bush" Value="FleshGolems/brothers_flesh_golem_bush.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Cat" Value="FleshGolems/brothers_flesh_golem_cat.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Chair" Value="FleshGolems/brothers_flesh_golem_chair.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Clam" Value="FleshGolems/brothers_flesh_golem_clam.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Crab" Value="FleshGolems/brothers_flesh_golem_crab.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Cragmensch" Value="FleshGolems/brothers_flesh_golem_cragmensch.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Crystal" Value="FleshGolems/brothers_flesh_golem_crystal.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Dawnglider" Value="FleshGolems/brothers_flesh_golem_dawnglider.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Human" Value="FleshGolems/ud_flesh_golem_human.png" />
   </object>
   
   <object Name="UD_FleshGolems_PostLoad_CountsAs" Inherits="DataBucket">

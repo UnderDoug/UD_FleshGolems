@@ -44,9 +44,17 @@ namespace XRL.World.Parts
 
         public static List<string> PartsInNeedOfRemovalWhenAnimated => new()
         {
+            // These would serve as quick ways to insta-kill a corpse creature, since they consume the corpse without contest. 
             nameof(Food),
             nameof(Butcherable),
             nameof(Harvestable),
+
+            nameof(SizeAdjective),
+
+            // Corpses are non-furniture objects (items), so it's conceivable they might have one of these.
+            nameof(ThrownWeapon),
+            nameof(MeleeWeapon),
+            nameof(MissileWeapon),
         };
 
         public static List<string> MeatContaminationLiquids = new() { "putrid", "slime", "ooze", };
@@ -187,6 +195,7 @@ namespace XRL.World.Parts
                     Debug.LogMethod(indent[1],
                         Debug.Arg(nameof(unendingSuffering), unendingSuffering != null), 
                         Debug.Arg(nameof(tier), tier));
+
                     return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier), Reanimator);
                 }
                 else

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Diagnostics;
 
 using Qud.API;
 
@@ -20,10 +21,12 @@ using XRL.UI;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
+using Debug = UD_FleshGolems.Logging.Debug;
 
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
 using UD_FleshGolems.Capabilities;
+using System.Reflection;
 
 namespace UD_FleshGolems
 {
@@ -43,6 +46,42 @@ namespace UD_FleshGolems
         }
 
         public static ModInfo ThisMod => ModManager.GetMod(MOD_ID);
+
+        public static ModInfo GetFirstCallingModNot(ModInfo ThisMod)
+        {
+            try
+            {
+                Dictionary<Assembly, ModInfo> modAssemblies = ModManager.ActiveMods
+                    ?.Where(mi => mi != ThisMod && mi.Assembly != null)
+                    ?.ToDictionary(mi => mi.Assembly, mi => mi);
+
+                StackFrame[] stackFrames = new StackTrace().GetFrames();
+                int stackTraceCount = Math.Min(stackFrames.Length, 12);
+                for (int i = 0; i < stackTraceCount; i++)
+                {
+                    if (stackFrames[i].GetMethod() is MethodBase methodBase
+                        && methodBase.DeclaringType is Type declaringType
+                        && modAssemblies.ContainsKey(declaringType.Assembly))
+                    {
+                        return modAssemblies[declaringType.Assembly];
+                    }
+                }
+            }
+            catch (Exception x)
+            {
+                MetricsManager.LogException(nameof(GetFirstCallingModNot), x, GAME_MOD_EXCEOPTION);
+            }
+            return null;
+        }
+        public static bool TryGetFirstCallingModNot(ModInfo ThisMod, out ModInfo FirstCallingMod)
+        {
+            return (FirstCallingMod = GetFirstCallingModNot(ThisMod)) != null;
+        }
+
+        public static IEnumerable<T> GetEnumValues<T>()
+        {
+            return Enum.GetValues(typeof(T)).Cast<T>();
+        }
 
         public static string GetPlayerBlueprint()
         {
