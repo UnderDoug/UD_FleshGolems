@@ -489,7 +489,7 @@ namespace XRL.World.Parts
 
                         ConversationScript bIAJ_Conversation = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<ConversationScript>());
 
-                        if (PastLife.Statistics.IsNullOrEmpty())
+                        if (!PastLife.Statistics.IsNullOrEmpty())
                         {
                             BrainInAJar.Statistics = new();
                             foreach ((string statName, Statistic stat) in PastLife?.Statistics)
