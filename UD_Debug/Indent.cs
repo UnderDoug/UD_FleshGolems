@@ -44,7 +44,7 @@ namespace UD_FleshGolems.Logging
         public Indent(int Offset) 
             : this() 
         {
-            BaseValue = LastValue + Offset;
+            BaseValue += Offset;
             LastValue = BaseValue;
         }
         public Indent(Indent Source, bool Store)
@@ -63,7 +63,10 @@ namespace UD_FleshGolems.Logging
         {
             get
             {
-                LastValue = CapIndent(BaseValue + Indent);
+                if (Debug.DoDebug)
+                {
+                    LastValue = CapIndent(BaseValue + Indent);
+                }
                 return this;
             }
             protected set

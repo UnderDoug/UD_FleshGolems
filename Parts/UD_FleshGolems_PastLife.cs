@@ -35,6 +35,7 @@ using UD_FleshGolems.Capabilities;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using UD_FleshGolems.Capabilities.Necromancy;
 using XRL.World.Effects;
+using XRL.World.Capabilities;
 
 namespace XRL.World.Parts
 {
@@ -105,7 +106,7 @@ namespace XRL.World.Parts
                 this.RapidLevel = RapidLevel;
             }
             public override readonly string ToString()
-                => Name + ":" + Variant + " (" + BaseLevel + "|" + CapOverride + "|" + RapidLevel + ")";
+                => Name + "/" + (Variant ?? "base") + ": (" + BaseLevel + "|" + CapOverride + "|" + RapidLevel + ")";
 
             public bool GiveToEntity(GameObject Entity)
             {
@@ -222,6 +223,7 @@ namespace XRL.World.Parts
         public string ConversationScriptID => BrainInAJar?.GetPart<ConversationScript>()?.ConversationID;
 
         public Dictionary<string, Statistic> Stats => BrainInAJar?.Statistics;
+        public bool IsTrifling => (BrainInAJar?.IsTrifling).GetValueOrDefault();
 
         public Body Body => BrainInAJar?.Body;
         public string Species => BrainInAJar?.GetSpecies();
@@ -438,7 +440,15 @@ namespace XRL.World.Parts
                         BrainInAJar._IntProperty = new(PastLife._IntProperty);
 
                         Debug.Log(nameof(BrainInAJar._Property), BrainInAJar._Property?.Count ?? 0, indent[2]);
+                        foreach ((string name, string value) in BrainInAJar._Property)
+                        {
+                            Debug.Log(name, "\"" + (value ?? "null") + "\"", indent[3]);
+                        }
                         Debug.Log(nameof(BrainInAJar._IntProperty), BrainInAJar._IntProperty?.Count ?? 0, indent[2]);
+                        foreach ((string name, int value) in BrainInAJar._IntProperty)
+                        {
+                            Debug.Log(name, value, indent[3]);
+                        }
 
                         Render bIAJ_Render = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Render);
                         BrainInAJar.Render = bIAJ_Render;
@@ -578,16 +588,28 @@ namespace XRL.World.Parts
                             BrainInAJar.Statistics = new();
                             foreach ((string statName, Statistic stat) in PastLife?.Statistics)
                             {
-                                Statistic newStat = new(stat);
+                                if (stat.Name == "Hitpoints")
+                                {
+                                    stat.Penalty = 0;
+                                }
+                                Statistic newStat = new(stat)
+                                {
+                                    Owner = BrainInAJar,
+                                };
+                                /*
                                 if (statName == "Hitpoints")
                                 {
                                     newStat.Penalty = 0;
                                 }
                                 newStat.Owner = BrainInAJar;
+                                */
+
                                 BrainInAJar.Statistics.Add(statName, newStat);
-                                Debug.Log(statName, newStat.Value + "/" + newStat.BaseValue, indent[3]);
+                                Debug.Log(statName, newStat.Value + "/" + newStat.BaseValue + " | " + (newStat.sValue ?? "no sValue"), indent[3]);
                             }
                         }
+
+                        BrainInAJar.IsTrifling = PastLife.IsTrifling;
 
                         BrainInAJar.SetSpecies(PastLife.GetSpecies());
                         BrainInAJar.SetGenotype(PastLife.GetGenotype());
@@ -599,7 +621,7 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(Subtype), Subtype ?? NULL, indent[2]);
 
                         Mutations bIAJ_Mutations = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Mutations>());
-                        Debug.Log(nameof(MutationsList) + "...", indent[2]);
+                        Debug.Log(nameof(MutationsList) + "(BaseLevel|CapOverride|RapidLevel)", indent[2]);
                         foreach (BaseMutation pastMutation in PastLife.RequirePart<Mutations>().ActiveMutationList)
                         {
                             MutationData mutationData = new(pastMutation, pastMutation.GetRapidLevelAmount());
@@ -702,6 +724,15 @@ namespace XRL.World.Parts
             bool ExcludedFromDynamicEncounters,
             out Brain FrankenBrain)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                    Debug.Arg(nameof(ExcludedFromDynamicEncounters), ExcludedFromDynamicEncounters),
+                    Debug.Arg("out " + nameof(FrankenBrain)),
+                });
             FrankenBrain = null;
             if (FrankenCorpse == null || PastLife == null)
             {
@@ -712,6 +743,17 @@ namespace XRL.World.Parts
                 && PastLife?.Brain is Brain pastBrain)
             {
                 FrankenCorpse.Brain.Allegiance ??= new();
+                /*
+                if (AutoAct.Action is OngoingAction ongoingAction
+                    && ongoingAction.GetType().InheritsFrom(typeof(UD_FleshGolems_OngoingReanimate)))
+                {
+                    FrankenCorpse.SetIntProperty("UD_FLeshGolems Deferred PastLife Hostility", 1);
+                }
+                else
+                {
+                    FrankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
+                }
+                */
                 FrankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
                 FrankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
                 if ((!UD_FleshGolems_Reanimated.HasWorldGenerated || ExcludedFromDynamicEncounters))
@@ -825,6 +867,14 @@ namespace XRL.World.Parts
             UD_FleshGolems_PastLife PastLife,
             bool WantOldIdentity = false)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                    Debug.Arg(nameof(WantOldIdentity), WantOldIdentity),
+                });
             if (FrankenCorpse == null || PastLife == null || !WantOldIdentity)
             {
                 return false;
@@ -849,6 +899,13 @@ namespace XRL.World.Parts
             UD_FleshGolems_PastLife PastLife,
             out Body FrankenBody)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                });
             FrankenBody = null;
             if (FrankenCorpse == null || PastLife == null || PastLife.Body == null)
             {
@@ -932,6 +989,16 @@ namespace XRL.World.Parts
             GameObject FrankenCorpse,
             UD_FleshGolems_PastLife PastLife)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                    Debug.Arg(nameof(PastLife.Species), PastLife?.Species ?? NULL),
+                    Debug.Arg(nameof(PastLife.Genotype), PastLife?.Genotype ?? NULL),
+                    Debug.Arg(nameof(PastLife.Subtype), PastLife?.Subtype ?? NULL),
+                });
             if (FrankenCorpse == null || PastLife == null)
             {
                 return false;
@@ -961,6 +1028,15 @@ namespace XRL.World.Parts
             out Mutations FrankenMutations,
             Predicate<BaseMutation> Exclude = null)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                    Debug.Arg("out " + nameof(FrankenMutations)),
+                    Debug.Arg(nameof(Exclude), Exclude != null),
+                });
             FrankenMutations = null;
             bool any = false;
             if (FrankenCorpse == null
@@ -996,6 +1072,7 @@ namespace XRL.World.Parts
                     baseMutationToAdd.BaseLevel += baseMutation.Level;
                 }
                 FrankenMutations.AddMutation(baseMutationToAdd, baseMutation.BaseLevel);
+                Debug.Log(baseMutationToAdd.DebugName, baseMutationToAdd.Level, indent[1]);
                 any = true;
             }
             return any;
@@ -1013,6 +1090,15 @@ namespace XRL.World.Parts
             out Skills FrankenSkills,
             Predicate<BaseSkill> Exclude = null)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                    Debug.Arg("out " + nameof(FrankenSkills)),
+                    Debug.Arg(nameof(Exclude), Exclude != null),
+                });
             FrankenSkills = null;
             bool any = false;
             if (FrankenCorpse == null
@@ -1029,9 +1115,11 @@ namespace XRL.World.Parts
                     || FrankenCorpse.HasSkill(baseSkill.Name)
                     || FrankenCorpse.HasPart(baseSkill.Name))
                 {
+                    Debug.CheckNah(baseSkill.Name, indent[1]);
                     continue;
                 }
                 any = FrankenSkills.AddSkill(baseSkill.DeepCopy(FrankenCorpse, null) as BaseSkill) || any;
+                Debug.CheckYeh(baseSkill.Name, indent[1]);
             }
             return any;
         }
@@ -1048,6 +1136,14 @@ namespace XRL.World.Parts
             UD_FleshGolems_PastLife PastLife,
             out bool WereCyberneticsInstalled)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                    Debug.Arg(nameof(PastLife.InstalledCybernetics), PastLife?.InstalledCybernetics?.Count ?? 0),
+                });
             WereCyberneticsInstalled = false;
             if (FrankenCorpse == null || PastLife == null)
             {

@@ -72,6 +72,13 @@
     <part Name="Honorifics" Primary="the Mad" />
     <xtagGrammar Proper="true" />
     <intproperty Name="ProperNoun" Value="1" />
+    <mutation Name="Myopia" />
+    <mutation Name="IrritableGenome" />
+    <mutation Name="TonicAllergy" />
+    <mutation Name="HeightenedAgility" Level="10" />
+    <mutation Name="SociallyRepugnant" />
+    <mutation Name="Psychometry" Level="10" />
+    <intproperty Name="CyberneticRejectionSyndromeModifier" Value="75" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Mad Monger Corpse" CorpseChance="100" />
     <part Name="GenericInventoryRestocker" Table="UD_FleshGolems Mad Monger Stock Table" Chance="85" />
     <part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" />
@@ -80,7 +87,6 @@
     <removepart Name="HasGuards" />
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
-    <intproperty Name="CyberneticRejectionSyndromeModifier" Value="100" />
     <inventoryobject Blueprint="CyberneticsCreditWedge3" Number="1-2" IntProperties="WontSell:1" />
     <inventoryobject Blueprint="Di-Thermo Beam" Number="2" IntProperties="AlwaysEquipAsWeapon:1" />
     <inventoryobject Blueprint="Pocketed Lab Coat" Number="1" IntProperties="AlwaysEquipAsArmor:1" />
@@ -342,35 +348,39 @@
           TileColor="&amp;r" DetailColor="w" ColorString="&amp;r"/>
     <part Name="Description" Short="=subject.UD_xTag:UD_FleshGolems_Ragged:GrossAdjective= =subject.uD_xTag:UD_FleshGolems_Ragged:Skin= is held taut over =subject.uD_xTag:UD_FleshGolems_Ragged:HarshAdjective= =subject.uD_xTag:UD_FleshGolems_Ragged:HardMaterial= which protudes in several places, forming a very deadly make-shift weapon." />
     <part Name="RandomColors" DetailColor="w,w,K,K,K,R" />
-    <part Name="MeleeWeapon" Slot="" HitBonus="10" PenBonus="0" MaxStrengthBonus="999" Stat="Strength" />
+    <part Name="MeleeWeapon" Slot="" HitBonus="5" PenBonus="0" MaxStrengthBonus="999" Stat="Strength" />
     <part Name="UD_FleshGolems_SetDefaultBehaviorBlueprintWhenDefaultBehavior" />
     <part Name="UD_FleshGolems_RaggedNaturalWeapon" />
     <tag Name="BaseObject" Value="*noinherit" />
   </object>
   <object Name="UD_FleshGolems Ragged Cudgel" Inherits="UD_FleshGolems Ragged Weapon">
     <part Name="Render" DisplayName="cudgel" />
-    <part Name="MeleeWeapon" BaseDamage="4d6" Skill="Cudgel" />
+    <part Name="MeleeWeapon" BaseDamage="4d3" Skill="Cudgel" />
+    <!--part Name="MeleeWeapon" BaseDamage="4d6" Skill="Cudgel" /-->
     <tag Name="BaseObject" Value="*noinherit" />
     <part Name="ConfuseOnHit" Chance="15" />
     <part Name="StunOnHit" Chance="15" />
   </object>
   <object Name="UD_FleshGolems Ragged Axe" Inherits="UD_FleshGolems Ragged Weapon">
     <part Name="Render" DisplayName="axe" />
-    <part Name="MeleeWeapon" BaseDamage="1d8+8" Skill="Axe" />
+    <part Name="MeleeWeapon" BaseDamage="1d4+4" Skill="Axe" />
+    <!--part Name="MeleeWeapon" BaseDamage="1d8+8" Skill="Axe" /-->
     <tag Name="BaseObject" Value="*noinherit" />
     <part Name="ConfuseOnHit" Chance="15" />
     <part Name="VomitOnHit" Chance="15" />
   </object>
   <object Name="UD_FleshGolems Ragged LongBlades" Inherits="UD_FleshGolems Ragged Weapon">
     <part Name="Render" DisplayName="long blade" />
-    <part Name="MeleeWeapon" BaseDamage="2d12" Skill="LongBlades" />
+    <part Name="MeleeWeapon" BaseDamage="2d6" Skill="LongBlades" />
+    <!--part Name="MeleeWeapon" BaseDamage="2d12" Skill="LongBlades" /-->
     <tag Name="BaseObject" Value="*noinherit" />
     <part Name="PoisonOnHit" Chance="15" />
     <part Name="StunOnHit" Chance="15" />
   </object>
   <object Name="UD_FleshGolems Ragged ShortBlades" Inherits="UD_FleshGolems Ragged Weapon">
     <part Name="Render" DisplayName="dagger" />
-    <part Name="MeleeWeapon" BaseDamage="1d12+5" Skill="ShortBlades" />
+    <part Name="MeleeWeapon" BaseDamage="1d6+3" Skill="ShortBlades" />
+    <!--part Name="MeleeWeapon" BaseDamage="1d12+5" Skill="ShortBlades" /-->
     <tag Name="BaseObject" Value="*noinherit" />
     <part Name="PoisonOnHit" Chance="15" />
     <part Name="VomitOnHit" Chance="15" />

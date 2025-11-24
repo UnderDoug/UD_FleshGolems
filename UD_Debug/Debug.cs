@@ -33,7 +33,7 @@ namespace UD_FleshGolems.Logging
             SetSilenceLogging(!SilenceLogging);
         }
 
-        private static bool _DoDebug => DebugEnableLogging && !SilenceLogging;
+        private static bool DoDebugSetting => DebugEnableLogging && !SilenceLogging;
         public static bool DoDebug
         {
             get
@@ -57,7 +57,7 @@ namespace UD_FleshGolems.Logging
                 {
                     MetricsManager.LogException(typeof(Debug) + "." + nameof(DoDebug), x, GAME_MOD_EXCEOPTION);
                 }
-                return _DoDebug;
+                return DoDebugSetting;
             }
         }
         private static List<MethodRegistryEntry> _DoDebugRegistry = new();
@@ -208,7 +208,8 @@ namespace UD_FleshGolems.Logging
                 {
                     if (stackFrames[i].GetMethod() is MethodBase methodBase
                         && methodBase.DeclaringType is Type declaringType
-                        && !declaringType.Equals(typeof(UD_FleshGolems.Logging.Debug)))
+                        && !declaringType.Equals(typeof(UD_FleshGolems.Logging.Debug))
+                        && !declaringType.Equals(typeof(UD_FleshGolems.Logging.Indent)))
                     {
                         CallingType = declaringType;
                         Method = methodBase;

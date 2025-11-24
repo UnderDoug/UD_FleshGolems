@@ -24,6 +24,7 @@ using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
+using XRL.World.Effects;
 
 namespace XRL.World.Parts
 {
@@ -132,7 +133,8 @@ namespace XRL.World.Parts
             GameObject FrankenCorpse,
             Dictionary<string, Statistic> Statistics,
             bool Override = true,
-            Dictionary<string, int> StatAdjustments = null)
+            Dictionary<string, int> StatAdjustments = null,
+            bool HitpointsFallbackToMinimum = false)
         {
             using Indent indent = new();
             bool any = false;
@@ -143,10 +145,26 @@ namespace XRL.World.Parts
             }
             foreach ((string statName, Statistic sourceStat) in Statistics)
             {
-                Statistic statistic = new(sourceStat)
+                Statistic statistic = new(sourceStat);
+                if (sourceStat.Name == "Hitpoints")
                 {
-                    Owner = FrankenCorpse,
-                };
+                    if (HitpointsFallbackToMinimum)
+                    {
+                        if (sourceStat.BaseValue < 1)
+                        {
+                            sourceStat.BaseValue = 1;
+                        }
+                        if (sourceStat.sValue.IsNullOrEmpty())
+                        {
+                            sourceStat.sValue = "5,(t)*5,4d3*(t)";
+                        }
+                        if (sourceStat.Penalty != 0)
+                        {
+                            sourceStat.Penalty = 0;
+                        }
+                    }
+                       
+                }
                 if (!FrankenCorpse.HasStat(statName))
                 {
                     FrankenCorpse.Statistics.Add(statName, statistic);
@@ -163,30 +181,35 @@ namespace XRL.World.Parts
                     FrankenCorpse.Statistics[statName].BaseValue += StatAdjustments[statName];
                     statAdjust = StatAdjustments[statName];
                 }
+                statistic.Owner = FrankenCorpse;
+
                 int statValue = FrankenCorpse.Statistics[statName].Value;
                 int statBaseValue = FrankenCorpse.Statistics[statName].BaseValue;
-                Debug.Arg(statName, statValue + "/" + statBaseValue + " (" + statAdjust.Signed() + ")").Log(indent[1]);
+                string sValue = FrankenCorpse.Statistics[statName].sValue;
+                Debug.Arg(statName, statValue + "/" + statBaseValue + " (" + statAdjust.Signed() + ") | " + (sValue ?? "no sValue")).Log(indent[1]);
                 any = true;
             }
 
             Debug.CheckYeh(nameof(Statistics) + " Assigned!", indent[0]);
-            FrankenCorpse.FinalizeStats();
+
             return any;
         }
         public static bool AssignStatsFromPastLife(
             GameObject FrankenCorpse,
             UD_FleshGolems_PastLife PastLife,
             bool Override = true,
-            Dictionary<string, int> StatAdjustments = null)
+            Dictionary<string, int> StatAdjustments = null,
+            bool HitpointsFallbackToMinimum = false)
         {
-            return AssignStatsFromStatistics(FrankenCorpse, PastLife.Stats, Override, StatAdjustments);
+            return AssignStatsFromStatistics(FrankenCorpse, PastLife.Stats, Override, StatAdjustments, HitpointsFallbackToMinimum);
         }
         public static bool AssignStatsFromPastLifeWithAdjustment(
             GameObject FrankenCorpse,
             UD_FleshGolems_PastLife PastLife,
             bool Override = true,
             int PhysicalAdjustment = 0,
-            int MentalAdjustment = 0)
+            int MentalAdjustment = 0,
+            bool HitpointsFallbackToMinimum = false)
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
@@ -206,14 +229,15 @@ namespace XRL.World.Parts
                 { "Intelligence", MentalAdjustment },
                 { "Willpower", MentalAdjustment },
                 { "Ego", MentalAdjustment },
-            });
+            }, HitpointsFallbackToMinimum);
         }
         public static bool AssignStatsFromPastLifeWithFactor(
             GameObject FrankenCorpse,
             UD_FleshGolems_PastLife PastLife,
             bool Override = true,
             float PhysicalAdjustmentFactor = 1f,
-            float MentalAdjustmentFactor = 1f)
+            float MentalAdjustmentFactor = 1f,
+            bool HitpointsFallbackToMinimum = false)
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
@@ -252,15 +276,25 @@ namespace XRL.World.Parts
                     }
                 }
             }
-            return AssignStatsFromStatistics(FrankenCorpse, PastLife.Stats, Override, StatAdjustments);
+            return AssignStatsFromStatistics(FrankenCorpse, PastLife.Stats, Override, StatAdjustments, HitpointsFallbackToMinimum);
         }
         public static bool AssignStatsFromBlueprint(
             GameObject FrankenCorpse,
             GameObjectBlueprint SourceBlueprint,
             bool Override = true,
-            Dictionary<string, int> StatAdjustments = null)
+            Dictionary<string, int> StatAdjustments = null,
+            bool HitpointsFallbackToMinimum = false)
         {
-            return AssignStatsFromStatistics(FrankenCorpse, SourceBlueprint.Stats, Override, StatAdjustments);
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(SourceBlueprint), SourceBlueprint.Name),
+                    Debug.Arg(nameof(Override), Override),
+                    Debug.Arg(nameof(StatAdjustments), StatAdjustments?.Count ?? 0),
+                });
+            return AssignStatsFromStatistics(FrankenCorpse, SourceBlueprint.Stats, Override, StatAdjustments, HitpointsFallbackToMinimum);
         }
 
         public static void AssignPartsFromBlueprint(
@@ -268,34 +302,59 @@ namespace XRL.World.Parts
             GameObjectBlueprint SourceBlueprint,
             Predicate<IPart> Exclude = null)
         {
-            if (FrankenCorpse == null || SourceBlueprint == null || SourceBlueprint.allparts.IsNullOrEmpty())
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(SourceBlueprint), SourceBlueprint?.Name ?? NULL),
+                    Debug.Arg(nameof(Exclude), Exclude != null),
+                });
+            if (FrankenCorpse == null
+                || SourceBlueprint == null
+                || SourceBlueprint.allparts.IsNullOrEmpty())
             {
                 return;
             }
             foreach (GamePartBlueprint sourcePartBlueprint in SourceBlueprint.allparts.Values)
             {
-                if (Stat.Random(1, sourcePartBlueprint.ChanceOneIn) == 1)
+                if (Stat.Random(1, sourcePartBlueprint.ChanceOneIn) != 1)
                 {
-                    if (sourcePartBlueprint.T == null)
-                    {
-                        XRLCore.LogError("Unknown part " + sourcePartBlueprint.Name + "!");
-                        return;
-                    }
-                    IPart sourcePart = sourcePartBlueprint.Reflector?.GetInstance() ?? (Activator.CreateInstance(sourcePartBlueprint.T) as IPart);
-                    if (sourcePart == null || Exclude != null && Exclude(sourcePart))
-                    {
-                        continue;
-                    }
-                    sourcePart.ParentObject = FrankenCorpse;
-                    sourcePartBlueprint.InitializePartInstance(sourcePart);
-                    FrankenCorpse.AddPart(sourcePart);
+                    Debug.CheckNah(sourcePartBlueprint.Name, nameof(sourcePartBlueprint.ChanceOneIn) + " failed", indent[1]);
+                    continue;
+                }
+                if (sourcePartBlueprint.T == null)
+                {
+                    MetricsManager.LogModError(ThisMod, "Unknown part " + sourcePartBlueprint.Name + "!");
+                    continue;
+                }
+                if ((sourcePartBlueprint.Reflector?.GetInstance() ?? (Activator.CreateInstance(sourcePartBlueprint.T) as IPart)) is not IPart sourcePart)
+                {
+                    MetricsManager.LogError("Part " + sourcePartBlueprint.T + " is not an IPart");
+                    continue;
+                }
+                if (Exclude != null && Exclude(sourcePart))
+                {
+                    Debug.CheckNah(sourcePartBlueprint.Name, "part excluded", indent[1]);
+                    continue;
+                }
 
-                    if (sourcePartBlueprint.TryGetParameter("Builder", out string partBuilderName)
-                        && ModManager.ResolveType("XRL.World.PartBuilders", partBuilderName) is Type partBuilderType
-                        && Activator.CreateInstance(partBuilderType) is IPartBuilder partBuilder)
-                    {
-                        partBuilder.BuildPart(sourcePart);
-                    }
+                Debug.Log(sourcePartBlueprint.Name, indent[1]);
+                sourcePart.ParentObject = FrankenCorpse;
+                sourcePartBlueprint.InitializePartInstance(sourcePart);
+                FrankenCorpse.AddPart(sourcePart);
+                Debug.CheckYeh(sourcePartBlueprint.Name, "added", indent[2]);
+
+                if (sourcePartBlueprint.TryGetParameter("Builder", out string partBuilderName)
+                    && ModManager.ResolveType("XRL.World.PartBuilders", partBuilderName) is Type partBuilderType
+                    && Activator.CreateInstance(partBuilderType) is IPartBuilder partBuilder)
+                {
+                    partBuilder.BuildPart(sourcePart, Context: "Initialization");
+                    Debug.CheckYeh(sourcePartBlueprint.Name, "built", indent[2]);
+                }
+                else
+                {
+                    Debug.CheckNah(sourcePartBlueprint.Name, "unable to build", indent[2]);
                 }
             }
         }
@@ -305,6 +364,14 @@ namespace XRL.World.Parts
             GameObjectBlueprint SourceBlueprint,
             Predicate<BaseMutation> Exclude = null)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenMutations), FrankenMutations != null),
+                    Debug.Arg(nameof(SourceBlueprint), SourceBlueprint?.Name ?? NULL),
+                    Debug.Arg(nameof(Exclude), Exclude != null),
+                });
             bool any = false;
             if (FrankenMutations == null || SourceBlueprint == null || SourceBlueprint.Mutations.IsNullOrEmpty())
             {
@@ -312,8 +379,10 @@ namespace XRL.World.Parts
             }
             foreach (GamePartBlueprint sourceMutationBlueprint in SourceBlueprint.Mutations.Values)
             {
+                Debug.Log(sourceMutationBlueprint.Name, indent[1]);
                 if (Stat.Random(1, sourceMutationBlueprint.ChanceOneIn) != 1)
                 {
+                    Debug.CheckNah(sourceMutationBlueprint.Name, nameof(sourceMutationBlueprint.ChanceOneIn) + " failed", indent[1]);
                     continue;
                 }
                 string mutationNamespace = "XRL.World.Parts.Mutation." + sourceMutationBlueprint.Name;
@@ -322,7 +391,7 @@ namespace XRL.World.Parts
                 if (mutationType == null)
                 {
                     MetricsManager.LogError("Unknown mutation " + mutationNamespace);
-                    return any;
+                    continue;
                 }
                 if ((sourceMutationBlueprint.Reflector?.GetNewInstance() ?? Activator.CreateInstance(mutationType)) is not BaseMutation baseMutation)
                 {
@@ -331,6 +400,7 @@ namespace XRL.World.Parts
                 }
                 if (Exclude != null && Exclude(baseMutation))
                 {
+                    Debug.CheckNah(sourceMutationBlueprint.Name, "excluded", indent[1]);
                     continue;
                 }
                 sourceMutationBlueprint.InitializePartInstance(baseMutation);
@@ -339,24 +409,30 @@ namespace XRL.World.Parts
                     && Activator.CreateInstance(mutationBuilderType) is IPartBuilder mutationBuilder)
                 {
                     mutationBuilder.BuildPart(baseMutation, Context: "Initialization");
+                    Debug.CheckYeh(sourceMutationBlueprint.Name, "built", indent[1]);
+                }
+                else
+                {
+                    Debug.CheckNah(sourceMutationBlueprint.Name, "unable to build", indent[1]);
                 }
                 BaseMutation baseMutationToAdd = baseMutation;
+                Debug.Log(sourceMutationBlueprint.Name, indent[1]);
                 bool alreadyHaveMutation = FrankenMutations.HasMutation(sourceMutationBlueprint.Name);
                 if (alreadyHaveMutation)
                 {
                     baseMutationToAdd = FrankenMutations.GetMutation(sourceMutationBlueprint.Name);
+                    baseMutationToAdd.BaseLevel += baseMutation.Level;
+                    Debug.CheckYeh(nameof(alreadyHaveMutation), indent[2]);
+                }
+                else
+                {
+                    FrankenMutations.AddMutation(baseMutationToAdd, baseMutation.Level);
+                    Debug.CheckYeh("mutation added", indent[2]);
                 }
                 if (baseMutationToAdd.CapOverride == -1)
                 {
                     baseMutationToAdd.CapOverride = baseMutation.Level;
-                }
-                if (!alreadyHaveMutation)
-                {
-                    FrankenMutations.AddMutation(baseMutationToAdd, baseMutation.Level);
-                }
-                else
-                {
-                    baseMutationToAdd.BaseLevel += baseMutation.Level;
+                    Debug.CheckYeh(nameof(baseMutationToAdd.CapOverride), baseMutationToAdd.CapOverride, indent[2]);
                 }
                 any = true;
             }
@@ -368,8 +444,19 @@ namespace XRL.World.Parts
             GameObjectBlueprint SourceBlueprint,
             Predicate<BaseSkill> Exclude = null)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenSkills), FrankenSkills != null),
+                    Debug.Arg(nameof(SourceBlueprint), SourceBlueprint?.Name ?? NULL),
+                    Debug.Arg(nameof(Exclude), Exclude != null),
+                });
+
             bool any = false;
-            if (FrankenSkills == null || SourceBlueprint == null || SourceBlueprint.Skills.IsNullOrEmpty())
+            if (FrankenSkills == null
+                || SourceBlueprint == null
+                || SourceBlueprint.Skills.IsNullOrEmpty())
             {
                 return any;
             }
@@ -377,6 +464,7 @@ namespace XRL.World.Parts
             {
                 if (Stat.Random(1, sourceSkillBlueprint.ChanceOneIn) != 1)
                 {
+                    Debug.CheckNah(sourceSkillBlueprint.Name, nameof(sourceSkillBlueprint.ChanceOneIn) + " failed", indent[1]);
                     continue;
                 }
                 string skillNamespace = "XRL.World.Parts.Skill." + sourceSkillBlueprint.Name;
@@ -394,15 +482,24 @@ namespace XRL.World.Parts
                 }
                 if (Exclude != null && Exclude(baseSkill))
                 {
+                    Debug.CheckNah(sourceSkillBlueprint.Name, "excluded", indent[1]);
                     continue;
                 }
+                Debug.Log(sourceSkillBlueprint.Name, indent[1]);
                 sourceSkillBlueprint.InitializePartInstance(baseSkill);
                 if (sourceSkillBlueprint.TryGetParameter("Builder", out string skillBuilderName)
                     && ModManager.ResolveType("XRL.World.PartBuilders." + skillBuilderName) is Type skillBuilderType
                     && Activator.CreateInstance(skillBuilderType) is IPartBuilder skillBuilder)
                 {
                     skillBuilder.BuildPart(baseSkill, Context: "Initialization");
+                    Debug.CheckYeh("skill built", indent[2]);
                 }
+                else
+                {
+                    Debug.CheckNah("unable to build skill", indent[2]);
+                }
+                Debug.CheckYeh("skill added", indent[2]);
+
                 any = FrankenSkills.AddSkill(baseSkill) || any;
             }
             return any;
@@ -412,6 +509,12 @@ namespace XRL.World.Parts
             GameObject FrankenCorpse,
             out bool AnyImplanted)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                });
             AnyImplanted = false;
             if (FrankenCorpse.Body is Body frankenBody)
             {
@@ -624,18 +727,16 @@ namespace XRL.World.Parts
 
         public static void AddPlayerSkillsIfPlayer(GameObject FrankenCorpse, bool WasPlayer)
         {
-            if (WasPlayer)
+            if (WasPlayer
+                && FrankenCorpse.RequirePart<Skills>() is Skills frankenSkills)
             {
-                if (FrankenCorpse.RequirePart<Skills>() is Skills frankenSkills)
+                if (!FrankenCorpse.HasSkill(nameof(Survival_Camp)))
                 {
-                    if (!FrankenCorpse.HasSkill(nameof(Survival_Camp)))
-                    {
-                        frankenSkills.AddSkill(nameof(Survival_Camp));
-                    }
-                    if (!FrankenCorpse.HasSkill(nameof(Tactics_Run)))
-                    {
-                        frankenSkills.AddSkill(nameof(Tactics_Run));
-                    }
+                    frankenSkills.AddSkill(nameof(Survival_Camp));
+                }
+                if (!FrankenCorpse.HasSkill(nameof(Tactics_Run)))
+                {
+                    frankenSkills.AddSkill(nameof(Tactics_Run));
                 }
             }
         }
@@ -740,6 +841,11 @@ namespace XRL.World.Parts
             return true;
         }
 
+        public static int CalculateMinimumHitpoints(GameObject FrankenCorpse)
+        {
+            return Stat.RollCached("4d3+5") * UD_FleshGolems_ReanimatedCorpse.GetTierFromLevel(FrankenCorpse);
+        }
+
         public static bool MakeItALIVE(
             GameObject Corpse,
             UD_FleshGolems_PastLife PastLife)
@@ -790,17 +896,38 @@ namespace XRL.World.Parts
                 {
                     return false;
                 }
+                if (!frankenCorpse.FireEvent(Event.New(
+                        ID: "UD_FleshGolems_BeforeReanimated",
+                        "FrankenCorpse", frankenCorpse,
+                        "Reanimator", reanimationHelper.Reanimator,
+                        "PastLifePart", PastLife)))
+                {
+                    return false;
+                }
 
+                frankenCorpse.SetStringProperty("OverlayColor", "&amp;G^k");
+
+                frankenCorpse.Physics.Organic = PastLife.Physics.Organic;
+
+                Debug.Log("Assigning string and int properties...", indent[2]);
                 if (UD_FleshGolems_Reanimated.HasWorldGenerated)
                 {
-                    foreach ((string intProp, int value) in PastLife.IntProperties)
-                    {
-                        frankenCorpse.SetIntProperty(intProp, value);
-                    }
-                    foreach ((string stringProp, string value) in PastLife.StringProperties)
+                    Debug.Log(nameof(PastLife.StringProperties), PastLife?.StringProperties?.Count ?? 0, indent[3]);
+                    foreach ((string stringProp, string value) in PastLife?.StringProperties)
                     {
                         frankenCorpse.SetStringProperty(stringProp, value);
+                        Debug.Log(stringProp, "\"" + (value ?? "null") + "\"", indent[4]);
                     }
+                    Debug.Log(nameof(PastLife.IntProperties), PastLife?.IntProperties?.Count ?? 0, indent[3]);
+                    foreach ((string intProp, int value) in PastLife?.IntProperties)
+                    {
+                        frankenCorpse.SetIntProperty(intProp, value);
+                        Debug.Log(intProp, value, indent[4]);
+                    }
+                }
+                else
+                {
+                    Debug.CheckNah("Skipped.", indent[3]);
                 }
 
                 bool wasPlayer = PastLife != null && PastLife.WasPlayer;
@@ -851,7 +978,7 @@ namespace XRL.World.Parts
 
                 PastLife.RestoreAnatomy(out Body frankenBody);
 
-                PastLife.RestoreTaxonomy();
+                bool taxonomyRestored = PastLife.RestoreTaxonomy();
 
                 PastLife.RestoreCybernetics(out bool installedCybernetics);
                 if (!installedCybernetics)
@@ -883,6 +1010,8 @@ namespace XRL.World.Parts
                 Debug.Log("Getting SourceBlueprint...", indent[2]);
                 if (GameObjectFactory.Factory.GetBlueprintIfExists(PastLife?.Blueprint) is GameObjectBlueprint sourceBlueprint)
                 {
+                    Debug.CheckYeh(nameof(sourceBlueprint), sourceBlueprint.Name, indent[3]);
+
                     CollectProspectiveTiles(
                         Dictionary: ref prospectiveTiles,
                         Keyword: TileMappingKeyword.Blueprint,
@@ -898,13 +1027,23 @@ namespace XRL.World.Parts
                     }
 
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
+
+                    Debug.Log("Pre-" + nameof(frankenCorpse.FinalizeStats) + " figures...", indent[2]);
+                    foreach ((string statName, Statistic stat) in frankenCorpse?.Statistics)
+                    {
+                        Debug.Log(statName, stat.Value + "/" + stat.BaseValue + " | " + (stat.sValue ?? "no sValue"), indent[3]);
+                    }
+                    Debug.CheckYeh(nameof(frankenCorpse.FinalizeStats), indent[2]);
+                    frankenCorpse?.FinalizeStats();
+
                     float physicalAdjustmentFactor = 1.2f; // wasPlayer ? 1.0f : 1.2f;
                     float mentalAdjustmentFactor = 0.80f; // wasPlayer ? 1.0f : 0.80f;
                     AssignStatsFromPastLifeWithFactor(
                         FrankenCorpse: frankenCorpse,
                         PastLife: PastLife,
                         PhysicalAdjustmentFactor: physicalAdjustmentFactor,
-                        MentalAdjustmentFactor: mentalAdjustmentFactor);
+                        MentalAdjustmentFactor: mentalAdjustmentFactor,
+                        HitpointsFallbackToMinimum: true);
 
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
 
@@ -916,25 +1055,31 @@ namespace XRL.World.Parts
                         && !PastLife.Tags.IsNullOrEmpty()
                         && PastLife.Tags.ContainsKey("ExcludeFromDynamicEncounters");
 
+                    Debug.Log("Adding Levels and XP...", indent[2]);
                     if (frankenCorpse.TryGetPart(out Leveler frankenLeveler))
                     {
                         if (int.TryParse(frankenCorpse.GetPropertyOrTag("UD_FleshGolems_SkipLevelsOnReanimate", "0"), out int SkipLevelsOnReanimate)
                             && SkipLevelsOnReanimate < 1)
                         {
+                            Debug.CheckYeh(nameof(frankenLeveler.LevelUp), indent[3]);
                             frankenLeveler?.LevelUp();
                             if (Stat.RollCached("1d2") == 1)
                             {
+                                Debug.CheckYeh(nameof(frankenLeveler.LevelUp) + " again", indent[3]);
                                 frankenLeveler?.LevelUp();
                             }
                         }
                         int floorXP = Leveler.GetXPForLevel(frankenCorpse.Level);
                         int ceilingXP = Leveler.GetXPForLevel(frankenCorpse.Level + 1);
                         frankenCorpse.GetStat("XP").BaseValue = Stat.RandomCosmetic(floorXP, ceilingXP);
+                        Debug.Log("XP set", frankenCorpse.GetStat("XP").BaseValue, indent[3]);
                     }
 
-                    if (sourceBlueprint.Tags.ContainsKey("Species"))
+                    if ((!taxonomyRestored || frankenCorpse.GetStringProperty("Species") is null)
+                        && sourceBlueprint.TryGetStringPropertyOrTag("Species", out string sourceSpecies))
                     {
-                        frankenCorpse.SetStringProperty("Species", sourceBlueprint.Tags["Species"]);
+                        frankenCorpse.SetStringProperty("Species", sourceSpecies);
+                        Debug.CheckYeh("Species given from sourceBlueprint", frankenCorpse.GetSpecies(), indent[2]);
                     }
 
                     CollectProspectiveTiles(
@@ -1278,7 +1423,7 @@ namespace XRL.World.Parts
 
                 if (frankenCorpse.GetStat("Hitpoints") is Statistic frankenHitpoints)
                 {
-                    int minHitpoints = Stat.RollCached("4d3+5");
+                    int minHitpoints = CalculateMinimumHitpoints(frankenCorpse);
                     Debug.Log(nameof(frankenHitpoints) + " " + nameof(minHitpoints), minHitpoints, Indent: indent[2]);
                     frankenHitpoints.BaseValue = Math.Max(minHitpoints, frankenHitpoints.BaseValue);
                     frankenHitpoints.Penalty = 0;
@@ -1302,7 +1447,13 @@ namespace XRL.World.Parts
 
                 Debug.Log("Calling " + nameof(frankenBody) + "." + nameof(frankenBody.UpdateBodyParts), indent[2]);
                 frankenBody?.UpdateBodyParts();
-                Debug.CheckYeh("Didn't fail, fortuantely!", indent[2]);
+                Debug.CheckYeh("Didn't fail, fortuantely!", indent[3]);
+
+                frankenCorpse.FireEvent(Event.New(
+                    ID: "UD_FleshGolems_Reanimated",
+                    "FrankenCorpse", frankenCorpse,
+                    "Reanimator", reanimationHelper.Reanimator,
+                    "PastLifePart", PastLife));
 
                 return true;
             }
@@ -1392,7 +1543,10 @@ namespace XRL.World.Parts
                         Debug.Arg(nameof(EnvironmentalUpdateEvent)),
                         Debug.Arg(nameof(IsALIVE), IsALIVE),
                     });
-                ProcessMoveToDeathCell(corpse, PastLife);
+                if (!UD_FleshGolems_Reanimated.HasWorldGenerated)
+                {
+                    ProcessMoveToDeathCell(corpse, PastLife);
+                }
                 return true;
             }
             return base.HandleEvent(E);

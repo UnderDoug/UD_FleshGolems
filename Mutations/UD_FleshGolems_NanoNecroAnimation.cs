@@ -719,6 +719,8 @@ namespace XRL.World.Parts.Mutation
                     AutoAct.Setting = "o";
                     The.Player.ForfeitTurn(EnergyNeutral: true);
 
+                    AutoAct.Setting = "";
+
                     E.RequestInterfaceExit();
                     return true;
                 }

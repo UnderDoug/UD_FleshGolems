@@ -9,6 +9,7 @@ using XRL.Language;
 using XRL.UI;
 using XRL.World;
 using XRL.World.AI;
+using XRL.World.Parts;
 using XRL.World.Parts.Mutation;
 using XRL.World.Text;
 
@@ -165,6 +166,10 @@ namespace UD_FleshGolems
             {
                 if (ReanimationMutation.ReanimateCorpse(Corpse, (NumberDone % 3) == 0))
                 {
+                    if (Corpse?.Brain?.Allegiance != null)
+                    {
+                        Corpse.Brain.Allegiance.Calm = true;
+                    }
                     bool multipleObjects = NumberWanted > 1 && OriginalCount > 1;
                     ReanimatedList ??= new();
                     ReanimatedNames ??= new();
@@ -234,7 +239,7 @@ namespace UD_FleshGolems
             base.Interrupt();
         }
 
-        public override bool CanComplete() => !Abort ? NumberDone >= NumberWanted : true;
+        public override bool CanComplete() => Abort || NumberDone >= NumberWanted;
 
         public override void Complete()
         {
@@ -247,6 +252,22 @@ namespace UD_FleshGolems
 
         public override void End()
         {
+            /*
+            foreach (GameObject reanimatedCorpse in ReanimatedList)
+            {
+                if (reanimatedCorpse.HasIntProperty("UD_FLeshGolems Deferred PastLife Hostility"))
+                {
+                    if (reanimatedCorpse.TryGetPart(out UD_FleshGolems_PastLife pastLife)
+                        && Corpse?.Brain?.Allegiance != null
+                        && pastLife?.Brain?.Allegiance != null)
+                    {
+                        Corpse.Brain.Allegiance.Hostile = pastLife.Brain.Allegiance.Hostile;
+                    }
+                    reanimatedCorpse.RemoveIntProperty("UD_FLeshGolems Deferred PastLife Hostility");
+                }
+            }
+            */
+
             var SB = Event.NewStringBuilder();
             SB.Append("=subject.Name= reanimated");
             bool doBulletList = NumberDone > 3

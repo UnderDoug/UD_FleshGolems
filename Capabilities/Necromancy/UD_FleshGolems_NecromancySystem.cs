@@ -178,7 +178,12 @@ namespace UD_FleshGolems.Capabilities
             TimeSpan duration = sw.Elapsed;
             string timeUnit = duration.Minutes > 0 ? "minute" : "second";
             double timeDuration = duration.Minutes > 0 ? duration.TotalMinutes : duration.TotalSeconds;
-            Debug.Log("Corpse Cache took " + timeDuration.Things(timeUnit) + ".", Indent: indent[0]);
+            string cacheDebugMessage = "Corpse Cache took " + timeDuration.Things(timeUnit) + ".";
+            Debug.Log(cacheDebugMessage, Indent: indent[0]);
+            if (!Debug.DoDebug)
+            {
+                UnityEngine.Debug.Log(cacheDebugMessage);
+            }
             indent.Dispose();
             Debug.ResetIndent();
         }
@@ -517,7 +522,7 @@ namespace UD_FleshGolems.Capabilities
                         possibleProducts.Add(butcherableProduct);
                     }
                 }
-
+                _ = indent[1];
                 List<GameObjectBlueprint> harvestableProducts = new(GetProcessableCorpsesProducts(
                     CorpseBlueprint: corpseBlueprint.GetGameObjectBlueprint(),
                     ProcessableType: nameof(Harvestable),
@@ -838,22 +843,20 @@ namespace UD_FleshGolems.Capabilities
             List<CorpseCountsAs> corpseCountsAsList = new();
             foreach (CorpseBlueprint corpseBlueprint in GetCorpseBlueprints())
             {
-                Debug.Log(nameof(corpseBlueprint), corpseBlueprint.ToString(), indent[1]);
-
                 if (corpseBlueprint?.GetGameObjectBlueprint() is not GameObjectBlueprint corpseModel
                     || !corpseModel.TryGetStringPropertyOrTag(CORPSE_COUNTS_AS_PROPTAG, out string rawCountsAsParams))
                 {
-                    Debug.CheckNah("Blueprint null or doesn't have tag!", indent[2]);
+                    Debug.CheckNah(corpseBlueprint.ToString() + " has no model or doesn't have defined CountsAs!", indent[1]);
                     continue;
                 }
-                Debug.Log(nameof(rawCountsAsParams), rawCountsAsParams, indent[2]);
                 if (CorpseCountsAs.GetCorpseCountsAs(corpseBlueprint, rawCountsAsParams) is CorpseCountsAs corpseCoutnasAs
                     && corpseCoutnasAs.CountasAs != CountsAs.None)
                 {
-                    Debug.CheckYeh(corpseCoutnasAs.ToString(), indent[2]);
+                    Debug.CheckYeh(corpseBlueprint.ToString(), corpseCoutnasAs.ToString(), indent[1]);
                     corpseCountsAsList.Add(corpseCoutnasAs);
                 }
             }
+            _ = indent[0];
             foreach ((string name, string value) in GameObjectFactory.Factory?.GetBlueprintIfExists("UD_FleshGolems_PostLoad_CountsAs")?.Tags)
             {
                 if (name.GetGameObjectBlueprint() is var corpseModel
@@ -866,6 +869,7 @@ namespace UD_FleshGolems.Capabilities
                     corpseCountsAsList.Add(corpseCoutnasAs);
                 }
             }
+            _ = indent[0];
             foreach (CorpseCountsAs corpseCountsAs in corpseCountsAsList)
             {
                 List<EntityWeightCountsAs> countsAsModels = GetCorpseCountsAsEntityWeights(corpseCountsAs.CountasAs, corpseCountsAs.Paramaters);
@@ -875,7 +879,7 @@ namespace UD_FleshGolems.Capabilities
                     continue;
                 }
                 CorpseSheet corpseSheet = RequireCorpseSheet(corpseCountsAs.Blueprint);
-                Debug.CheckYeh(nameof(countsAsModels) + "." + nameof(countsAsModels.Count) + ": " + countsAsModels.Count, indent[2]);
+                Debug.CheckYeh(corpseSheet.GetCorpse().ToString(), nameof(countsAsModels) + "." + nameof(countsAsModels.Count) + ": " + countsAsModels.Count, indent[2]);
                 foreach ((EntityBlueprint entityBlueprint, int weight, CountsAs countsAs) in countsAsModels)
                 {
                     SetLoadingStatusCorpses(counter++ % 5 == 0);
