@@ -52,6 +52,7 @@
       HardMaterial="calcifications" />
     <tag Name="UD_FleshGolems_ExcludeFromCorpseQuest" Value="*noinherit" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="UD_FleshGolems ReanimationHelper FlipColors" />
   </object>
   
   <object Name="Robot Corpse" Load="Merge">

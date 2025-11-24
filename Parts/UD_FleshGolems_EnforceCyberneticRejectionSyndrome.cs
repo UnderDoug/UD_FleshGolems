@@ -143,15 +143,15 @@ namespace XRL.World.Parts
                 Debug.LogMethod(indent,
                     new Debug.ArgPair[]
                     {
-                        Debug.Arg(nameof(ImplantedEvent)),
-                        Debug.Arg(nameof(E.Actor), E.Actor?.DebugName ?? NULL),
+                        Debug.Arg(nameof(EnteredCellEvent)),
+                        Debug.Arg(nameof(E.Object), E.Object?.DebugName ?? NULL),
                     });
 
-                if (ParentObject != null && E.Actor == ParentObject)
+                if (ParentObject != null && E.Object == ParentObject)
                 {
                     AppliedInitial = true;
 
-                    foreach (GameObject installedCybernetic in E.Actor.GetInstalledCybernetics())
+                    foreach (GameObject installedCybernetic in E.Object.GetInstalledCybernetics())
                     {
                         ProcessCybernetic(installedCybernetic);
                     }

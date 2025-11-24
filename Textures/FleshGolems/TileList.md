@@ -17,31 +17,31 @@
 - Cragmensch (brothers)
 - Crystal (brothers)
 - Dawnglider (brothers)
-- Dog
-- Door
-- Dromad
-- Equine
-- Fish
-- Flower
-- Fractus
-- Frog
-- Fungus
-- Goat
-- Goatfolk	
-- Hexapodal Robot
-- Hindren
-- Hover
+- Dog (brothers)
+- Door (brothers)
+- Dromad (brothers)
+- Equine (brothers)
+- Fish (brothers)
+- Flower (brothers)
+- Fractus (brothers)
+- Frog (brothers)
+- Fungus (brothers)
+- Goat (brothers)
+- Goatfolk	(brothers)
+- Hexapodal Robot (brothers)
+- Hindren (brothers)
+- Hover Robot (brothers)
 - Human (ud)
-- Humanoid Robot
-- Infrastructure
-- Insect
-- Iron Maiden
-- Jelly
-- Lichen
-- Mopango
-- Mopango Charioteer
+- Humanoid Robot (brothers)
+- Infrastructure (brothers)
+- Insect (brothers)
+- Iron Maiden (brothers)
+- Jelly (brothers)
+- Lichen (brothers)
+- Mopango (brothers)
+- Mopango Charioteer (brothers)
 - Nest
-- Oddity
+- Oddity (brothers)
 - Ooze
 - Quadrupedal Robot
 - Reptile

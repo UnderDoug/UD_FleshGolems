@@ -36,6 +36,7 @@ namespace XRL.World.Parts
         public const string REANIMATED_ALT_TILE_PROPTAG = "UD_FleshGolems_AlternateTileFor:";
         public const string REANIMATED_TILE_PROPTAG = "UD_FleshGolems_PastLife_TileOverride";
         public const string REANIMATED_PART_EXCLUSIONS_PROPTAG = "UD_FleshGolems_Reanimated_PartExclusions";
+        public const string REANIMATED_FLIP_COLORS_PROPTAG = "UD_FleshGolems ReanimationHelper FlipColors";
 
 
         public const string CYBERNETICS_LICENSES = "CyberneticsLicenses";
@@ -1026,7 +1027,7 @@ namespace XRL.World.Parts
                                 && partExclusionsList.Contains(p.Name));
                     }
 
-                    AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint);
+                    AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint, HitpointsFallbackToMinimum: true);
 
                     Debug.Log("Pre-" + nameof(frankenCorpse.FinalizeStats) + " figures...", indent[2]);
                     foreach ((string statName, Statistic stat) in frankenCorpse?.Statistics)
@@ -1218,6 +1219,15 @@ namespace XRL.World.Parts
                                 frankenCorpse.Render.Tile = sourceTile;
                             }
                         }
+                    }
+                    if (frankenCorpse.HasTagOrStringProperty(REANIMATED_FLIP_COLORS_PROPTAG))
+                    {
+                        string newTileColor = "&" + frankenCorpse.Render.DetailColor;
+                        string newDetailColor = frankenCorpse.Render.TileColor;
+
+                        frankenCorpse.Render.TileColor = newTileColor;
+                        frankenCorpse.Render.ColorString = newTileColor;
+                        frankenCorpse.Render.DetailColor = newDetailColor[^1].ToString();
                     }
 
                     Debug.Log("Granting SourceBlueprint Natural Equipment...", indent[2]);

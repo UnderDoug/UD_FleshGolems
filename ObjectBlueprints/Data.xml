@@ -38,11 +38,33 @@
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Cragmensch" Value="FleshGolems/brothers_flesh_golem_cragmensch.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Crystal" Value="FleshGolems/brothers_flesh_golem_crystal.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Dawnglider" Value="FleshGolems/brothers_flesh_golem_dawnglider.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Dog" Value="FleshGolems/brothers_flesh_golem_dog.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Door" Value="FleshGolems/brothers_flesh_golem_door.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Dromad" Value="FleshGolems/brothers_flesh_golem_dromad.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Equine" Value="FleshGolems/brothers_flesh_golem_equine.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Fish" Value="FleshGolems/brothers_flesh_golem_fish.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Flower" Value="FleshGolems/brothers_flesh_golem_flower.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Fractus" Value="FleshGolems/brothers_flesh_golem_fractus.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Frog" Value="FleshGolems/brothers_flesh_golem_frog.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Fungus" Value="FleshGolems/brothers_flesh_golem_fungus.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Goat" Value="FleshGolems/brothers_flesh_golem_goat.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Goatfolk" Value="FleshGolems/brothers_flesh_golem_goatfolk.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Hexapodal Robot" Value="FleshGolems/brothers_flesh_golem_hexapodal_robot.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Hindren" Value="FleshGolems/brothers_flesh_golem_hindren.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Hover" Value="FleshGolems/brothers_flesh_golem_hover_robot.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Infrastructure" Value="FleshGolems/brothers_flesh_golem_infrastructure.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Insect" Value="FleshGolems/brothers_flesh_golem_insect.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Iron Maiden" Value="FleshGolems/brothers_flesh_golem_iron_maiden.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Jelly" Value="FleshGolems/brothers_flesh_golem_jelly.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Lichen" Value="FleshGolems/brothers_flesh_golem_lichen.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Mopango" Value="FleshGolems/brothers_flesh_golem_mopango.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Mopango Charioteer" Value="FleshGolems/brothers_flesh_golem_mopango_charioteer.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Oddity" Value="FleshGolems/brothers_flesh_golem_oddity.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Human" Value="FleshGolems/ud_flesh_golem_human.png" />
   </object>
   
   <object Name="UD_FleshGolems_PostLoad_CountsAs" Inherits="DataBucket">
-    <tag Name="Overglutted Dreamslynth" Value="OtherCorpse:Sated Dreamcrungle:0" />
+    <!--tag Name="Overglutted Dreamslynth" Value="OtherCorpse:Sated Dreamcrungle:0" /-->
   </object>
   
 </objects>

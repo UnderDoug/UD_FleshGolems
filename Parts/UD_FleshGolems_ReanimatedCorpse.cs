@@ -106,11 +106,7 @@ namespace XRL.World.Parts
             using Indent indent = new(1);
             Debug.LogCaller(indent, Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL));
 
-            if (ParentObject?.GetBlueprint() is GameObjectBlueprint parentBlueprint)
-            {
-                Debug.Log(parentBlueprint.Name, indent[1]);
-                ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(parentBlueprint));
-            }
+            ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
             Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[2]);
             foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
             {

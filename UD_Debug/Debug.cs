@@ -40,6 +40,10 @@ namespace UD_FleshGolems.Logging
             {
                 try
                 {
+                    if (!DoDebugSetting)
+                    {
+                        return false;
+                    }
                     if (TryGetCallingTypeAndMethod(out _, out MethodBase callingMethod)
                         && GetRegistry() is List<MethodRegistryEntry> registry
                         && registry.Contains(callingMethod))
@@ -275,6 +279,10 @@ namespace UD_FleshGolems.Logging
         }
         public static Indent LogCaller(string MessageAfter, Indent Indent = null, params ArgPair[] ArgPairs)
         {
+            if (!DoDebug)
+            {
+                return Indent;
+            }
             string output = "";
             if (!ArgPairs.IsNullOrEmpty())
             {
@@ -293,6 +301,10 @@ namespace UD_FleshGolems.Logging
 
         public static Indent LogMethod(string MessageAfter, Indent Indent = null, params ArgPair[] ArgPairs)
         {
+            if (!DoDebug)
+            {
+                return Indent;
+            }
             string output = "";
             if (!ArgPairs.IsNullOrEmpty())
             {

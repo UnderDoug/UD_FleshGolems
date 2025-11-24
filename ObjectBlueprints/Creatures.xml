@@ -294,6 +294,7 @@
   </object>
   <object Name="UD_FleshGolems Skybear Corpse" Inherits="Ancient Corpse">
     <part Name="Render" DisplayName="ancient human's corpse" ColorString="&amp;r" TileColor="&amp;r" DetailColor="M" />
+    <tag Name="UD_FleshGolems ReanimationHelper FlipColors" />
   </object>
   
   <!--
