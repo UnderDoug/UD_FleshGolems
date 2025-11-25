@@ -280,7 +280,7 @@ namespace XRL.World.Effects
 
         public void Suffer()
         {
-            if (Object == null)
+            if (Object == null || Object.CurrentCell == null)
             {
                 return;
             }
@@ -440,6 +440,7 @@ namespace XRL.World.Effects
             E.AddEntry(this, nameof(FlipRenderColors), FlipRenderColors);
             E.AddEntry(this, nameof(SourceObject), SourceObject?.DebugName ?? NULL);
             E.AddEntry(this, nameof(Damage), Damage);
+            E.AddEntry(this, nameof(CumulativeSuffering), CumulativeSuffering);
             E.AddEntry(this, nameof(ChanceToDamage), ChanceToDamage);
             E.AddEntry(this, nameof(ChanceToSmear), ChanceToSmear);
             E.AddEntry(this, nameof(ChanceToSpatter), ChanceToSpatter);
