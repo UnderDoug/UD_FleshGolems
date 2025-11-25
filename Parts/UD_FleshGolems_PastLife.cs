@@ -21,21 +21,22 @@ using XRL.World.Parts.Mutation;
 using XRL.World.Parts.Skill;
 using XRL.World.Anatomy;
 using XRL.World.ObjectBuilders;
+using XRL.World.Effects;
+using XRL.World.Capabilities;
 
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
 using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
+using UD_FleshGolems.Capabilities;
+using UD_FleshGolems.Capabilities.Necromancy;
+using UD_FleshGolems.Parts.PastLifeHelpers;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
-using UD_FleshGolems.Capabilities;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
-using UD_FleshGolems.Capabilities.Necromancy;
-using XRL.World.Effects;
-using XRL.World.Capabilities;
 
 namespace XRL.World.Parts
 {
@@ -52,126 +53,6 @@ namespace XRL.World.Parts
             Registry.Register(nameof(GetAnEntityForCorpseWeighted), true);
             Registry.Register(nameof(GetAnEntityForCorpse), true);
             return Registry;
-        }
-
-        [Serializable]
-        public struct DeathCoordinates : IComposite
-        {
-            public string DeathZone;
-            public int X;
-            public int Y;
-
-            public DeathCoordinates(string DeathZone, int X, int Y)
-                : this()
-            {
-                this.DeathZone = DeathZone;
-                this.X = X;
-                this.Y = Y;
-            }
-            public DeathCoordinates(string DeathZone, Location2D DeathLocation)
-                : this(DeathZone, DeathLocation.X, DeathLocation.Y) { }
-
-            public readonly Location2D GetLocation()
-                => new(X, Y);
-
-            public readonly ZoneRequest GetZoneRequest()
-                => new(DeathZone);
-
-            public readonly Cell GetCell()
-                => The.ZoneManager?.GetZone(DeathZone)?.GetCell(X, Y);
-
-            public static explicit operator Cell(DeathCoordinates Source)
-                => Source.GetCell();
-
-            public override readonly string ToString()
-                => DeathZone + "[" + X + "," + Y + "]";
-        }
-
-        [Serializable]
-        public struct MutationData : IComposite
-        {
-            public string Name;
-            public string Variant;
-            public int BaseLevel;
-            public int CapOverride;
-            public int RapidLevel;
-
-            public MutationData(BaseMutation BaseMutation, int RapidLevel)
-                : this()
-            {
-                Name = BaseMutation.GetMutationEntry().Name;
-                Variant = BaseMutation.Variant;
-                BaseLevel = BaseMutation.BaseLevel;
-                CapOverride = BaseMutation.CapOverride;
-                this.RapidLevel = RapidLevel;
-            }
-            public override readonly string ToString()
-                => Name + "/" + (Variant ?? "base") + ": (" + BaseLevel + "|" + CapOverride + "|" + RapidLevel + ")";
-
-            public bool GiveToEntity(GameObject Entity)
-            {
-                if (Entity == null
-                    || MutationFactory.GetMutationEntryByName(Name) is not MutationEntry entry)
-                {
-                    return false;
-                }
-                var entityMutations = Entity.RequirePart<Mutations>();
-                if (!entityMutations.HasMutation(entry.Class))
-                {
-                    entityMutations.AddMutation(entry.Class, Variant);
-                }
-                if (entityMutations.GetMutation(entry.Class) is not BaseMutation baseMutation)
-                {
-                    return false;
-                }
-                baseMutation.ChangeLevel(BaseLevel);
-                baseMutation.CapOverride = CapOverride;
-                baseMutation.SetRapidLevelAmount(RapidLevel);
-                return true;
-            }
-        }
-
-        [Serializable]
-        public class InstalledCybernetic : IComposite
-        {
-            public GameObject Cybernetic;
-            public string ImplantedLimbType;
-
-            protected InstalledCybernetic()
-            {
-                Cybernetic = null;
-                ImplantedLimbType = null;
-            }
-            public InstalledCybernetic(GameObject Cybernetic, string ImplantedPart)
-                : this()
-            {
-                this.Cybernetic = Cybernetic;
-                ImplantedLimbType = ImplantedPart;
-                using Indent indent = new(1);
-                Debug.Log(ImplantedPart ?? NULL, Cybernetic?.DebugName ?? NULL, indent);
-            }
-            public InstalledCybernetic(GameObject Cybernetic, BodyPart ImplantedPart)
-                : this(Cybernetic, ImplantedPart.Type) { }
-
-            public InstalledCybernetic(GameObject Cybernetic, Body ImplantedBody)
-                : this(Cybernetic, ImplantedBody.FindCybernetics(Cybernetic)) { }
-
-            public InstalledCybernetic(GameObject Cybernetic)
-                : this(Cybernetic, Cybernetic?.Implantee?.Body) { }
-
-            public InstalledCybernetic(KeyValuePair<GameObject, string> SourcePair)
-                : this(SourcePair.Key, SourcePair.Value) { }
-
-            public void Deconstruct(out GameObject Cybernetic, out string ImplantedLimbType)
-            {
-                Cybernetic = this.Cybernetic;
-                ImplantedLimbType = this.ImplantedLimbType;
-            }
-
-            public KeyValuePair<GameObject, string> GetKeyValuePair()
-                => new(Cybernetic, ImplantedLimbType);
-            public static InstalledCybernetic NewFromKeyValuePair(KeyValuePair<GameObject, string> SourcePair)
-                => new(SourcePair);
         }
 
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";

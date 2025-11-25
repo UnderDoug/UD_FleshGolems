@@ -11,6 +11,7 @@ using XRL.World.Parts.Mutation;
 using XRL.World.Parts.Skill;
 using XRL.World.ObjectBuilders;
 using XRL.World.Quests.GolemQuest;
+using XRL.World.Effects;
 using XRL.World.Skills;
 using XRL.World.AI;
 
@@ -20,11 +21,11 @@ using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdje
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
+using UD_FleshGolems.Parts.PastLifeHelpers;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
-using XRL.World.Effects;
 
 namespace XRL.World.Parts
 {
@@ -659,7 +660,7 @@ namespace XRL.World.Parts
         {
             return PastLife == null
                 || (corpse != null
-                    && PastLife?.DeathAddress is UD_FleshGolems_PastLife.DeathCoordinates deathAddress
+                    && PastLife?.DeathAddress is DeathCoordinates deathAddress
                     && deathAddress.DeathZone == corpse.CurrentZone?.ZoneID
                     && deathAddress.GetLocation() != corpse.CurrentCell.Location
                     && corpse.Physics is Physics corpsePhysics

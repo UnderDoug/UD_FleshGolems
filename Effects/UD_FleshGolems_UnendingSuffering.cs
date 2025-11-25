@@ -108,10 +108,10 @@ namespace XRL.World.Effects
             Initialize(Tier);
         }
 
-        public UD_FleshGolems_UnendingSuffering(GameObject Source, int Tier)
+        public UD_FleshGolems_UnendingSuffering(GameObject Source, int Tier, int TimesReanimated = 1)
             : this(Source)
         {
-            Initialize(Tier);
+            Initialize(Tier, TimesReanimated);
         }
 
         public UD_FleshGolems_UnendingSuffering(string Damage, int Duration, GameObject Source, int ChanceToSmear, int ChanceToSpatter)
@@ -149,7 +149,7 @@ namespace XRL.World.Effects
             return Stat.RollCached("1d2") == 1;
         }
 
-        public void Initialize(int Tier)
+        public void Initialize(int Tier, int TimesReanimated = 1)
         {
             Tier = Capabilities.Tier.Constrain(Stat.Random(Tier - 1, Tier + 1));
 
@@ -176,10 +176,9 @@ namespace XRL.World.Effects
                 Damage = "1d3-2";
             }
             ChanceToDamage = 3 * (1 + Math.Max(1, Tier));
-            if (Object.TryGetPart(out UD_FleshGolems_PastLife pastLife))
-            {
-                ChanceToDamage *= Math.Max(1, pastLife.TimesReanimated);
-            }
+
+            ChanceToDamage *= Math.Max(1, TimesReanimated);
+
             ChanceToSmear *= Tier;
             ChanceToSpatter *= Tier;
 

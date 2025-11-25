@@ -207,8 +207,12 @@ namespace XRL.World.Parts
                             Debug.Arg(nameof(unendingSuffering), unendingSuffering != null),
                             Debug.Arg(nameof(tier), tier),
                         });
-
-                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier), Reanimator);
+                    int timesReanimated = 1;
+                    if (ParentObject.TryGetPart(out UD_FleshGolems_PastLife pastLife))
+                    {
+                        timesReanimated = pastLife.TimesReanimated;
+                    }
+                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier, timesReanimated), Reanimator);
                 }
                 if (unendingSuffering.SourceObject != Reanimator)
                 {
