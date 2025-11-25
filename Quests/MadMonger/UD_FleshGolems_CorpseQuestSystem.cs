@@ -431,7 +431,7 @@ namespace XRL.World.QuestManagers
                 {
                     int processedRoll = (questStepRoll % 3) + 1;
                     CorpseTaxonomy questStepTaxonomy = (CorpseTaxonomy)processedRoll;
-                    Debug.Log(nameof(questStepTaxonomy) + " roll " + processedRoll, indent[1]);
+                    Debug.Log(nameof(questStepTaxonomy) + " roll " + processedRoll, Indent: indent[1]);
                     corpseQuestStep = (questStepTaxonomy) switch
                     {
                         CorpseTaxonomy.Species => CreateASpeciesCorpseQuestStep(),
@@ -687,7 +687,7 @@ namespace XRL.World.QuestManagers
         public static void DebugQuestSpecies_Wish()
         {
             using Indent indent = new();
-            Debug.Log("All species (included or not)...", indent);
+            Debug.Log("All species (included or not)...", Indent: indent);
             foreach (string species in GetAllSpecies())
             {
                 Debug.YehNah(species, SpeciesIsNotExcluded(species), indent[1]);
@@ -701,7 +701,7 @@ namespace XRL.World.QuestManagers
             {
                 if (AllFactions.Count > pickedOption)
                 {
-                    Debug.Log("All " + AllSpecies[pickedOption] + " corpses...", indent);
+                    Debug.Log("All " + AllSpecies[pickedOption] + " corpses...", Indent: indent);
                     foreach (string corpse in GetAllCorpsesOfSpecies(AllSpecies[pickedOption]))
                     {
                         Debug.CheckYeh(SpeciesIsNotExcluded(corpse) + corpse, indent[1]);
@@ -717,10 +717,10 @@ namespace XRL.World.QuestManagers
         public static void DebugQuestBases_Wish()
         {
             using Indent indent = new();
-            Debug.Log("All Base Corpse blueprints...", indent);
+            Debug.Log("All Base Corpse blueprints...", Indent: indent);
             foreach (string baseCorpse in GetAllBaseCorpses())
             {
-                Debug.Log(baseCorpse, indent[1]);
+                Debug.Log(baseCorpse, Indent: indent[1]);
             }
         }
         [WishCommand(Command = "UD_FleshGolems debug quest faction corpses")]
@@ -737,10 +737,10 @@ namespace XRL.World.QuestManagers
             {
                 if (AllFactions.Count < pickedOption)
                 {
-                    Debug.Log("All " + AllFactions[pickedOption] + " corpses...", indent);
+                    Debug.Log("All " + AllFactions[pickedOption] + " corpses...", Indent: indent);
                     foreach (string corpse in GetAllCorpsesOfSpecies(AllFactions[pickedOption]))
                     {
-                        Debug.Log(corpse, indent[1]);
+                        Debug.Log(corpse, Indent: indent[1]);
                     }
                 }
                 else
@@ -759,7 +759,7 @@ namespace XRL.World.QuestManagers
                 && !corpseQuestSystem.Steps.IsNullOrEmpty())
             {
                 Debug.LogMethod(indent,
-                    new Debug.ArgPair[]
+                    ArgPairs: new Debug.ArgPair[]
                     {
                         Debug.Arg(nameof(corpseQuestSystem.ParentQuest), corpseQuestSystem?.ParentQuest?.ID ?? NULL),
                         Debug.Arg(nameof(corpseQuestSystem.Quest), corpseQuestSystem?.Quest?.ID ?? NULL),

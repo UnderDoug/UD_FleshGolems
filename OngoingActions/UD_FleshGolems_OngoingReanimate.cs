@@ -109,10 +109,9 @@ namespace UD_FleshGolems
                 MetricsManager.LogPotentialModError(Utils.ThisMod, nameof(CorpseQueue) + " is null or empty, or " + nameof(Corpse) + " is null, or failed to Dequeu Corpse.");
                 return false;
             }
-            var SB = Event.NewStringBuilder();
-            var RB = GameText.StartReplace(SB);
-            RB.AddObject(Reanimator, "reanimator");
-            RB.AddObject(Corpse, "corpse");
+
+            SoundManager.PreloadClipSet("Sounds/StatusEffects/sfx_statusEffect_negativeVitality");
+            SoundManager.PreloadClipSet("Sounds/StatusEffects/sfx_statusEffect_positiveVitality");
 
             bool interrupt = false;
             string interruptBecause = null;

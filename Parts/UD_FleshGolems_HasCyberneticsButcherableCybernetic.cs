@@ -184,7 +184,7 @@ namespace XRL.World.Parts
             {
                 using Indent indent = new(1);
                 Debug.LogMethod(indent,
-                    new Debug.ArgPair[]
+                    ArgPairs: new Debug.ArgPair[]
                     {
                         Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
                         Debug.Arg(nameof(Cybernetics), "\"" + Cybernetics + "\""),
@@ -222,7 +222,7 @@ namespace XRL.World.Parts
             {
                 using Indent indent = new(1);
                 Debug.LogMethod(indent,
-                    new Debug.ArgPair[]
+                    ArgPairs: new Debug.ArgPair[]
                     {
                         Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
                         Debug.Arg(nameof(Table), "\"" + Table + "\""),
@@ -284,7 +284,7 @@ namespace XRL.World.Parts
             {
                 using Indent indent = new(1);
                 Debug.LogMethod(indent,
-                    new Debug.ArgPair[]
+                    ArgPairs: new Debug.ArgPair[]
                     {
                         Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
                         Debug.Arg(nameof(ForLimb), "\"" + ForLimb + "\""),

@@ -172,6 +172,9 @@ namespace UD_FleshGolems
 
         public override bool Continue()
         {
+            SoundManager.PreloadClipSet("Sounds/StatusEffects/sfx_statusEffect_negativeVitality");
+            SoundManager.PreloadClipSet("Sounds/StatusEffects/sfx_statusEffect_positiveVitality");
+
             bool interrupt = false;
             string interruptBecause = null;
             if (!interrupt && SummoningMutation == null)

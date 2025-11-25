@@ -148,7 +148,7 @@ namespace XRL.World.Parts
 
                 using Indent indent = new(1);
                 Debug.LogMethod(indent,
-                    new Debug.ArgPair[]
+                    ArgPairs: new Debug.ArgPair[]
                     {
                         Debug.Arg(nameof(E.Object), E.Object?.DebugName ?? NULL),
                         Debug.Arg(nameof(blueprint), blueprint ?? NULL),

@@ -9,6 +9,7 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_CorpseIconColor : IIconColorPart
     {
+        public const string SET_COLORS_PROPTAG = "UD_FleshGolems CorpseIconColor";
         public UD_FleshGolems_CorpseIconColor()
         {
             SetTileColor("&r");
@@ -32,16 +33,41 @@ namespace XRL.World.Parts
             : this(GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint)) { }
 
         public UD_FleshGolems_CorpseIconColor(GameObject Corpse, bool DoDetail = true)
-            : this(Corpse?.Render?.TileColor, Corpse?.Render?.DetailColor, DoDetail) { }
+            : this(Corpse?.Render?.TileColor, Corpse?.Render?.DetailColor, DoDetail)
+        {
+            Dictionary<string, string> setColors = null;
+            if (setColors.IsNullOrEmpty()
+                && Corpse.TryGetPart(out UD_FleshGolems_PastLife pastLife)
+                && pastLife.GetBlueprint()?.GetPropertyOrTag(SET_COLORS_PROPTAG) is string setColorsPropTagByPastLifeBlueprint)
+            {
+                setColors = setColorsPropTagByPastLifeBlueprint.CachedDictionaryExpansion();
+            }
+            if (setColors.IsNullOrEmpty()
+                && Corpse.GetPropertyOrTag(SET_COLORS_PROPTAG) is string setColorsPropTagByCorpseObject)
+            {
+                setColors = setColorsPropTagByCorpseObject.CachedDictionaryExpansion();
+            }
+            if (!setColors.IsNullOrEmpty())
+            {
+                if (setColors.ContainsKey("TileColor"))
+                {
+                    SetTileColor("&" + setColors["TileColor"][^1]);
+                }
+                if (DoDetail && setColors.ContainsKey("DetailColor"))
+                {
+                    SetDetailColor(setColors["DetailColor"][^1].ToString());
+                }
+            }
+        }
 
         public UD_FleshGolems_CorpseIconColor SetTileColor(string TileColor)
         {
             if (!TileColor.IsNullOrEmpty())
             {
                 TextForeground = TileColor;
-                TextForegroundPriority = 110;
+                TextForegroundPriority = 92;
                 TileForeground = TileColor;
-                TileForegroundPriority = 110;
+                TileForegroundPriority = 92;
             }
             return this;
         }
@@ -50,7 +76,7 @@ namespace XRL.World.Parts
             if (!DetailColor.IsNullOrEmpty())
             {
                 TileDetail = DetailColor;
-                TileDetailPriority = 100;
+                TileDetailPriority = 91;
             }
             return this;
         }

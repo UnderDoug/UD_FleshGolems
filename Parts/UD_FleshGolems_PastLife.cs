@@ -299,7 +299,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new();
             Debug.LogMethod(indent[1],
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(CorpseBlueprint),
                     Debug.Arg(nameof(Include0Weight), Include0Weight),
@@ -353,7 +353,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new();
             Debug.LogCaller(indent[1],
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(PastLife), PastLife?.DebugName ?? NULL),
                 });
@@ -470,7 +470,7 @@ namespace XRL.World.Parts
                         Brain pastBrain = PastLife.Brain;
                         try
                         {
-                            Debug.Log("Storing " + nameof(bIAJ_Brain.PartyLeader) + "...", indent[2]);
+                            Debug.Log("Storing " + nameof(bIAJ_Brain.PartyLeader) + "...", Indent: indent[2]);
                             bIAJ_Brain.PartyLeader = pastBrain.PartyLeader;
                             Debug.Log(nameof(bIAJ_Brain.PartyLeader), bIAJ_Brain.PartyLeader?.DebugName ?? NULL, indent[3]);
                         }
@@ -481,12 +481,12 @@ namespace XRL.World.Parts
                         }
                         try
                         {
-                            Debug.Log("Storing " + nameof(bIAJ_Brain.PartyMembers) + "...", indent[2]);
+                            Debug.Log("Storing " + nameof(bIAJ_Brain.PartyMembers) + "...", Indent: indent[2]);
                             foreach ((int flags, PartyMember partyMember) in pastBrain.PartyMembers)
                             {
                                 PartyMember partyMemberCopy = new(partyMember.Reference, partyMember.Flags);
                                 bIAJ_Brain.PartyMembers.TryAdd(partyMemberCopy.Reference.ID, partyMemberCopy);
-                                Debug.Log(partyMemberCopy.Reference?.Object?.DebugName ?? NULL, indent[3]);
+                                Debug.Log(partyMemberCopy.Reference?.Object?.DebugName ?? NULL, Indent: indent[3]);
                             }
                         }
                         catch (Exception x)
@@ -496,7 +496,7 @@ namespace XRL.World.Parts
                         }
                         try
                         {
-                            Debug.Log("Storing " + nameof(bIAJ_Brain.Opinions) + "...", indent[2]);
+                            Debug.Log("Storing " + nameof(bIAJ_Brain.Opinions) + "...", Indent: indent[2]);
                             foreach ((int opinionSubjectID, OpinionList opinionList) in pastBrain.Opinions)
                             {
                                 OpinionList opinionsCopy = new();
@@ -563,7 +563,7 @@ namespace XRL.World.Parts
                         }
                         bIAJ_Corpse.CorpseChance = 100;
                         Debug.Log(
-                            nameof(bIAJ_Corpse.CorpseBlueprint), bIAJ_Corpse.CorpseBlueprint + "(" + 
+                            nameof(bIAJ_Corpse.CorpseBlueprint), bIAJ_Corpse.CorpseBlueprint + " (" + 
                             bIAJ_Corpse.CorpseChance + ")",
                             indent[2]);
 
@@ -620,21 +620,33 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(Genotype), Genotype ?? NULL, indent[2]);
                         Debug.Log(nameof(Subtype), Subtype ?? NULL, indent[2]);
 
-                        Mutations bIAJ_Mutations = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Mutations>());
-                        Debug.Log(nameof(MutationsList) + "(BaseLevel|CapOverride|RapidLevel)", indent[2]);
-                        foreach (BaseMutation pastMutation in PastLife.RequirePart<Mutations>().ActiveMutationList)
+                        Mutations bIAJ_Mutations = BrainInAJar.AddPart(PastLife.RequirePart<Mutations>());
+                        Debug.Log(nameof(MutationsList) + "(BaseLevel|CapOverride|RapidLevel)", Indent: indent[2]);
+                        foreach (BaseMutation bIAJ_Mutation in bIAJ_Mutations.ActiveMutationList)
                         {
-                            MutationData mutationData = new(pastMutation, pastMutation.GetRapidLevelAmount());
+                            // bIAJ_Mutations.AddMutation(pastMutation.GetMutationClass(), pastMutation.Variant, pastMutation.Level);
+                            /*
+                            if (bIAJ_Mutations.GetMutation(bIAJ_Mutation.Name) is BaseMutation bIAJ_Mutation)
+                            {
+                                if (bIAJ_Mutation.GetRapidLevelAmount() is int pastRapidLevel
+                                    && pastRapidLevel > 0)
+                                {
+                                    bIAJ_Mutation.SetRapidLevelAmount(pastRapidLevel);
+                                }
+                                bIAJ_Mutation.CapOverride = bIAJ_Mutation.CapOverride;
+                            }
+                            */
+                            MutationData mutationData = new(bIAJ_Mutation, bIAJ_Mutation.GetRapidLevelAmount());
                             MutationsList.Add(mutationData);
-                            Debug.Log(mutationData.ToString(), indent[3]);
+                            Debug.Log(mutationData.ToString(), Indent: indent[3]);
                         }
 
-                        Skills bIAJ_Skills = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Skills>());
+                        Skills bIAJ_Skills = BrainInAJar.AddPart(PastLife.RequirePart<Skills>());
                         List<BaseSkill> pastSkills = PastLife.GetPartsDescendedFrom<BaseSkill>();
                         Debug.Log(nameof(pastSkills), pastSkills?.Count ?? 0, indent[2]);
                         foreach (BaseSkill baseSkill in pastSkills)
                         {
-                            Debug.Log(baseSkill.Name, indent[3]);
+                            Debug.Log(baseSkill.Name, Indent: indent[3]);
                             // There's a bug in v1.04 with how Skills serializes its BaseSkills
                             // that means the only way to guarantee copying them is via the parts list.
                             if (!bIAJ_Skills.SkillList.Contains(baseSkill))
@@ -647,10 +659,10 @@ namespace XRL.World.Parts
                         foreach (Effect pastEffect in PastLife.Effects)
                         {
                             BrainInAJar.Effects.Add(pastEffect.DeepCopy(BrainInAJar, null));
-                            Debug.Log(pastEffect.DisplayNameStripped, indent[3]);
+                            Debug.Log(pastEffect.DisplayNameStripped, Indent: indent[3]);
                         }
 
-                        Debug.Log(nameof(InstalledCybernetics) + "...", indent[2]);
+                        Debug.Log(nameof(InstalledCybernetics) + "...", Indent: indent[2]);
                         if (PastLife?.Body is Body pastBody
                             && pastBody.GetInstalledCyberneticsReadonly() is List<GameObject> installedCybernetics
                             && InstalledCybernetics.IsNullOrEmpty())
@@ -726,7 +738,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
                     Debug.Arg(nameof(PastLife), PastLife != null),
@@ -743,17 +755,6 @@ namespace XRL.World.Parts
                 && PastLife?.Brain is Brain pastBrain)
             {
                 FrankenCorpse.Brain.Allegiance ??= new();
-                /*
-                if (AutoAct.Action is OngoingAction ongoingAction
-                    && ongoingAction.GetType().InheritsFrom(typeof(UD_FleshGolems_OngoingReanimate)))
-                {
-                    FrankenCorpse.SetIntProperty("UD_FLeshGolems Deferred PastLife Hostility", 1);
-                }
-                else
-                {
-                    FrankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
-                }
-                */
                 FrankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
                 FrankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
                 if ((!UD_FleshGolems_Reanimated.HasWorldGenerated || ExcludedFromDynamicEncounters))
@@ -804,7 +805,7 @@ namespace XRL.World.Parts
             string newIdentity;
             using Indent indent = new();
             Debug.LogMethod(indent[1],
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(PastLife.ParentObject), PastLife.ParentObject?.DebugName ?? NULL),
                     Debug.Arg(nameof(oldIdentity), oldIdentity ?? NULL),
@@ -869,7 +870,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
                     Debug.Arg(nameof(PastLife), PastLife != null),
@@ -901,7 +902,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
                     Debug.Arg(nameof(PastLife), PastLife != null),
@@ -958,7 +959,10 @@ namespace XRL.World.Parts
                 {
                     continue;
                 }
-                targetBodyPart.AddPart(bodyPart?.DeepCopy(DestinationBody?.ParentObject, DestinationBody, null, DeepCopyMapInventory));
+                BodyPart newParentPart = DestinationBody.GetParts()
+                    ?.Where(bp => bp.Native && !bp.Extrinsic && bp.Type == bodyPart.Type)
+                    ?.GetRandomElementCosmetic();
+                targetBodyPart.AddPart(bodyPart?.DeepCopy(DestinationBody?.ParentObject, DestinationBody, newParentPart, DeepCopyMapInventory));
             }
             return true;
         }
@@ -991,7 +995,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
                     Debug.Arg(nameof(PastLife), PastLife != null),
@@ -1030,7 +1034,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
                     Debug.Arg(nameof(PastLife), PastLife != null),
@@ -1044,12 +1048,13 @@ namespace XRL.World.Parts
                 || PastLife.Mutations == null
                 || PastLife.Mutations.ActiveMutationList.IsNullOrEmpty())
             {
+                Debug.CheckNah("PastLife, Mutations, or ActiveMutations missing.", indent[1]);
                 return any;
             }
             FrankenMutations = FrankenCorpse.RequirePart<Mutations>();
-            foreach (BaseMutation baseMutation in PastLife.Mutations.MutationList)
+            foreach (BaseMutation baseMutation in PastLife.Mutations.ActiveMutationList)
             {
-                BaseMutation baseMutationToAdd = baseMutation.DeepCopy(FrankenCorpse, null) as BaseMutation;
+                BaseMutation baseMutationToAdd = baseMutation;
                 bool alreadyHaveMutation = FrankenMutations.HasMutation(baseMutation.Name);
                 if (alreadyHaveMutation)
                 {
@@ -1057,6 +1062,7 @@ namespace XRL.World.Parts
                 }
                 if (Exclude != null && Exclude(baseMutationToAdd))
                 {
+                    Debug.CheckNah(baseMutationToAdd?.DebugName, "Excluded", indent[1]);
                     continue;
                 }
                 if (baseMutationToAdd.CapOverride == -1)
@@ -1065,14 +1071,14 @@ namespace XRL.World.Parts
                 }
                 if (!alreadyHaveMutation)
                 {
-                    FrankenMutations.AddMutation(baseMutationToAdd, baseMutation.Level);
+                    FrankenMutations.AddMutation(baseMutationToAdd.Name, baseMutationToAdd.Variant, baseMutation.Level);
                 }
                 else
                 {
                     baseMutationToAdd.BaseLevel += baseMutation.Level;
                 }
                 FrankenMutations.AddMutation(baseMutationToAdd, baseMutation.BaseLevel);
-                Debug.Log(baseMutationToAdd.DebugName, baseMutationToAdd.Level, indent[1]);
+                Debug.CheckYeh(baseMutationToAdd.DebugName, baseMutationToAdd.Level, indent[1]);
                 any = true;
             }
             return any;
@@ -1092,7 +1098,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
                     Debug.Arg(nameof(PastLife), PastLife != null),
@@ -1138,7 +1144,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
                     Debug.Arg(nameof(PastLife), PastLife != null),
@@ -1237,14 +1243,14 @@ namespace XRL.World.Parts
                 Debug.Log(nameof(DeathAddress), DeathAddress, indent);
 
                 Debug.Log(nameof(Brain), Brain != null, indent);
-                Debug.Log(nameof(Brain.Allegiance), indent[2]);
+                Debug.Log(nameof(Brain.Allegiance), Indent: indent[2]);
                 foreach ((string faction, int rep) in Brain?.Allegiance ?? new())
                 {
                     Debug.Log(faction, rep, indent[3]);
                 }
                 if (Brain != null)
                 {
-                    Debug.Log("bools", indent[2]);
+                    Debug.Log("bools", Indent: indent[2]);
                     Traverse brainWalk = new(Brain);
                     foreach (string field in brainWalk.Fields() ?? new())
                     {
@@ -1273,7 +1279,7 @@ namespace XRL.World.Parts
                 Debug.Log(nameof(Skills), Skills?.SkillList?.Count, indent[1]);
                 foreach (BaseSkill baseSkill in Skills?.SkillList)
                 {
-                    Debug.Log(baseSkill.Name, indent[2]);
+                    Debug.Log(baseSkill.Name, Indent: indent[2]);
                 }
                 Debug.Log(nameof(InstalledCybernetics), new List<InstalledCybernetic>(InstalledCybernetics)?.Count, indent[1]);
                 foreach ((GameObject cybernetic, string implantedLimb) in InstalledCybernetics)

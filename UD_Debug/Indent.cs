@@ -26,8 +26,8 @@ namespace UD_FleshGolems.Logging
             Char = ' ';
             if (Debug.HaveIndents())
             {
-                BaseValue = Debug.LastIndent.LastValue;
-                LastValue = Debug.LastIndent.LastValue;
+                BaseValue = Debug.LastIndent.CapIndent();
+                LastValue = Debug.LastIndent.CapIndent();
                 Factor = Debug.LastIndent.Factor;
                 Char = Debug.LastIndent.Char;
             }
@@ -44,7 +44,7 @@ namespace UD_FleshGolems.Logging
         public Indent(int Offset) 
             : this() 
         {
-            BaseValue += Offset;
+            BaseValue = CapIndent(BaseValue + Offset);
             LastValue = BaseValue;
         }
         public Indent(Indent Source, bool Store)
@@ -63,7 +63,7 @@ namespace UD_FleshGolems.Logging
         {
             get
             {
-                if (Debug.DoDebug)
+                if (Debug.GetDoDebug())
                 {
                     LastValue = CapIndent(BaseValue + Indent);
                 }

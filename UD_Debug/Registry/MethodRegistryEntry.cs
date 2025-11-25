@@ -5,10 +5,10 @@ using System.Text;
 
 namespace UD_FleshGolems.Logging
 {
-    public struct MethodRegistryEntry : IEquatable<MethodBase>
+    public readonly struct MethodRegistryEntry : IEquatable<MethodBase>
     {
-        public MethodBase MethodBase;
-        public bool Value;
+        private readonly MethodBase MethodBase;
+        private readonly bool Value;
 
         public MethodRegistryEntry(MethodBase MethodBase, bool Value)
             : this()
@@ -24,35 +24,31 @@ namespace UD_FleshGolems.Logging
         }
 
         public readonly string GetTypeAndMethodName()
-        {
-            return MethodBase.DeclaringType.Name + "." + MethodBase.Name;
-        }
-        public override readonly string ToString() => GetTypeAndMethodName() + ": " + Value;
+            => MethodBase.DeclaringType.Name + "." + MethodBase.Name;
 
-        public static implicit operator bool(MethodRegistryEntry Operand)
-        {
-            return Operand.Value;
-        }
+        public override readonly string ToString() 
+            => GetTypeAndMethodName() + ": " + Value;
+
+        public MethodBase GetMethod()
+            => MethodBase;
+
+        public bool GetValue()
+            => Value;
+
+        public static explicit operator bool(MethodRegistryEntry Operand)
+            => Operand.Value;
 
         public static explicit operator MethodBase(MethodRegistryEntry Operand)
-        {
-            return Operand.MethodBase;
-        }
+            => Operand.MethodBase;
 
         public static explicit operator MethodRegistryEntry(MethodBase Operand)
-        {
-            return new(Operand, true);
-        }
+            => new(Operand, true);
 
         public static explicit operator KeyValuePair<MethodBase, bool>(MethodRegistryEntry Operand)
-        {
-            return new(Operand.MethodBase, Operand.Value);
-        }
+            => new(Operand.MethodBase, Operand.Value);
 
         public static explicit operator MethodRegistryEntry(KeyValuePair<MethodBase, bool> Operand)
-        {
-            return new(Operand.Key, Operand.Value);
-        }
+            => new(Operand.Key, Operand.Value);
 
         public override readonly bool Equals(object obj)
         {
@@ -79,9 +75,7 @@ namespace UD_FleshGolems.Logging
         }
 
         public readonly bool Equals(MethodBase other)
-        {
-            return other.Equals(MethodBase);
-        }
+            => other.Equals(MethodBase);
 
         public static bool operator ==(MethodRegistryEntry Operand1, MethodBase Operand2) => Operand1.MethodBase == Operand2;
         public static bool operator !=(MethodRegistryEntry Operand1, MethodBase Operand2) => !(Operand1 == Operand2);

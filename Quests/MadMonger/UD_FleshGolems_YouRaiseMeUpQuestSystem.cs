@@ -57,7 +57,7 @@ namespace XRL.World.Quests
         public override bool HandleEvent(QuestStepFinishedEvent E)
         {
             using Indent indent = new();
-            Debug.Log(E.Quest + ", " + E.Step.ID + " Finished", indent);
+            Debug.Log(E.Quest + ", " + E.Step.ID + " Finished", Indent: indent);
 
             if (E.Quest == Quest
                 && E.Step is QuestStep thisStep

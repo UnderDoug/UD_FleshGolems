@@ -14,6 +14,7 @@ using UD_FleshGolems;
 using static UD_FleshGolems.Options;
 using static UD_FleshGolems.Utils;
 using static UD_FleshGolems.Const;
+using System.Runtime.CompilerServices;
 
 namespace UD_FleshGolems.Logging
 {
@@ -34,7 +35,7 @@ namespace UD_FleshGolems.Logging
         }
 
         private static bool DoDebugSetting => DebugEnableLogging && !SilenceLogging;
-        public static bool DoDebug
+        private static bool DoDebug
         {
             get
             {
@@ -46,9 +47,9 @@ namespace UD_FleshGolems.Logging
                     }
                     if (TryGetCallingTypeAndMethod(out _, out MethodBase callingMethod)
                         && GetRegistry() is List<MethodRegistryEntry> registry
-                        && registry.Contains(callingMethod))
+                        && registry.TryGetValue(callingMethod, out bool registryMethodValue))
                     {
-                        if (!registry.GetValue(callingMethod))
+                        if (!registryMethodValue)
                         {
                             if (!DebugEnableAllLogging)
                             {
@@ -64,22 +65,23 @@ namespace UD_FleshGolems.Logging
                 return DoDebugSetting;
             }
         }
-        private static List<MethodRegistryEntry> _DoDebugRegistry = new();
-        public static List<MethodRegistryEntry> DoDebugRegistry => GetRegistry();
+
+        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        private static List<MethodRegistryEntry> _DoDebugRegistry = null;
+        public static List<MethodRegistryEntry> DoDebugRegistry => _DoDebugRegistry ??= GetRegistry();
         public static void Register(
             Type Class,
             string MethodName,
             bool Value,
             List<MethodRegistryEntry> Registry,
-            out List<MethodRegistryEntry> ReturnRegistry)
-        {
-            Register(Class?.GetMethod(MethodName), Value, Registry, out ReturnRegistry);
-        }
+            ref List<MethodRegistryEntry> ReturnRegistry)
+            => Register(Class?.GetMethod(MethodName), Value, Registry, ref ReturnRegistry);
         public static void Register(
             MethodBase MethodBase,
             bool Value,
             List<MethodRegistryEntry> Registry,
-            out List<MethodRegistryEntry> ReturnRegistry)
+            ref List<MethodRegistryEntry> ReturnRegistry)
         {
             string declaringType = MethodBase?.DeclaringType?.Name;
             UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(Register) + "(" + declaringType + "." + MethodBase.Name + ": " + Value + ")");
@@ -88,11 +90,11 @@ namespace UD_FleshGolems.Logging
         }
         public static void Register(this List<MethodRegistryEntry> Registry, Type Class, string MethodName, bool Value)
         {
-            Register(Class, MethodName, Value, Registry, out _DoDebugRegistry);
+            Register(Class, MethodName, Value, Registry, ref _DoDebugRegistry);
         }
         public static void Register(this List<MethodRegistryEntry> Registry, MethodBase MethodBase, bool Value)
         {
-            Register(MethodBase, Value, Registry, out _DoDebugRegistry);
+            Register(MethodBase, Value, Registry, ref _DoDebugRegistry);
         }
         public static void Register(this List<MethodRegistryEntry> Registry, string MethodName, bool Value)
         {
@@ -101,16 +103,17 @@ namespace UD_FleshGolems.Logging
             {
                 if (methodBase.Name == MethodName)
                 {
-                    Register(methodBase, Value, Registry, out _DoDebugRegistry);
+                    Register(methodBase, Value, Registry, ref _DoDebugRegistry);
                 }
             }
         }
         public static void Register(this List<MethodRegistryEntry> Registry, MethodRegistryEntry RegisterEntry)
         {
-            Register((MethodBase)RegisterEntry, RegisterEntry, Registry, out _DoDebugRegistry);
+            Register(RegisterEntry.GetMethod(), RegisterEntry.GetValue(), Registry, ref _DoDebugRegistry);
         }
         public static List<MethodRegistryEntry> GetRegistry()
         {
+            _DoDebugRegistry ??= new();
             if (_GotRegistry)
             {
                 return _DoDebugRegistry;
@@ -130,6 +133,30 @@ namespace UD_FleshGolems.Logging
             }
             _GotRegistry = true;
             return _DoDebugRegistry;
+        }
+
+        [ModSensitiveCacheInit]
+        [GameBasedCacheInit]
+        public static void CacheDoDebugRegistry()
+        {
+            GetRegistry();
+        }
+
+        public static bool GetDoDebug(string CallingMethod = null)
+        {
+            if (CallingMethod.IsNullOrEmpty())
+            {
+                return DoDebug;
+            }
+            if (GetRegistry() is List<MethodRegistryEntry> doDebugRegistry
+                && !doDebugRegistry.Any(m => m.GetMethod().Name == CallingMethod))
+            {
+                return DoDebugSetting;
+            }
+            else
+            {
+                return DoDebug;
+            }
         }
 
         [ModSensitiveStaticCache( CreateEmptyInstance = false )]
@@ -200,23 +227,26 @@ namespace UD_FleshGolems.Logging
             }
             return null;
         }
-        public static bool TryGetCallingTypeAndMethod(out Type CallingType, out MethodBase Method)
+        public static bool TryGetCallingTypeAndMethod(out Type CallingType, out MethodBase CallingMethod)
         {
             CallingType = null;
-            Method = null;
+            CallingMethod = null;
             try
             {
-                StackFrame[] stackFrames = new StackTrace().GetFrames();
-                int stackTraceCount = Math.Min(stackFrames.Length, 8);
-                for (int i = 0; i < stackTraceCount; i++)
+                Type[] debugTypes = new Type[2]
                 {
-                    if (stackFrames[i].GetMethod() is MethodBase methodBase
+                    typeof(UD_FleshGolems.Logging.Debug),
+                    typeof(UD_FleshGolems.Logging.Indent),
+                };
+                StackTrace stackTrace = new();
+                for (int i = 0; i < 8 && stackTrace?.GetFrame(i) is StackFrame stackFrameI; i++)
+                {
+                    if (stackFrameI?.GetMethod() is MethodBase methodBase
                         && methodBase.DeclaringType is Type declaringType
-                        && !declaringType.Equals(typeof(UD_FleshGolems.Logging.Debug))
-                        && !declaringType.Equals(typeof(UD_FleshGolems.Logging.Indent)))
+                        && !declaringType.EqualsAny(debugTypes))
                     {
                         CallingType = declaringType;
-                        Method = methodBase;
+                        CallingMethod = methodBase;
                         return true;
                     }
                 }
@@ -228,9 +258,9 @@ namespace UD_FleshGolems.Logging
             return false;
         }
 
-        public static Indent Log<T>(string Field, T Value, Indent Indent = null)
+        public static Indent Log<T>(string Field, T Value, Indent Indent = null, [CallerMemberName] string CallingMethod = "")
         {
-            if (!DoDebug)
+            if (!GetDoDebug(CallingMethod))
             {
                 return Indent;
             }
@@ -244,8 +274,8 @@ namespace UD_FleshGolems.Logging
             UnityEngine.Debug.Log(Indent.ToString() + output);
             return Indent;
         }
-        public static Indent Log(string Message, Indent Indent = null)
-            => Log(Message, (string)null, Indent);
+        public static Indent Log(string Message, Indent Indent = null, [CallerMemberName] string CallingMethod = "")
+            => Log(Message, (string)null, Indent, CallingMethod);
 
         public readonly struct ArgPair
         {
@@ -262,24 +292,26 @@ namespace UD_FleshGolems.Logging
                 ? Value?.ToString() 
                 : Name + ": " + Value?.ToString();
 
-            public Indent Log(Indent Indent)
-                => Debug.Log(Name, Value, Indent ?? LastIndent);
-            public Indent Log()
-                => Log(null);
-            public Indent Log(int Offset)
-                => Log(LastIndent[Offset]);
+            public Indent Log(Indent Indent, [CallerMemberName] string CallingMethod = "")
+                => Debug.Log(Name, Value, Indent ?? LastIndent, CallingMethod);
+            public Indent Log([CallerMemberName] string CallingMethod = "")
+                => Log(null, CallingMethod);
+            public Indent Log(int Offset, [CallerMemberName] string CallingMethod = "")
+                => Log(LastIndent[Offset], CallingMethod);
         }
         public static ArgPair Arg(string Name, object Value)
-        {
-            return new ArgPair(Name, Value);
-        }
+            => new(Name, Value);
+
         public static ArgPair Arg(object Value)
+            => Arg(null, Value);
+
+        public static Indent LogCaller(
+            string MessageAfter,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
         {
-            return Arg(null, Value);
-        }
-        public static Indent LogCaller(string MessageAfter, Indent Indent = null, params ArgPair[] ArgPairs)
-        {
-            if (!DoDebug)
+            if (!GetDoDebug(CallingMethod))
             {
                 return Indent;
             }
@@ -292,16 +324,21 @@ namespace UD_FleshGolems.Logging
             {
                 output += " " + MessageAfter;
             }
-            return Log(GetCallingTypeAndMethod() + output, Indent);
+            return Log(GetCallingTypeAndMethod() + output, Indent, CallingMethod);
         }
-        public static Indent LogCaller(Indent Indent = null, params ArgPair[] ArgPairs)
-        {
-            return LogCaller(null, Indent, ArgPairs);
-        }
+        public static Indent LogCaller(
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
+            => LogCaller(null, Indent, CallingMethod, ArgPairs);
 
-        public static Indent LogMethod(string MessageAfter, Indent Indent = null, params ArgPair[] ArgPairs)
+        public static Indent LogMethod(
+            string MessageAfter,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
         {
-            if (!DoDebug)
+            if (!GetDoDebug(CallingMethod))
             {
                 return Indent;
             }
@@ -314,14 +351,51 @@ namespace UD_FleshGolems.Logging
             {
                 output += " " + MessageAfter;
             }
-            return Log(GetCallingMethod() + output, Indent);
+            return Log(CallingMethod + output, Indent, CallingMethod);
+            // return Log(GetCallingMethod() + output, Indent);
         }
-        public static Indent LogMethod(Indent Indent = null, params ArgPair[] ArgPairs)
+        public static Indent LogMethod(
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
+            => LogMethod(null, Indent, CallingMethod, ArgPairs);
+
+        public static Indent LogArgs(
+            string MessageBefore,
+            string MessageAfter,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
         {
-            return LogMethod(null, Indent, ArgPairs);
+            string output = "";
+            if (!MessageBefore.IsNullOrEmpty())
+            {
+                output += MessageBefore;
+            }
+            if (!ArgPairs.IsNullOrEmpty())
+            {
+                output += ArgPairs.ToList().ConvertAll(ap => ap.ToString()).Join();
+            }
+            if (!MessageAfter.IsNullOrEmpty())
+            {
+                output += MessageAfter;
+            }
+            return Log(output, Indent, CallingMethod);
         }
 
-        public static Indent YehNah(string Message, object Value, bool? Good = null, Indent Indent = null)
+        public static Indent LogArgs(
+            string MessageBefore,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
+            => LogArgs(MessageBefore, null, Indent, CallingMethod, ArgPairs);
+
+        public static Indent YehNah(
+            string Message,
+            object Value,
+            bool? Good = null,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
         {
             string append;
             if (Good != null)
@@ -339,28 +413,40 @@ namespace UD_FleshGolems.Logging
             {
                 append = "[-] ";
             }
-            return Log(append + Message, Value, Indent);
+            return Log(append + Message, Value, Indent, CallingMethod);
         }
-        public static Indent YehNah(string Message, bool? Good = null, Indent Indent = null)
-        {
-            return YehNah(Message, null, Good, Indent);
-        }
-        public static Indent CheckYeh(string Message, object Value, Indent Indent = null)
-        {
-            return YehNah(Message, Value, true, Indent);
-        }
-        public static Indent CheckYeh(string Message, Indent Indent = null)
-        {
-            return YehNah(Message, null, true, Indent);
-        }
-        public static Indent CheckNah(string Message, object Value, Indent Indent = null)
-        {
-            return YehNah(Message, Value, false, Indent);
-        }
-        public static Indent CheckNah(string Message, Indent Indent = null)
-        {
-            return YehNah(Message, null, false, Indent);
-        }
+        public static Indent YehNah(
+            string Message,
+            bool?Good = null,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, null, Good, Indent, CallingMethod);
+
+        public static Indent CheckYeh(
+            string Message,
+            object Value,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, Value, true, Indent, CallingMethod);
+
+        public static Indent CheckYeh(
+            string Message,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, null, true, Indent, CallingMethod);
+
+        public static Indent CheckNah(
+            string Message,
+            object Value,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, Value, false, Indent, CallingMethod);
+
+        public static Indent CheckNah(
+            string Message,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, null, false, Indent, CallingMethod);
 
         public static void MetricsManager_LogCallingModError(object Message)
         {

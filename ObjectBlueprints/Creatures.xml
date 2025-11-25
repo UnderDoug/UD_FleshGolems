@@ -32,6 +32,9 @@
     <property Name="Story" Value="UD_FleshGolems Jofo Qudwufo" />
     <part Name="ConversationScript" ConversationID="UD_FleshGolems Jofo Qudwufo" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Jofo Qudwufo" />
+    <skill Name="Pistol" />
+    <skill Name="Pistol_SteadyHands" />
+    <skill Name="Pistol_Akimbo" />
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
@@ -64,6 +67,7 @@
     <tag Name="Kernelmethod_BetterPetSelector_Description" Value="A mound of wet fur and rotting flesh, uncontent with remaining still." />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="UD_FleshGolems PastLife CountsAs" Value="UD_FleshGolems Late Jofo Qudwufo" />
+    <tag Name="UD_FleshGolems ReanimationHelper GenerateSourceInventory" />
   </object>
   
   <object Name="UD_FleshGolems Mad Monger" Inherits="Gutsmonger">
@@ -78,15 +82,25 @@
     <mutation Name="HeightenedAgility" Level="10" />
     <mutation Name="SociallyRepugnant" />
     <mutation Name="Psychometry" Level="10" />
-    <intproperty Name="CyberneticRejectionSyndromeModifier" Value="75" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Mad Monger Corpse" CorpseChance="100" />
-    <part Name="GenericInventoryRestocker" Table="UD_FleshGolems Mad Monger Stock Table" Chance="85" />
-    <part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands" />
     <part Name="ConversationScript" ConversationID="UD_FleshGolems Mad Monger" />
-    <part Name="UD_FleshGolems_EnforceCyberneticRejectionSyndrome" />
+    <part Name="GenericInventoryRestocker" Table="UD_FleshGolems Mad Monger Stock Table" Chance="75" />
+    <intproperty Name="CyberneticRejectionSyndromeModifier" Value="95" />
+    <part Name="CyberneticsHasImplants" Implants="BiologicalIndexer@face,PalladiumElectrodeposits@head,RapidReleaseFingerFlexors@hands,FireSuppressionSystem@back,AnomalyFumigator@body" />
+    <part Name="UD_FleshGolems_EnforceCyberneticRejectionSyndrome" CostStackMultiplier="1.5" />
     <removepart Name="HasGuards" />
     <tag Name="Gender" Value="male" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <skill Name="Pistol" />
+    <skill Name="Pistol_SteadyHands" />
+    <skill Name="Pistol_Akimbo" />
+    <skill Name="Pistol_WeakSpotter" />
+    <skill Name="Pistol_SlingAndRun" />
+    <skill Name="Pistol_DisarmingShot" />
+    <skill Name="Pistol_DeadShot" />
+    <skill Name="Pistol_EmptyTheClips" />
+    <skill Name="Pistol_FastestGun" />
+    <part Name="UD_FleshGolems_DifficultyEvaluationAdjustment" AdjustRating="5" MinRating="5" />
     <inventoryobject Blueprint="CyberneticsCreditWedge3" Number="1-2" IntProperties="WontSell:1" />
     <inventoryobject Blueprint="Di-Thermo Beam" Number="2" IntProperties="AlwaysEquipAsWeapon:1" />
     <inventoryobject Blueprint="Pocketed Lab Coat" Number="1" IntProperties="AlwaysEquipAsArmor:1" />
@@ -288,18 +302,20 @@
   
   <object Name="SkybearClone" Load="Merge">
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Skybear Corpse" />
+    <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::M;;DetailColor::Y" />
   </object>
   <object Name="Skybear" Load="Merge">
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Skybear Corpse" />
+    <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::M;;DetailColor::Y" />
   </object>
   <object Name="UD_FleshGolems Skybear Corpse" Inherits="Ancient Corpse">
     <part Name="Render" DisplayName="ancient human's corpse" ColorString="&amp;r" TileColor="&amp;r" DetailColor="M" />
-    <tag Name="UD_FleshGolems ReanimationHelper FlipColors" />
+    <tag Name="UD_FleshGolems ReanimationHelper SetColors" Value="TileColor::M;;DetailColor::Y" />
   </object>
   
   <!--
   
-  Base Game Corpse Reassignments
+  Base Game Corpse Reassignments/Adjustments
   
   -->
   <object Name="Chute Crab" Load="Merge">
@@ -324,6 +340,14 @@
 
   <object Name="BaseSlynth" Load="Merge">
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Slynth Corpse" CorpseChance="20" />
+  </object>
+
+  <object Name="Albino ape" Load="Merge">
+    <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::Y;;DetailColor::w" />
+  </object>
+
+  <object Name="Ogre Ape" Load="Merge">
+    <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::W;;DetailColor::w" />
   </object>
 
   <!--

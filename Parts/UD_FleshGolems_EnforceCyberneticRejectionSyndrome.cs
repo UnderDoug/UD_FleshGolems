@@ -16,9 +16,12 @@ namespace XRL.World.Parts
     {
         public bool AppliedInitial;
 
+        public double CostStackMultiplier;
+
         public UD_FleshGolems_EnforceCyberneticRejectionSyndrome()
         {
             AppliedInitial = false;
+            CostStackMultiplier = 1.0;
         }
 
         public static int GetCyberneticRejectionSyndromeChance(GameObject Implantee, GameObject InstalledCybernetic, int Cost, string Slots)
@@ -48,11 +51,11 @@ namespace XRL.World.Parts
             return chance;
         }
 
-        public static bool ProcessCybernetic(GameObject Implantee, GameObject InstalledCybernetic)
+        public static bool ProcessCybernetic(GameObject Implantee, GameObject InstalledCybernetic, double CostStackMultiplier = 1.0)
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(Implantee), Implantee?.DebugName ?? NULL),
                     Debug.Arg(nameof(InstalledCybernetic), InstalledCybernetic?.DebugName ?? NULL),
@@ -85,7 +88,8 @@ namespace XRL.World.Parts
                 return false;
             }
             Debug.CheckYeh(nameof(InstalledCybernetic) + " (" + cRS_Key + ")", indent[1]);
-            return Implantee.ForceApplyEffect(new CyberneticRejectionSyndrome(cyberneticsBaseItemPart.Cost));
+            int cost = (int)Math.Ceiling(cyberneticsBaseItemPart.Cost * CostStackMultiplier);
+            return Implantee.ForceApplyEffect(new CyberneticRejectionSyndrome(cost));
         }
         public bool ProcessCybernetic(GameObject InstalledCybernetic)
         {
@@ -96,7 +100,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(Implantee), Implantee?.DebugName ?? NULL),
                     Debug.Arg(nameof(InstalledCybernetic), InstalledCybernetic?.DebugName ?? NULL),
@@ -141,7 +145,7 @@ namespace XRL.World.Parts
             {
                 using Indent indent = new(1);
                 Debug.LogMethod(indent,
-                    new Debug.ArgPair[]
+                    ArgPairs: new Debug.ArgPair[]
                     {
                         Debug.Arg(nameof(EnteredCellEvent)),
                         Debug.Arg(nameof(E.Object), E.Object?.DebugName ?? NULL),
@@ -163,7 +167,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(ImplantedEvent)),
                     Debug.Arg(nameof(E.Implantee), E.Implantee?.DebugName ?? NULL),
@@ -180,7 +184,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(UnimplantedEvent)),
                     Debug.Arg(nameof(E.Implantee), E.Implantee?.DebugName ?? NULL),

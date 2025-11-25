@@ -35,20 +35,20 @@ namespace UD_FleshGolems
             }
             return Registry;
         }
-        public static bool Contains(this List<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
+        public static bool Contains(this ICollection<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
         {
-            foreach (MethodBase methodBase in DebugRegistry)
+            foreach ((MethodBase method, bool _) in DebugRegistry)
             {
-                if (MethodBase.Equals(methodBase))
+                if (MethodBase.Equals(method))
                 {
                     return true;
                 }
             }
             return false;
         }
-        public static bool GetValue(this List<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
+        public static bool GetValue(this ICollection<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
         {
-            foreach ((MethodBase methodBase, bool value )in DebugRegistry)
+            foreach ((MethodBase methodBase, bool value) in DebugRegistry)
             {
                 if (MethodBase.Equals(methodBase))
                 {
@@ -57,6 +57,27 @@ namespace UD_FleshGolems
             }
             throw new ArgumentOutOfRangeException(nameof(MethodBase), "Not found.");
         }
+        public static bool TryGetValue(
+            this ICollection<MethodRegistryEntry> DebugRegistry,
+            MethodBase MethodBase,
+            out bool Value)
+        {
+            Value = default;
+            if (DebugRegistry.Contains(MethodBase))
+            {
+                Value = DebugRegistry.GetValue(MethodBase);
+                return true;
+            }
+            return false;
+        }
+
+        public static bool EqualsAny<T>(this T Value, params T[] args)
+            => !args.IsNullOrEmpty()
+            && !args.Where(t => t.Equals(Value)).IsNullOrEmpty();
+
+        public static bool EqualsAll<T>(this T Value, params T[] args)
+            => !args.IsNullOrEmpty()
+            && args.Where(t => t.Equals(Value)).Count() == args.Length;
 
         public static bool InheritsFrom(this Type T, Type Type, bool IncludeSelf = true)
             => (IncludeSelf && T == Type) 
@@ -740,7 +761,7 @@ namespace UD_FleshGolems
             int rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
 
             Debug.LogMethod(indent[1],
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(rolledAmount), rolledAmount),
                     Debug.Arg(nameof(maxWeight), maxWeight)
@@ -778,6 +799,23 @@ namespace UD_FleshGolems
             where T : struct, Enum
         {
             return EnumEntry.ToString().Pluralize();
+        }
+
+        public static int SetMinValue(ref this int Int, int Min)
+        {
+            if (Int < Min)
+            {
+                Int = Min;
+            }
+            return Int;
+        }
+        public static int SetMaxValue(ref this int Int, int Max)
+        {
+            if (Int > Max)
+            {
+                Int = Max;
+            }
+            return Int;
         }
     }
 }

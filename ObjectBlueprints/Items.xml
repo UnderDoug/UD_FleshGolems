@@ -2,7 +2,7 @@
 <objects>
   <object Name="Corpse" Load="Merge">
     <part Name="UD_FleshGolems_CorpseReanimationHelper" />
-    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Corpse Corpse" CorpseChance="100" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Corpse Corpse" CorpseChance="0" />
     <tag Name="Animatable" />
     <removetag Name="Tier" />
     <builder Name="Animated" ChanceOneIn="3000" />
@@ -52,7 +52,7 @@
       HardMaterial="calcifications" />
     <tag Name="UD_FleshGolems_ExcludeFromCorpseQuest" Value="*noinherit" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
-    <tag Name="UD_FleshGolems ReanimationHelper FlipColors" />
+    <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::K;;DetailColor::w" />
   </object>
   
   <object Name="Robot Corpse" Load="Merge">
@@ -232,6 +232,7 @@
       Skin="plate"
       HarshAdjective="broken,cracked,chipped"
       HardMaterial="rock,mineral" />
+    <tag Name="ExcludeFromDynamicEncounters" />
   </object>
 
   <object Name="UD_FleshGolems Chute Crab Corpse" Inherits="Crab Corpse">
@@ -280,6 +281,7 @@
 
   <object Name="Black Puma Haunch" Load="Merge">
     <tag Name="UD_FleshGolems PastLife CountsAs" Value="Species:cat:10" />
+    <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::K;;DetailColor::w" />
   </object>
 
   <object Name="Sated Dreamcrungle" Load="Merge">

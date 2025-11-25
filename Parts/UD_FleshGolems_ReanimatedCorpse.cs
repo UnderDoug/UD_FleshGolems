@@ -16,6 +16,7 @@ using UD_FleshGolems.Logging;
 using static UD_FleshGolems.Const;
 using System.Linq;
 using XRL.Rules;
+using Genkit;
 
 namespace XRL.World.Parts
 {
@@ -73,6 +74,13 @@ namespace XRL.World.Parts
             }
             set
             {
+                using Indent indent = new(1);
+                Debug.LogCaller(indent, 
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(_Reanimator), _Reanimator?.DebugName ?? NULL),
+                        Debug.Arg(nameof(value), value?.DebugName ?? NULL),
+                    });
                 if (_Reanimator != value)
                 {
                     _Reanimator = value;
@@ -104,14 +112,16 @@ namespace XRL.World.Parts
         public override void Attach()
         {
             using Indent indent = new(1);
-            Debug.LogCaller(indent, Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL));
+            Debug.LogCaller(indent, ArgPairs: Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL));
 
             ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
             Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[2]);
             foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
             {
-                Debug.Log(nameof(partToRemove), partToRemove, indent[3]);
-                ParentObject?.RemovePart(partToRemove);
+                Debug.YehNah(
+                    Message: partToRemove,
+                    Good: ParentObject?.RemovePart(partToRemove),
+                    Indent: indent[3]);
             }
             Debug.Log(nameof(BleedLiquid), BleedLiquid ?? NULL, indent[2]);
             if (BleedLiquid.IsNullOrEmpty())
@@ -122,6 +132,9 @@ namespace XRL.World.Parts
                     GetBleedLiquidEvent.GetFor(ParentObject),
                     indent[3]);
             }
+
+            HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
+
             AttemptToSuffer();
             base.Attach();
         }
@@ -189,17 +202,22 @@ namespace XRL.World.Parts
                 {
                     int tier = GetTierFromLevel(frankenCorpse);
                     Debug.LogMethod(indent[1],
-                        Debug.Arg(nameof(unendingSuffering), unendingSuffering != null), 
-                        Debug.Arg(nameof(tier), tier));
+                        ArgPairs: new Debug.ArgPair[]
+                        {
+                            Debug.Arg(nameof(unendingSuffering), unendingSuffering != null),
+                            Debug.Arg(nameof(tier), tier),
+                        });
 
                     return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier), Reanimator);
                 }
-                else
-                if (unendingSuffering?.SourceObject != Reanimator)
+                if (unendingSuffering.SourceObject != Reanimator)
                 {
                     Debug.LogMethod(indent[1],
-                        Debug.Arg(nameof(unendingSuffering.SourceObject), unendingSuffering?.SourceObject?.DebugName ?? NULL),
-                        Debug.Arg(nameof(Reanimator), Reanimator?.DebugName ?? NULL));
+                        ArgPairs: new Debug.ArgPair[]
+                        {
+                            Debug.Arg(nameof(unendingSuffering.SourceObject), unendingSuffering.SourceObject?.DebugName ?? NULL),
+                            Debug.Arg(nameof(Reanimator), Reanimator?.DebugName ?? NULL),
+                        });
                     unendingSuffering.SourceObject = Reanimator;
                     return true;
                 }
@@ -212,6 +230,30 @@ namespace XRL.World.Parts
             && defaultBehavior.GetBlueprint().InheritsFrom("UD_FleshGolems Ragged Weapon")
             && defaultBehavior.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedNaturalWeaponPart)
             && raggedNaturalWeaponPart.Wielder == null;
+
+        public static void HaltGreaterVoiderLairCreation(GameObject FrankenCorpse, GameObject Reanimator)
+        {
+            if (FrankenCorpse.TryGetPart(out GreaterVoider greaterVoider))
+            {
+                greaterVoider.createdLair = true;
+                greaterVoider.lairZone = FrankenCorpse?.CurrentZone?.ZoneID;
+                Location2D lairOrigin = null;
+                if (FrankenCorpse?.CurrentCell is Cell currentCell)
+                {
+                    lairOrigin = currentCell.Location;
+                }
+                else
+                if (Reanimator.CurrentCell is Cell reanimatorCell)
+                {
+                    lairOrigin = reanimatorCell.Location;
+                }
+                else
+                {
+                    lairOrigin = new(Stat.RandomCosmetic(0, 79), Stat.RandomCosmetic(0, 24));
+                }
+                greaterVoider.lairRect = new(lairOrigin.X - 1, lairOrigin.Y - 1, lairOrigin.X + 1, lairOrigin.Y + 1);
+            }
+        }
 
         public override bool WantEvent(int ID, int cascade)
         {
@@ -251,11 +293,12 @@ namespace XRL.World.Parts
             if (ParentObject?.Body is Body frankenBody
                 && frankenBody == E.Body)
             {
-                Debug.LogCaller(null, new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(DecorateDefaultEquipmentEvent)),
-                    Debug.Arg(ParentObject?.DebugName ?? NULL),
-                });
+                Debug.LogCaller(
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(DecorateDefaultEquipmentEvent)),
+                        Debug.Arg(ParentObject?.DebugName ?? NULL),
+                    });
                 foreach (BodyPart bodyPart in frankenBody.LoopParts(BodyPartHasRaggedNaturalWeapon))
                 {
                     if (bodyPart.DefaultBehavior is GameObject defaultBehavior
@@ -275,6 +318,15 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(GetBleedLiquidEvent E)
         {
+            if (BleedLiquidPortions == null || BleedLiquid.IsNullOrEmpty())
+            {
+                Debug.LogMethod(
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(GetBleedLiquidEvent)),
+                        Debug.Arg(ParentObject?.DebugName ?? NULL),
+                    });
+            }
             if (BleedLiquidPortions == null)
             {
                 string baseBlood = E.BaseLiquid ?? E.Actor.GetStringProperty("BleedLiquid", "blood-1000");

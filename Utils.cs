@@ -55,11 +55,14 @@ namespace UD_FleshGolems
                     ?.Where(mi => mi != ThisMod && mi.Assembly != null)
                     ?.ToDictionary(mi => mi.Assembly, mi => mi);
 
-                StackFrame[] stackFrames = new StackTrace().GetFrames();
-                int stackTraceCount = Math.Min(stackFrames.Length, 12);
-                for (int i = 0; i < stackTraceCount; i++)
+                if (modAssemblies.IsNullOrEmpty())
                 {
-                    if (stackFrames[i].GetMethod() is MethodBase methodBase
+                    return null;
+                }
+                StackTrace stackTrace = new();
+                for (int i = 0; i < 12 && stackTrace?.GetFrame(i) is StackFrame stackFrameI; i++)
+                {
+                    if (stackFrameI?.GetMethod() is MethodBase methodBase
                         && methodBase.DeclaringType is Type declaringType
                         && modAssemblies.ContainsKey(declaringType.Assembly))
                     {
@@ -219,12 +222,12 @@ namespace UD_FleshGolems
                 && multixTag.CachedCommaExpansion() is List<string> multiTagList)
             {
                 List<string> andList = new();
-                Debug.Log(nameof(multiTagList) + " Entries:", indent[2]);
+                Debug.Log(nameof(multiTagList) + " Entries:", Indent: indent[2]);
                 for (int i = 0; i < count; i++)
                 {
                     if (multiTagList.GetRandomElementCosmeticExcluding(Exclude: s => andList.Contains(s)) is string entry)
                     {
-                        Debug.Log(entry, indent[3]);
+                        Debug.Log(entry, Indent: indent[3]);
                         andList.Add(entry);
                     }
                     else
@@ -250,7 +253,7 @@ namespace UD_FleshGolems
         {
             using Indent indent = new();
             Debug.LogCaller(indent[1],
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(Context.Target), Context?.Target?.DebugName ?? NULL),
                 });
@@ -272,27 +275,27 @@ namespace UD_FleshGolems
                 {
                     case 0:
                     case 1:
-                        Debug.Log("Uh-oh!", indent[3]);
+                        Debug.Log("Uh-oh!", Indent: indent[3]);
                         break;
 
                     case 2:
                         output = UD_xTagSingle(Context);
-                        Debug.Log(nameof(UD_xTagSingle), indent[3]);
+                        Debug.Log(nameof(UD_xTagSingle), Indent: indent[3]);
                         break;
 
                     case 3:
                         output = UD_xTagMulti(Context);
-                        Debug.Log(nameof(UD_xTagMulti), indent[3]);
+                        Debug.Log(nameof(UD_xTagMulti), Indent: indent[3]);
                         break;
 
                     default: // 4
                         output = UD_xTagMultiU(Context);
-                        Debug.Log(nameof(UD_xTagMultiU), indent[3]);
+                        Debug.Log(nameof(UD_xTagMultiU), Indent: indent[3]);
                         break;
                 }
                 if (Context.Capitalize)
                 {
-                    Debug.Log(nameof(Context.Capitalize), indent[3]);
+                    Debug.Log(nameof(Context.Capitalize), Indent: indent[3]);
                     output = output.Capitalize();
                 }
             }
@@ -397,7 +400,7 @@ namespace UD_FleshGolems
         {
             using Indent indent = new();
             Debug.LogCaller(indent[1],
-                new Debug.ArgPair[]
+                ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(TableName), TableName),
                     Debug.Arg(nameof(n), n),
@@ -412,7 +415,7 @@ namespace UD_FleshGolems
                 {
                     foreach (PopulationResult populationResult in populationResults)
                     {
-                        Debug.Log(populationResult.Blueprint, indent[2]);
+                        Debug.Log(populationResult.Blueprint, Indent: indent[2]);
                         returnList.AddUnique(populationResult.Blueprint);
                     }
                 }
@@ -464,6 +467,9 @@ namespace UD_FleshGolems
             }
             return "{{" + BulletColor + "|" + Bullet + "}}";
         }
+
+        public static string GetMutationClassByName(string Name)
+            => MutationFactory.GetMutationEntryByName(Name)?.Class;
 
         /* 
          * 

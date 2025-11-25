@@ -180,7 +180,7 @@ namespace UD_FleshGolems.Capabilities
             double timeDuration = duration.Minutes > 0 ? duration.TotalMinutes : duration.TotalSeconds;
             string cacheDebugMessage = "Corpse Cache took " + timeDuration.Things(timeUnit) + ".";
             Debug.Log(cacheDebugMessage, Indent: indent[0]);
-            if (!Debug.DoDebug)
+            if (!Debug.GetDoDebug())
             {
                 UnityEngine.Debug.Log(cacheDebugMessage);
             }
@@ -191,21 +191,15 @@ namespace UD_FleshGolems.Capabilities
         public bool TryGetCorpseSheet(string Corpse, out CorpseSheet CorpseSheet)
         {
             Necronomicon ??= new();
-            if (Necronomicon[Corpse] is CorpseSheet cachedCorpseSheet)
-            {
-                CorpseSheet = cachedCorpseSheet;
-                return true;
-            }
-            CorpseSheet = null;
-            return false;
+            return Necronomicon.TryGetValue(Corpse, out CorpseSheet);
         }
         public CorpseSheet RequireCorpseSheet(string Blueprint)
         {
             using Indent indent = new();
-            Debug.LogMethod(indent[1], Debug.Arg(Blueprint));
+            Debug.LogMethod(indent[1], ArgPairs: Debug.Arg(Blueprint));
             if (!TryGetCorpseSheet(Blueprint, out CorpseSheet corpseSheet))
             {
-                Debug.Log("No existing CorpseSheet entry; creating new one...", indent[2]);
+                Debug.Log("No existing CorpseSheet entry; creating new one...", Indent: indent[2]);
                 corpseSheet = new CorpseSheet(new CorpseBlueprint(Blueprint));
                 Necronomicon[Blueprint] = corpseSheet;
                 if (!corpseSheet.InheritedCorpsesInitialized)
@@ -215,7 +209,7 @@ namespace UD_FleshGolems.Capabilities
             }
             else
             {
-                Debug.Log("CorpseSheet entry retreived...", indent[2]);
+                Debug.Log("CorpseSheet entry retreived...", Indent: indent[2]);
             }
             return corpseSheet;
         }
@@ -231,28 +225,22 @@ namespace UD_FleshGolems.Capabilities
         public bool TryGetEntityBluprint(string Entity, out EntityBlueprint EntityBlueprint)
         {
             EntityBlueprints ??= new();
-            if (EntityBlueprints[Entity] is EntityBlueprint cachedEntityBlueprint)
-            {
-                EntityBlueprint = cachedEntityBlueprint;
-                return true;
-            }
-            EntityBlueprint = null;
-            return false;
+            return EntityBlueprints.TryGetValue(Entity, out EntityBlueprint);
         }
         public EntityBlueprint RequireEntityBlueprint(string Blueprint)
         {
             using Indent indent = new();
-            Debug.LogCaller(indent[1], Debug.Arg(Blueprint));
+            Debug.LogCaller(indent[1], ArgPairs: Debug.Arg(Blueprint));
 
             if (!TryGetEntityBluprint(Blueprint, out EntityBlueprint entityBlueprint))
             {
-                Debug.Log("No existing entity entry; creating new one...", indent[2]);
+                Debug.Log("No existing entity entry; creating new one...", Indent: indent[2]);
                 entityBlueprint = new EntityBlueprint(Blueprint);
                 EntityBlueprints[Blueprint] = entityBlueprint;
             }
             else
             {
-                Debug.Log("Entity entry retreived...", indent[2]);
+                Debug.Log("Entity entry retreived...", Indent: indent[2]);
             }
             return entityBlueprint;
         }
@@ -273,7 +261,7 @@ namespace UD_FleshGolems.Capabilities
             int counter = 0;
             foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList.Where(IsReanimatableCorpse))
             {
-                Debug.Log(blueprint.Name, indent[1]);
+                Debug.Log(blueprint.Name, Indent: indent[1]);
                 SetLoadingStatusCorpses(counter++ % 100 == 0);
                 RequireCorpseSheet(blueprint.Name);
             }
@@ -438,7 +426,7 @@ namespace UD_FleshGolems.Capabilities
         {
             using Indent indent = new();
             Debug.LogMethod(indent[1],
-                new ArgPair[] 
+                ArgPairs: new ArgPair[] 
                 {
                     Debug.Arg(CorpseBlueprint.Name),
                     Debug.Arg(ProcessableType),
@@ -464,13 +452,13 @@ namespace UD_FleshGolems.Capabilities
             }
 
             List<GameObjectBlueprint> outputList = new();
-            Debug.Log(processedProductValue, indent[1]);
+            Debug.Log(processedProductValue, Indent: indent[1]);
             if (!processedProductValue.StartsWith('@'))
             {
                 if (processedProductValue.GetGameObjectBlueprint() is GameObjectBlueprint processedProductValueBlueprint
                     && (ProductFilter == null || ProductFilter(processedProductValueBlueprint)))
                 {
-                    Debug.Log(processedProductValue, indent[2]);
+                    Debug.Log(processedProductValue, Indent: indent[2]);
                     if (processedProductValueBlueprint.IsCorpse())
                     {
                         Debug.CheckYeh("Added", indent[3]);
@@ -515,10 +503,10 @@ namespace UD_FleshGolems.Capabilities
 
                 if (!butcherableProducts.IsNullOrEmpty())
                 {
-                    Debug.Log(nameof(butcherableProducts), indent[2]);
+                    Debug.Log(nameof(butcherableProducts), Indent: indent[2]);
                     foreach (GameObjectBlueprint butcherableProduct in butcherableProducts)
                     {
-                        Debug.Log(butcherableProduct.Name, indent[3]);
+                        Debug.Log(butcherableProduct.Name, Indent: indent[3]);
                         possibleProducts.Add(butcherableProduct);
                     }
                 }
@@ -530,10 +518,10 @@ namespace UD_FleshGolems.Capabilities
 
                 if (!harvestableProducts.IsNullOrEmpty())
                 {
-                    Debug.Log(nameof(harvestableProducts), indent[2]);
+                    Debug.Log(nameof(harvestableProducts), Indent: indent[2]);
                     foreach (GameObjectBlueprint harvestableProduct in harvestableProducts)
                     {
-                        Debug.Log(harvestableProduct.Name, indent[3]);
+                        Debug.Log(harvestableProduct.Name, Indent: indent[3]);
                         possibleProducts.Add(harvestableProduct);
                     }
                 }
@@ -595,8 +583,8 @@ namespace UD_FleshGolems.Capabilities
             List<string> countsAsParamaters)
         {
             using Indent indent = new();
-            Debug.LogMethod(indent, 
-                new ArgPair[]
+            Debug.LogMethod(indent,
+                ArgPairs: new ArgPair[]
                 {
                     Debug.Arg(nameof(countsAs), countsAs),
                     Debug.Arg(nameof(countsAsParamaters), "\"" + countsAsParamaters.Join() + "\""),
@@ -905,7 +893,7 @@ namespace UD_FleshGolems.Capabilities
                 foreach (CorpseBlueprint inheritedCorpse in corpseSheet.GetInheritedCorpseList())
                 {
                     SetLoadingStatusCorpses(counter++ % 5 == 0);
-                    Debug.Log("Adding EntityWeights for " + nameof(inheritedCorpse) + " " + inheritedCorpse.ToString(), indent[2]);
+                    Debug.Log("Adding EntityWeights for " + nameof(inheritedCorpse) + " " + inheritedCorpse.ToString(), Indent: indent[2]);
                     RequireCorpseSheet(inheritedCorpse).AddInheritedEntities(corpseSheetEntityWeightList);
                 }
             }

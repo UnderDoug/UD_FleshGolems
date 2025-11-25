@@ -383,7 +383,7 @@ namespace XRL.World.Parts.Mutation
         public bool ProcessReanimateOne(GameObject TargetCorpse = null)
         {
             using Indent indent = new();
-            Debug.LogMethod(indent[0], Debug.Arg(nameof(TargetCorpse), TargetCorpse?.DebugName));
+            Debug.LogMethod(indent[0], ArgPairs: Debug.Arg(nameof(TargetCorpse), TargetCorpse?.DebugName));
 
             if (TargetCorpse == null
                 && IsReanimatableCorpse(ParentObject?.Target))
@@ -451,7 +451,7 @@ namespace XRL.World.Parts.Mutation
         public bool ProcessAssessCorpse(GameObject TargetCorpse = null)
         {
             using Indent indent = new();
-            Debug.LogMethod(indent[0], Debug.Arg(nameof(TargetCorpse), TargetCorpse?.DebugName));
+            Debug.LogMethod(indent[0], ArgPairs: Debug.Arg(nameof(TargetCorpse), TargetCorpse?.DebugName));
 
             if (TargetCorpse == null
                 && IsReanimatableCorpse(ParentObject?.Target))
@@ -510,8 +510,8 @@ namespace XRL.World.Parts.Mutation
                         pastLifeName = Grammar.A(pastLife.BaseDisplayName);
                     }
                     corpseListLabel += (" was\n" + pastLifeName.PrependBullet() + "\n\n" +
-                        "but, if =subject.subjective= =subject.verb:wasn't:afterpronoun=...\n" +
-                        "=ud_nbsp:8=...=subject.subjective= ").StartReplace().ToString();
+                        "but, if =subject.subjective= =subject.verb:wasn't:afterpronoun=... " +
+                        "=subject.subjective= ").StartReplace().ToString();
                 }
                 corpseListLabel += " might have been any of the following:";
 
@@ -533,7 +533,7 @@ namespace XRL.World.Parts.Mutation
         public bool ProcessPowerWordKill(GameObject TargetCreature = null)
         {
             using Indent indent = new();
-            Debug.LogMethod(indent[0], Debug.Arg(nameof(TargetCreature), TargetCreature?.DebugName));
+            Debug.LogMethod(indent[0], ArgPairs: Debug.Arg(nameof(TargetCreature), TargetCreature?.DebugName));
             if (TargetCreature == null
                 && HasCorpse(ParentObject.Target))
             {
