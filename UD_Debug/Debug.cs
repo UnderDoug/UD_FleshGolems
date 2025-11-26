@@ -279,6 +279,8 @@ namespace UD_FleshGolems.Logging
 
         public readonly struct ArgPair
         {
+            public static ArgPair Empty = default;
+
             private readonly string Name;
             private readonly object Value;
             public ArgPair(string Name, object Value)
@@ -298,6 +300,25 @@ namespace UD_FleshGolems.Logging
                 => Log(null, CallingMethod);
             public Indent Log(int Offset, [CallerMemberName] string CallingMethod = "")
                 => Log(LastIndent[Offset], CallingMethod);
+
+            public static bool operator ==(ArgPair Operand1, ArgPair Operand2)
+            {
+                if (Operand1.Equals(Empty) != Operand2.Equals(Empty))
+                {
+                    return false;
+                }
+                if (Operand1.Name != Operand2.Name)
+                {
+                    return false;
+                }
+                if ((Operand1.Value != null) != (Operand2.Value != null))
+                {
+                    return false;
+                }
+                return Operand1.Value == Operand2.Value;
+            }
+            public static bool operator !=(ArgPair Operand1, ArgPair Operand2)
+                => !(Operand1 == Operand2);
         }
         public static ArgPair Arg(string Name, object Value)
             => new(Name, Value);
@@ -318,7 +339,15 @@ namespace UD_FleshGolems.Logging
             string output = "";
             if (!ArgPairs.IsNullOrEmpty())
             {
-                output += "(" + ArgPairs.ToList().ConvertAll(ap => ap.ToString()).Join() + ")";
+                List<string> joinableArgs = ArgPairs.ToList()
+                    ?.Where(ap => ap != ArgPair.Empty)
+                    ?.ToList()
+                    ?.ConvertAll(ap => ap.ToString())
+                    ?.ToList();
+                if (!joinableArgs.IsNullOrEmpty())
+                {
+                    output += "(" + joinableArgs?.Join() + ")";
+                }
             }
             if (!MessageAfter.IsNullOrEmpty())
             {
@@ -345,7 +374,15 @@ namespace UD_FleshGolems.Logging
             string output = "";
             if (!ArgPairs.IsNullOrEmpty())
             {
-                output += "(" + ArgPairs.ToList().ConvertAll(ap => ap.ToString()).Join() + ")";
+                List<string> joinableArgs = ArgPairs.ToList()
+                    ?.Where(ap => ap != ArgPair.Empty)
+                    ?.ToList()
+                    ?.ConvertAll(ap => ap.ToString())
+                    ?.ToList();
+                if (!joinableArgs.IsNullOrEmpty())
+                {
+                    output += "(" + joinableArgs?.Join() + ")";
+                }
             }
             if (!MessageAfter.IsNullOrEmpty())
             {
@@ -374,7 +411,15 @@ namespace UD_FleshGolems.Logging
             }
             if (!ArgPairs.IsNullOrEmpty())
             {
-                output += ArgPairs.ToList().ConvertAll(ap => ap.ToString()).Join();
+                List<string> joinableArgs = ArgPairs.ToList()
+                    ?.Where(ap => ap != ArgPair.Empty)
+                    ?.ToList()
+                    ?.ConvertAll(ap => ap.ToString())
+                    ?.ToList();
+                if (!joinableArgs.IsNullOrEmpty())
+                {
+                    output += joinableArgs?.Join();
+                }
             }
             if (!MessageAfter.IsNullOrEmpty())
             {

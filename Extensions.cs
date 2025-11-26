@@ -623,6 +623,10 @@ namespace UD_FleshGolems
             string Bullet = "\u0007",
             string BulletColor = "K")
         {
+            if (Bullet.IsNullOrEmpty())
+            {
+                return Text;
+            }
             return Utils.Bullet(Bullet, BulletColor) + " " + Text;
         }
 
@@ -816,6 +820,28 @@ namespace UD_FleshGolems
                 Int = Max;
             }
             return Int;
+        }
+
+        public static string YehNah(this bool? Yeh)
+            => Utils.YehNah(Yeh);
+
+        public static string BodyPartString(this BodyPart BodyPart, bool WithManager = false, bool WithParent = false, bool Recursive = false)
+        {
+            if (BodyPart == null)
+            {
+                return NULL;
+            }
+            string managed = null;
+            if (WithManager && !BodyPart.Manager.IsNullOrEmpty())
+            {
+                managed = "[::" + BodyPart.Manager + "]";
+            }
+            string parent = null;
+            if (WithParent && BodyPart.ParentPart is BodyPart parentPart)
+            {
+                parent = " of parent " + parentPart.BodyPartString(WithManager, Recursive, Recursive);
+            }
+            return "(" + BodyPart.ID + "):" + BodyPart.Type + "/" + BodyPart.VariantType + managed + parent;
         }
     }
 }

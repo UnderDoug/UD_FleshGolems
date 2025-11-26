@@ -111,7 +111,7 @@ namespace XRL.World.ObjectBuilders
                 }
                 Parts.Temporary.CarryOver(Creature, corpse);
                 Phase.carryOver(Creature, corpse);
-                if (Creature.HasProperName)
+                if (Utils.WasProperlyNamed(Creature))
                 {
                     corpse.SetStringProperty("CreatureName", Creature.BaseDisplayName);
                 }
@@ -257,7 +257,7 @@ namespace XRL.World.ObjectBuilders
                     nameof(soonToBeCorpse) + ": " + (soonToBeCorpse.DebugName ?? NULL) + ", " +
                     nameof(soonToBeCreature) + ": " + (soonToBeCreature.DebugName ?? NULL));
                 */
-                Metamorphosis.TransferInventory(soonToBeCorpse, soonToBeCreature);
+                Metamorphosis.TransferInventory(soonToBeCorpse, soonToBeCreature, false);
                 transferred = true;
             }
             catch (Exception x)

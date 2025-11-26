@@ -78,6 +78,9 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
             ImplantedLimbType = this.ImplantedLimbType;
         }
 
+        public override string ToString()
+            => ImplantedLimbType + ": " + (Cybernetic?.DebugName ?? NULL);
+
         public KeyValuePair<GameObject, string> GetKeyValuePair()
             => new(Cybernetic, ImplantedLimbType);
         public static InstalledCybernetic NewFromKeyValuePair(KeyValuePair<GameObject, string> SourcePair)

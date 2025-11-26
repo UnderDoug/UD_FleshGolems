@@ -27,6 +27,7 @@ using XRL.World.Effects;
 using XRL.World.Capabilities;
 
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
+using static XRL.World.Parts.UD_FleshGolems_PastLife;
 using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
 
 using UD_FleshGolems;
@@ -45,13 +46,13 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
     public class PseudoLimb : IComposite
     {
         [SerializeField]
-        protected int ID;
+        protected string Type;
 
         [SerializeField]
-        protected BodyPartType Model;
+        protected string VariantType;
 
         [SerializeField]
-        protected bool Dynamic;
+        protected string Manager;
 
         [SerializeField]
         protected PseudoLimb Root;
@@ -69,9 +70,9 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
 
         public PseudoLimb()
         {
-            ID = 0;
-            Model = null;
-            Dynamic = false;
+            Type = null;
+            VariantType = null;
+            Manager = null;
 
             Root = null;
             AttachedTo = null;
@@ -80,52 +81,121 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
             DistanceFromRoot = 0;
         }
         public PseudoLimb(BodyPart BodyPart, PseudoLimb AttachedTo = null, PseudoLimb Root = null)
+            : this ()
         {
-            ID = BodyPart?.ID ?? 0;
-            Model = Anatomies.GetBodyPartType(BodyPart.Name);
-            Dynamic = BodyPart.Dynamic;
+            Type = BodyPart.Type;
+            VariantType = BodyPart.VariantType;
+            Manager = BodyPart.Manager;
             this.AttachedTo = AttachedTo;
             this.Root = Root;
             PseudoLimb root = Root ?? this;
             DistanceFromRoot = AttachedTo == null ? 0 : AttachedTo.DistanceFromRoot + 1;
-            foreach (BodyPart subPart in BodyPart?.Parts?.Where(bp => bp.Native && !bp.Extrinsic))
+
+            using Indent indent = new(1);
+            Debug.LogArgs(ToString() + "(", ")", Indent: indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(BodyPart), ToString() ?? NULL),
+                    Debug.Arg(nameof(AttachedTo), AttachedTo?.ToString() ?? NULL),
+                    Debug.Arg(nameof(Attached), Attached?.Count ?? 0),
+                    Debug.Arg(nameof(Root), Root?.ToString() ?? NULL),
+                    Debug.Arg(nameof(DistanceFromRoot), DistanceFromRoot),
+                });
+            List<BodyPart> subParts = BodyPart?.Parts?.Where(IsConcreteIntrinsic)?.ToList() ?? new();
+            foreach (BodyPart subPart in subParts)
             {
-                Attached.Add(new PseudoLimb(BodyPart, this, Root ?? this));
+                Attached.Add(new PseudoLimb(subPart, this, Root ?? this));
+            }
+            if (root == this)
+            {
+                Debug.CheckYeh(ToString() + " limb-tree stored!", Indent: indent[0]);
             }
         }
-        public PseudoLimb(Body Body) : this(Body?.GetBody()) { }
 
         public override string ToString()
-            => "[" + ID + "]" + Model.FinalType + "(" + (Model.Name ?? "base") + ")";
-
-        public bool GiveToEntity(GameObject Entity)
         {
-            if (!IsRoot)
+            if (GetModel() is not BodyPartType limbModel)
             {
-                return false;
+                return "Invalid";
             }
+            string variant = VariantType ?? "base";
+            string manager = Manager.IsNullOrEmpty() ? null : ("(::" + Manager + ")");
+            return Type + "/" + variant + "" + manager;
+        }
+
+        public BodyPartType GetModel()
+            => Anatomies.GetBodyPartTypeOrFail(VariantType ?? Type);
+
+        public bool GiveToEntity(GameObject Entity, BodyPart AttachAt)
+        {
+            string attachAtString = AttachAt?.BodyPartString();
+
+            using Indent indent = new(1);
+            Debug.LogMethod(Indent: indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(ToString() ?? NULL),
+                    Root == null ? Debug.Arg(nameof(Entity), Entity?.DebugName ?? NULL) : Debug.ArgPair.Empty,
+                    Debug.Arg(nameof(AttachAt), attachAtString ?? NULL),
+                });
             if (Entity.Body is not Body parentBody)
             {
+                Debug.CheckNah("no parent body", Indent: indent[1]);
                 return false;
             }
-            foreach (BodyPart BodyPart in parentBody.GetBody().Parts.Where(bp => bp.Native && !bp.Extrinsic))
+            if (GetModel() is not BodyPartType bodyPartType)
             {
-                //PseudoLimb pseudoLimb 
-                //if (BodyPart.Dynamic)
+                Debug.CheckNah(nameof(BodyPartType) + " invalid", Indent: indent[1]);
+                return false;
+            }
+
+            BodyPart newPart = new(
+                Base: bodyPartType,
+                ParentBody: parentBody,
+                Manager: Manager,
+                Dynamic: true);
+
+            if (newPart == null)
+            {
+                Debug.CheckNah(nameof(newPart) + " failed creation", Indent: indent[1]);
+                return false;
+            }
+            if (newPart.Laterality == 0)
+            {
+                if (!bodyPartType.UsuallyOn.IsNullOrEmpty() && bodyPartType.UsuallyOn != AttachAt.Type)
+                {
+                    BodyPartType attachAtPartType = AttachAt.VariantTypeModel();
+                    newPart.ModifyNameAndDescriptionRecursively(attachAtPartType.Name.Replace(" ", "-"), attachAtPartType.Description.Replace(" ", "-"));
+                }
+                if (AttachAt.Laterality != 0)
+                {
+                    newPart.ChangeLaterality(AttachAt.Laterality | newPart.Laterality, Recursive: true);
+                }
+            }
+
+            AttachAt.AddPart(newPart, newPart.Type, new string[2] { "Thrown Weapon", "Floating Nearby" });
+            Debug.CheckYeh(newPart.BodyPartString().Strip() + " added to " + attachAtString, Indent: indent[1]);
+
+            foreach (PseudoLimb subPart in Attached)
+            {
+                subPart.GiveToEntity(Entity, newPart);
+            }
+
+            if (Root == null)
+            {
+                Debug.Log(ToString() + " limb-tree attached to " + (Entity?.DebugName ?? NULL) + "!", Indent: indent[0]);
             }
             return true;
         }
-        public bool GiveToEntity(GameObject Entity, BodyPart AttachAt)
+
+        public void DebugPseudoLimb()
         {
-            if (Entity.Body is not Body parentBody)
+            using Indent indent = new(1);
+            Debug.Log(ToString(), Indent: indent);
+            foreach (PseudoLimb pseudoLimb in Attached)
             {
-                return false;
+                pseudoLimb.DebugPseudoLimb();
             }
-            if (Dynamic)
-            {
-                AttachAt.AddPart(new BodyPart(Model, parentBody, Dynamic: Dynamic));
-            }
-            return true;
         }
     }
 }

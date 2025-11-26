@@ -137,7 +137,8 @@ namespace XRL.World.Parts
             => base.WantEvent(ID, Cascade)
             || ID == ImplantedEvent.ID
             || ID == UnimplantedEvent.ID
-            || ID == EnteredCellEvent.ID;
+            || ID == EnteredCellEvent.ID
+            || ID == GetDebugInternalsEvent.ID;
 
         public override bool HandleEvent(EnteredCellEvent E)
         {
@@ -195,6 +196,12 @@ namespace XRL.World.Parts
             {
                 UnprocessCybernetic(E.Item);
             }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(GetDebugInternalsEvent E)
+        {
+            E.AddEntry(this, nameof(AppliedInitial), AppliedInitial);
+            E.AddEntry(this, nameof(CostStackMultiplier), CostStackMultiplier);
             return base.HandleEvent(E);
         }
     }

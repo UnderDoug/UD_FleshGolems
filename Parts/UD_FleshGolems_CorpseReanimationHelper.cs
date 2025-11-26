@@ -78,12 +78,6 @@ namespace XRL.World.Parts
 
         public bool AlwaysAnimate;
 
-        public string CreatureName;
-
-        public string SourceBlueprint;
-
-        public string CorpseDescription;
-
         public GameObject Reanimator;
 
         private List<int> FailedToRegisterEvents;
@@ -92,9 +86,6 @@ namespace XRL.World.Parts
         {
             IsALIVE = false;
             AlwaysAnimate = false;
-            CreatureName = null;
-            SourceBlueprint = null;
-            CorpseDescription = null;
             Reanimator = null;
             FailedToRegisterEvents = new();
         }
@@ -342,12 +333,10 @@ namespace XRL.World.Parts
                     Debug.CheckNah(sourcePartBlueprint.Name, "part excluded", indent[1]);
                     continue;
                 }
-
-                Debug.Log(sourcePartBlueprint.Name, Indent: indent[1]);
                 sourcePart.ParentObject = FrankenCorpse;
                 sourcePartBlueprint.InitializePartInstance(sourcePart);
                 FrankenCorpse.AddPart(sourcePart);
-                Debug.CheckYeh(sourcePartBlueprint.Name, "added", indent[2]);
+                Debug.CheckYeh(sourcePartBlueprint.Name, "added", indent[1]);
 
                 if (sourcePartBlueprint.TryGetParameter("Builder", out string partBuilderName)
                     && ModManager.ResolveType("XRL.World.PartBuilders", partBuilderName) is Type partBuilderType
@@ -926,6 +915,13 @@ namespace XRL.World.Parts
                     return false;
                 }
 
+                Dictionary<TileMappingKeyword, List<string>> prospectiveTiles = null;
+
+                CollectProspectiveTiles(
+                    Dictionary: ref prospectiveTiles,
+                    Keyword: TileMappingKeyword.Override,
+                    Lookup: frankenCorpse.GetPropertyOrTag(REANIMATED_TILE_PROPTAG, Default: null));
+
                 frankenCorpse.SetStringProperty("OverlayColor", "&amp;G^k");
 
                 frankenCorpse.Physics.Organic = PastLife.Physics.Organic;
@@ -1022,8 +1018,6 @@ namespace XRL.World.Parts
                 }
 
                 string bleedLiquid = PastLife?.BleedLiquid;
-
-                Dictionary<TileMappingKeyword, List<string>> prospectiveTiles = null;
 
                 int guaranteedNaturalWeapons = 3;
                 int bestowedNaturalWeapons = 0;
@@ -1191,11 +1185,6 @@ namespace XRL.World.Parts
                         AssignMutationsFromBlueprint(frankenMutations, golemBodyBlueprint, Exclude: giganticIfNotAlready);
                         AssignSkillsFromBlueprint(frankenSkills, golemBodyBlueprint);
                     }
-
-                    CollectProspectiveTiles(
-                        Dictionary: ref prospectiveTiles,
-                        Keyword: TileMappingKeyword.Override,
-                        Lookup: frankenCorpse.GetPropertyOrTag(REANIMATED_TILE_PROPTAG, Default: null));
 
                     bool generateInventory = frankenCorpse.HasPropertyOrTag(REANIMATED_GEN_SOURCE_INV_PROPTAG);
 
@@ -1430,10 +1419,10 @@ namespace XRL.World.Parts
                 MutationEntry darkVisionEntry = MutationFactory.GetMutationEntryByName(darkVisionMutationName);
                 if (!frankenMutations.HasMutation(nightVisionEntry.Class) && !frankenMutations.HasMutation(darkVisionEntry.Class))
                 {
-                    if (darkVisionEntry.Instance is BaseMutation darkVisionMutation)
+                    frankenMutations.AddMutation(darkVisionEntry.Class, 8);
+                    if (frankenMutations.GetMutation(darkVisionEntry.Class) is BaseMutation darkVisionMutation)
                     {
                         darkVisionMutation.CapOverride.SetMinValue(8);
-                        frankenMutations.AddMutation(darkVisionMutation, 8);
                     }
                 }
 
@@ -1552,7 +1541,8 @@ namespace XRL.World.Parts
             || ID == BeforeObjectCreatedEvent.ID
             || ID == AnimateEvent.ID
             || ID == EnvironmentalUpdateEvent.ID
-            || (FailedToRegisterEvents.Contains(DroppedEvent.ID) && ID == DroppedEvent.ID);
+            || (ID == DroppedEvent.ID && FailedToRegisterEvents.Contains(DroppedEvent.ID))
+            || ID == GetDebugInternalsEvent.ID;
 
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
         {
@@ -1591,7 +1581,7 @@ namespace XRL.World.Parts
                 Reanimator = E.Actor;
                 IsALIVE = true;
                 MakeItALIVE(E.Object, pastLife);
-                Debug.Log("Definitely resolved called to " + nameof(MakeItALIVE), Indent: indent[1]);
+                Debug.Log(nameof(MakeItALIVE) + " resolved", Indent: indent[1]);
             }
             return base.HandleEvent(E);
         }
@@ -1668,6 +1658,24 @@ namespace XRL.World.Parts
                         Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? null),
                     });
                 return true;
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(GetDebugInternalsEvent E)
+        {
+            E.AddEntry(this, nameof(IsALIVE), IsALIVE);
+            E.AddEntry(this, nameof(AlwaysAnimate), AlwaysAnimate);
+            E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
+            if (!FailedToRegisterEvents.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(FailedToRegisterEvents),
+                    FailedToRegisterEvents
+                    ?.ConvertAll(id => MinEvent.EventTypes.ContainsKey(id) ? MinEvent.EventTypes[id].ToString() : "Error")
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(FailedToRegisterEvents), "Empty");
             }
             return base.HandleEvent(E);
         }

@@ -81,7 +81,7 @@ namespace XRL.World.Parts
         [SerializeField]
         private string _RefName;
         public string RefName => _RefName ??= BrainInAJar?.GetReferenceDisplayName(Short: true);
-        public bool WasProperlyNamed => (BrainInAJar?.HasProperName).GetValueOrDefault();
+        public bool WasProperlyNamed => WasProperlyNamed(BrainInAJar);
         public DisplayNameAdjectives DisplayNameAdjectives => BrainInAJar?.GetPart<DisplayNameAdjectives>();
         public Titles Titles => BrainInAJar?.GetPart<Titles>();
         public Epithets Epithets => BrainInAJar?.GetPart<Epithets>();
@@ -104,9 +104,10 @@ namespace XRL.World.Parts
         public string ConversationScriptID => BrainInAJar?.GetPart<ConversationScript>()?.ConversationID;
 
         public Dictionary<string, Statistic> Stats => BrainInAJar?.Statistics;
-        public bool IsTrifling => (BrainInAJar?.IsTrifling).GetValueOrDefault();
 
         public Body Body => BrainInAJar?.Body;
+        public Dictionary<PseudoLimb, string> ExtraLimbs;
+
         public string Species => BrainInAJar?.GetSpecies();
         public string Genotype => BrainInAJar?.GetGenotype();
         public string Subtype => BrainInAJar?.GetSubtype();
@@ -141,6 +142,8 @@ namespace XRL.World.Parts
             _Description = null;
 
             DeathAddress = new();
+
+            ExtraLimbs = new();
 
             MutationsList = new();
 
@@ -418,7 +421,7 @@ namespace XRL.World.Parts
                         }
                         Debug.Log(nameof(bIAJ_Body), bIAJ_Body?.Anatomy, indent[2]);
 
-                        RoughlyCopyAdditionalLimbs(bIAJ_Body, PastLife?.Body);
+                        RoughlyCopyAdditionalLimbs(bIAJ_Body, PastLife?.Body, ref ExtraLimbs);
 
                         string bleedLiquid = PastLife.GetBleedLiquid();
                         BrainInAJar.SetBleedLiquid(bleedLiquid);
@@ -477,25 +480,15 @@ namespace XRL.World.Parts
                                 {
                                     Owner = BrainInAJar,
                                 };
-                                /*
-                                if (statName == "Hitpoints")
-                                {
-                                    newStat.Penalty = 0;
-                                }
-                                newStat.Owner = BrainInAJar;
-                                */
 
                                 BrainInAJar.Statistics.Add(statName, newStat);
                                 Debug.Log(statName, newStat.Value + "/" + newStat.BaseValue + " | " + (newStat.sValue ?? "no sValue"), indent[3]);
                             }
                         }
 
-                        BrainInAJar.IsTrifling = PastLife.IsTrifling;
-
                         BrainInAJar.SetSpecies(PastLife.GetSpecies());
                         BrainInAJar.SetGenotype(PastLife.GetGenotype());
                         BrainInAJar.SetSubtype(PastLife.GetSubtype());
-
 
                         Debug.Log(nameof(Species), Species ?? NULL, indent[2]);
                         Debug.Log(nameof(Genotype), Genotype ?? NULL, indent[2]);
@@ -505,18 +498,6 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(MutationsList) + "(BaseLevel|CapOverride|RapidLevel)", Indent: indent[2]);
                         foreach (BaseMutation bIAJ_Mutation in bIAJ_Mutations.ActiveMutationList)
                         {
-                            // bIAJ_Mutations.AddMutation(pastMutation.GetMutationClass(), pastMutation.Variant, pastMutation.Level);
-                            /*
-                            if (bIAJ_Mutations.GetMutation(bIAJ_Mutation.Name) is BaseMutation bIAJ_Mutation)
-                            {
-                                if (bIAJ_Mutation.GetRapidLevelAmount() is int pastRapidLevel
-                                    && pastRapidLevel > 0)
-                                {
-                                    bIAJ_Mutation.SetRapidLevelAmount(pastRapidLevel);
-                                }
-                                bIAJ_Mutation.CapOverride = bIAJ_Mutation.CapOverride;
-                            }
-                            */
                             MutationData mutationData = new(bIAJ_Mutation, bIAJ_Mutation.GetRapidLevelAmount());
                             MutationsList.Add(mutationData);
                             Debug.Log(mutationData.ToString(), Indent: indent[3]);
@@ -528,8 +509,6 @@ namespace XRL.World.Parts
                         foreach (BaseSkill baseSkill in pastSkills)
                         {
                             Debug.Log(baseSkill.Name, Indent: indent[3]);
-                            // There's a bug in v1.04 with how Skills serializes its BaseSkills
-                            // that means the only way to guarantee copying them is via the parts list.
                             if (!bIAJ_Skills.SkillList.Contains(baseSkill))
                             {
                                 bIAJ_Skills.AddSkill(baseSkill);
@@ -703,7 +682,7 @@ namespace XRL.World.Parts
                 }
                 else
                 {
-                    newIdentity = /*PastLife.BrainInAJar?.DisplayName ??*/ PastLife.BrainInAJar?.Render?.DisplayName;
+                    newIdentity = /* PastLife.BrainInAJar?.DisplayName ??*/ PastLife.BrainInAJar?.Render?.DisplayName?.Replace("[", "").Replace("]", "");
                 }
             }
             Debug.Log(nameof(newIdentity), newIdentity ?? NULL, indent[1]);
@@ -728,7 +707,6 @@ namespace XRL.World.Parts
             }
             else
             {
-
                 string whoTheyWere = (PastLife?.RefName ?? PastLife.GetBlueprint().DisplayName());
                 if (!PastLife.WasProperlyNamed)
                 {
@@ -808,42 +786,155 @@ namespace XRL.World.Parts
             FrankenBody = FrankenCorpse.Body;
             return true;
         }
-        public bool RestoreAnatomy(
-            out Body FrankenBody)
+        public bool RestoreAnatomy(out Body FrankenBody)
         {
             return RestoreAnatomy(ParentObject, this, out FrankenBody);
         }
 
         public static bool IsIntrinsicAndNative(BodyPart BodyPart)
-        {
-            return BodyPart.Native
-                && !BodyPart.Extrinsic;
-        }
+            => BodyPart != null
+            && BodyPart.Native
+            && !BodyPart.Extrinsic;
+
+        public static bool IsAbstractOrExtrinsic(BodyPart BodyPart)
+            => BodyPart != null 
+            && (BodyPart.Abstract
+                || BodyPart.Extrinsic);
+
+        public static bool IsConcreteIntrinsic(BodyPart BodyPart)
+            => BodyPart != null
+            && !IsAbstractOrExtrinsic(BodyPart);
+
+        public static bool IsAbstractOrExtrinsicOrNonNative(BodyPart BodyPart)
+            => BodyPart != null
+            && (IsAbstractOrExtrinsic(BodyPart)
+                || !BodyPart.Native);
+
+        public static bool IsConcreteIntrinsicNative(BodyPart BodyPart)
+            => BodyPart != null
+            && !IsAbstractOrExtrinsicOrNonNative(BodyPart);
+
         private static bool RoughlyCopyAdditionalLimbs(
             Body DestinationBody,
-            Body SourceBody)
+            Body SourceBody,
+            ref Dictionary<PseudoLimb, string> ExtraLimbs)
         {
-            if (DestinationBody == null || SourceBody == null || SourceBody.ParentObject == null)
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(DestinationBody), DestinationBody?.ParentObject?.DebugName ?? NULL),
+                    Debug.Arg(nameof(SourceBody), SourceBody?.ParentObject?.DebugName ?? NULL),
+                });
+            if (DestinationBody == null
+                || DestinationBody.ParentObject is not GameObject destinationObject
+                || SourceBody == null
+                || SourceBody.ParentObject is not GameObject sourceObject)
             {
+                Debug.CheckNah("Nothing to work with.", Indent: indent[1]);
                 return false;
             }
 
-            foreach (BodyPart bodyPart in SourceBody?.LoopParts())
+            ExtraLimbs ??= new();
+            if (!ExtraLimbs.IsNullOrEmpty())
             {
-                if (bodyPart.Native
-                    || bodyPart.Extrinsic
-                    || !bodyPart.ParentPart.Native
-                    || bodyPart?.ParentPart is not BodyPart parentPart
-                    || parentPart.Type is not string parentPartType
-                    || DestinationBody?.GetPart(parentPartType) is not List<BodyPart> destinationBodyPartsOfType
-                    || destinationBodyPartsOfType.GetRandomElementCosmetic(IsIntrinsicAndNative) is not BodyPart targetBodyPart)
+                Debug.CheckYeh("Looping all " + ExtraLimbs.Count.Things(nameof(ExtraLimbs) + " tree") + ".", Indent: indent[1]);
+                foreach ((PseudoLimb pseudoLimb, string _) in ExtraLimbs)
                 {
+                    pseudoLimb.DebugPseudoLimb();
+                }
+
+                Debug.Log("Growing " + ExtraLimbs.Count.Things(nameof(ExtraLimbs) + " tree") + ".", Indent: indent[1]);
+                foreach ((PseudoLimb pseudoLimb, string targetBodyPartType) in ExtraLimbs)
+                {
+                    BodyPart targetBodyPart = 
+                        DestinationBody.LoopPart(targetBodyPartType)
+                            ?.GetRandomElementCosmetic()
+                        ?? DestinationBody.LoopParts(IsConcreteIntrinsic)
+                        ?.GetRandomElementCosmetic();
+                    if (targetBodyPart == null)
+                    { 
+                        Debug.CheckNah("Actually no limbs to grow on!", Indent: indent[2]);
+                        break;
+                    }
+                    pseudoLimb.GiveToEntity(destinationObject, targetBodyPart);
+                }
+                return true;
+            }
+            List<BodyPart> bodyPartsToLoop = SourceBody?.GetBody()?.Parts;
+            List<BodyPart> accountedForBodyParts = new();
+            List<BodyPart> accountedForDestinationBodyParts = new();
+
+            foreach (BodyPart bodyPart in bodyPartsToLoop)
+            {
+                string bodyPartName = bodyPart?.BodyPartString(WithManager: true).Strip();
+                if (IsAbstractOrExtrinsicOrNonNative(bodyPart))
+                {
+                    Debug.CheckNah(bodyPartName + " " + nameof(IsAbstractOrExtrinsicOrNonNative), Indent: indent[1]);
                     continue;
                 }
-                BodyPart newParentPart = DestinationBody.GetParts()
-                    ?.Where(bp => bp.Native && !bp.Extrinsic && bp.Type == bodyPart.Type)
-                    ?.GetRandomElementCosmetic();
-                targetBodyPart.AddPart(bodyPart?.DeepCopy(DestinationBody?.ParentObject, DestinationBody, newParentPart, DeepCopyMapInventory));
+                Debug.CheckYeh(bodyPartName + " eligible", Indent: indent[1]);
+                List<BodyPart> subPartsToLoop = bodyPart?.Parts ?? new();
+                accountedForBodyParts.Add(bodyPart);
+                List<PseudoLimb> bodyPartExtraLimbs = new();
+                Debug.Log("Looping Subparts", Indent: indent[2]);
+                foreach (BodyPart subPart in subPartsToLoop)
+                {
+                    string subPartName = subPart?.BodyPartString(WithManager: true)?.Strip();
+                    if (IsAbstractOrExtrinsic(subPart)
+                        || accountedForBodyParts.Contains(subPart))
+                    {
+                        Debug.CheckNah(subPartName + " " + nameof(IsAbstractOrExtrinsic) + " || in " + nameof(accountedForBodyParts), Indent: indent[3]);
+                        continue;
+                    }
+                    if (subPart.Manager.IsNullOrEmpty())
+                    {
+                        Debug.CheckNah(subPartName + " not managed", Indent: indent[3]);
+                        continue;
+                    }
+                    Debug.CheckYeh(subPartName + " eligible", Indent: indent[3]);
+                    accountedForBodyParts.Add(subPart);
+                    PseudoLimb pseudoLimb = new(bodyPart, null, null);
+                    ExtraLimbs.Add(pseudoLimb, bodyPart.Type);
+                    bodyPartExtraLimbs.Add(pseudoLimb);
+                }
+                if (bodyPartExtraLimbs.IsNullOrEmpty())
+                {
+                    Debug.CheckYeh("Subparts Looped, nothing to copy", Indent: indent[2]);
+                    continue;
+                }
+                Debug.CheckYeh("Subparts Looped, " + bodyPartExtraLimbs.Count.Things("limb tree") + " copied", Indent: indent[2]);
+                List<BodyPart> potentialTargetBodyParts = DestinationBody.GetBody()?.Parts
+                    ?.Where(IsConcreteIntrinsicNative)
+                    ?.Where(bp => !accountedForDestinationBodyParts.Contains(bp))
+                    .ToList();
+
+                BodyPart targetBodyPart = 
+                    potentialTargetBodyParts
+                        ?.GetRandomElementCosmeticExcluding(bp => bp.Type != bodyPart.Type)
+                    ?? potentialTargetBodyParts
+                        ?.GetRandomElementCosmeticExcluding(bp => bp.Type != bodyPart.Type);
+
+                Debug.CheckYeh("Getting " + nameof(targetBodyPart) + " from " + nameof(DestinationBody), Indent: indent[2]);
+                Debug.YehNah(targetBodyPart?.BodyPartString(WithManager: true)?.Strip(), targetBodyPart != null, Indent: indent[3]);
+                if (targetBodyPart != null)
+                {
+                    accountedForDestinationBodyParts.Add(targetBodyPart);
+                    foreach (PseudoLimb bodyPartExtraLimb in bodyPartExtraLimbs)
+                    {
+                        Debug.YehNah(bodyPartExtraLimb?.ToString(), bodyPartExtraLimb.GiveToEntity(destinationObject, targetBodyPart), Indent: indent[4]);
+                    }
+                }
+            }
+            Debug.CheckYeh("Looping all DestinationBody (" + (destinationObject?.DebugName ?? NULL) + ") parts.", Indent: indent[1]);
+            foreach (BodyPart bodyPart in DestinationBody.LoopParts())
+            {
+                Indent bodyPartIndent = 
+                    (bodyPart.ParentPart == null || bodyPart.ParentPart == bodyPart.ParentBody.GetBody()) 
+                    ? indent[2] 
+                    : indent[3];
+
+                Debug.Log(bodyPart.BodyPartString(WithManager: true, WithParent: true), Indent: bodyPartIndent);
             }
             return true;
         }
@@ -853,15 +944,16 @@ namespace XRL.World.Parts
             out Body FrankenBody)
         {
             FrankenBody = null;
-            if (FrankenCorpse == null || PastLife == null || PastLife.Body == null)
+            if (FrankenCorpse == null
+                || FrankenCorpse.Body == null
+                || PastLife == null
+                || PastLife.Body == null)
             {
                 return false;
             }
-            FrankenBody = FrankenCorpse.Body;
-            return RoughlyCopyAdditionalLimbs(FrankenBody, PastLife.Body);
+            return RoughlyCopyAdditionalLimbs(FrankenCorpse.Body, PastLife.Body, ref PastLife.ExtraLimbs);
         }
-        public bool RestoreAdditionalLimbs(
-            out Body FrankenBody)
+        public bool RestoreAdditionalLimbs(out Body FrankenBody)
         {
             return RestoreAdditionalLimbs(ParentObject, this, out FrankenBody);
         }
@@ -1085,7 +1177,196 @@ namespace XRL.World.Parts
         public override bool HandleEvent(GetDebugInternalsEvent E)
         {
             E.AddEntry(this, nameof(Init), Init);
+            E.AddEntry(this, nameof(WasCorpse), WasCorpse);
+            E.AddEntry(this, nameof(WasPlayer), WasPlayer);
+            E.AddEntry(this, nameof(TimesReanimated), TimesReanimated);
+            E.AddEntry(this, nameof(Blueprint), Blueprint);
+            E.AddEntry(this, nameof(BaseDisplayName), BaseDisplayName);
+            E.AddEntry(this, nameof(RefName), RefName);
+            E.AddEntry(this, nameof(WasProperlyNamed), WasProperlyNamed);
+            if (DisplayNameAdjectives != null && !DisplayNameAdjectives.AdjectiveList.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(DisplayNameAdjectives),
+                    DisplayNameAdjectives.AdjectiveList
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(DisplayNameAdjectives), "Empty");
+            }
+            E.AddEntry(this, nameof(Titles), Titles?.TitleList ?? "Empty");
+            E.AddEntry(this, nameof(Epithets), Epithets?.EpithetList ?? "Empty");
+            E.AddEntry(this, nameof(Honorifics), Honorifics?.HonorificList ?? "Empty");
+            E.AddEntry(this, nameof(PastRender), YehNah(PastRender != null));
+            E.AddEntry(this, nameof(Description), YehNah(Description != null));
+            E.AddEntry(this, nameof(DeathAddress), DeathAddress.ToString());
+
+            static string treeItem(int i, int count)
+            {
+                return ((i == count - 1) ? 'ÿ' : '³').ToString() + 'Ä'.ThisManyTimes(3);
+            }
+            if (Brain != null && !Brain.Allegiance.IsNullOrEmpty())
+            {
+                Traverse brainWalk = new(Brain);
+                List<string> brainWalkFields = brainWalk?.Fields();
+                int i = 0;
+                int j = 0;
+                List<string> brainList = new()
+                {
+                    Brain.Allegiance
+                        ?.ToList()
+                        ?.ConvertAll(a => a.Key + ": " + a.Value)
+                        ?.GenerateBulletList(
+                            Label: nameof(Brain.Allegiance),
+                            Bullet: treeItem(i++, Brain.Allegiance.Count),
+                            BulletColor: null),
+                    brainWalkFields
+                        ?.ConvertAll(f => f + ": " + brainWalk?.Field(f)?.GetValue()?.ToString())
+                        ?.GenerateBulletList(
+                            Label: "Fields",
+                            Bullet: treeItem(j++, brainWalkFields?.Count ?? 0),
+                            BulletColor: null),
+                };
+                E.AddEntry(this, nameof(Brain), brainList?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(Brain), "Empty");
+            }
+            E.AddEntry(this, nameof(Gender), Gender?.Name ?? NULL);
+            E.AddEntry(this, nameof(PronounSet), PronounSet?.Name ?? NULL);
+            E.AddEntry(this, nameof(ConversationScriptID), ConversationScriptID);
+            if (!Stats.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(Stats),
+                    Stats
+                    ?.ConvertToStringList(kvp => kvp.Key + ": " + (kvp.Value?.Value ?? 0) + "/" + (kvp.Value?.BaseValue ?? 0))
+                    ?.ToList()
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(Stats), "Empty");
+            }
+            E.AddEntry(this, nameof(Body), Body?.Anatomy ?? "No Anatomy!?");
+            if (!ExtraLimbs.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(ExtraLimbs),
+                    ExtraLimbs
+                    ?.ConvertToStringList(kvp => "for " + kvp.Value + ": " + kvp.Key.ToString())
+                    ?.ToList()
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(ExtraLimbs), "Empty");
+            }
+            E.AddEntry(this, nameof(Species), Species);
+            E.AddEntry(this, nameof(Genotype), Genotype);
+            E.AddEntry(this, nameof(Subtype), Subtype);
+            if (!MutationsList.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(MutationsList),
+                    MutationsList
+                    ?.ConvertAll(md => md.ToString())
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(MutationsList), "Empty");
+            }
+            if (Skills != null && !Skills.SkillList.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(Skills),
+                    Skills.SkillList
+                    ?.ConvertAll(s => s.DebugName)
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(Skills), "Empty");
+            }
+            if (!InstalledCybernetics.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(InstalledCybernetics),
+                    InstalledCybernetics
+                    ?.ConvertAll(ic => ic.ToString())
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(InstalledCybernetics), "Empty");
+            }
+            if (!Tags.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(Tags),
+                    Tags
+                    ?.ConvertToStringList(kvp => (kvp.Value != null) ? (kvp.Key + ": " + kvp.Value) : kvp.Key)
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(Tags), "Empty");
+            }
+            if (!StringProperties.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(StringProperties),
+                    StringProperties
+                    ?.ConvertToStringList(kvp => (kvp.Value != null) ? (kvp.Key + ": " + kvp.Value) : kvp.Key)
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(StringProperties), "Empty");
+            }
+            if (!IntProperties.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(IntProperties),
+                    IntProperties
+                    ?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value)
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(IntProperties), "Empty");
+            }
+            if (!Effects.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(Effects),
+                    Effects
+                    .ToList()
+                    ?.ConvertAll(fx => fx.ClassName + ": " + ((fx.Duration == 9999) ? "Indefinite" : fx.Duration.ToString()))
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(Effects), "Empty");
+            }
             return base.HandleEvent(E);
+        }
+
+        public void SummonBrainInAJar()
+        {
+            if (!BrainInAJar.Statistics.ContainsKey("Enenrgy"))
+            {
+                BrainInAJar.Statistics.Add("Enenrgy", new("Enenrgy", -100000, 100000, 0, BrainInAJar));
+            }
+            else
+            {
+                BrainInAJar.Statistics["Enenrgy"] = new("Enenrgy", -100000, 100000, 0, BrainInAJar);
+            }
+            if (BrainInAJar.Statistics.ContainsKey("Enenrgy"))
+            {
+                The.Player.CurrentCell
+                    ?.GetAdjacentCells()
+                    ?.GetRandomElementCosmetic()
+                    ?.AddObject(BrainInAJar);
+            }
+            else
+            {
+                Popup.Show("Couldn't give " + nameof(BrainInAJar) + ", " + (BrainInAJar?.DebugName ?? NULL) + ", energy stat.\n\n" +
+                    "Unable to summon" + (BrainInAJar?.them ?? "it") + ".");
+            }
         }
 
         /*

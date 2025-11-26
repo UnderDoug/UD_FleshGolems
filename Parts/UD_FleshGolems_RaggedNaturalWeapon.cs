@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using UD_FleshGolems;
+using static UD_FleshGolems.Const;
 
 using SerializeField = UnityEngine.SerializeField;
 
@@ -197,7 +198,8 @@ namespace XRL.World.Parts
 
         public override bool WantEvent(int ID, int cascade) => base.WantEvent(ID, cascade)
             || ID == GetDisplayNameEvent.ID
-            || ID == GetShortDescriptionEvent.ID;
+            || ID == GetShortDescriptionEvent.ID
+            || ID == GetDebugInternalsEvent.ID;
 
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
@@ -220,6 +222,13 @@ namespace XRL.World.Parts
             {
                 ProcessDescriptionElements(Wielder);
             }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(GetDebugInternalsEvent E)
+        {
+            E.AddEntry(this, nameof(Taxonomy), Taxonomy.ToString());
+            E.AddEntry(this, nameof(DisplayNameAdjusted), DisplayNameAdjusted);
+            E.AddEntry(this, nameof(Wielder), Wielder?.DebugName ?? NULL);
             return base.HandleEvent(E);
         }
     }

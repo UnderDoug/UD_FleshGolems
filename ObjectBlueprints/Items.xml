@@ -14,6 +14,18 @@
     <tag Name="BodyType" Value="Jelly" />
     <tag Name="Species" Value="jelly" />
     <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:2:U:UD_FleshGolems_CorpseText:Components= are brought =subject.uD_xTag:UD_FleshGolems_CorpseText:WretchedVerbs= back into a horrific facsimile of life. =subject.UD_xTag:UD_FleshGolems_CorpseText:UnappealingAdjectives= =subject.uD_xTag:2:U:UD_FleshGolems_CorpseText:UnsettlingNoises= escape =subject.possessive= every movement and twist the gut of anyone unfortunate enough to hear it." />
+    <xtagTextFragments 
+      Skin="leather"
+      PoeticFeatures="cracked teeth,sparse hair,glassy eyes,exposed muscle,exposed bone,unnaturally bent limbs"
+      YounglingNoise="*wilhelm scream*"
+      Activity="suffering endlessly"
+      VillageActivity="steeping in perpetual existential pain"
+      NeedsItemFor="to persue oblivion,because I want it,because it was mine while I lived,just to have,because it would ease my suffering,for secret reasons I won't tell you"
+      SacredThing="oblivion,a way to cease the endless suffering,the answer to why this was allowed to happen"
+      ArableLand="a place to truly belong,the bottom of a ditch"
+      ValuedOre="b... brains?.." />
+    <stag Name="HardMaterial" Value="bone" />
+    <tag Name="PetResponse" Value="=subject.T= absently =verb:stare= through =object.t=." />
     <xtagUD_FleshGolems_CorpseText
       CorpseDescription="mess"
       Components="viscera,muck,entrails,sinew,bone"
@@ -65,6 +77,17 @@
     <part Name="Metal" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Robot Corpse Corpse" CorpseChance="100" />
     <property Name="BleedLiquid" Value="oil-1000" />
+    <xtagTextFragments
+      Skin="shorn metal"
+      PoeticFeatures="cracked micro-processors,frayed wires,dull photoreceptors,exposed circuitry,snapped antenna,bent joints"
+      YounglingNoise="*zzzt*"
+      Activity="suffering endlessly"
+      VillageActivity="steeping in perpetual existential pain"
+      NeedsItemFor="to persue oblivion,because I want it,because it was mine while I lived,just to have,because it would ease my suffering,for secret reasons I won't tell you"
+      SacredThing="oblivion,a way to cease the endless suffering,the answer to why this was allowed to happen"
+      ArableLand="a place to truly belong,the bottom of a ditch,a junk-yard"
+      ValuedOre="tinkering bits" />
+    <stag Name="HardMaterial" Value="metal plates" />
     <xtagUD_FleshGolems_CorpseText
       CorpseDescription="scrap"
       Components="oil,gel,bent chrome,jagged edges"
@@ -128,6 +151,17 @@
     <tag Name="Plant" />
     <removetag Name="Meat" />
     <part Name="Food" Message="The fibers are tough." />
+    <xtagTextFragments
+      Skin="fibres"
+      PoeticFeatures="wilted leaves,spares twigs,dull foliage,snapped limbs"
+      YounglingNoise="*creak*"
+      Activity="suffering endlessly"
+      VillageActivity="steeping in perpetual existential pain"
+      NeedsItemFor="to persue oblivion,because I want it,because it was mine while I lived,just to have,because it would ease my suffering,for secret reasons I won't tell you"
+      SacredThing="oblivion,a way to cease the endless suffering,the answer to why this was allowed to happen"
+      ArableLand="a place to truly belong,the bottom of a ditch,compost"
+      ValuedOre="compost" />
+    <stag Name="HardMaterial" Value="wood" />
     <xtagUD_FleshGolems_CorpseText
       CorpseDescription="mulch"
       Components="sap,fibre,roots"
@@ -199,6 +233,17 @@
     <tag Name="HeroNameTitleDescriptor" Value="Decayed,Barren,Blighted" />
     <tag Name="HeroNameTitleAdmirers" Value="Gardeners,MYcologists,The Last of Us" />
     <part Name="Food" Message="The material is soft and slimy." />
+    <xtagTextFragments
+      Skin="reticulum"
+      PoeticFeatures="rotten gills,spares teeth,dull skirt,snapped tendrils"
+      YounglingNoise="*creak*"
+      Activity="suffering endlessly"
+      VillageActivity="steeping in perpetual existential pain"
+      NeedsItemFor="to persue oblivion,because I want it,because it was mine while I lived,just to have,because it would ease my suffering,for secret reasons I won't tell you"
+      SacredThing="oblivion,a way to cease the endless suffering,the answer to why this was allowed to happen"
+      ArableLand="a place to truly belong,the bottom of a ditch,graveyard"
+      ValuedOre="rotten flesh" />
+    <stag Name="HardMaterial" Value="stipe" />
     <xtagUD_FleshGolems_CorpseText
       CorpseDescription="mess"
       Components="spores,tendrils,fibre"

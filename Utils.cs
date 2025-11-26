@@ -98,7 +98,7 @@ namespace UD_FleshGolems
                         string blueprint = characterInit?.builder?.GetModule<QudGenotypeModule>()?.data?.Entry?.BodyObject
                             ?? characterInit?.builder?.GetModule<QudSubtypeModule>()?.data?.Entry?.BodyObject
                             ?? "Humanoid";
-                        return characterInit.builder.info.fireBootEvent(QudGameBootModule.BOOTEVENT_BOOTPLAYEROBJECTBLUEPRINT, The.Game, blueprint);
+                        return characterInit?.builder?.info?.fireBootEvent(QudGameBootModule.BOOTEVENT_BOOTPLAYEROBJECTBLUEPRINT, The.Game, blueprint);
                     }
                 }
             }
@@ -315,13 +315,16 @@ namespace UD_FleshGolems
             return String + "[" + (Yeh ? TICK : CROSS) + "]" + (WithSpaceAfter ? " " : "");
         }
 
+        public static string YehNah(bool? Yeh = null)
+            => "[" + (Yeh == null ? "-" : (Yeh.GetValueOrDefault() ? TICK : CROSS)) + "]";
+
         public static int CapDamageTo1HPRemaining(GameObject Creature, int DamageAmount)
         {
             if (Creature == null || Creature.GetStat("Hitpoints") is not Statistic hitpoints)
             {
                 return 0;
             }
-            return Math.Min(hitpoints.Value - 1, DamageAmount);
+            return Math.Max(0, Math.Min(hitpoints.Value - 1, DamageAmount));
         }
 
         public static GameObject DeepCopyMapInventory(GameObject Source)
@@ -470,6 +473,32 @@ namespace UD_FleshGolems
 
         public static string GetMutationClassByName(string Name)
             => MutationFactory.GetMutationEntryByName(Name)?.Class;
+
+        public static bool WasProperlyNamed(GameObject Object)
+        {
+            if (Object == null)
+            {
+                return false;
+            }
+            if (Object.HasProperName)
+            {
+                return true;
+            }
+            if (Object.GetTagOrStringProperty("SpawnedFrom") is string spawnedFrom
+                && spawnedFrom.EqualsAny("Mechanimist Convert Librarian"))
+            {
+                return true;
+            }
+            if (Object.PartsList.Any(p => p.Name.EqualsAny(nameof(Titles), nameof(Epithets), nameof(Honorifics))))
+            {
+                return true;
+            }
+            if (Object.GetPropertyOrTag("Role") == "Hero")
+            {
+                return true;
+            }
+            return false;
+        }
 
         /* 
          * 

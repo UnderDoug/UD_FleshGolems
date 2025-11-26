@@ -200,7 +200,7 @@ namespace XRL.World.Effects
             {
                 dueToFolly += " due to the existential folly of " + SourceObject.GetReferenceDisplayName(Short: true, Stripped: true);
             }
-            return ChanceToDamage + "% per turn to suffer " + Damage + " damage" + dueToFolly + ".";
+            return ChanceToDamage + "% chance per turn to suffer " + Damage + " damage" + dueToFolly + ".";
         }
         public virtual string DamageAttributes()
         {

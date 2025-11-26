@@ -35,6 +35,7 @@
     <skill Name="Pistol" />
     <skill Name="Pistol_SteadyHands" />
     <skill Name="Pistol_Akimbo" />
+    <property Name="UD_FleshGolems_PastLife_TileOverride" Value="FleshGolems/ud_flesh_golem_snapjaw_jofo.png" />
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />

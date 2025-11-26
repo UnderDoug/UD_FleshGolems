@@ -101,6 +101,9 @@ namespace XRL.World.Parts
 
         public List<LiquidPortion> BleedLiquidPortions;
 
+        [SerializeField]
+        private bool AlteredRenderDisplayName;
+
         public UD_FleshGolems_ReanimatedCorpse()
         {
             _Reanimator = null;
@@ -212,7 +215,7 @@ namespace XRL.World.Parts
                     {
                         timesReanimated = pastLife.TimesReanimated;
                     }
-                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier, timesReanimated), Reanimator);
+                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier, timesReanimated + 1), Reanimator);
                 }
                 if (unendingSuffering.SourceObject != Reanimator)
                 {
@@ -247,7 +250,7 @@ namespace XRL.World.Parts
                     lairOrigin = currentCell.Location;
                 }
                 else
-                if (Reanimator.CurrentCell is Cell reanimatorCell)
+                if (Reanimator?.CurrentCell is Cell reanimatorCell)
                 {
                     lairOrigin = reanimatorCell.Location;
                 }
@@ -262,19 +265,46 @@ namespace XRL.World.Parts
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
+                || ID == AfterPlayerBodyChangeEvent.ID
                 || ID == GetDisplayNameEvent.ID
                 || ID == GetShortDescriptionEvent.ID
                 || ID == DecorateDefaultEquipmentEvent.ID
                 || ID == EndTurnEvent.ID
                 || ID == GetBleedLiquidEvent.ID
                 || ID == BeforeTakeActionEvent.ID
-                || ID == BeforeDeathRemovalEvent.ID
                 || ID == GetDebugInternalsEvent.ID;
+        }
+        public override bool HandleEvent(AfterPlayerBodyChangeEvent E)
+        {
+            if (E.NewBody is GameObject playerCorpse
+                && E.OldBody is GameObject playerPastLife)
+            {
+                if (playerCorpse.Render is Render corpseRender)
+                {
+                    AlteredRenderDisplayName = true;
+                    corpseRender.DisplayName = The.Game.PlayerName;
+                    if (playerCorpse.TryGetPart(out UD_FleshGolems_PastLife pastLifePart))
+                    {
+                        The.Game.PlayerName = pastLifePart.GenerateDisplayName();
+                        corpseRender.DisplayName = The.Game.PlayerName;
+                    }
+                }
+            }
+            return base.HandleEvent(E);
         }
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
             if (!NewDisplayName.IsNullOrEmpty())
             {
+                if (!AlteredRenderDisplayName
+                    && E.Object?.Render is Render corpseRender)
+                {
+                    if (E.Object.TryGetPart(out UD_FleshGolems_PastLife pastLifePart))
+                    {
+                        AlteredRenderDisplayName = true;
+                        corpseRender.DisplayName = pastLifePart.GenerateDisplayName();
+                    }
+                }
                 E.ReplacePrimaryBase(NewDisplayName);
             }
             if (int.TryParse(E.Object?.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
@@ -396,19 +426,6 @@ namespace XRL.World.Parts
             if (ParentObject.TryGetPart(out Stomach undeadStomach))
             {
                 undeadStomach.Water = RuleSettings.WATER_MAXIMUM - 1000;
-            }
-            return base.HandleEvent(E);
-        }
-        public override bool HandleEvent(BeforeDeathRemovalEvent E)
-        {
-            if (false && ParentObject is GameObject dying
-                && dying == E.Dying
-                && IsDyingCreatureCorpse(dying, out GameObject corpseObject)
-                && corpseObject.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
-            {
-                corpseObject.SetStringProperty("UD_FleshGolems_OriginalCreatureName", reanimationHelper.CreatureName);
-                corpseObject.SetStringProperty("UD_FleshGolems_OriginalSourceBlueprint", reanimationHelper.SourceBlueprint);
-                corpseObject.SetStringProperty("UD_FleshGolems_CorpseDescription", reanimationHelper.SourceBlueprint);
             }
             return base.HandleEvent(E);
         }

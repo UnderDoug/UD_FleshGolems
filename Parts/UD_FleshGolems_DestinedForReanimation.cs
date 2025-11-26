@@ -11,11 +11,13 @@ using XRL.UI;
 using XRL.World.Effects;
 using XRL.World.ObjectBuilders;
 using XRL.World.Capabilities;
+using XRL.World.Parts.Mutation;
+
+using SerializeField = UnityEngine.SerializeField;
 
 using UD_FleshGolems;
 
 using static UD_FleshGolems.Const;
-using XRL.World.Parts.Mutation;
 
 namespace XRL.World.Parts
 {
@@ -153,6 +155,10 @@ namespace XRL.World.Parts
             },
         };
 
+        public static bool HaveFakedDeath = false;
+
+        private static bool IfPlayerStartUndeadUseTurnTickNotStringy => false;
+
         public GameObject Corpse;
 
         public bool BuiltToBeReanimated;
@@ -161,13 +167,10 @@ namespace XRL.World.Parts
 
         public bool DelayTillZoneBuild;
 
+        [SerializeField]
         private List<int> FailedToRegisterEvents;
 
-        public static bool HaveFakedDeath = false;
-
         public bool PlayerWantsFakeDie;
-
-        private static bool IfPlayerStartUndeadUseTurnTickNotStringy => false;
 
         public UD_FleshGolems_DestinedForReanimation()
         {
@@ -463,7 +466,9 @@ namespace XRL.World.Parts
 
         public bool ActuallyDoTheFakeDieAndReanimate()
         {
-            if (ParentObject == null || !PlayerWantsFakeDie || HaveFakedDeath)
+            if (ParentObject == null
+                || !PlayerWantsFakeDie
+                || HaveFakedDeath)
             {
                 return false;
             }
@@ -473,9 +478,13 @@ namespace XRL.World.Parts
                 FakedDeath: out HaveFakedDeath,
                 DeathEvent: null,
                 Corpse: Corpse);
+
             PlayerWantsFakeDie = false;
             return success;
         }
+
+        public override bool AllowStaticRegistration()
+            => true;
 
         public override bool WantTurnTick()
         {
@@ -518,11 +527,12 @@ namespace XRL.World.Parts
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
-                || (FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID) && ID == BeforeObjectCreatedEvent.ID)
-                || (FailedToRegisterEvents.Contains(EnvironmentalUpdateEvent.ID) && ID == EnvironmentalUpdateEvent.ID)
-                || (DelayTillZoneBuild && ID == BeforeZoneBuiltEvent.ID)
+                || (ID == BeforeObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID))
+                || (ID == EnvironmentalUpdateEvent.ID && FailedToRegisterEvents.Contains(EnvironmentalUpdateEvent.ID))
+                || (ID == BeforeZoneBuiltEvent.ID && DelayTillZoneBuild)
                 || ID == GetShortDescriptionEvent.ID
-                || ID == BeforeDieEvent.ID;
+                || ID == BeforeDieEvent.ID
+                || ID == GetDebugInternalsEvent.ID;
         }
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
@@ -665,6 +675,26 @@ namespace XRL.World.Parts
             {
                 return false;
             }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(GetDebugInternalsEvent E)
+        {
+            E.AddEntry(this, nameof(Corpse), Corpse?.DebugName ?? NULL);
+            E.AddEntry(this, nameof(BuiltToBeReanimated), BuiltToBeReanimated);
+            E.AddEntry(this, nameof(Attempted), Attempted);
+            E.AddEntry(this, nameof(DelayTillZoneBuild), DelayTillZoneBuild);
+            if (!FailedToRegisterEvents.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(FailedToRegisterEvents),
+                    FailedToRegisterEvents
+                    ?.ConvertAll(id => MinEvent.EventTypes.ContainsKey(id) ? MinEvent.EventTypes[id].ToString() : "Error")
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(FailedToRegisterEvents), "Empty");
+            }
+            E.AddEntry(this, nameof(PlayerWantsFakeDie), PlayerWantsFakeDie);
             return base.HandleEvent(E);
         }
     }
