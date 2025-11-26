@@ -92,7 +92,10 @@ namespace XRL.World.Parts
         public UD_FleshGolems_PastLife PastLife => ParentObject?.GetPart<UD_FleshGolems_PastLife>();
 
         private string _NewDisplayName;
-        public string NewDisplayName => _NewDisplayName ??= PastLife?.GenerateDisplayName();
+        public string NewDisplayName 
+            => _NewDisplayName 
+            ??= PastLife?.GenerateDisplayName()
+                    ?.Replace("[", "").Replace("]", "");
 
         private string _NewDescription;
         public string NewDescription => _NewDescription ??= PastLife?.GenerateDescription();
@@ -137,6 +140,19 @@ namespace XRL.World.Parts
             }
 
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
+
+            if (!NewDescription.IsNullOrEmpty()
+                && ParentObject.TryGetPart(out Description description))
+            {
+                description._Short += "\n\n" + NewDescription;
+            }
+            if (!NewDisplayName.IsNullOrEmpty()
+                && !AlteredRenderDisplayName
+                && ParentObject?.Render is Render corpseRender)
+            {
+                AlteredRenderDisplayName = true;
+                corpseRender.DisplayName = NewDisplayName;
+            }
 
             AttemptToSuffer();
             base.Attach();
@@ -296,15 +312,6 @@ namespace XRL.World.Parts
         {
             if (!NewDisplayName.IsNullOrEmpty())
             {
-                if (!AlteredRenderDisplayName
-                    && E.Object?.Render is Render corpseRender)
-                {
-                    if (E.Object.TryGetPart(out UD_FleshGolems_PastLife pastLifePart))
-                    {
-                        AlteredRenderDisplayName = true;
-                        corpseRender.DisplayName = pastLifePart.GenerateDisplayName();
-                    }
-                }
                 E.ReplacePrimaryBase(NewDisplayName);
             }
             if (int.TryParse(E.Object?.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)

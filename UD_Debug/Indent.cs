@@ -8,7 +8,7 @@ namespace UD_FleshGolems.Logging
 {
     public class Indent : IDisposable
     {
-        public static int MaxIndent = 12;
+        public static int MaxIndent = 16;
 
         protected int BaseValue;
 

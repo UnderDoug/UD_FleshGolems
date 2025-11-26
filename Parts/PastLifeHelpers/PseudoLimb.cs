@@ -80,9 +80,10 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
 
             DistanceFromRoot = 0;
         }
-        public PseudoLimb(BodyPart BodyPart, PseudoLimb AttachedTo = null, PseudoLimb Root = null)
+        public PseudoLimb(BodyPart BodyPart, PseudoLimb AttachedTo, PseudoLimb Root, ref int AmountStored)
             : this ()
         {
+            AmountStored++;
             Type = BodyPart.Type;
             VariantType = BodyPart.VariantType;
             Manager = BodyPart.Manager;
@@ -100,11 +101,12 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
                     Debug.Arg(nameof(Attached), Attached?.Count ?? 0),
                     Debug.Arg(nameof(Root), Root?.ToString() ?? NULL),
                     Debug.Arg(nameof(DistanceFromRoot), DistanceFromRoot),
+                    Debug.Arg(nameof(AmountStored), AmountStored),
                 });
             List<BodyPart> subParts = BodyPart?.Parts?.Where(IsConcreteIntrinsic)?.ToList() ?? new();
             foreach (BodyPart subPart in subParts)
             {
-                Attached.Add(new PseudoLimb(subPart, this, Root ?? this));
+                Attached.Add(new PseudoLimb(subPart, this, Root ?? this, ref AmountStored));
             }
             if (root == this)
             {
@@ -119,14 +121,14 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
                 return "Invalid";
             }
             string variant = VariantType ?? "base";
-            string manager = Manager.IsNullOrEmpty() ? null : ("(::" + Manager + ")");
+            string manager = Manager.IsNullOrEmpty() ? null : ("[::" + Manager + "]");
             return Type + "/" + variant + "" + manager;
         }
 
         public BodyPartType GetModel()
             => Anatomies.GetBodyPartTypeOrFail(VariantType ?? Type);
 
-        public bool GiveToEntity(GameObject Entity, BodyPart AttachAt)
+        public bool GiveToEntity(GameObject Entity, BodyPart AttachAt, ref int AmountGiven)
         {
             string attachAtString = AttachAt?.BodyPartString();
 
@@ -137,6 +139,7 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
                     Debug.Arg(ToString() ?? NULL),
                     Root == null ? Debug.Arg(nameof(Entity), Entity?.DebugName ?? NULL) : Debug.ArgPair.Empty,
                     Debug.Arg(nameof(AttachAt), attachAtString ?? NULL),
+                    Debug.Arg(nameof(AmountGiven), AmountGiven),
                 });
             if (Entity.Body is not Body parentBody)
             {
@@ -175,10 +178,10 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
 
             AttachAt.AddPart(newPart, newPart.Type, new string[2] { "Thrown Weapon", "Floating Nearby" });
             Debug.CheckYeh(newPart.BodyPartString().Strip() + " added to " + attachAtString, Indent: indent[1]);
-
+            AmountGiven++;
             foreach (PseudoLimb subPart in Attached)
             {
-                subPart.GiveToEntity(Entity, newPart);
+                subPart.GiveToEntity(Entity, newPart, ref AmountGiven);
             }
 
             if (Root == null)

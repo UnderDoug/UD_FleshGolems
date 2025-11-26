@@ -993,6 +993,8 @@ namespace XRL.World.Parts
                     }
                 }
 
+                frankenCorpse.RequireAbilities();
+
                 PastLife.RestoreAnatomy(out Body frankenBody);
 
                 bool taxonomyRestored = PastLife.RestoreTaxonomy();
@@ -1270,6 +1272,7 @@ namespace XRL.World.Parts
                         Debug.CheckNah("Skipped", Indent: indent[3]);
                     }
                 }
+                _ = indent[1];
                 PastLife?.RestoreAdditionalLimbs();
 
                 frankenBody ??= frankenCorpse.Body;

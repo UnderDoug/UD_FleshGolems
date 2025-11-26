@@ -482,8 +482,15 @@ namespace XRL.World.Parts
                                 };
 
                                 BrainInAJar.Statistics.Add(statName, newStat);
-                                Debug.Log(statName, newStat.Value + "/" + newStat.BaseValue + " | " + (newStat.sValue ?? "no sValue"), indent[3]);
+                                int statValue = newStat.Value;
+                                int statBaseValue = newStat.BaseValue;
+                                string statsValue = (newStat.sValue ?? "no sValue");
+                                Debug.CheckYeh(statName, statValue + "/" + statBaseValue + " | " + statsValue, indent[3]);
                             }
+                        }
+                        else
+                        {
+                            Debug.CheckNah("none!", Indent: indent[3]);
                         }
 
                         BrainInAJar.SetSpecies(PastLife.GetSpecies());
@@ -496,44 +503,71 @@ namespace XRL.World.Parts
 
                         Mutations bIAJ_Mutations = BrainInAJar.AddPart(PastLife.RequirePart<Mutations>());
                         Debug.Log(nameof(MutationsList) + "(BaseLevel|CapOverride|RapidLevel)", Indent: indent[2]);
-                        foreach (BaseMutation bIAJ_Mutation in bIAJ_Mutations.ActiveMutationList)
+                        if (!bIAJ_Mutations.ActiveMutationList.IsNullOrEmpty())
                         {
-                            MutationData mutationData = new(bIAJ_Mutation, bIAJ_Mutation.GetRapidLevelAmount());
-                            MutationsList.Add(mutationData);
-                            Debug.Log(mutationData.ToString(), Indent: indent[3]);
+                            foreach (BaseMutation bIAJ_Mutation in bIAJ_Mutations.ActiveMutationList)
+                            {
+                                MutationData mutationData = new(bIAJ_Mutation, bIAJ_Mutation.GetRapidLevelAmount());
+                                MutationsList.Add(mutationData);
+                                Debug.CheckYeh(mutationData.ToString(), Indent: indent[3]);
+                            }
+                        }
+                        else
+                        {
+                            Debug.CheckNah("none!", Indent: indent[3]);
                         }
 
                         Skills bIAJ_Skills = BrainInAJar.AddPart(PastLife.RequirePart<Skills>());
                         List<BaseSkill> pastSkills = PastLife.GetPartsDescendedFrom<BaseSkill>();
                         Debug.Log(nameof(pastSkills), pastSkills?.Count ?? 0, indent[2]);
-                        foreach (BaseSkill baseSkill in pastSkills)
+                        if (!pastSkills.IsNullOrEmpty())
                         {
-                            Debug.Log(baseSkill.Name, Indent: indent[3]);
-                            if (!bIAJ_Skills.SkillList.Contains(baseSkill))
+                            foreach (BaseSkill baseSkill in pastSkills)
                             {
-                                bIAJ_Skills.AddSkill(baseSkill);
+                                Debug.CheckYeh(baseSkill.Name, Indent: indent[3]);
+                                if (!bIAJ_Skills.SkillList.Contains(baseSkill))
+                                {
+                                    bIAJ_Skills.AddSkill(baseSkill);
+                                }
                             }
+                        }
+                        else
+                        {
+                            Debug.CheckNah("none!", Indent: indent[3]);
                         }
 
                         Debug.Log(nameof(PastLife.Effects), PastLife.Effects?.Count ?? 0, indent[2]);
-                        foreach (Effect pastEffect in PastLife.Effects)
+                        if (!PastLife.Effects.IsNullOrEmpty())
                         {
-                            BrainInAJar.Effects.Add(pastEffect.DeepCopy(BrainInAJar, null));
-                            Debug.Log(pastEffect.DisplayNameStripped, Indent: indent[3]);
+                            foreach (Effect pastEffect in PastLife.Effects)
+                            {
+                                BrainInAJar.Effects.Add(pastEffect.DeepCopy(BrainInAJar, null));
+                                Debug.CheckYeh(pastEffect.DisplayNameStripped, Indent: indent[3]);
+                            }
+                        }
+                        else
+                        {
+                            Debug.CheckNah("none!", Indent: indent[3]);
                         }
 
                         Debug.Log(nameof(InstalledCybernetics) + "...", Indent: indent[2]);
                         if (PastLife?.Body is Body pastBody
-                            && pastBody.GetInstalledCyberneticsReadonly() is List<GameObject> installedCybernetics
+                            && pastBody.GetInstalledCyberneticsReadonly() is List<GameObject> pastInstalledCybernetics
                             && InstalledCybernetics.IsNullOrEmpty())
                         {
-                            foreach (GameObject installedCybernetic in installedCybernetics)
+                            foreach (GameObject pastInstalledCybernetic in pastInstalledCybernetics)
                             {
-                                if (installedCybernetic?.Implantee?.Body is Body implanteeBody)
+                                if (pastInstalledCybernetic?.Implantee?.Body is Body implanteeBody)
                                 {
-                                    InstalledCybernetics.Add(new(installedCybernetic, implanteeBody));
+                                    InstalledCybernetic installedCybernetic = new(pastInstalledCybernetic, implanteeBody);
+                                    InstalledCybernetics.Add(installedCybernetic);
+                                    Debug.CheckYeh(installedCybernetic.ToString(), Indent: indent[3]);
                                 }
                             }
+                        }
+                        else
+                        {
+                            Debug.CheckNah("none!", Indent: indent[3]);
                         }
                     }
                 }
@@ -550,6 +584,7 @@ namespace XRL.World.Parts
                     }
                 }
             }
+            Debug.LogMethod("Finished", Indent: indent[1]);
             return this;
         }
 
@@ -670,7 +705,7 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(PastLife.ParentObject), PastLife.ParentObject?.DebugName ?? NULL),
                     Debug.Arg(nameof(oldIdentity), oldIdentity ?? NULL),
                 });
-            if (PastLife.WasProperlyNamed)
+            if (PastLife.WasProperlyNamed || HasSpecialIdentity(PastLife.ParentObject))
             {
                 newIdentity = "corpse of " + oldIdentity;
             }
@@ -682,7 +717,11 @@ namespace XRL.World.Parts
                 }
                 else
                 {
-                    newIdentity = /* PastLife.BrainInAJar?.DisplayName ??*/ PastLife.BrainInAJar?.Render?.DisplayName?.Replace("[", "").Replace("]", "");
+                    newIdentity = /* PastLife.BrainInAJar?.DisplayName ??*/ 
+                        PastLife.BrainInAJar
+                            ?.Render
+                            ?.DisplayName
+                            ?.Replace("[", "").Replace("]", "");
                 }
             }
             Debug.Log(nameof(newIdentity), newIdentity ?? NULL, indent[1]);
@@ -708,7 +747,7 @@ namespace XRL.World.Parts
             else
             {
                 string whoTheyWere = (PastLife?.RefName ?? PastLife.GetBlueprint().DisplayName());
-                if (!PastLife.WasProperlyNamed)
+                if (!PastLife.WasProperlyNamed && !HasSpecialIdentity(PastLife.ParentObject))
                 {
                     whoTheyWere = Grammar.A(whoTheyWere);
                 }
@@ -805,6 +844,24 @@ namespace XRL.World.Parts
             => BodyPart != null
             && !IsAbstractOrExtrinsic(BodyPart);
 
+        public static bool IsManaged(BodyPart BodyPart)
+            => BodyPart != null
+            && !BodyPart.Manager.IsNullOrEmpty();
+
+        public static bool IsUnmanaged(BodyPart BodyPart)
+            => BodyPart != null
+            && !IsManaged(BodyPart);
+
+        public static bool IsManagedConcreteIntrinsic(BodyPart BodyPart)
+            => BodyPart != null
+            && IsManaged(BodyPart)
+            && IsConcreteIntrinsic(BodyPart);
+
+        public static bool IsUnmanagedConcreteIntrinsic(BodyPart BodyPart)
+            => BodyPart != null
+            && IsUnmanaged(BodyPart)
+            && IsConcreteIntrinsic(BodyPart);
+
         public static bool IsAbstractOrExtrinsicOrNonNative(BodyPart BodyPart)
             => BodyPart != null
             && (IsAbstractOrExtrinsic(BodyPart)
@@ -814,12 +871,20 @@ namespace XRL.World.Parts
             => BodyPart != null
             && !IsAbstractOrExtrinsicOrNonNative(BodyPart);
 
+        public static bool IsUnmanagedConcreteIntrinsicNative(BodyPart BodyPart)
+            => BodyPart != null
+            && IsUnmanaged(BodyPart)
+            && !IsAbstractOrExtrinsicOrNonNative(BodyPart);
+
+        public static bool HasManagedConcreteIntrinsicSubpart(BodyPart BodyPart)
+            => BodyPart.LoopSubparts().Any(IsManagedConcreteIntrinsic);
+
         private static bool RoughlyCopyAdditionalLimbs(
             Body DestinationBody,
             Body SourceBody,
             ref Dictionary<PseudoLimb, string> ExtraLimbs)
         {
-            using Indent indent = new(1);
+            using Indent indent = new();
             Debug.LogMethod(indent,
                 ArgPairs: new Debug.ArgPair[]
                 {
@@ -835,7 +900,10 @@ namespace XRL.World.Parts
                 return false;
             }
 
+            int amountGiven = 0;
             ExtraLimbs ??= new();
+            int totalSourceParts = SourceBody?.LoopParts()?.Count() ?? 0;
+            int totalDestinationParts = 0;
             if (!ExtraLimbs.IsNullOrEmpty())
             {
                 Debug.CheckYeh("Looping all " + ExtraLimbs.Count.Things(nameof(ExtraLimbs) + " tree") + ".", Indent: indent[1]);
@@ -851,40 +919,62 @@ namespace XRL.World.Parts
                         DestinationBody.LoopPart(targetBodyPartType)
                             ?.GetRandomElementCosmetic()
                         ?? DestinationBody.LoopParts(IsConcreteIntrinsic)
-                        ?.GetRandomElementCosmetic();
+                            ?.GetRandomElementCosmetic();
+
                     if (targetBodyPart == null)
                     { 
                         Debug.CheckNah("Actually no limbs to grow on!", Indent: indent[2]);
                         break;
                     }
-                    pseudoLimb.GiveToEntity(destinationObject, targetBodyPart);
+                    pseudoLimb.GiveToEntity(destinationObject, targetBodyPart, ref amountGiven);
+                }
+                Debug.Log(nameof(totalSourceParts), totalSourceParts, Indent: indent[1]);
+
+                Debug.Log(nameof(amountGiven), amountGiven, Indent: indent[1]);
+
+                totalDestinationParts = DestinationBody?.LoopParts()?.Count() ?? 0;
+                Debug.Log(nameof(totalDestinationParts), totalDestinationParts, Indent: indent[1]);
+
+                Debug.CheckYeh("Looping all DestinationBody (" + (destinationObject?.DebugName ?? NULL) + ") parts.", Indent: indent[1]);
+                foreach (BodyPart bodyPart in DestinationBody.LoopParts())
+                {
+                    int depth = DestinationBody.GetBody().GetPartDepth(bodyPart, 0);
+                    Debug.Log(bodyPart.BodyPartString(WithManager: true, WithParent: true), Indent: indent[depth + 2]);
                 }
                 return true;
             }
-            List<BodyPart> bodyPartsToLoop = SourceBody?.GetBody()?.Parts;
+            List<BodyPart> bodyPartsToLoop = SourceBody?.LoopParts()
+                ?.Where(IsUnmanagedConcreteIntrinsicNative)
+                ?.Where(HasManagedConcreteIntrinsicSubpart)
+                ?.ToList();
             List<BodyPart> accountedForBodyParts = new();
             List<BodyPart> accountedForDestinationBodyParts = new();
-
+            int amountStored = 0;
             foreach (BodyPart bodyPart in bodyPartsToLoop)
             {
                 string bodyPartName = bodyPart?.BodyPartString(WithManager: true).Strip();
-                if (IsAbstractOrExtrinsicOrNonNative(bodyPart))
+
+                accountedForBodyParts.Add(bodyPart);
+
+                List<BodyPart> subPartsToLoop = bodyPart?.LoopSubparts()
+                    ?.Where(IsManagedConcreteIntrinsic)
+                    ?.ToList();
+
+                if (subPartsToLoop.IsNullOrEmpty())
                 {
-                    Debug.CheckNah(bodyPartName + " " + nameof(IsAbstractOrExtrinsicOrNonNative), Indent: indent[1]);
+                    Debug.CheckNah(bodyPartName + " has no subparts that " + nameof(IsManagedConcreteIntrinsic), Indent: indent[1]);
                     continue;
                 }
                 Debug.CheckYeh(bodyPartName + " eligible", Indent: indent[1]);
-                List<BodyPart> subPartsToLoop = bodyPart?.Parts ?? new();
-                accountedForBodyParts.Add(bodyPart);
+
                 List<PseudoLimb> bodyPartExtraLimbs = new();
                 Debug.Log("Looping Subparts", Indent: indent[2]);
                 foreach (BodyPart subPart in subPartsToLoop)
                 {
                     string subPartName = subPart?.BodyPartString(WithManager: true)?.Strip();
-                    if (IsAbstractOrExtrinsic(subPart)
-                        || accountedForBodyParts.Contains(subPart))
+                    if (accountedForBodyParts.Contains(subPart))
                     {
-                        Debug.CheckNah(subPartName + " " + nameof(IsAbstractOrExtrinsic) + " || in " + nameof(accountedForBodyParts), Indent: indent[3]);
+                        Debug.CheckNah(subPartName + " in " + nameof(accountedForBodyParts), Indent: indent[3]);
                         continue;
                     }
                     if (subPart.Manager.IsNullOrEmpty())
@@ -893,8 +983,9 @@ namespace XRL.World.Parts
                         continue;
                     }
                     Debug.CheckYeh(subPartName + " eligible", Indent: indent[3]);
+
                     accountedForBodyParts.Add(subPart);
-                    PseudoLimb pseudoLimb = new(bodyPart, null, null);
+                    PseudoLimb pseudoLimb = new(subPart, null, null, ref amountStored);
                     ExtraLimbs.Add(pseudoLimb, bodyPart.Type);
                     bodyPartExtraLimbs.Add(pseudoLimb);
                 }
@@ -904,16 +995,17 @@ namespace XRL.World.Parts
                     continue;
                 }
                 Debug.CheckYeh("Subparts Looped, " + bodyPartExtraLimbs.Count.Things("limb tree") + " copied", Indent: indent[2]);
-                List<BodyPart> potentialTargetBodyParts = DestinationBody.GetBody()?.Parts
-                    ?.Where(IsConcreteIntrinsicNative)
+
+                List<BodyPart> potentialTargetBodyParts = DestinationBody?.LoopParts()
+                    ?.Where(IsUnmanagedConcreteIntrinsicNative)
                     ?.Where(bp => !accountedForDestinationBodyParts.Contains(bp))
-                    .ToList();
+                    ?.ToList();
 
                 BodyPart targetBodyPart = 
                     potentialTargetBodyParts
                         ?.GetRandomElementCosmeticExcluding(bp => bp.Type != bodyPart.Type)
                     ?? potentialTargetBodyParts
-                        ?.GetRandomElementCosmeticExcluding(bp => bp.Type != bodyPart.Type);
+                        ?.GetRandomElementCosmetic();
 
                 Debug.CheckYeh("Getting " + nameof(targetBodyPart) + " from " + nameof(DestinationBody), Indent: indent[2]);
                 Debug.YehNah(targetBodyPart?.BodyPartString(WithManager: true)?.Strip(), targetBodyPart != null, Indent: indent[3]);
@@ -922,19 +1014,24 @@ namespace XRL.World.Parts
                     accountedForDestinationBodyParts.Add(targetBodyPart);
                     foreach (PseudoLimb bodyPartExtraLimb in bodyPartExtraLimbs)
                     {
-                        Debug.YehNah(bodyPartExtraLimb?.ToString(), bodyPartExtraLimb.GiveToEntity(destinationObject, targetBodyPart), Indent: indent[4]);
+                        bool given = bodyPartExtraLimb.GiveToEntity(destinationObject, targetBodyPart, ref amountGiven);
+                        Debug.YehNah(bodyPartExtraLimb?.ToString(), given, Indent: indent[4]);
                     }
                 }
             }
+            Debug.Log(nameof(totalSourceParts), totalSourceParts, Indent: indent[1]);
+
+            Debug.Log(nameof(amountStored), amountStored, Indent: indent[1]);
+            Debug.Log(nameof(amountGiven), amountGiven, Indent: indent[1]);
+
+            totalDestinationParts = DestinationBody?.LoopParts()?.Count() ?? 0;
+            Debug.Log(nameof(totalDestinationParts), totalDestinationParts, Indent: indent[1]);
+
             Debug.CheckYeh("Looping all DestinationBody (" + (destinationObject?.DebugName ?? NULL) + ") parts.", Indent: indent[1]);
             foreach (BodyPart bodyPart in DestinationBody.LoopParts())
             {
-                Indent bodyPartIndent = 
-                    (bodyPart.ParentPart == null || bodyPart.ParentPart == bodyPart.ParentBody.GetBody()) 
-                    ? indent[2] 
-                    : indent[3];
-
-                Debug.Log(bodyPart.BodyPartString(WithManager: true, WithParent: true), Indent: bodyPartIndent);
+                int depth = DestinationBody.GetBody().GetPartDepth(bodyPart, 0);
+                Debug.Log(bodyPart.BodyPartString(WithManager: true, WithParent: true), Indent: indent[depth + 2]);
             }
             return true;
         }
@@ -1279,7 +1376,7 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(Skills),
                     Skills.SkillList
-                    ?.ConvertAll(s => s.DebugName)
+                    ?.ConvertAll(s => s.Name)
                     ?.GenerateBulletList(Bullet: null, BulletColor: null));
             }
             else
@@ -1355,6 +1452,7 @@ namespace XRL.World.Parts
             {
                 BrainInAJar.Statistics["Enenrgy"] = new("Enenrgy", -100000, 100000, 0, BrainInAJar);
             }
+            BrainInAJar?.FinalizeStats();
             if (BrainInAJar.Statistics.ContainsKey("Enenrgy"))
             {
                 The.Player.CurrentCell

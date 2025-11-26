@@ -500,6 +500,42 @@ namespace UD_FleshGolems
             return false;
         }
 
+        public static bool HasSpecialIdentity(GameObject Object)
+        {
+            if (Object == null)
+            {
+                return false;
+            }
+            if (Object.HasProperName)
+            {
+                return true;
+            }
+            if (Object.GetTagOrStringProperty("SpawnedFrom") is string spawnedFrom
+                && spawnedFrom.EqualsAny("Mechanimist Convert Librarian"))
+            {
+                return true;
+            }
+            if (Object.TryGetIntProperty("Villager", out int villagerProp)
+                && villagerProp > 0)
+            {
+                return true;
+            }
+            if (Object.TryGetIntProperty("ProperNoun", out int properNounProp)
+                && properNounProp > 0)
+            {
+                return true;
+            }
+            if (Object.PartsList.Any(p => p.Name.EqualsAny(nameof(Titles), nameof(Epithets), nameof(Honorifics))))
+            {
+                return true;
+            }
+            if (Object.GetPropertyOrTag("Role") == "Hero")
+            {
+                return true;
+            }
+            return false;
+        }
+
         /* 
          * 
          * Wishes!
