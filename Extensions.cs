@@ -977,5 +977,26 @@ namespace UD_FleshGolems
             && FromWalk.HasFieldOrProp(FieldPropName)
             && FromWalk.GetFieldOrProp(FieldPropName) is Traverse fieldProp
             && fieldProp.HasValueIsPrimativeType();
+
+        public static bool IsLibrarian(this GameObject Object)
+            => Object.GetTagOrStringProperty("SpawnedFrom") is string spawnedFrom
+            && spawnedFrom.Equals("Mechanimist Convert Librarian");
+
+        public static bool HasIntPropertyGTZeo(this GameObject Object, string Property)
+            => Object.TryGetIntProperty(Property, out int result)
+            && result > 0;
+
+        public static bool IsVillageWarden(this GameObject Object)
+            => Object.HasIntPropertyGTZeo("VillageWarden");
+
+        public static bool IsNamedVillager(this GameObject Object)
+            => Object.HasIntPropertyGTZeo("NamedVillager");
+
+        public static bool IsParticipantVillager(this GameObject Object)
+            => Object.HasIntPropertyGTZeo("ParticipantVillager");
+
+        public static bool IsVillager(this GameObject Object)
+            => Object.HasIntPropertyGTZeo("Villager");
+
     }
 }

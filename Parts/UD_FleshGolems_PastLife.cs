@@ -299,7 +299,9 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(TimesReanimated), TimesReanimated, indent[2]);
 
                         BrainInAJar.HasProperName = PastLife.HasProperName 
-                            || PastLife.GetBlueprint().GetxTag("Grammar", "Proper").EqualsNoCase("true");
+                            || (PastLife.GetBlueprint() is GameObjectBlueprint pastLifeBlueprint
+                                && pastLifeBlueprint.GetxTag("Grammar", "Proper") is string properGrammar
+                                && properGrammar.EqualsNoCase("true"));
 
                         Debug.Log(nameof(BrainInAJar.HasProperName), BrainInAJar.HasProperName, indent[2]);
 
@@ -761,14 +763,62 @@ namespace XRL.World.Parts
             return RestoreBrain(ParentObject, this, ExcludedFromDynamicEncounters, out FrankenBrain);
         }
 
-        public static string GenerateDisplayName(UD_FleshGolems_PastLife PastLife)
+        public enum IdentityType : int
+        {
+            Player,
+            Librarian,
+            Warden,
+            NamedVillager,
+            Named,
+            ParticipantVillager,
+            Villager,
+            Nobody,
+            Corpse,
+            None,
+        }
+        public static IdentityType GetIdentityType(UD_FleshGolems_PastLife PastLife)
         {
             if (PastLife == null
                 || PastLife.ParentObject is not GameObject frankenCorpse)
+                return IdentityType.None;
+
+            if (PastLife.WasPlayer || frankenCorpse.IsPlayer())
+                return IdentityType.Player;
+
+            if (frankenCorpse.IsLibrarian())
+                return IdentityType.Librarian;
+
+            if (frankenCorpse.IsVillageWarden())
+                return IdentityType.Warden;
+
+            if (frankenCorpse.IsNamedVillager())
+                return IdentityType.NamedVillager;
+
+            if (PastLife.WasProperlyNamed)
+                return IdentityType.Named;
+
+            if (frankenCorpse.IsParticipantVillager())
+                return IdentityType.ParticipantVillager;
+
+            if (frankenCorpse.IsVillager())
+                return IdentityType.Villager;
+
+            if (PastLife.WasCorpse)
+                return IdentityType.Corpse;
+
+            return IdentityType.Nobody;
+        }
+        public IdentityType GetIdentityType()
+            => GetIdentityType(this);
+
+        public static string GenerateDisplayName(UD_FleshGolems_PastLife PastLife, out IdentityType IdentityType)
+        {
+            IdentityType = IdentityType.None;
+            if (PastLife?.ParentObject is not GameObject frankenCorpse)
             {
                 return null;
             }
-
+            IdentityType = PastLife.GetIdentityType();
             bool corpseHasSpecialIdentity = HasSpecialIdentity(frankenCorpse);
 
             string whoTheyWere =
@@ -776,7 +826,6 @@ namespace XRL.World.Parts
                 ? frankenCorpse?.Render?.DisplayName
                 : PastLife.RefName;
 
-            string newIdentity;
             using Indent indent = new();
             Debug.LogMethod(indent[1],
                 ArgPairs: new Debug.ArgPair[]
@@ -785,6 +834,26 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(whoTheyWere), whoTheyWere ?? NULL),
                 });
 
+            string newIdentity = IdentityType switch
+            {
+                IdentityType.Player => The.Game.PlayerName,
+
+                IdentityType.Librarian
+                or IdentityType.Warden
+                or IdentityType.NamedVillager => frankenCorpse?.Render?.DisplayName,
+
+                IdentityType.Named 
+                or IdentityType.ParticipantVillager 
+                or IdentityType.Villager 
+                or IdentityType.Nobody => PastLife.RefName,
+
+                IdentityType.Corpse => PastLife.BrainInAJar?.Render?.DisplayName,
+
+                _ => frankenCorpse?.DisplayName,
+            };
+            Debug.Log(nameof(newIdentity), newIdentity ?? NULL, indent[1]);
+            return newIdentity?.Replace("[", "").Replace("]", "");
+            /*
             if (PastLife.WasProperlyNamed || corpseHasSpecialIdentity)
             {
                 newIdentity = "corpse of " + whoTheyWere;
@@ -797,54 +866,83 @@ namespace XRL.World.Parts
                 }
                 else
                 {
-                    newIdentity = /* PastLife.BrainInAJar?.DisplayName ??*/ 
+                    newIdentity = // PastLife.BrainInAJar?.DisplayName ?? 
                         PastLife.BrainInAJar?.Render?.DisplayName;
                 }
             }
             newIdentity = newIdentity?.Replace("[", "").Replace("]", "");
             Debug.Log(nameof(newIdentity), newIdentity ?? NULL, indent[1]);
             return newIdentity;
+            */
         }
-        public string GenerateDisplayName()
-        {
-            return GenerateDisplayName(this);
-        }
+        public string GenerateDisplayName(out IdentityType IdentityType)
+            => GenerateDisplayName(this, out IdentityType);
 
-        public static string GenerateDescription(UD_FleshGolems_PastLife PastLife)
+        public string GenerateDisplayName()
+            => GenerateDisplayName(out _);
+
+        public static string GeneratePostDescription(UD_FleshGolems_PastLife PastLife, out IdentityType IdentityType)
         {
+            IdentityType = IdentityType.None;
+
             if (PastLife == null
                 || PastLife.Description.IsNullOrEmpty()
                 || PastLife.ParentObject is not GameObject frankenCorpse)
             {
                 return null;
             }
-            bool corpseHasSpecialIdentity = HasSpecialIdentity(frankenCorpse);
 
+            IdentityType = PastLife.GetIdentityType();
+
+            string inLife = "In life this =subject.uD_xTag:UD_FleshGolems_CorpseText:CorpseDescription= was ";
+            string whoTheyWere = (PastLife.RefName ?? PastLife.GetBlueprint()?.DisplayName() ?? "unfortunate soul");
+            string endMark = ":\n";
             string oldDescription = PastLife.Description;
-            string postDescription = "In life this =subject.uD_xTag:UD_FleshGolems_CorpseText:CorpseDescription= was ";
-            if (PastLife.WasPlayer)
+            if (IdentityType == IdentityType.Corpse)
             {
-                postDescription += "you.";
+                oldDescription = null;
+                endMark = ".";
             }
-            else
+            if (IdentityType > IdentityType.NamedVillager)
             {
-                string whoTheyWere = (PastLife?.RefName ?? PastLife.GetBlueprint().DisplayName());
-                if (corpseHasSpecialIdentity)
-                {
-                    whoTheyWere = frankenCorpse?.Render?.DisplayName;
-                }
-                if (!PastLife.WasProperlyNamed && !corpseHasSpecialIdentity)
-                {
-                    whoTheyWere = Grammar.A(whoTheyWere);
-                }
-                string postDescriptionEnd = PastLife.WasCorpse ? "." : ":\n" + oldDescription;
-                postDescription += whoTheyWere + postDescriptionEnd;
+                whoTheyWere = Grammar.A(whoTheyWere);
             }
-            return postDescription;
+            if (IdentityType == IdentityType.Librarian)
+            {
+                whoTheyWere = frankenCorpse.Render?.DisplayName ?? "Sheba Hagadias";
+                if (GameObject.CreateSample("UD_FleshGolems_Sample_Librarian") is GameObject sampleLibrarian)
+                {
+                    if (sampleLibrarian.TryGetPart(out MechanimistLibrarian librarianPart))
+                    {
+                        librarianPart.Initialize();
+                        if (sampleLibrarian.TryGetPart(out Description librarianDescription))
+                        {
+                            oldDescription = librarianDescription.Short;
+                        }
+                        whoTheyWere = sampleLibrarian.DisplayName;
+                    }
+                    if (GameObject.Validate(ref sampleLibrarian))
+                    {
+                        sampleLibrarian.Obliterate();
+                    }
+                }
+            }
+            if (IdentityType == IdentityType.Player)
+            {
+                whoTheyWere = "you";
+                oldDescription = null;
+                endMark = ".";
+            }
+
+            return inLife + whoTheyWere + endMark + oldDescription;
         }
-        public string GenerateDescription()
+        public string GeneratePostDescription(out IdentityType IdentityType)
         {
-            return GenerateDescription(this);
+            return GeneratePostDescription(this, out IdentityType);
+        }
+        public string GeneratePostDescription()
+        {
+            return GeneratePostDescription(out _);
         }
 
         public static bool RestoreGenderIdentity(

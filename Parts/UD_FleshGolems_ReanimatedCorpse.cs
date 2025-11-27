@@ -10,6 +10,7 @@ using static XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon;
 
 using SerializeField = UnityEngine.SerializeField;
 using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdjective;
+using IdentityType = XRL.World.Parts.UD_FleshGolems_PastLife.IdentityType;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
@@ -43,6 +44,8 @@ namespace XRL.World.Parts
 
         public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolems_reanimated|reanimated}}";
 
+        private const string LIBRARIAN_FRAGMENT = "In the narthex of the Stilt, cloistered beneath a marble arch and close to";
+
         public static List<string> PartsInNeedOfRemovalWhenAnimated => new()
         {
             // These would serve as quick ways to insta-kill a corpse creature, since they consume the corpse without contest. 
@@ -62,6 +65,18 @@ namespace XRL.World.Parts
         public static List<string> RobotContaminationLiquids = new() { "putrid", "gel", "sludge", };
         public static List<string> PlantContaminationLiquids = new() { "putrid", "slime", "goo", };
         public static List<string> FungusContaminationLiquids = new() { "putrid", "slime", "acid", };
+
+        public static int CorpseAdjective = -500;
+        public static int CorpseClause = -500;
+
+        public static List<IdentityType> CorpseOfPrefixTypes = new()
+        {
+            IdentityType.Player,
+            IdentityType.Librarian,
+            IdentityType.Warden,
+            IdentityType.Named,
+            IdentityType.NamedVillager,
+        };
 
         [SerializeField]
         private GameObject _Reanimator;
@@ -91,14 +106,35 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_PastLife PastLife => ParentObject?.GetPart<UD_FleshGolems_PastLife>();
 
-        private string _NewDisplayName;
-        public string NewDisplayName 
-            => _NewDisplayName 
-            ??= PastLife?.GenerateDisplayName()
-                    ?.Replace("[", "").Replace("]", "");
+        public IdentityType IdentityType => PastLife?.GetIdentityType() ?? IdentityType.None;
 
+        [SerializeField]
+        private string _NewDisplayName;
+        public string NewDisplayName
+        {
+            get
+            {
+                if (!_NewDisplayName.IsNullOrEmpty())
+                {
+                    return _NewDisplayName;
+                }
+                IdentityType identityType = IdentityType.None;
+                string output = PastLife?.GenerateDisplayName(out identityType);
+                if (identityType == IdentityType.None)
+                {
+                    return output;
+                }
+                return _NewDisplayName = output;
+            }
+            set
+            {
+                _NewDisplayName = value;
+            }
+        }
+
+        [SerializeField]
         private string _NewDescription;
-        public string NewDescription => _NewDescription ??= PastLife?.GenerateDescription();
+        public string NewDescription => _NewDescription ??= PastLife?.GeneratePostDescription();
 
         public string BleedLiquid;
 
@@ -106,6 +142,9 @@ namespace XRL.World.Parts
 
         [SerializeField]
         private bool AlteredRenderDisplayName;
+
+        [SerializeField]
+        private bool AlteredDescription;
 
         public UD_FleshGolems_ReanimatedCorpse()
         {
@@ -141,9 +180,12 @@ namespace XRL.World.Parts
 
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
 
-            if (!NewDescription.IsNullOrEmpty()
+            if (!AlteredDescription
+                && IdentityType != IdentityType.Librarian
+                && !NewDescription.IsNullOrEmpty()
                 && ParentObject.TryGetPart(out Description description))
             {
+                AlteredDescription = true;
                 description._Short += "\n\n" + NewDescription;
             }
             /*
@@ -299,12 +341,12 @@ namespace XRL.World.Parts
             {
                 if (playerCorpse.Render is Render corpseRender)
                 {
-                    AlteredRenderDisplayName = true;
-                    corpseRender.DisplayName = The.Game.PlayerName;
+                    // AlteredRenderDisplayName = true;
+                    // corpseRender.DisplayName = The.Game.PlayerName;
                     if (playerCorpse.TryGetPart(out UD_FleshGolems_PastLife pastLifePart))
                     {
-                        The.Game.PlayerName = pastLifePart.GenerateDisplayName();
-                        corpseRender.DisplayName = The.Game.PlayerName;
+                        // The.Game.PlayerName = pastLifePart.GenerateDisplayName();
+                        // corpseRender.DisplayName = The.Game.PlayerName;
                     }
                 }
             }
@@ -312,24 +354,40 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
-            if (!NewDisplayName.IsNullOrEmpty())
+            if (PastLife != null
+                && PastLife.GenerateDisplayName(out IdentityType identityType) is string newDisplayName)
             {
-                // E.ReplacePrimaryBase(NewDisplayName);
+                E.ReplacePrimaryBase(newDisplayName);
+
+                if (identityType < IdentityType.ParticipantVillager)
+                {
+                    E.AddAdjective("corpse of", CorpseAdjective);
+                }
+                else
+                if (identityType < IdentityType.Corpse)
+                {
+                    E.AddClause("corpse", CorpseClause);
+                }
+                E.AddTag(identityType.ToString() + " (" + (int)identityType + ")");
             }
             E.ReplacePrimaryBase(PastLife.GenerateDisplayName());
             if (int.TryParse(E.Object?.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
                 && NoReanimatedNamePrefix < 1)
             {
-                E.AddAdjective(REANIMATED_ADJECTIVE, 5);
+                E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
             }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
-            if (!NewDescription.IsNullOrEmpty()
-                && Utils.HasSpecialIdentity(E.Object))
+            if (AlteredDescription
+                && IdentityType == IdentityType.Librarian
+                && !NewDescription.IsNullOrEmpty()
+                && ParentObject.TryGetPart(out Description description)
+                && description._Short.Contains(LIBRARIAN_FRAGMENT))
             {
-                E.Infix.AppendLine().Append(NewDescription);
+                AlteredDescription = true;
+                description._Short += "\n\n" + NewDescription;
             }
             return base.HandleEvent(E);
         }

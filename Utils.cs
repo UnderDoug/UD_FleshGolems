@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using System.Diagnostics;
+using System.Reflection;
+
+using HarmonyLib;
 
 using Qud.API;
 
@@ -21,13 +24,12 @@ using XRL.UI;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
+using UD_FleshGolems.Capabilities;
 using Debug = UD_FleshGolems.Logging.Debug;
+using Options = UD_FleshGolems.Options;
 
 using static UD_FleshGolems.Const;
-using Options = UD_FleshGolems.Options;
-using UD_FleshGolems.Capabilities;
-using System.Reflection;
-using HarmonyLib;
+
 
 namespace UD_FleshGolems
 {
