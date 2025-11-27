@@ -181,7 +181,8 @@ namespace XRL.World.Parts
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
 
             if (!AlteredDescription
-                && IdentityType != IdentityType.Librarian
+                && (IdentityType > IdentityType.ParticipantVillager
+                    || IdentityType < IdentityType.Librarian)
                 && !NewDescription.IsNullOrEmpty()
                 && ParentObject.TryGetPart(out Description description))
             {
@@ -381,7 +382,8 @@ namespace XRL.World.Parts
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
             if (AlteredDescription
-                && IdentityType == IdentityType.Librarian
+                && (IdentityType > IdentityType.ParticipantVillager
+                    || IdentityType < IdentityType.Librarian)
                 && !NewDescription.IsNullOrEmpty()
                 && ParentObject.TryGetPart(out Description description)
                 && description._Short.Contains(LIBRARIAN_FRAGMENT))
