@@ -21,6 +21,7 @@ using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair.Pai
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
+using HarmonyLib;
 
 namespace UD_FleshGolems
 {
@@ -843,5 +844,138 @@ namespace UD_FleshGolems
             }
             return "(" + BodyPart.ID + "):" + BodyPart.Type + "/" + BodyPart.VariantType + managed + parent;
         }
+
+        public static IEnumerable<string> GetFieldAndPropertyNames(this object Root)
+        {
+            if (Root == null)
+                yield break;
+
+            Traverse rootWalk = new(Root);
+
+            foreach (string fieldName in rootWalk.Fields())
+                yield return fieldName;
+
+            foreach (string propertyName in rootWalk.Properties())
+                yield return propertyName;
+        }
+
+        public static IEnumerable<MemberInfo> GetMembers(this object Root, IEnumerable<string> MemberNameList)
+            => Root?.GetType()?.GetMembers()
+                ?.Where(mi => !MemberNameList.IsNullOrEmpty() && MemberNameList.Contains(mi.Name));
+
+        public static IEnumerable<MemberInfo> GetFieldsAndProperties(this object Root)
+            => Root.GetMembers(Root.GetFieldAndPropertyNames());
+
+        public static IEnumerable<KeyValuePair<string, Traverse>> GetAssignableDeclaredFieldAndPropertyKeyValuePairs(
+            this object Root,
+            Predicate<Traverse> TraverseFilter = null,
+            Predicate<FieldInfo> FieldFilter = null,
+            Predicate<PropertyInfo> PropertyFilter = null)
+        {
+            if (Root == null)
+                yield break;
+
+            Traverse rootWalk = new(Root);
+            foreach (MemberInfo memberInfo in Root.GetFieldsAndProperties())
+            {
+                if (memberInfo is FieldInfo fieldInfo)
+                {
+                    if (fieldInfo.IsLiteral)
+                        continue;
+
+                    if (FieldFilter != null && !FieldFilter(fieldInfo))
+                        continue;
+                }
+
+                if (memberInfo is PropertyInfo propertyInfo)
+                {
+                    if (!propertyInfo.CanWrite)
+                        continue;
+
+                    if (PropertyFilter != null && !PropertyFilter(propertyInfo))
+                        continue;
+                }
+
+                if (rootWalk.GetFieldOrProp(memberInfo.Name) is Traverse fieldProp)
+                    if (TraverseFilter == null || TraverseFilter(fieldProp))
+                        yield return new(memberInfo.Name, fieldProp);
+            }
+        }
+
+        public static Dictionary<string, Traverse> GetAssignableDeclaredFieldAndPropertyDictionary(
+            this object Root,
+            Predicate<Traverse> TraverseFilter = null,
+            Predicate<FieldInfo> FieldFilter = null,
+            Predicate<PropertyInfo> PropertyFilter = null)
+        {
+            Dictionary<string, Traverse> output = new();
+
+            if (Root == null)
+                return output;
+
+            Traverse rootWalk = new(Root);
+            foreach (MemberInfo memberInfo in Root.GetFieldsAndProperties())
+            {
+                if (memberInfo is FieldInfo fieldInfo)
+                {
+                    if (fieldInfo.IsLiteral)
+                        continue;
+
+                    if (FieldFilter != null && !FieldFilter(fieldInfo))
+                        continue;
+
+                    if (rootWalk.Field(memberInfo.Name) is Traverse field)
+                        if (TraverseFilter == null || TraverseFilter(field))
+                            output.TryAdd(memberInfo.Name, field);
+
+                    continue;
+                }
+
+                if (memberInfo is PropertyInfo propertyInfo)
+                {
+                    if (!propertyInfo.CanWrite || !propertyInfo.CanRead)
+                        continue;
+
+                    if (PropertyFilter != null && !PropertyFilter(propertyInfo))
+                        continue;
+
+                    if (rootWalk.Property(memberInfo.Name) is Traverse property)
+                        if (TraverseFilter == null || TraverseFilter(property))
+                        output.TryAdd(memberInfo.Name, property);
+
+                    continue;
+                }
+            }
+            return output;
+        }
+
+        public static Traverse GetFieldOrProp(this Traverse FromWalk, string FieldPropName)
+        {
+            if (FromWalk == null || FieldPropName.IsNullOrEmpty())
+                return null;
+
+            if (FromWalk.Field(FieldPropName) is Traverse field)
+                if (field.FieldExists())
+                    return field;
+
+            if (FromWalk.Property(FieldPropName) is Traverse prop)
+                if (prop.PropertyExists())
+                    return prop;
+
+            return null;
+        }
+
+        public static bool HasFieldOrProp(this Traverse FromWalk, string FieldPropName)
+            => FromWalk.Field(FieldPropName).FieldExists()
+            || FromWalk.Property(FieldPropName).PropertyExists();
+
+        public static bool HasValueIsPrimativeType(this Traverse Member)
+            => Utils.HasValueIsPrimativeType(Member);
+
+        public static bool HasFieldOrPropAndValueIsPrimativeType(this Traverse FromWalk, string FieldPropName)
+            => !FieldPropName.IsNullOrEmpty()
+            && FromWalk.HasFieldOrProp(FieldPropName)
+            && FromWalk.GetFieldOrProp(FieldPropName) is Traverse fieldProp
+            && fieldProp.HasValueIsPrimativeType();
     }
 }

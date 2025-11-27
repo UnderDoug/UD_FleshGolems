@@ -11,6 +11,7 @@ namespace XRL.World.ObjectBuilders
     [Serializable]
     public class UD_FleshGolems_OptionallyReanimated : IObjectBuilder
     {
+        public const string REANIMATED_BYBUILDER = "UD_FleshGolems Reanimated ByBuilder";
         public static int SpecialChanceOneIn => SpecialReanimatedBuilderChanceOneIn;
 
         public static List<string> ContextsToIgnore => new()
@@ -28,6 +29,8 @@ namespace XRL.World.ObjectBuilders
                 {
                     Object.SetStringProperty("UD_FleshGolems_Reanimator", "UD_FleshGolems Mad Monger");
                 }
+                Object.SetStringProperty(REANIMATED_BYBUILDER, "Yep! I should be loyal to my primary faction.");
+                Object.RequireAbilities();
                 UD_FleshGolems_Reanimated.Unkill(Object, Context);
             }
         }

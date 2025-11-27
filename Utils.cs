@@ -27,6 +27,7 @@ using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
 using UD_FleshGolems.Capabilities;
 using System.Reflection;
+using HarmonyLib;
 
 namespace UD_FleshGolems
 {
@@ -484,11 +485,6 @@ namespace UD_FleshGolems
             {
                 return true;
             }
-            if (Object.GetTagOrStringProperty("SpawnedFrom") is string spawnedFrom
-                && spawnedFrom.EqualsAny("Mechanimist Convert Librarian"))
-            {
-                return true;
-            }
             if (Object.PartsList.Any(p => p.Name.EqualsAny(nameof(Titles), nameof(Epithets), nameof(Honorifics))))
             {
                 return true;
@@ -506,10 +502,6 @@ namespace UD_FleshGolems
             {
                 return false;
             }
-            if (Object.HasProperName)
-            {
-                return true;
-            }
             if (Object.GetTagOrStringProperty("SpawnedFrom") is string spawnedFrom
                 && spawnedFrom.EqualsAny("Mechanimist Convert Librarian"))
             {
@@ -518,23 +510,39 @@ namespace UD_FleshGolems
             if (Object.TryGetIntProperty("Villager", out int villagerProp)
                 && villagerProp > 0)
             {
-                return true;
-            }
-            if (Object.TryGetIntProperty("ProperNoun", out int properNounProp)
-                && properNounProp > 0)
-            {
-                return true;
-            }
-            if (Object.PartsList.Any(p => p.Name.EqualsAny(nameof(Titles), nameof(Epithets), nameof(Honorifics))))
-            {
-                return true;
-            }
-            if (Object.GetPropertyOrTag("Role") == "Hero")
-            {
-                return true;
+                // return true;
             }
             return false;
         }
+
+        public static ICollection<T> SafeCombineLists<T>(params ICollection<T>[] args)
+        {
+            List<T> output = new();
+            if (args.IsNullOrEmpty())
+            {
+                return output;
+            }
+            foreach (ICollection<T> arg in args)
+            {
+                if (arg.IsNullOrEmpty())
+                {
+                    continue;
+                }
+                output.AddRange(arg);
+            }
+            return output;
+        }
+
+        public static bool HasValueIsPrimativeType(Traverse Member)
+            => Member != null
+            && Member.GetValueType() != null
+            && Member.GetValueType().EqualsAny(
+                new Type[]
+                {
+                    typeof(string),
+                    typeof(int),
+                    typeof(bool),
+                });
 
         /* 
          * 

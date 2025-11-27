@@ -26,6 +26,7 @@ using XRL.World.Capabilities;
 
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
 using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
+using static XRL.World.ObjectBuilders.UD_FleshGolems_OptionallyReanimated;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
@@ -56,6 +57,7 @@ namespace XRL.World.Parts
         }
 
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
+        public const string PREVIOUSLY_SENTIENT_BEINGS = "Previously Sentient Beings";
 
         public GameObject BrainInAJar;
 
@@ -334,8 +336,45 @@ namespace XRL.World.Parts
                             Debug.Log(name, value, indent[3]);
                         }
 
-                        Render bIAJ_Render = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Render);
-                        BrainInAJar.Render = bIAJ_Render;
+                        Debug.Log(nameof(PastLife.Render), Indent: indent[2]);
+                        if (PastLife.Render != null)
+                        {
+                            Render bIAJ_Render = BrainInAJar.Render ?? BrainInAJar.RequirePart<Render>();
+                            BrainInAJar.Render = bIAJ_Render;
+
+                            // Traverse pastRenderWalk = new(PastLife.Render);
+                            Dictionary<string, Traverse> pastRenderFieldsProps = PastLife.Render
+                                ?.GetAssignableDeclaredFieldAndPropertyDictionary(HasValueIsPrimativeType);
+
+                            // Traverse bIAJ_RenderWalk = new(BrainInAJar.Render);
+                            Dictionary<string, Traverse> bIAJ_RenderFieldsProps = BrainInAJar.Render
+                                ?.GetAssignableDeclaredFieldAndPropertyDictionary(HasValueIsPrimativeType);
+
+                            if (!pastRenderFieldsProps.IsNullOrEmpty() && !bIAJ_RenderFieldsProps.IsNullOrEmpty())
+                            {
+                                foreach ((string pastFieldPropName, Traverse pastRenderFieldProp) in pastRenderFieldsProps)
+                                {
+                                    object pastRenderFieldPropValue = pastRenderFieldProp.GetValue();
+                                    try
+                                    {
+                                        if (bIAJ_RenderFieldsProps.ContainsKey(pastFieldPropName)
+                                            && bIAJ_RenderFieldsProps[pastFieldPropName].GetValueType() == pastRenderFieldProp.GetValueType())
+                                        {
+                                            bIAJ_RenderFieldsProps[pastFieldPropName].SetValue(pastRenderFieldPropValue);
+                                            Debug.CheckYeh(pastFieldPropName, pastRenderFieldPropValue.ToString(), indent[3]);
+                                        }
+                                        else
+                                        {
+                                            Debug.CheckNah(pastFieldPropName, pastRenderFieldPropValue.ToString(), indent[3]);
+                                        }
+                                    }
+                                    catch (Exception x)
+                                    {
+                                        MetricsManager.LogException(callingTypeAndMethod + " " + nameof(BrainInAJar.Render) + ": " + pastRenderFieldPropValue, x, "game_mod_exception");
+                                    }
+                                }
+                            }
+                        }
 
                         Description bIAJ_Description = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Description>());
 
@@ -445,7 +484,6 @@ namespace XRL.World.Parts
                                 bIAJ_Corpse.CorpseBlueprint = speciesCorpseBlueprint;
                             }
                         }
-                        bIAJ_Corpse.CorpseChance = 100;
                         Debug.Log(
                             nameof(bIAJ_Corpse.CorpseBlueprint), bIAJ_Corpse.CorpseBlueprint + " (" + 
                             bIAJ_Corpse.CorpseChance + ")",
@@ -641,7 +679,8 @@ namespace XRL.World.Parts
                     Debug.Arg("out " + nameof(FrankenBrain)),
                 });
             FrankenBrain = null;
-            if (FrankenCorpse == null || PastLife == null)
+            if (FrankenCorpse == null
+                || PastLife == null)
             {
                 return false;
             }
@@ -649,37 +688,69 @@ namespace XRL.World.Parts
             if (FrankenBrain != null
                 && PastLife?.Brain is Brain pastBrain)
             {
-                FrankenCorpse.Brain.Allegiance ??= new();
-                FrankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
-                FrankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
-                if ((!UD_FleshGolems_Reanimated.HasWorldGenerated || ExcludedFromDynamicEncounters))
+                bool wasBuiltReanimated = FrankenCorpse.HasPropertyOrTag(REANIMATED_BYBUILDER);
+
+                FrankenBrain.Allegiance ??= new();
+                FrankenBrain.Allegiance.Clear();
+
+                int previouslySentientBeingsRep = 100;
+                if (!UD_FleshGolems_Reanimated.HasWorldGenerated
+                    || ExcludedFromDynamicEncounters
+                    || wasBuiltReanimated
+                    || PastLife.WasPlayer)
                 {
-                    FrankenCorpse.Brain.Allegiance.Clear();
-                    FrankenCorpse.Brain.Allegiance.Add("Newly Sentient Beings", 75);
-                    foreach ((string faction, int rep) in pastBrain.Allegiance)
+                    foreach ((string factionName, int repValue) in pastBrain.Allegiance)
                     {
-                        if (!pastBrain.Allegiance.ContainsKey(faction))
+                        if (!pastBrain.Allegiance.ContainsKey(factionName))
                         {
-                            FrankenCorpse.Brain.Allegiance.Add(faction, rep);
+                            FrankenBrain.Allegiance.Add(factionName, repValue);
                         }
                         else
                         {
-                            FrankenCorpse.Brain.Allegiance[faction] += rep;
+                            int clampedRepValue = Math.Min(Math.Max(-100, FrankenBrain.Allegiance[factionName] + repValue), 100);
+                            FrankenBrain.Allegiance[factionName] = clampedRepValue;
                         }
                     }
+
                     if (!FrankenCorpse.HasPropertyOrTag("StartingPet") && !FrankenCorpse.HasPropertyOrTag("Pet"))
                     {
-                        FrankenCorpse.Brain.PartyLeader = pastBrain.PartyLeader;
-                        FrankenCorpse.Brain.PartyMembers = pastBrain.PartyMembers;
-
-                        FrankenCorpse.Brain.Opinions = pastBrain.Opinions;
+                        FrankenBrain.PartyMembers = pastBrain.PartyMembers;
+                        foreach ((int memberID, PartyMember partyMember) in FrankenBrain.PartyMembers)
+                        {
+                            if (memberID == pastBrain.PartyLeader.BaseID)
+                            {
+                                FrankenBrain.SetPartyLeader(pastBrain.PartyLeader, Flags: partyMember.Flags, Silent: true);
+                                break;
+                            }
+                        }
                     }
                 }
-                FrankenBrain.Wanders = pastBrain.Wanders;
-                FrankenBrain.WallWalker = pastBrain.WallWalker;
-                FrankenBrain.HostileWalkRadius = pastBrain.HostileWalkRadius;
+                if (wasBuiltReanimated)
+                {
+                    previouslySentientBeingsRep -= 25;
+                }
+                if (!UD_FleshGolems_Reanimated.HasWorldGenerated)
+                {
+                    previouslySentientBeingsRep -= 25;
+                }
+                FrankenBrain.Allegiance.Add(PREVIOUSLY_SENTIENT_BEINGS, previouslySentientBeingsRep);
 
-                FrankenBrain.Mobile = pastBrain.Mobile;
+                FrankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
+                FrankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
+
+                FrankenBrain.Flags = pastBrain.Flags;
+
+                FrankenBrain.MaxKillRadius = pastBrain.MaxKillRadius;
+                FrankenBrain.MaxMissileRange = pastBrain.MaxMissileRange;
+                FrankenBrain.MaxWanderRadius = pastBrain.MaxWanderRadius;
+                FrankenBrain.MinKillRadius = pastBrain.MinKillRadius;
+
+                FrankenBrain.LastThought = "*wilhelm scream*";
+
+                if (PastLife.DeathAddress.GetCell() is Cell deathCell)
+                {
+                    FrankenBrain.StartingCell = new(deathCell);
+                }
             }
             return true;
         }
@@ -692,38 +763,45 @@ namespace XRL.World.Parts
 
         public static string GenerateDisplayName(UD_FleshGolems_PastLife PastLife)
         {
-            if (PastLife == null)
+            if (PastLife == null
+                || PastLife.ParentObject is not GameObject frankenCorpse)
             {
                 return null;
             }
-            string oldIdentity = PastLife?.RefName;
+
+            bool corpseHasSpecialIdentity = HasSpecialIdentity(frankenCorpse);
+
+            string whoTheyWere =
+                corpseHasSpecialIdentity
+                ? frankenCorpse?.Render?.DisplayName
+                : PastLife.RefName;
+
             string newIdentity;
             using Indent indent = new();
             Debug.LogMethod(indent[1],
                 ArgPairs: new Debug.ArgPair[]
                 {
-                    Debug.Arg(nameof(PastLife.ParentObject), PastLife.ParentObject?.DebugName ?? NULL),
-                    Debug.Arg(nameof(oldIdentity), oldIdentity ?? NULL),
+                    Debug.Arg(nameof(frankenCorpse), frankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(whoTheyWere), whoTheyWere ?? NULL),
                 });
-            if (PastLife.WasProperlyNamed || HasSpecialIdentity(PastLife.ParentObject))
+
+            if (PastLife.WasProperlyNamed || corpseHasSpecialIdentity)
             {
-                newIdentity = "corpse of " + oldIdentity;
+                newIdentity = "corpse of " + whoTheyWere;
             }
             else
             {
                 if (!PastLife.WasCorpse)
                 {
-                    newIdentity = oldIdentity + " corpse";
+                    newIdentity = whoTheyWere + " corpse";
                 }
                 else
                 {
                     newIdentity = /* PastLife.BrainInAJar?.DisplayName ??*/ 
-                        PastLife.BrainInAJar
-                            ?.Render
-                            ?.DisplayName
-                            ?.Replace("[", "").Replace("]", "");
+                        PastLife.BrainInAJar?.Render?.DisplayName;
                 }
             }
+            newIdentity = newIdentity?.Replace("[", "").Replace("]", "");
             Debug.Log(nameof(newIdentity), newIdentity ?? NULL, indent[1]);
             return newIdentity;
         }
@@ -734,10 +812,14 @@ namespace XRL.World.Parts
 
         public static string GenerateDescription(UD_FleshGolems_PastLife PastLife)
         {
-            if (PastLife == null || PastLife.Description.IsNullOrEmpty())
+            if (PastLife == null
+                || PastLife.Description.IsNullOrEmpty()
+                || PastLife.ParentObject is not GameObject frankenCorpse)
             {
                 return null;
             }
+            bool corpseHasSpecialIdentity = HasSpecialIdentity(frankenCorpse);
+
             string oldDescription = PastLife.Description;
             string postDescription = "In life this =subject.uD_xTag:UD_FleshGolems_CorpseText:CorpseDescription= was ";
             if (PastLife.WasPlayer)
@@ -747,7 +829,11 @@ namespace XRL.World.Parts
             else
             {
                 string whoTheyWere = (PastLife?.RefName ?? PastLife.GetBlueprint().DisplayName());
-                if (!PastLife.WasProperlyNamed && !HasSpecialIdentity(PastLife.ParentObject))
+                if (corpseHasSpecialIdentity)
+                {
+                    whoTheyWere = frankenCorpse?.Render?.DisplayName;
+                }
+                if (!PastLife.WasProperlyNamed && !corpseHasSpecialIdentity)
                 {
                     whoTheyWere = Grammar.A(whoTheyWere);
                 }
@@ -1281,6 +1367,7 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(BaseDisplayName), BaseDisplayName);
             E.AddEntry(this, nameof(RefName), RefName);
             E.AddEntry(this, nameof(WasProperlyNamed), WasProperlyNamed);
+
             if (DisplayNameAdjectives != null && !DisplayNameAdjectives.AdjectiveList.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(DisplayNameAdjectives),
@@ -1291,48 +1378,77 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(DisplayNameAdjectives), "Empty");
             }
+
             E.AddEntry(this, nameof(Titles), Titles?.TitleList ?? "Empty");
             E.AddEntry(this, nameof(Epithets), Epithets?.EpithetList ?? "Empty");
             E.AddEntry(this, nameof(Honorifics), Honorifics?.HonorificList ?? "Empty");
-            E.AddEntry(this, nameof(PastRender), YehNah(PastRender != null));
+
+            if (PastRender != null)
+            {
+                try
+                {
+                    // Traverse pastRenderWalk = new(PastRender);
+                    List<string> pastRenderFieldPropValues = BrainInAJar.Render
+                        ?.GetAssignableDeclaredFieldAndPropertyDictionary(HasValueIsPrimativeType)
+                        ?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.GetValue()?.ToString() ?? NULL)
+                        ?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value)
+                        ?.ToList();
+
+                    E.AddEntry(this, nameof(PastRender), pastRenderFieldPropValues?.GenerateBulletList(Bullet: null, BulletColor: null));
+                }
+                catch (Exception x)
+                {
+                    MetricsManager.LogException(nameof(GetDebugInternalsEvent) + "->" + nameof(PastRender), x, "game_mod_exception");
+                    E.AddEntry(this, nameof(PastRender), "threw exception.");
+                }
+            }
+            else
+            {
+                E.AddEntry(this, nameof(PastRender), "Empty");
+            }
+
             E.AddEntry(this, nameof(Description), YehNah(Description != null));
             E.AddEntry(this, nameof(DeathAddress), DeathAddress.ToString());
 
-            static string treeItem(int i, int count)
-            {
-                return ((i == count - 1) ? 'ÿ' : '³').ToString() + 'Ä'.ThisManyTimes(3);
-            }
             if (Brain != null && !Brain.Allegiance.IsNullOrEmpty())
             {
-                Traverse brainWalk = new(Brain);
-                List<string> brainWalkFields = brainWalk?.Fields();
-                int i = 0;
-                int j = 0;
-                List<string> brainList = new()
+                try
                 {
-                    Brain.Allegiance
-                        ?.ToList()
-                        ?.ConvertAll(a => a.Key + ": " + a.Value)
-                        ?.GenerateBulletList(
-                            Label: nameof(Brain.Allegiance),
-                            Bullet: treeItem(i++, Brain.Allegiance.Count),
-                            BulletColor: null),
-                    brainWalkFields
-                        ?.ConvertAll(f => f + ": " + brainWalk?.Field(f)?.GetValue()?.ToString())
-                        ?.GenerateBulletList(
-                            Label: "Fields",
-                            Bullet: treeItem(j++, brainWalkFields?.Count ?? 0),
-                            BulletColor: null),
-                };
-                E.AddEntry(this, nameof(Brain), brainList?.GenerateBulletList(Bullet: null, BulletColor: null));
+                    // Traverse brainWalk = new(Brain);
+
+                    List<string> brainList = new()
+                    {
+                        Brain.Allegiance
+                            ?.ToList()
+                            ?.ConvertAll(a => nameof(Brain.Allegiance) + ": " + a.Key + "-" + a.Value)
+                            ?.GenerateBulletList(
+                                Bullet: null,
+                                BulletColor: null),
+                        Brain
+                            ?.GetAssignableDeclaredFieldAndPropertyDictionary(HasValueIsPrimativeType)
+                            ?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.GetValue()?.ToString() ?? NULL)
+                            ?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value)
+                            ?.GenerateBulletList(
+                                Bullet: null,
+                                BulletColor: null),
+                    };
+                    E.AddEntry(this, nameof(Brain), brainList?.GenerateBulletList(Bullet: null, BulletColor: null));
+                }
+                catch (Exception x)
+                {
+                    MetricsManager.LogException(nameof(GetDebugInternalsEvent) + "->" + nameof(Brain), x, "game_mod_exception");
+                    E.AddEntry(this, nameof(Brain), "threw exception.");
+                }
             }
             else
             {
                 E.AddEntry(this, nameof(Brain), "Empty");
             }
+
             E.AddEntry(this, nameof(Gender), Gender?.Name ?? NULL);
             E.AddEntry(this, nameof(PronounSet), PronounSet?.Name ?? NULL);
             E.AddEntry(this, nameof(ConversationScriptID), ConversationScriptID);
+
             if (!Stats.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(Stats),
@@ -1345,7 +1461,9 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(Stats), "Empty");
             }
+
             E.AddEntry(this, nameof(Body), Body?.Anatomy ?? "No Anatomy!?");
+
             if (!ExtraLimbs.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(ExtraLimbs),
@@ -1358,9 +1476,13 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(ExtraLimbs), "Empty");
             }
+
+            E.AddEntry(this, nameof(Corpse), (Corpse?.CorpseBlueprint ?? NULL) + " (" + (Corpse?.CorpseChance ?? 0) + ")");
+
             E.AddEntry(this, nameof(Species), Species);
             E.AddEntry(this, nameof(Genotype), Genotype);
             E.AddEntry(this, nameof(Subtype), Subtype);
+
             if (!MutationsList.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(MutationsList),
@@ -1372,6 +1494,7 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(MutationsList), "Empty");
             }
+
             if (Skills != null && !Skills.SkillList.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(Skills),
@@ -1383,6 +1506,7 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(Skills), "Empty");
             }
+
             if (!InstalledCybernetics.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(InstalledCybernetics),
@@ -1394,6 +1518,7 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(InstalledCybernetics), "Empty");
             }
+
             if (!Tags.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(Tags),
@@ -1405,6 +1530,7 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(Tags), "Empty");
             }
+
             if (!StringProperties.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(StringProperties),
@@ -1416,6 +1542,7 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(StringProperties), "Empty");
             }
+
             if (!IntProperties.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(IntProperties),
@@ -1427,6 +1554,7 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(IntProperties), "Empty");
             }
+
             if (!Effects.IsNullOrEmpty())
             {
                 E.AddEntry(this, nameof(Effects),
@@ -1439,6 +1567,7 @@ namespace XRL.World.Parts
             {
                 E.AddEntry(this, nameof(Effects), "Empty");
             }
+
             return base.HandleEvent(E);
         }
 

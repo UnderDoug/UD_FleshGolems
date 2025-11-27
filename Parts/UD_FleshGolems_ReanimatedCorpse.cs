@@ -146,6 +146,7 @@ namespace XRL.World.Parts
             {
                 description._Short += "\n\n" + NewDescription;
             }
+            /*
             if (!NewDisplayName.IsNullOrEmpty()
                 && !AlteredRenderDisplayName
                 && ParentObject?.Render is Render corpseRender)
@@ -153,6 +154,7 @@ namespace XRL.World.Parts
                 AlteredRenderDisplayName = true;
                 corpseRender.DisplayName = NewDisplayName;
             }
+            */
 
             AttemptToSuffer();
             base.Attach();
@@ -312,8 +314,9 @@ namespace XRL.World.Parts
         {
             if (!NewDisplayName.IsNullOrEmpty())
             {
-                E.ReplacePrimaryBase(NewDisplayName);
+                // E.ReplacePrimaryBase(NewDisplayName);
             }
+            E.ReplacePrimaryBase(PastLife.GenerateDisplayName());
             if (int.TryParse(E.Object?.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
                 && NoReanimatedNamePrefix < 1)
             {
@@ -323,7 +326,8 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
-            if (!NewDescription.IsNullOrEmpty())
+            if (!NewDescription.IsNullOrEmpty()
+                && Utils.HasSpecialIdentity(E.Object))
             {
                 E.Infix.AppendLine().Append(NewDescription);
             }

@@ -74,8 +74,10 @@ namespace UD_FleshGolems.Capabilities
             OtherCorpse,
         }
 
+        public const string EXCLUDE_FROM_CACHE_PROPTAG = "UD_FleshGolems Necromancy ExcludeFromNecronomicon";
         public const string IGNORE_EXCLUDE_PROPTAG = "UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding";
         public const string CORPSE_COUNTS_AS_PROPTAG = "UD_FleshGolems PastLife CountsAs";
+        public const string CORPSE_COUNTS_AS_POSTLOAD_PROPTAG = "UD_FleshGolems_PostLoad_CountsAs";
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
 
         [ModSensitiveStaticCache( CreateEmptyInstance = false )]
@@ -270,6 +272,12 @@ namespace UD_FleshGolems.Capabilities
             return UD_FleshGolems_NanoNecroAnimation.IsReanimatableCorpse(Blueprint);
         }
 
+        public static bool IsReanimatableCacheableCorpse(GameObjectBlueprint Blueprint)
+        {
+            return IsReanimatableCorpse(Blueprint)
+                && !Blueprint.HasTagOrProperty(EXCLUDE_FROM_CACHE_PROPTAG);
+        }
+
         public UD_FleshGolems_NecromancySystem InitializeCorpseSheetsCorpses(out bool Initialized)
         {
             using Indent indent = new(1);
@@ -277,7 +285,7 @@ namespace UD_FleshGolems.Capabilities
             if (!CorpseSheetsInitialized)
             {
                 int counter = 0;
-                foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList.Where(IsReanimatableCorpse))
+                foreach (GameObjectBlueprint blueprint in GameObjectFactory.Factory.BlueprintList.Where(IsReanimatableCacheableCorpse))
                 {
                     Debug.Log(blueprint.Name, Indent: indent[1]);
                     SetLoadingStatusCorpses(counter++ % 100 == 0);
@@ -870,16 +878,16 @@ namespace UD_FleshGolems.Capabilities
                     }
                 }
                 _ = indent[0];
-                foreach ((string name, string value) in GameObjectFactory.Factory?.GetBlueprintIfExists("UD_FleshGolems_PostLoad_CountsAs")?.Tags)
+                foreach ((string name, string value) in GameObjectFactory.Factory?.GetBlueprintIfExists(CORPSE_COUNTS_AS_POSTLOAD_PROPTAG)?.Tags)
                 {
                     if (name.GetGameObjectBlueprint() is var corpseModel
                         && corpseModel.IsCorpse()
                         && RequireCorpseSheet(corpseModel) is CorpseSheet postLoadCorpseSheet
-                        && CorpseCountsAs.GetCorpseCountsAs(postLoadCorpseSheet.GetCorpse(), value) is CorpseCountsAs corpseCoutnasAs
-                        && corpseCoutnasAs.CountasAs != CountsAs.None)
+                        && CorpseCountsAs.GetCorpseCountsAs(postLoadCorpseSheet.GetCorpse(), value) is CorpseCountsAs corpseCountsAs
+                        && corpseCountsAs.CountasAs != CountsAs.None)
                     {
-                        Debug.CheckYeh(corpseCoutnasAs.ToString(), indent[2]);
-                        corpseCountsAsList.Add(corpseCoutnasAs);
+                        Debug.CheckYeh(corpseCountsAs.ToString(), indent[2]);
+                        corpseCountsAsList.Add(corpseCountsAs);
                     }
                 }
                 _ = indent[0];
