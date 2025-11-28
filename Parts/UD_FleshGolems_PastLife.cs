@@ -311,6 +311,9 @@ namespace XRL.World.Parts
                             BrainInAJar.AddPart(prevPastLifeCopy);
                         }
 
+                        BrainInAJar._Property = new(PastLife._Property);
+                        BrainInAJar._IntProperty = new(PastLife._IntProperty);
+
                         if (PastLife.IsPlayer())
                         {
                             BrainInAJar.SetStringProperty("UD_FleshGolems_WasPlayer", "Yep, I used to be the player!");
@@ -324,9 +327,6 @@ namespace XRL.World.Parts
                             TimesReanimated++;
                         }
                         Debug.Log(nameof(TimesReanimated), TimesReanimated, indent[2]);
-
-                        BrainInAJar._Property = new(PastLife._Property);
-                        BrainInAJar._IntProperty = new(PastLife._IntProperty);
 
                         Debug.Log(nameof(BrainInAJar._Property), BrainInAJar._Property?.Count ?? 0, indent[2]);
                         foreach ((string name, string value) in BrainInAJar._Property)
