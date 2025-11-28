@@ -368,6 +368,18 @@
     <tag Name="UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding" />
   </object>
 
+  <!--
+  
+  Bestowing Taxa
+  
+  -->
+  <object Name="Saltwurm" Load="Merge">
+    <xtagUD_FleshGolems_Taxa Morphology="kraken" />
+  </object>
+  <object Name="Star Kraken" Load="Merge">
+    <xtagUD_FleshGolems_Taxa Morphology="kraken" />
+  </object>
+
   <!-- Flesh Golem natural weapons -->
   <object Name="UD_FleshGolems Ragged Weapon" Inherits="NaturalWeapon">
     <part Name="Render" DisplayName="weapon"

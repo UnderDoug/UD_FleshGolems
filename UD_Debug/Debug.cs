@@ -346,7 +346,7 @@ namespace UD_FleshGolems.Logging
                     ?.ToList();
                 if (!joinableArgs.IsNullOrEmpty())
                 {
-                    output += "(" + joinableArgs?.Join() + ")";
+                    output += "(" + joinableArgs?.SafeJoin() + ")";
                 }
             }
             if (!MessageAfter.IsNullOrEmpty())
@@ -381,7 +381,7 @@ namespace UD_FleshGolems.Logging
                     ?.ToList();
                 if (!joinableArgs.IsNullOrEmpty())
                 {
-                    output += "(" + joinableArgs?.Join() + ")";
+                    output += "(" + joinableArgs?.SafeJoin() + ")";
                 }
             }
             if (!MessageAfter.IsNullOrEmpty())
@@ -418,7 +418,7 @@ namespace UD_FleshGolems.Logging
                     ?.ToList();
                 if (!joinableArgs.IsNullOrEmpty())
                 {
-                    output += joinableArgs?.Join();
+                    output += joinableArgs?.SafeJoin();
                 }
             }
             if (!MessageAfter.IsNullOrEmpty())

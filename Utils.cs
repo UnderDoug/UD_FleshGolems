@@ -480,21 +480,26 @@ namespace UD_FleshGolems
         public static bool WasProperlyNamed(GameObject Object)
         {
             if (Object == null)
-            {
                 return false;
-            }
+
             if (Object.HasProperName)
-            {
                 return true;
-            }
-            if (Object.PartsList.Any(p => p.Name.EqualsAny(nameof(Titles), nameof(Epithets), nameof(Honorifics))))
-            {
+
+            if (Object.TryGetPart(out Titles titles)
+                && !titles.TitleList.IsNullOrEmpty())
                 return true;
-            }
+
+            if (Object.TryGetPart(out Epithets epithets)
+                && !epithets.EpithetList.IsNullOrEmpty())
+                return true;
+
+            if (Object.TryGetPart(out Honorifics honorifics)
+                && !honorifics.HonorificList.IsNullOrEmpty())
+                return true;
+
             if (Object.GetPropertyOrTag("Role") == "Hero")
-            {
                 return true;
-            }
+
             return false;
         }
 

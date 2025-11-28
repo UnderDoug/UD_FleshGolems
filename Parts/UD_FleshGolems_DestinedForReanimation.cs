@@ -18,6 +18,7 @@ using SerializeField = UnityEngine.SerializeField;
 using UD_FleshGolems;
 
 using static UD_FleshGolems.Const;
+using UD_FleshGolems.Logging;
 
 namespace XRL.World.Parts
 {
@@ -483,6 +484,32 @@ namespace XRL.World.Parts
             return success;
         }
 
+        public bool ProcessObjectCreationEvent(IObjectCreationEvent E)
+        {
+            bool goAhead = true || UD_FleshGolems_Reanimated.HasWorldGenerated;
+            if (goAhead
+                && !Attempted
+                && BuiltToBeReanimated
+                && !DelayTillZoneBuild
+                && ParentObject is GameObject soonToBeCorpse
+                && soonToBeCorpse == E.Object
+                && Corpse is GameObject soonToBeCreature)
+            {
+                if (soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
+                {
+                    if (!soonToBeCorpse.IsPlayer()
+                        && !soonToBeCorpse.Blueprint.IsPlayerBlueprint())
+                    {
+                        reanimationHelper.Animate();
+                        E.ReplacementObject = soonToBeCreature;
+                        Attempted = true;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         public override bool AllowStaticRegistration()
             => true;
 
@@ -500,7 +527,8 @@ namespace XRL.World.Parts
             int eventOrder = EventOrder.EXTREMELY_LATE + EventOrder.EXTREMELY_LATE;
             try
             {
-                Registrar?.Register(BeforeObjectCreatedEvent.ID, -eventOrder);
+                // Registrar?.Register(BeforeObjectCreatedEvent.ID, -eventOrder);
+                Registrar?.Register(AfterObjectCreatedEvent.ID, -eventOrder);
                 Registrar?.Register(EnvironmentalUpdateEvent.ID, -eventOrder);
             }
             catch (Exception x)
@@ -513,7 +541,13 @@ namespace XRL.World.Parts
                     || ParentObject.RegisteredEvents == null
                     || !ParentObject.RegisteredEvents.ContainsKey(BeforeObjectCreatedEvent.ID))
                 {
-                    FailedToRegisterEvents.Add(BeforeObjectCreatedEvent.ID);
+                    // FailedToRegisterEvents.Add(BeforeObjectCreatedEvent.ID);
+                }
+                if (ParentObject == null
+                    || ParentObject.RegisteredEvents == null
+                    || !ParentObject.RegisteredEvents.ContainsKey(AfterObjectCreatedEvent.ID))
+                {
+                    FailedToRegisterEvents.Add(AfterObjectCreatedEvent.ID);
                 }
                 if (ParentObject == null
                     || ParentObject.RegisteredEvents == null
@@ -527,12 +561,14 @@ namespace XRL.World.Parts
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
-                || (ID == BeforeObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID))
+                // || (ID == BeforeObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID))
+                || (ID == AfterObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(AfterObjectCreatedEvent.ID))
                 || (ID == EnvironmentalUpdateEvent.ID && FailedToRegisterEvents.Contains(EnvironmentalUpdateEvent.ID))
                 || (ID == BeforeZoneBuiltEvent.ID && DelayTillZoneBuild)
                 || ID == GetShortDescriptionEvent.ID
                 || ID == BeforeDieEvent.ID
-                || ID == GetDebugInternalsEvent.ID;
+                || ID == GetDebugInternalsEvent.ID
+                ;
         }
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
@@ -593,33 +629,17 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
         {
-            bool goAhead = true || UD_FleshGolems_Reanimated.HasWorldGenerated;
-            if (goAhead
-                && !Attempted
-                && BuiltToBeReanimated
-                && !DelayTillZoneBuild
-                && ParentObject is GameObject soonToBeCorpse
-                && soonToBeCorpse == E.Object
-                && Corpse is GameObject soonToBeCreature)
-            {
-                if (soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
-                {
-                    if (!soonToBeCorpse.IsPlayer()
-                        && !soonToBeCorpse.Blueprint.IsPlayerBlueprint())
-                    {
-                        reanimationHelper.Animate();
-                        E.ReplacementObject = soonToBeCreature;
-                        Attempted = true;
-                    }
-                }
-            }
+            ProcessObjectCreationEvent(E);
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(AfterObjectCreatedEvent E)
+        {
+            ProcessObjectCreationEvent(E);
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(BeforeZoneBuiltEvent E)
         {
-            bool goAhead = true || UD_FleshGolems_Reanimated.HasWorldGenerated;
-            if (goAhead
-                && !Attempted
+            if (!Attempted
                 && BuiltToBeReanimated
                 && DelayTillZoneBuild
                 && ParentObject is GameObject soonToBeCorpse
@@ -630,16 +650,18 @@ namespace XRL.World.Parts
                 && Corpse is GameObject soonToBeCreature
                 && soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
             {
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(BeforeZoneBuiltEvent) + ", " +
-                    nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
-                    nameof(soonToBeCreature) + ": " + (soonToBeCreature?.DebugName ?? NULL));
-                */
+                using Indent indent = new(1);
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(BeforeZoneBuiltEvent)),
+                        Debug.Arg(nameof(soonToBeCorpse), soonToBeCorpse?.DebugName ?? NULL),
+                        Debug.Arg(nameof(soonToBeCreature), soonToBeCreature?.DebugName ?? NULL),
+                    });
                 bool reanimated = reanimationHelper.Animate();
                 ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
                 Attempted = true;
-                // UnityEngine.Debug.Log("    [" + (reanimated ? TICK : CROSS) + "] " + (reanimated ? "Success" : "Fail") + "!");
+                Debug.YehNah((reanimated ? "Success" : "Fail") + "!", reanimated, indent[1]);
             }
             return base.HandleEvent(E);
         }

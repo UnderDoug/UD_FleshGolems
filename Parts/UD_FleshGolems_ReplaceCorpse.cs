@@ -32,8 +32,21 @@ namespace XRL.World.Parts
                 {
                     pastLifePart = corpseToReplace.RequirePart<UD_FleshGolems_PastLife>().Initialize();
                 }
+                GameObject replacementCorpse = null;
                 if (pastLifePart.Corpse?.CorpseBlueprint is string pastLifeCorpseBlueprint
-                    && GameObjectFactory.Factory.CreateObject(pastLifeCorpseBlueprint) is GameObject replacementCorpse)
+                    && pastLifeCorpseBlueprint != corpseToReplace.Blueprint
+                    && !pastLifeCorpseBlueprint.GetGameObjectBlueprint().HasPart(nameof(ReplaceObject)))
+                {
+                    replacementCorpse = GameObjectFactory.Factory.CreateObject(pastLifeCorpseBlueprint);
+                }
+                else
+                if (pastLifePart.GetBlueprint().TryGetCorpseBlueprint(out pastLifeCorpseBlueprint)
+                    && pastLifeCorpseBlueprint != corpseToReplace.Blueprint
+                    && !pastLifeCorpseBlueprint.GetGameObjectBlueprint().HasPart(nameof(ReplaceObject)))
+                {
+                    replacementCorpse = GameObjectFactory.Factory.CreateObject(pastLifeCorpseBlueprint);
+                }
+                if (replacementCorpse != null)
                 {
                     if (corpseToReplace.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper oldCorpseReanimationHelper)
                         && replacementCorpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper newCorpseReanimationHelper))

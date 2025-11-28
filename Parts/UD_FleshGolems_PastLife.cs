@@ -50,6 +50,7 @@ namespace XRL.World.Parts
         [UD_FleshGolems_DebugRegistry]
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
         {
+            Registry.Register(nameof(GenerateDisplayName), false);
             Registry.Register(nameof(GetCorpseBlueprints), true);
             Registry.Register(nameof(GetAnEntityForCorpseWeighted), true);
             Registry.Register(nameof(GetAnEntityForCorpse), true);
@@ -58,6 +59,17 @@ namespace XRL.World.Parts
 
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
         public const string PREVIOUSLY_SENTIENT_BEINGS = "Previously Sentient Beings";
+
+        public static List<string> PropTagsToNotRestore = new()
+        {
+            "Species",
+            "Genotype",
+            "Subtype",
+            "Gender",
+            "BleedLiquid",
+            "Humanoid",
+            "Bleeds",
+        };
 
         public GameObject BrainInAJar;
 
@@ -299,18 +311,24 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(TimesReanimated), TimesReanimated, indent[2]);
 
                         BrainInAJar.HasProperName = PastLife.HasProperName 
-                            || (PastLife.GetBlueprint() is GameObjectBlueprint pastLifeBlueprint
-                                && pastLifeBlueprint.GetxTag("Grammar", "Proper") is string properGrammar
+                            || (PastLife.GetxTag("Grammar", "Proper") is string properGrammar
                                 && properGrammar.EqualsNoCase("true"));
 
                         Debug.Log(nameof(BrainInAJar.HasProperName), BrainInAJar.HasProperName, indent[2]);
 
-                        BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<DisplayNameAdjectives>());
-                        BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Titles>());
-                        BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Epithets>());
-                        BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Honorifics>());
+                        if (PastLife.HasPart<DisplayNameAdjectives>())
+                            BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<DisplayNameAdjectives>());
 
-                        if (WasCorpse)
+                        if (PastLife.HasPart<Titles>())
+                            BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Titles>());
+
+                        if (PastLife.HasPart<Epithets>())
+                            BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Epithets>());
+
+                        if (PastLife.HasPart<Honorifics>())
+                            BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Honorifics>());
+
+                        if (WasCorpse && false)
                         {
                             DisplayNameAdjectives bIAJ_Adjectives = BrainInAJar.RequirePart<DisplayNameAdjectives>();
                             if (bIAJ_Adjectives.AdjectiveList.IsNullOrEmpty()
@@ -469,7 +487,10 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(bleedLiquid), bleedLiquid ?? NULL, indent[2]);
 
                         Corpse bIAJ_Corpse = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Corpse>());
-                        bIAJ_Corpse.CorpseBlueprint = ParentObject.Blueprint;
+                        if (!ParentObject.HasPart<ReplaceObject>())
+                        {
+                            bIAJ_Corpse.CorpseBlueprint = ParentObject.Blueprint;
+                        }
                         if (bIAJ_Corpse.CorpseBlueprint.IsNullOrEmpty())
                         {
                             if (Blueprint
@@ -665,6 +686,149 @@ namespace XRL.World.Parts
             return (GameObjectBlueprint = Blueprint?.GetGameObjectBlueprint()) != null;
         }
 
+        public static bool IsFactionRelationshipPropTag(KeyValuePair<string, string> Entry)
+            => !Entry.Key.IsNullOrEmpty()
+            && (Entry.Key.StartsWith("staticFaction") 
+                || Entry.Key == "NoHateFactions");
+
+        public static bool RestoreFactionRelationships(
+            GameObject FrankenCorpse,
+            UD_FleshGolems_PastLife PastLife)
+        {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                });
+
+            if (FrankenCorpse == null
+                || PastLife == null
+                || !PastLife.TryGetBlueprint(out GameObjectBlueprint sourceBlueprint))
+            {
+                Debug.CheckNah("Missing FrankenCorpse or PastLife.", indent[1]);
+                return false;
+            }
+
+            foreach ((string tagName, string tagValue) in sourceBlueprint.Tags.Where(IsFactionRelationshipPropTag))
+            {
+                FrankenCorpse.SetStringProperty(tagName, tagValue);
+            }
+            foreach ((string tagName, string tagValue) in sourceBlueprint.Props.Where(IsFactionRelationshipPropTag))
+            {
+                FrankenCorpse.SetStringProperty(tagName, tagValue);
+            }
+            return true;
+        }
+        public bool RestoreFactionRelationships()
+            => RestoreFactionRelationships(ParentObject, this);
+
+        public static bool IsPropTagToRestore<T>(KeyValuePair<string, T> Entry)
+        {
+            if (Entry.Key.IsNullOrEmpty())
+                return false;
+
+            if (Entry.Key.StartsWith("Semantic"))
+                return false;
+
+            if (PropTagsToNotRestore.Contains(Entry.Key))
+                return false;
+
+            if (Entry.Value is string stringValue)
+                if (IsFactionRelationshipPropTag(new(Entry.Key, stringValue)))
+                    return false;
+
+            if (Entry.Key.StartsWith("UD_FleshGolems"))
+                return false;
+
+            return true;
+        }
+
+        public static bool RestoreSelectPropTags(
+            GameObject FrankenCorpse,
+            UD_FleshGolems_PastLife PastLife)
+        {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                });
+
+            if (FrankenCorpse == null
+                || PastLife == null
+                || !PastLife.TryGetBlueprint(out GameObjectBlueprint sourceBlueprint))
+            {
+                Debug.CheckNah("Missing FrankenCorpse or PastLife.", indent[1]);
+                return false;
+            }
+            foreach ((string tagName, string tagValue) in sourceBlueprint.Tags.Where(IsPropTagToRestore))
+            {
+                FrankenCorpse.SetStringProperty(tagName, tagValue);
+            }
+            foreach ((string propName, string propValue) in sourceBlueprint.Props.Where(IsPropTagToRestore))
+            {
+                FrankenCorpse.SetStringProperty(propName, propValue);
+            }
+            foreach ((string intPropName, int intPropValue) in sourceBlueprint.IntProps.Where(IsPropTagToRestore))
+            {
+                FrankenCorpse.SetIntProperty(intPropName, intPropValue);
+            }
+            return true;
+        }
+        public bool RestoreSelectPropTags()
+            => RestoreSelectPropTags(ParentObject, this);
+
+        public static bool AlignWithPreviouslySentientBeings(
+            Brain FrankenBrain,
+            UD_FleshGolems_PastLife PastLife)
+        {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(FrankenBrain), FrankenBrain != null),
+                    Debug.Arg(nameof(PastLife), PastLife != null),
+                });
+
+            if (FrankenBrain == null
+                || PastLife == null
+                || PastLife?.Brain is not Brain pastBrain
+                || FrankenBrain.ParentObject is not GameObject frankenCorpse
+                || (frankenCorpse.GetIntProperty("UD_FleshGolems Alignment Adjusted") > 0
+                    && FrankenBrain.Allegiance.Any(a => a.Key == PREVIOUSLY_SENTIENT_BEINGS)))
+            {
+                Debug.CheckNah("Failed or skipped.", indent[1]);
+                return false;
+            }
+            bool wasBuiltReanimated = frankenCorpse.HasPropertyOrTag(REANIMATED_BYBUILDER);
+
+            int previouslySentientBeingsRep = 100;
+            Debug.Log(nameof(previouslySentientBeingsRep), previouslySentientBeingsRep, indent[1]);
+
+            Debug.Log("Altering " + nameof(previouslySentientBeingsRep), Indent: indent[1]);
+            if (wasBuiltReanimated)
+            {
+                previouslySentientBeingsRep -= 25;
+                Debug.CheckYeh(nameof(wasBuiltReanimated), nameof(previouslySentientBeingsRep) + "-" + previouslySentientBeingsRep, indent[2]);
+            }
+            if (!UD_FleshGolems_Reanimated.HasWorldGenerated
+                || (frankenCorpse.TryGetPart(out UD_FleshGolems_DestinedForReanimation destinedForReanimation)
+                    && destinedForReanimation.DelayTillZoneBuild))
+            {
+                previouslySentientBeingsRep -= 25;
+                Debug.CheckYeh(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), nameof(previouslySentientBeingsRep) + "-" + previouslySentientBeingsRep, indent[2]);
+            }
+            Debug.Log("Final " + nameof(previouslySentientBeingsRep), previouslySentientBeingsRep, Indent: indent[1]);
+            FrankenBrain.Allegiance.Add(PREVIOUSLY_SENTIENT_BEINGS, previouslySentientBeingsRep);
+            frankenCorpse.SetIntProperty("UD_FleshGolems Alignment Adjusted", 1);
+            return true;
+        }
+        public bool AlignWithPreviouslySentientBeings()
+            => AlignWithPreviouslySentientBeings(Brain, this);
+
         public static bool RestoreBrain(
             GameObject FrankenCorpse,
             UD_FleshGolems_PastLife PastLife,
@@ -694,26 +858,39 @@ namespace XRL.World.Parts
 
                 FrankenBrain.Allegiance ??= new();
                 FrankenBrain.Allegiance.Clear();
+                Debug.Log(nameof(FrankenBrain.Allegiance), "Cleared", indent[1]);
 
-                int previouslySentientBeingsRep = 100;
                 if (!UD_FleshGolems_Reanimated.HasWorldGenerated
                     || ExcludedFromDynamicEncounters
                     || wasBuiltReanimated
                     || PastLife.WasPlayer)
                 {
+                    Debug.LogArgs("Any of: (", ")", indent[1],
+                        ArgPairs: new Debug.ArgPair[]
+                        {
+                            Debug.Arg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated), 
+                            Debug.Arg(nameof(ExcludedFromDynamicEncounters), ExcludedFromDynamicEncounters), 
+                            Debug.Arg(nameof(wasBuiltReanimated), wasBuiltReanimated), 
+                            Debug.Arg(nameof(PastLife.WasPlayer), PastLife.WasPlayer), 
+                        });
+
+                    Debug.Log("Iterating Faction Reps...", Indent: indent[2]);
                     foreach ((string factionName, int repValue) in pastBrain.Allegiance)
                     {
                         if (!pastBrain.Allegiance.ContainsKey(factionName))
                         {
                             FrankenBrain.Allegiance.Add(factionName, repValue);
+                            Debug.CheckYeh(factionName + " added", repValue, Indent: indent[3]);
                         }
                         else
                         {
                             int clampedRepValue = Math.Min(Math.Max(-100, FrankenBrain.Allegiance[factionName] + repValue), 100);
                             FrankenBrain.Allegiance[factionName] = clampedRepValue;
+                            Debug.CheckYeh(factionName + " adjusted to", clampedRepValue, Indent: indent[3]);
                         }
                     }
 
+                    Debug.Log("Transferring Party Members...", Indent: indent[2]);
                     if (!FrankenCorpse.HasPropertyOrTag("StartingPet") && !FrankenCorpse.HasPropertyOrTag("Pet"))
                     {
                         FrankenBrain.PartyMembers = pastBrain.PartyMembers;
@@ -722,20 +899,24 @@ namespace XRL.World.Parts
                             if (memberID == pastBrain.PartyLeader.BaseID)
                             {
                                 FrankenBrain.SetPartyLeader(pastBrain.PartyLeader, Flags: partyMember.Flags, Silent: true);
+                                Debug.CheckYeh("Party Leader set", pastBrain.PartyLeader?.DebugName ?? NULL, Indent: indent[3]);
                                 break;
                             }
                         }
+                        Debug.CheckYeh("Party Members transferred", Indent: indent[3]);
                     }
+                    else
+                    {
+                        Debug.CheckNah("Skipped due to being pet", Indent: indent[3]);
+                    }
+                    Debug.CheckYeh("Conditional Transfer finished", Indent: indent[2]);
                 }
-                if (wasBuiltReanimated)
+
+                if (PastLife.GetIdentityType() is IdentityType identityType
+                    && identityType > IdentityType.NamedVillager)
                 {
-                    previouslySentientBeingsRep -= 25;
+                    AlignWithPreviouslySentientBeings(FrankenBrain, PastLife);
                 }
-                if (!UD_FleshGolems_Reanimated.HasWorldGenerated)
-                {
-                    previouslySentientBeingsRep -= 25;
-                }
-                FrankenBrain.Allegiance.Add(PREVIOUSLY_SENTIENT_BEINGS, previouslySentientBeingsRep);
 
                 FrankenBrain.Allegiance.Hostile = pastBrain.Allegiance.Hostile;
                 FrankenBrain.Allegiance.Calm = pastBrain.Allegiance.Calm;
@@ -747,14 +928,36 @@ namespace XRL.World.Parts
                 FrankenBrain.MaxWanderRadius = pastBrain.MaxWanderRadius;
                 FrankenBrain.MinKillRadius = pastBrain.MinKillRadius;
 
-                FrankenBrain.LastThought = "*wilhelm scream*";
+                Debug.CheckYeh(nameof(FrankenBrain.Allegiance.Hostile), FrankenBrain.Allegiance.Hostile, Indent: indent[1]);
+                Debug.CheckYeh(nameof(FrankenBrain.Allegiance.Calm), FrankenBrain.Allegiance.Calm, Indent: indent[1]);
+                Debug.CheckYeh(nameof(FrankenBrain.Flags), FrankenBrain.Flags, Indent: indent[1]);
+                Debug.CheckYeh(nameof(FrankenBrain.MaxKillRadius), FrankenBrain.MaxKillRadius, Indent: indent[1]);
+                Debug.CheckYeh(nameof(FrankenBrain.MaxMissileRange), FrankenBrain.MaxMissileRange, Indent: indent[1]);
+                Debug.CheckYeh(nameof(FrankenBrain.MaxWanderRadius), FrankenBrain.MaxWanderRadius, Indent: indent[1]);
+                Debug.CheckYeh(nameof(FrankenBrain.MinKillRadius), FrankenBrain.MinKillRadius, Indent: indent[1]);
 
+                FrankenBrain.LastThought = "*wilhelm scream*";
+                Debug.CheckYeh(nameof(FrankenBrain.LastThought), FrankenBrain.LastThought, Indent: indent[1]);
+
+                Debug.Log("Setting " + nameof(FrankenBrain.StartingCell) + "...", Indent: indent[1]);
                 if (PastLife.DeathAddress.GetCell() is Cell deathCell)
                 {
                     FrankenBrain.StartingCell = new(deathCell);
+                    GlobalLocation startingCell = FrankenBrain.StartingCell;
+                    Debug.CheckYeh(
+                        nameof(FrankenBrain.StartingCell), 
+                        startingCell?.ZoneID + "[" + startingCell?.CellX + "," + startingCell?.CellY + "]",
+                        Indent: indent[2]);
                 }
+                else
+                {
+                    Debug.CheckNah("No " + nameof(PastLife.DeathAddress) + " to set from", Indent: indent[2]);
+                }
+                Debug.CheckYeh("Brain restoration complete!", Indent: indent[0]);
+                return true;
             }
-            return true;
+            Debug.CheckNah("No Brain to transfer from (or to)", Indent: indent[0]);
+            return false;
         }
         public bool RestoreBrain(
             bool ExcludedFromDynamicEncounters,
@@ -794,6 +997,9 @@ namespace XRL.World.Parts
             if (frankenCorpse.IsNamedVillager())
                 return IdentityType.NamedVillager;
 
+            if (PastLife.WasCorpse)
+                return IdentityType.Corpse;
+
             if (PastLife.WasProperlyNamed)
                 return IdentityType.Named;
 
@@ -802,9 +1008,6 @@ namespace XRL.World.Parts
 
             if (frankenCorpse.IsVillager())
                 return IdentityType.Villager;
-
-            if (PastLife.WasCorpse)
-                return IdentityType.Corpse;
 
             return IdentityType.Nobody;
         }
@@ -851,29 +1054,8 @@ namespace XRL.World.Parts
 
                 _ => frankenCorpse?.DisplayName,
             };
-            Debug.Log(nameof(newIdentity), newIdentity ?? NULL, indent[1]);
+            Debug.Log(nameof(newIdentity) + "(" + IdentityType + ")", newIdentity ?? NULL, indent[1]);
             return newIdentity?.Replace("[", "").Replace("]", "");
-            /*
-            if (PastLife.WasProperlyNamed || corpseHasSpecialIdentity)
-            {
-                newIdentity = "corpse of " + whoTheyWere;
-            }
-            else
-            {
-                if (!PastLife.WasCorpse)
-                {
-                    newIdentity = whoTheyWere + " corpse";
-                }
-                else
-                {
-                    newIdentity = // PastLife.BrainInAJar?.DisplayName ?? 
-                        PastLife.BrainInAJar?.Render?.DisplayName;
-                }
-            }
-            newIdentity = newIdentity?.Replace("[", "").Replace("]", "");
-            Debug.Log(nameof(newIdentity), newIdentity ?? NULL, indent[1]);
-            return newIdentity;
-            */
         }
         public string GenerateDisplayName(out IdentityType IdentityType)
             => GenerateDisplayName(this, out IdentityType);
@@ -898,12 +1080,22 @@ namespace XRL.World.Parts
             string whoTheyWere = (PastLife.RefName ?? PastLife.GetBlueprint()?.DisplayName() ?? "unfortunate soul");
             string endMark = ":\n";
             string oldDescription = PastLife.Description;
+
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(frankenCorpse), frankenCorpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(whoTheyWere), whoTheyWere ?? NULL),
+                    Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
+                });
+
             if (IdentityType == IdentityType.Corpse)
             {
                 oldDescription = null;
                 endMark = ".";
             }
-            if (IdentityType > IdentityType.NamedVillager)
+            if (IdentityType > IdentityType.Named)
             {
                 whoTheyWere = Grammar.A(whoTheyWere);
             }
@@ -933,8 +1125,9 @@ namespace XRL.World.Parts
                 oldDescription = null;
                 endMark = ".";
             }
-
-            return inLife + whoTheyWere + endMark + oldDescription;
+            string postDescription = inLife + whoTheyWere + endMark + oldDescription;
+            Debug.Log(nameof(postDescription), postDescription ?? NULL, indent[1]);
+            return postDescription;
         }
         public string GeneratePostDescription(out IdentityType IdentityType)
         {
@@ -1060,6 +1253,11 @@ namespace XRL.World.Parts
             && IsUnmanaged(BodyPart)
             && !IsAbstractOrExtrinsicOrNonNative(BodyPart);
 
+        public static bool IsNonChimericConcreteIntrinsicNative(BodyPart BodyPart)
+            => BodyPart != null
+            && BodyPart.Manager != "Chimera"
+            && !IsAbstractOrExtrinsicOrNonNative(BodyPart);
+
         public static bool HasManagedConcreteIntrinsicSubpart(BodyPart BodyPart)
             => BodyPart.LoopSubparts().Any(IsManagedConcreteIntrinsic);
 
@@ -1128,7 +1326,7 @@ namespace XRL.World.Parts
                 return true;
             }
             List<BodyPart> bodyPartsToLoop = SourceBody?.LoopParts()
-                ?.Where(IsUnmanagedConcreteIntrinsicNative)
+                ?.Where(IsNonChimericConcreteIntrinsicNative)
                 ?.Where(HasManagedConcreteIntrinsicSubpart)
                 ?.ToList();
             List<BodyPart> accountedForBodyParts = new();
@@ -1142,6 +1340,7 @@ namespace XRL.World.Parts
 
                 List<BodyPart> subPartsToLoop = bodyPart?.LoopSubparts()
                     ?.Where(IsManagedConcreteIntrinsic)
+                    ?.Where(bp => bp.Manager == "Chimera")
                     ?.ToList();
 
                 if (subPartsToLoop.IsNullOrEmpty())
@@ -1181,7 +1380,7 @@ namespace XRL.World.Parts
                 Debug.CheckYeh("Subparts Looped, " + bodyPartExtraLimbs.Count.Things("limb tree") + " copied", Indent: indent[2]);
 
                 List<BodyPart> potentialTargetBodyParts = DestinationBody?.LoopParts()
-                    ?.Where(IsUnmanagedConcreteIntrinsicNative)
+                    ?.Where(IsNonChimericConcreteIntrinsicNative)
                     ?.Where(bp => !accountedForDestinationBodyParts.Contains(bp))
                     ?.ToList();
 
@@ -1464,6 +1663,8 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(Blueprint), Blueprint);
             E.AddEntry(this, nameof(BaseDisplayName), BaseDisplayName);
             E.AddEntry(this, nameof(RefName), RefName);
+            IdentityType identityType = GetIdentityType(); 
+            E.AddEntry(this, nameof(IdentityType), identityType.ToStringWithNum());
             E.AddEntry(this, nameof(WasProperlyNamed), WasProperlyNamed);
 
             if (DisplayNameAdjectives != null && !DisplayNameAdjectives.AdjectiveList.IsNullOrEmpty())

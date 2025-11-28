@@ -619,7 +619,7 @@ namespace UD_FleshGolems.Capabilities
                 ArgPairs: new ArgPair[]
                 {
                     Debug.Arg(nameof(countsAs), countsAs),
-                    Debug.Arg(nameof(countsAsParamaters), "\"" + countsAsParamaters.Join() + "\""),
+                    Debug.Arg(nameof(countsAsParamaters), "\"" + countsAsParamaters.SafeJoin() + "\""),
                 });
 
             List<GameObjectBlueprint> entitiesWithCorpses = new();

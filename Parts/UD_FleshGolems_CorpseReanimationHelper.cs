@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
+using HarmonyLib;
+
 using Genkit;
+
 using XRL.Core;
 using XRL.Language;
 using XRL.Rules;
@@ -26,21 +29,30 @@ using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
+using System.Linq;
+using static XRL.World.Parts.UD_FleshGolems_PastLife;
 
 namespace XRL.World.Parts
 {
     [Serializable]
     public class UD_FleshGolems_CorpseReanimationHelper : IScribedPart
     {
+        [UD_FleshGolems_DebugRegistry]
+        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
+        {
+            Registry.Register(nameof(AssignStatsFromStatistics), false);
+            return Registry;
+        }
+
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
         public const string REANIMATED_ALT_TILE_PROPTAG = "UD_FleshGolems_AlternateTileFor:";
         public const string REANIMATED_TILE_PROPTAG = "UD_FleshGolems_PastLife_TileOverride";
+        public const string REANIMATED_TAXA_XTAG = "UD_FleshGolems_Taxa";
         public const string REANIMATED_PART_EXCLUSIONS_PROPTAG = "UD_FleshGolems_Reanimated_PartExclusions";
         public const string REANIMATED_FLIP_COLORS_PROPTAG = "UD_FleshGolems ReanimationHelper FlipColors";
         public const string REANIMATED_SET_COLORS_PROPTAG = "UD_FleshGolems ReanimationHelper SetColors";
         public const string REANIMATED_GEN_SOURCE_INV_PROPTAG = "UD_FleshGolems ReanimationHelper GenerateSourceInventory";
-
 
         public const string CYBERNETICS_LICENSES = "CyberneticsLicenses";
         public const string CYBERNETICS_LICENSES_FREE = "FreeCyberneticsLicenses";
@@ -335,7 +347,7 @@ namespace XRL.World.Parts
                 }
                 sourcePart.ParentObject = FrankenCorpse;
                 sourcePartBlueprint.InitializePartInstance(sourcePart);
-                FrankenCorpse.AddPart(sourcePart);
+                FrankenCorpse.AddPart(sourcePart, Creation: true);
                 Debug.CheckYeh(sourcePartBlueprint.Name, "added", indent[1]);
 
                 if (sourcePartBlueprint.TryGetParameter("Builder", out string partBuilderName)
@@ -369,7 +381,6 @@ namespace XRL.World.Parts
             }
             foreach (GamePartBlueprint sourceMutationBlueprint in SourceBlueprint.Mutations.Values)
             {
-                Debug.Log(sourceMutationBlueprint.Name, Indent: indent[1]);
                 if (Stat.Random(1, sourceMutationBlueprint.ChanceOneIn) != 1)
                 {
                     Debug.CheckNah(sourceMutationBlueprint.Name, nameof(sourceMutationBlueprint.ChanceOneIn) + " failed", indent[1]);
@@ -754,28 +765,39 @@ namespace XRL.World.Parts
         {
             Override,
             Blueprint,
+            Taxon,
             Species,
             Golem,
         }
-        public static bool TileMappingTagExistsAndContainsLookup(string Name, string AlternateTileTag, string Lookup, out string ParameterString)
+        public static bool TileMappingTagExistsAndContainsLookup(string ParameterString, out List<string> Parameters, params string[] Lookup)
         {
-            ParameterString = null;
-            return Name.StartsWith(AlternateTileTag)
-                && !(ParameterString = Name.Replace(AlternateTileTag, "")).IsNullOrEmpty()
-                && ParameterString.CachedCommaExpansion().Contains(Lookup);
+            Parameters = new();
+            return !ParameterString.IsNullOrEmpty()
+                && !Lookup.IsNullOrEmpty()
+                && !(Parameters = ParameterString.CachedCommaExpansion()).IsNullOrEmpty()
+                && Parameters.Count > 0
+                && Parameters.Any(s => s.EqualsAny(Lookup));
         }
-        public static bool ParseTileMappings(TileMappingKeyword Keyword, string Lookup, out List<string> TileList)
+        public static bool ParseTileMappings(TileMappingKeyword Keyword, out List<string> TileList, params string[] Lookup)
         {
             TileList = new();
             string alternateTileTag = REANIMATED_ALT_TILE_PROPTAG + Keyword + ":";
 
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(Keyword), Keyword),
+                    Debug.Arg(nameof(Lookup), Lookup?.ToList()?.SafeJoin() ?? "empty"),
+                });
+
             if (Keyword == TileMappingKeyword.Override)
             {
-                if (Lookup == null)
+                if (Lookup.IsNullOrEmpty())
                 {
                     return false; // No tag, so nothing to parse.
                 }
-                if (Lookup.CachedCommaExpansion() is not List<string> valueList
+                if (Lookup.ToList() is not List<string> valueList
                     || valueList.IsNullOrEmpty())
                 {
                     Debug.MetricsManager_LogCallingModError(
@@ -789,23 +811,91 @@ namespace XRL.World.Parts
                 }
                 return true;
             }
-            if (GameObjectFactory.Factory.GetBlueprintIfExists("UD_FleshGolems_TileMappings") is not GameObjectBlueprint tileMappings)
+            if (GameObjectFactory.Factory.GetBlueprintIfExists("UD_FleshGolems_TileMappings") is not GameObjectBlueprint tileMappingsModel)
             {
                 return false; // No Blueprint, so nothing to parse.
             }
             bool any = false;
-            foreach ((string name, string value) in tileMappings.Tags)
+            foreach ((string tagName, string tagValue) in tileMappingsModel.Tags)
             {
-                bool tileMappingExists = TileMappingTagExistsAndContainsLookup(
-                    Name: name,
-                    AlternateTileTag: alternateTileTag,
-                    Lookup: Lookup,
-                    ParameterString: out string parameterString);
-
+                bool tileMappingExists = false;
+                List<string> tileMappingParameters = new();
+                List<string> tagParameterList = new();
+                if (tagName.StartsWith(alternateTileTag)
+                    && tagName?.Replace(alternateTileTag, "") is string parameterString)
+                {
+                    if (parameterString.Contains(":"))
+                    {
+                        tileMappingParameters = alternateTileTag.Split(":").ToList();
+                        parameterString = tileMappingParameters[^1];
+                        tileMappingParameters.Remove(parameterString);
+                    }
+                    tileMappingExists = TileMappingTagExistsAndContainsLookup(
+                        ParameterString: parameterString
+                        Parameters: out tagParameterList,
+                        Lookup: Lookup);
+                }
+                
                 any = tileMappingExists || any;
 
+                if (Keyword == TileMappingKeyword.Taxon)
+                {
+                    Debug.ArgPair[] lookupArgPairs = new Debug.ArgPair[0];
+                    Debug.ArgPair[] tileMapParamArgPairs = new Debug.ArgPair[0];
+                    Debug.ArgPair[] tagParamArgPairs = new Debug.ArgPair[0];
+
+                    if (!Lookup.IsNullOrEmpty())
+                    {
+                        List<Debug.ArgPair> lookupArgPairList = new();
+                        for (int i = 0; i < Lookup.Length; i++)
+                        {
+                            lookupArgPairList.Add(Debug.Arg(i.ToString(), Lookup[i]));
+                        }
+                        lookupArgPairs = lookupArgPairList.ToArray();
+                    }
+                    if (!tileMappingParameters.IsNullOrEmpty())
+                    {
+                        List<Debug.ArgPair> tileMapParamArgPairList = new();
+                        for (int i = 0; i < tileMappingParameters.Count; i++)
+                        {
+                            tileMapParamArgPairList.Add(Debug.Arg(i.ToString(), tileMappingParameters[i]));
+                        }
+                        tileMapParamArgPairs = tileMapParamArgPairList.ToArray();
+                    }
+                    if (!tagParameterList.IsNullOrEmpty())
+                    {
+                        List<Debug.ArgPair> tagParamArgPairList = new();
+                        for (int i = 0; i < tagParameterList.Count; i++)
+                        {
+                            tagParamArgPairList.Add(Debug.Arg(i.ToString(), tagParameterList[i]));
+                        }
+                        tagParamArgPairs = tagParamArgPairList.ToArray();
+                    }
+
+                    if (lookupArgPairs.IsNullOrEmpty()
+                        || tileMapParamArgPairs.IsNullOrEmpty()
+                        || tagParamArgPairs.IsNullOrEmpty())
+                    {
+                        Debug.LogArgs(Keyword + " " + nameof(Lookup) + " (", ")", indent[1], ArgPairs: lookupArgPairs);
+                        Debug.LogArgs(nameof(tileMappingParameters) + " (", ")", indent[1], ArgPairs: tileMapParamArgPairs);
+                        Debug.LogArgs(nameof(tagParameterList) + " (", ")", indent[1], ArgPairs: tagParamArgPairs);
+                    }
+
+                    if (Lookup.IsNullOrEmpty()
+                        || Lookup.Length < 2
+                        || tileMappingParameters.IsNullOrEmpty()
+                        || tagParameterList.IsNullOrEmpty()
+                        || tileMappingParameters[0] != Lookup[0]
+                        || Lookup[1].CachedCommaExpansion() is not List<string> lookupParams
+                        || lookupParams.Count < 1
+                        || !tagParameterList.All(s => !lookupParams.Contains(s)))
+                    {
+                        continue;
+                    }
+                }
+
                 if (!tileMappingExists
-                    || value.CachedCommaExpansion() is not List<string> valueList
+                    || tagValue.CachedCommaExpansion() is not List<string> valueList
                     || valueList.IsNullOrEmpty())
                 {
                     continue;
@@ -815,12 +905,13 @@ namespace XRL.World.Parts
             return any; // successfully collected results, including none if the tag value was empty (logs warning).
         }
 
-        public static bool CollectProspectiveTiles(ref Dictionary<TileMappingKeyword, List<string>> Dictionary, TileMappingKeyword Keyword, string Lookup)
+        public static bool CollectProspectiveTiles(ref Dictionary<TileMappingKeyword, List<string>> Dictionary, TileMappingKeyword Keyword, params string[] Lookup)
         {
             Dictionary ??= new()
             {
                 { TileMappingKeyword.Override, new() },
                 { TileMappingKeyword.Blueprint, new() },
+                { TileMappingKeyword.Taxon, new() },
                 { TileMappingKeyword.Species, new() },
                 { TileMappingKeyword.Golem, new() },
             };
@@ -832,7 +923,7 @@ namespace XRL.World.Parts
 
                 Dictionary.Add(Keyword, new());
             }
-            if (!ParseTileMappings(Keyword, Lookup, out List<string> prospectiveTiles))
+            if (!ParseTileMappings(Keyword, out List<string> prospectiveTiles, Lookup))
             {
                 return true; // We successfully got 0 results due to absent tag.
             }
@@ -920,7 +1011,12 @@ namespace XRL.World.Parts
                 CollectProspectiveTiles(
                     Dictionary: ref prospectiveTiles,
                     Keyword: TileMappingKeyword.Override,
-                    Lookup: frankenCorpse.GetPropertyOrTag(REANIMATED_TILE_PROPTAG, Default: null));
+                    Lookup: frankenCorpse
+                        .GetPropertyOrTag(REANIMATED_TILE_PROPTAG, Default: null)
+                        ?.CachedCommaExpansion()
+                        ?.ToArray());
+
+                IdentityType identityType = PastLife.GetIdentityType();
 
                 frankenCorpse.SetStringProperty("OverlayColor", "&amp;G^k");
 
@@ -961,7 +1057,9 @@ namespace XRL.World.Parts
 
                 PastLife.RestoreBrain(excludedFromDynamicEncounters, out Brain frankenBrain);
 
-                PastLife.RestoreGenderIdentity(WantOldIdentity: 50.in100());
+                bool wantOldIdentity = identityType == IdentityType.Librarian || 50.in100();
+
+                PastLife.RestoreGenderIdentity(WantOldIdentity: wantOldIdentity);
 
                 if (frankenCorpse.GetPropertyOrTag(nameof(CyberneticsButcherableCybernetic)) is string butcherableCyberneticsProp
                     && butcherableCyberneticsProp != null)
@@ -1028,11 +1126,26 @@ namespace XRL.World.Parts
                 if (GameObjectFactory.Factory.GetBlueprintIfExists(PastLife?.Blueprint) is GameObjectBlueprint sourceBlueprint)
                 {
                     Debug.CheckYeh(nameof(sourceBlueprint), sourceBlueprint.Name, Indent: indent[3]);
+                    
 
                     CollectProspectiveTiles(
                         Dictionary: ref prospectiveTiles,
                         Keyword: TileMappingKeyword.Blueprint,
                         Lookup: sourceBlueprint.Name);
+
+                    if (sourceBlueprint.xTags.TryGetValue(REANIMATED_TAXA_XTAG, out Dictionary<string, string> sourceTaxa))
+                    {
+                        foreach ((string taxonLabel, string taxon) in sourceTaxa)
+                        {
+                            CollectProspectiveTiles(
+                                Dictionary: ref prospectiveTiles,
+                                Keyword: TileMappingKeyword.Taxon,
+                                Lookup: new string[] { taxonLabel, taxon, });
+                        }
+                    }
+
+                    PastLife.RestoreFactionRelationships();
+                    PastLife.RestoreSelectPropTags();
 
                     bool isProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
                     {
@@ -1043,15 +1156,21 @@ namespace XRL.World.Parts
                                 && partExclusionsList.Contains(p.Name));
                     }
 
+                    _ = indent[2];
+
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint, HitpointsFallbackToMinimum: true);
 
+                    /*
                     Debug.Log("Pre-" + nameof(frankenCorpse.FinalizeStats) + " figures...", Indent: indent[2]);
                     foreach ((string statName, Statistic stat) in frankenCorpse?.Statistics)
                     {
                         Debug.Log(statName, stat.Value + "/" + stat.BaseValue + " | " + (stat.sValue ?? "no sValue"), indent[3]);
                     }
+                    */
                     Debug.CheckYeh(nameof(frankenCorpse.FinalizeStats), indent[2]);
                     frankenCorpse?.FinalizeStats();
+
+                    _ = indent[2];
 
                     float physicalAdjustmentFactor = 1.2f; // wasPlayer ? 1.0f : 1.2f;
                     float mentalAdjustmentFactor = 0.80f; // wasPlayer ? 1.0f : 0.80f;
@@ -1102,7 +1221,7 @@ namespace XRL.World.Parts
                     CollectProspectiveTiles(
                         Dictionary: ref prospectiveTiles,
                         Keyword: TileMappingKeyword.Species,
-                        Lookup: sourceBlueprint.Name);
+                        Lookup: sourceBlueprint.GetPropertyOrTag("Species"));
 
                     if (sourceBlueprint.GetPropertyOrTag(REANIMATED_CONVO_ID_TAG) is string sourceCreatureConvoID
                         && convo != null)
@@ -1505,6 +1624,19 @@ namespace XRL.World.Parts
                 Debug.CheckYeh("Didn't fail, fortuantely!", indent[3]);
 
                 frankenCorpse.RequirePart<Corpse>().CorpseChance = 100;
+
+                if (frankenCorpse.TryGetIntProperty("Hero", out int frankenHero)
+                    && frankenHero > 0
+                    && identityType > IdentityType.ParticipantVillager)
+                {
+                    frankenCorpse.SetIntProperty("Hero", 0, RemoveIfZero: true);
+                    HeroMaker.MakeHero(frankenCorpse);
+                }
+                else
+                if (frankenCorpse.TryGetPart(out GivesRep frankenRep))
+                {
+                    frankenRep.FillInRelatedFactions(true);
+                }
 
                 frankenCorpse.FireEvent(Event.New(
                     ID: "UD_FleshGolems_Reanimated",

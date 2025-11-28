@@ -61,6 +61,7 @@
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Mopango Charioteer" Value="FleshGolems/brothers_flesh_golem_mopango_charioteer.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Oddity" Value="FleshGolems/brothers_flesh_golem_oddity.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Human" Value="FleshGolems/ud_flesh_golem_human.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Taxon:Morphology:kraken" Value="FleshGolems/ud_flesh_golem_kraken.png" />
   </object>
   
   <object Name="UD_FleshGolems_PostLoad_CountsAs" Inherits="DataBucket">

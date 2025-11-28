@@ -18,12 +18,20 @@ using static UD_FleshGolems.Const;
 using System.Linq;
 using XRL.Rules;
 using Genkit;
+using HarmonyLib;
 
 namespace XRL.World.Parts
 {
     [Serializable]
     public class UD_FleshGolems_ReanimatedCorpse : IScribedPart
     {
+        [UD_FleshGolems_DebugRegistry]
+        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
+        {
+            Registry.Register(AccessTools.Method(typeof(UD_FleshGolems_ReanimatedCorpse), nameof(HandleEvent), new Type[] { typeof(DecorateDefaultEquipmentEvent) }), false);
+            return Registry;
+        }
+
         [Serializable]
         public struct LiquidPortion : IComposite
         {
@@ -66,8 +74,8 @@ namespace XRL.World.Parts
         public static List<string> PlantContaminationLiquids = new() { "putrid", "slime", "goo", };
         public static List<string> FungusContaminationLiquids = new() { "putrid", "slime", "acid", };
 
-        public static int CorpseAdjective = -500;
-        public static int CorpseClause = -500;
+        public static int CorpseAdjective = 49;
+        public static int CorpseClause = -588;
 
         public static List<IdentityType> CorpseOfPrefixTypes = new()
         {
@@ -157,7 +165,14 @@ namespace XRL.World.Parts
         public override void Attach()
         {
             using Indent indent = new(1);
-            Debug.LogCaller(indent, ArgPairs: Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL));
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
+                    Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
+                    Debug.Arg(nameof(AlteredDescription), AlteredDescription),
+                    Debug.Arg(nameof(NewDescription), !NewDescription.IsNullOrEmpty()),
+                });
 
             ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
             Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[2]);
@@ -181,8 +196,8 @@ namespace XRL.World.Parts
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
 
             if (!AlteredDescription
-                && (IdentityType > IdentityType.ParticipantVillager
-                    || IdentityType < IdentityType.Librarian)
+                && IdentityType > IdentityType.ParticipantVillager
+                && IdentityType < IdentityType.Librarian
                 && !NewDescription.IsNullOrEmpty()
                 && ParentObject.TryGetPart(out Description description))
             {
@@ -331,6 +346,8 @@ namespace XRL.World.Parts
                 || ID == GetShortDescriptionEvent.ID
                 || ID == DecorateDefaultEquipmentEvent.ID
                 || ID == EndTurnEvent.ID
+                || ID == EnteredCellEvent.ID
+                || ID == AfterZoneBuiltEvent.ID
                 || ID == GetBleedLiquidEvent.ID
                 || ID == BeforeTakeActionEvent.ID
                 || ID == GetDebugInternalsEvent.ID;
@@ -342,12 +359,12 @@ namespace XRL.World.Parts
             {
                 if (playerCorpse.Render is Render corpseRender)
                 {
-                    // AlteredRenderDisplayName = true;
-                    // corpseRender.DisplayName = The.Game.PlayerName;
+                    AlteredRenderDisplayName = true;
+                    corpseRender.DisplayName = The.Game.PlayerName;
                     if (playerCorpse.TryGetPart(out UD_FleshGolems_PastLife pastLifePart))
                     {
-                        // The.Game.PlayerName = pastLifePart.GenerateDisplayName();
-                        // corpseRender.DisplayName = The.Game.PlayerName;
+                        The.Game.PlayerName = pastLifePart.GenerateDisplayName();
+                        corpseRender.DisplayName = The.Game.PlayerName;
                     }
                 }
             }
@@ -369,7 +386,7 @@ namespace XRL.World.Parts
                 {
                     E.AddClause("corpse", CorpseClause);
                 }
-                E.AddTag(identityType.ToString() + " (" + (int)identityType + ")");
+                // E.AddTag(identityType.ToString() + " (" + (int)identityType + ")");
             }
             E.ReplacePrimaryBase(PastLife.GenerateDisplayName());
             if (int.TryParse(E.Object?.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
@@ -382,11 +399,9 @@ namespace XRL.World.Parts
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
             if (AlteredDescription
-                && (IdentityType > IdentityType.ParticipantVillager
-                    || IdentityType < IdentityType.Librarian)
+                && IdentityType >= IdentityType.ParticipantVillager
                 && !NewDescription.IsNullOrEmpty()
-                && ParentObject.TryGetPart(out Description description)
-                && description._Short.Contains(LIBRARIAN_FRAGMENT))
+                && ParentObject.TryGetPart(out Description description))
             {
                 AlteredDescription = true;
                 description._Short += "\n\n" + NewDescription;
@@ -419,6 +434,102 @@ namespace XRL.World.Parts
         public override bool HandleEvent(EndTurnEvent E)
         {
             AttemptToSuffer();
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(EnteredCellEvent E)
+        {
+            using Indent indent = new(1);
+            if (ParentObject is GameObject frankenCorpse
+                && frankenCorpse == E.Object
+                && IdentityType > IdentityType.ParticipantVillager
+                && IdentityType < IdentityType.Player)
+            {
+                if (!frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
+                    || !AlteredDescription)
+                {
+                    Debug.LogCaller(indent,
+                        ArgPairs: new Debug.ArgPair[]
+                        {
+                            Debug.Arg(nameof(EnteredCellEvent)),
+                            Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
+                        });
+                }
+                if (!AlteredDescription
+                    && !NewDescription.IsNullOrEmpty()
+                    && ParentObject.TryGetPart(out Description description))
+                {
+                    Debug.Log(nameof(NewDescription), !NewDescription.IsNullOrEmpty(), Indent: indent[1]);
+                    if (IdentityType == IdentityType.Librarian
+                        && description._Short.Contains(LIBRARIAN_FRAGMENT))
+                    {
+                        Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[2]);
+                        if (frankenCorpse.GetBlueprint().TryGetPartParameter(nameof(Description), nameof(Description._Short), out string corpseDescription)
+                            && !corpseDescription.IsNullOrEmpty())
+                        {
+                            Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[3]);
+                            AlteredDescription = true;
+                            string combinedDescription = corpseDescription + "\n\n" + NewDescription;
+                            description._Short = combinedDescription;
+                        }
+                    }
+                    else
+                    if (IdentityType > IdentityType.Librarian)
+                    {
+                        AlteredDescription = true;
+                        description._Short += "\n\n" + NewDescription;
+                        Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[2]);
+                    }
+                }
+                PastLife.AlignWithPreviouslySentientBeings();
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(AfterZoneBuiltEvent E)
+        {
+            using Indent indent = new(1);
+            if (ParentObject is GameObject frankenCorpse
+                && frankenCorpse.CurrentZone == E.Zone
+                && IdentityType > IdentityType.ParticipantVillager
+                && IdentityType < IdentityType.Player)
+            {
+                if (!frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
+                    || !AlteredDescription)
+                {
+                    Debug.LogCaller(indent,
+                        ArgPairs: new Debug.ArgPair[]
+                        {
+                            Debug.Arg(nameof(EnteredCellEvent)),
+                            Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
+                        });
+                }
+                if (!AlteredDescription
+                    && !NewDescription.IsNullOrEmpty()
+                    && ParentObject.TryGetPart(out Description description))
+                {
+                    Debug.Log(nameof(NewDescription), !NewDescription.IsNullOrEmpty(), Indent: indent[1]);
+                    if (IdentityType == IdentityType.Librarian
+                        && description._Short.Contains(LIBRARIAN_FRAGMENT))
+                    {
+                        Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[2]);
+                        if (frankenCorpse.GetBlueprint().TryGetPartParameter(nameof(Description), nameof(Description._Short), out string corpseDescription)
+                            && !corpseDescription.IsNullOrEmpty())
+                        {
+                            Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[3]);
+                            AlteredDescription = true;
+                            string combinedDescription = corpseDescription + "\n\n" + NewDescription;
+                            description._Short = combinedDescription;
+                        }
+                    }
+                    else
+                    if (IdentityType > IdentityType.Librarian)
+                    {
+                        AlteredDescription = true;
+                        description._Short += "\n\n" + NewDescription;
+                        Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[2]);
+                    }
+                }
+                PastLife.AlignWithPreviouslySentientBeings();
+            }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(GetBleedLiquidEvent E)
@@ -503,6 +614,11 @@ namespace XRL.World.Parts
         public override bool HandleEvent(GetDebugInternalsEvent E)
         {
             E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
+            E.AddEntry(this, nameof(IdentityType), IdentityType.ToStringWithNum());
+
+            E.AddEntry(this, nameof(AlteredRenderDisplayName), AlteredRenderDisplayName);
+            E.AddEntry(this, nameof(AlteredDescription), AlteredDescription);
+
             E.AddEntry(this, nameof(BleedLiquid), BleedLiquid);
             return base.HandleEvent(E);
         }

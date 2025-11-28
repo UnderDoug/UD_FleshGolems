@@ -33,7 +33,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
         }
 
         public override string ToString()
-            => Blueprint.ToString() + " (" + CountasAs + ")::" + Paramaters.Join(delimiter:":");
+            => Blueprint.ToString() + " (" + CountasAs + ")::" + Paramaters.SafeJoin(Delimiter:":");
 
         public static CorpseCountsAs GetCorpseCountsAs(CorpseBlueprint CorpseBlueprint, string PropTag)
         {

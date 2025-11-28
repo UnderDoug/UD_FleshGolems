@@ -998,5 +998,18 @@ namespace UD_FleshGolems
         public static bool IsVillager(this GameObject Object)
             => Object.HasIntPropertyGTZeo("Villager");
 
+        public static string ToStringWithNum<T>(this T Enum)
+            where T : struct, Enum
+            => (Enum is int intEnum)
+            ? Enum + "(" + intEnum + ")"
+            : Enum.ToString();
+
+        public static string SafeJoin<T>(this IEnumerable<T> Enumerable, string Delimiter = ", ")
+        {
+            if (Enumerable.IsNullOrEmpty())
+                return null;
+
+            return Enumerable.Join(delimiter: Delimiter);
+        }
     }
 }

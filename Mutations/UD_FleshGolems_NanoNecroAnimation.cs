@@ -597,10 +597,12 @@ namespace XRL.World.Parts.Mutation
 
                     if (TargetCreature.Die(
                         Killer: TargetCreature,
+                        KillerText: reason,
                         Reason: reason,
                         ThirdPersonReason: reason,
-                        Accidental: true,
-                        Force: true))
+                        Force: true,
+                        DeathVerb: "cease",
+                        DeathCategory: "command"))
                     {
                         targetCell?.PsychicPulse();
                         ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_success");
