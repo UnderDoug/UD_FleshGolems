@@ -821,17 +821,18 @@ namespace XRL.World.Parts
                 bool tileMappingExists = false;
                 List<string> tileMappingParameters = new();
                 List<string> tagParameterList = new();
+                string parameterString = null;
                 if (tagName.StartsWith(alternateTileTag)
-                    && tagName?.Replace(alternateTileTag, "") is string parameterString)
+                    && !(parameterString = tagName?.Replace(alternateTileTag, "")).IsNullOrEmpty())
                 {
                     if (parameterString.Contains(":"))
                     {
-                        tileMappingParameters = alternateTileTag.Split(":").ToList();
+                        tileMappingParameters = parameterString.Split(":").ToList();
                         parameterString = tileMappingParameters[^1];
                         tileMappingParameters.Remove(parameterString);
                     }
                     tileMappingExists = TileMappingTagExistsAndContainsLookup(
-                        ParameterString: parameterString
+                        ParameterString: parameterString,
                         Parameters: out tagParameterList,
                         Lookup: Lookup);
                 }
@@ -872,10 +873,11 @@ namespace XRL.World.Parts
                         tagParamArgPairs = tagParamArgPairList.ToArray();
                     }
 
-                    if (lookupArgPairs.IsNullOrEmpty()
-                        || tileMapParamArgPairs.IsNullOrEmpty()
-                        || tagParamArgPairs.IsNullOrEmpty())
+                    if (!lookupArgPairs.IsNullOrEmpty()
+                        && !tileMapParamArgPairs.IsNullOrEmpty()
+                        && !tagParamArgPairs.IsNullOrEmpty())
                     {
+                        Debug.LogArgs(nameof(parameterString) + " (", ")", indent[1], ArgPairs: Debug.Arg(parameterString));
                         Debug.LogArgs(Keyword + " " + nameof(Lookup) + " (", ")", indent[1], ArgPairs: lookupArgPairs);
                         Debug.LogArgs(nameof(tileMappingParameters) + " (", ")", indent[1], ArgPairs: tileMapParamArgPairs);
                         Debug.LogArgs(nameof(tagParameterList) + " (", ")", indent[1], ArgPairs: tagParamArgPairs);
@@ -888,7 +890,7 @@ namespace XRL.World.Parts
                         || tileMappingParameters[0] != Lookup[0]
                         || Lookup[1].CachedCommaExpansion() is not List<string> lookupParams
                         || lookupParams.Count < 1
-                        || !tagParameterList.All(s => !lookupParams.Contains(s)))
+                        || !tagParameterList.Any(s => lookupParams.Contains(s)))
                     {
                         continue;
                     }
@@ -945,6 +947,13 @@ namespace XRL.World.Parts
         {
             return Stat.RollCached("4d3+5") * UD_FleshGolems_ReanimatedCorpse.GetTierFromLevel(FrankenCorpse);
         }
+
+
+        public static bool IsPartToSkip(IPart Part, GameObject FrankenCorpse)
+            => IPartsToSkipWhenReanimating.Contains(Part.Name)
+            || (FrankenCorpse.GetPropertyOrTag(REANIMATED_PART_EXCLUSIONS_PROPTAG) is string propertyPartExclusions
+                && propertyPartExclusions.CachedCommaExpansion() is List<string> partExclusionsList
+                && partExclusionsList.Contains(Part.Name));
 
         public static bool MakeItALIVE(
             GameObject Corpse,
@@ -1057,6 +1066,8 @@ namespace XRL.World.Parts
 
                 PastLife.RestoreBrain(excludedFromDynamicEncounters, out Brain frankenBrain);
 
+                // PastLife.RestoreParts(p => !IsPartToSkip(p, frankenCorpse));
+
                 bool wantOldIdentity = identityType == IdentityType.Librarian || 50.in100();
 
                 PastLife.RestoreGenderIdentity(WantOldIdentity: wantOldIdentity);
@@ -1147,7 +1158,7 @@ namespace XRL.World.Parts
                     PastLife.RestoreFactionRelationships();
                     PastLife.RestoreSelectPropTags();
 
-                    bool isProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
+                    bool iIsProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
                     {
                         return IPartsToSkipWhenReanimating.Contains(p.Name)
                             || frankenCorpse.HasPart(p.Name)
@@ -1160,13 +1171,6 @@ namespace XRL.World.Parts
 
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint, HitpointsFallbackToMinimum: true);
 
-                    /*
-                    Debug.Log("Pre-" + nameof(frankenCorpse.FinalizeStats) + " figures...", Indent: indent[2]);
-                    foreach ((string statName, Statistic stat) in frankenCorpse?.Statistics)
-                    {
-                        Debug.Log(statName, stat.Value + "/" + stat.BaseValue + " | " + (stat.sValue ?? "no sValue"), indent[3]);
-                    }
-                    */
                     Debug.CheckYeh(nameof(frankenCorpse.FinalizeStats), indent[2]);
                     frankenCorpse?.FinalizeStats();
 
@@ -1181,7 +1185,7 @@ namespace XRL.World.Parts
                         MentalAdjustmentFactor: mentalAdjustmentFactor,
                         HitpointsFallbackToMinimum: true);
 
-                    AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isProblemPartOrFollowerPartOrPartAlreadyHave);
+                    AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: iIsProblemPartOrFollowerPartOrPartAlreadyHave);
 
                     AssignMutationsFromBlueprint(frankenMutations, sourceBlueprint);
 

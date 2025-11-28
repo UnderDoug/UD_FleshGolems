@@ -287,10 +287,6 @@ namespace XRL.World.ObjectBuilders
             {
                 return false;
             }
-            if (!Creature.IsAlive)
-            {
-                return false;
-            }
             if (!TryProduceCorpse(Creature, out Corpse))
             {
                 return false;
@@ -329,8 +325,9 @@ namespace XRL.World.ObjectBuilders
             bool OverridePastLife = true)
         {
             FakedDeath = false;
-            Creature ??= The.Player;
-            if (Creature == null || (Corpse == null && !TryProduceCorpse(Creature, out Corpse, ForImmediateReanimation, OverridePastLife)))
+            if (Creature == null
+                || (Corpse == null
+                    && !TryProduceCorpse(Creature, out Corpse, ForImmediateReanimation, OverridePastLife)))
             {
                 return false;
             }
@@ -365,6 +362,18 @@ namespace XRL.World.ObjectBuilders
                 if (Creature.IsPlayer() || Creature.Blueprint.IsPlayerBlueprint())
                 {
                     The.Game.Player.SetBody(Corpse);
+                    if (Corpse.Render is Render corpseRender
+                        && Corpse.TryGetPart(out UD_FleshGolems_ReanimatedCorpse reanimatedCorpsePart))
+                    {
+                        reanimatedCorpsePart.RenderDisplayNameSetAltered();
+                        corpseRender.DisplayName = The.Game.PlayerName;
+                        if (Corpse.TryGetPart(out UD_FleshGolems_PastLife pastLifePart))
+                        {
+                            pastLifePart.BrainInAJar.Render.DisplayName = The.Game.PlayerName;
+                            The.Game.PlayerName = pastLifePart.GenerateDisplayName();
+                            corpseRender.DisplayName = The.Game.PlayerName;
+                        }
+                    }
                 }
 
                 Creature.MakeInactive();

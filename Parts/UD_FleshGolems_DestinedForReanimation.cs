@@ -527,8 +527,8 @@ namespace XRL.World.Parts
             int eventOrder = EventOrder.EXTREMELY_LATE + EventOrder.EXTREMELY_LATE;
             try
             {
-                // Registrar?.Register(BeforeObjectCreatedEvent.ID, -eventOrder);
-                Registrar?.Register(AfterObjectCreatedEvent.ID, -eventOrder);
+                Registrar?.Register(BeforeObjectCreatedEvent.ID, -eventOrder);
+                // Registrar?.Register(AfterObjectCreatedEvent.ID, -eventOrder);
                 Registrar?.Register(EnvironmentalUpdateEvent.ID, -eventOrder);
             }
             catch (Exception x)
@@ -541,13 +541,13 @@ namespace XRL.World.Parts
                     || ParentObject.RegisteredEvents == null
                     || !ParentObject.RegisteredEvents.ContainsKey(BeforeObjectCreatedEvent.ID))
                 {
-                    // FailedToRegisterEvents.Add(BeforeObjectCreatedEvent.ID);
+                    FailedToRegisterEvents.Add(BeforeObjectCreatedEvent.ID);
                 }
                 if (ParentObject == null
                     || ParentObject.RegisteredEvents == null
                     || !ParentObject.RegisteredEvents.ContainsKey(AfterObjectCreatedEvent.ID))
                 {
-                    FailedToRegisterEvents.Add(AfterObjectCreatedEvent.ID);
+                    // FailedToRegisterEvents.Add(AfterObjectCreatedEvent.ID);
                 }
                 if (ParentObject == null
                     || ParentObject.RegisteredEvents == null
@@ -561,8 +561,8 @@ namespace XRL.World.Parts
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
-                // || (ID == BeforeObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID))
-                || (ID == AfterObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(AfterObjectCreatedEvent.ID))
+                || (ID == BeforeObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID))
+                // || (ID == AfterObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(AfterObjectCreatedEvent.ID))
                 || (ID == EnvironmentalUpdateEvent.ID && FailedToRegisterEvents.Contains(EnvironmentalUpdateEvent.ID))
                 || (ID == BeforeZoneBuiltEvent.ID && DelayTillZoneBuild)
                 || ID == GetShortDescriptionEvent.ID
@@ -600,22 +600,10 @@ namespace XRL.World.Parts
                 && !DelayTillZoneBuild
                 && ParentObject is GameObject soonToBeCorpse)
             {
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(EnvironmentalUpdateEvent) + ", " +
-                    nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
-                    nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL));
-                */
                 if ((soonToBeCorpse.Blueprint.IsPlayerBlueprint() || soonToBeCorpse.IsPlayer())
                     && !HaveFakedDeath
                     && UD_FleshGolems_Reanimated.TryProduceCorpse(soonToBeCorpse, out Corpse))
                 {
-                    /*
-                    UnityEngine.Debug.Log(
-                        nameof(The) + "." + nameof(The.Player) + ": " + (The.Player?.DebugName ?? NULL) + ", " +
-                        nameof(UD_FleshGolems.Extensions.IsPlayerBlueprint) + ": " + soonToBeCorpse.Blueprint.IsPlayerBlueprint() + ", " +
-                        nameof(soonToBeCorpse.IsPlayer) + ": " + soonToBeCorpse.IsPlayer());
-                    */
                     soonToBeCorpse.RegisterPartEvent(this, "GameStart");
                 }
                 else

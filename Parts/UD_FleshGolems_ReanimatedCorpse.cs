@@ -77,15 +77,6 @@ namespace XRL.World.Parts
         public static int CorpseAdjective = 49;
         public static int CorpseClause = -588;
 
-        public static List<IdentityType> CorpseOfPrefixTypes = new()
-        {
-            IdentityType.Player,
-            IdentityType.Librarian,
-            IdentityType.Warden,
-            IdentityType.Named,
-            IdentityType.NamedVillager,
-        };
-
         [SerializeField]
         private GameObject _Reanimator;
         public GameObject Reanimator
@@ -149,10 +140,10 @@ namespace XRL.World.Parts
         public List<LiquidPortion> BleedLiquidPortions;
 
         [SerializeField]
-        private bool AlteredRenderDisplayName;
+        private bool IsAlteredRenderDisplayName;
 
         [SerializeField]
-        private bool AlteredDescription;
+        private bool IsAlteredDescription;
 
         public UD_FleshGolems_ReanimatedCorpse()
         {
@@ -170,7 +161,7 @@ namespace XRL.World.Parts
                 {
                     Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
                     Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
-                    Debug.Arg(nameof(AlteredDescription), AlteredDescription),
+                    Debug.Arg(nameof(IsAlteredDescription), IsAlteredDescription),
                     Debug.Arg(nameof(NewDescription), !NewDescription.IsNullOrEmpty()),
                 });
 
@@ -195,25 +186,6 @@ namespace XRL.World.Parts
 
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
 
-            if (!AlteredDescription
-                && IdentityType > IdentityType.ParticipantVillager
-                && IdentityType < IdentityType.Librarian
-                && !NewDescription.IsNullOrEmpty()
-                && ParentObject.TryGetPart(out Description description))
-            {
-                AlteredDescription = true;
-                description._Short += "\n\n" + NewDescription;
-            }
-            /*
-            if (!NewDisplayName.IsNullOrEmpty()
-                && !AlteredRenderDisplayName
-                && ParentObject?.Render is Render corpseRender)
-            {
-                AlteredRenderDisplayName = true;
-                corpseRender.DisplayName = NewDisplayName;
-            }
-            */
-
             AttemptToSuffer();
             base.Attach();
         }
@@ -221,6 +193,17 @@ namespace XRL.World.Parts
         public override bool SameAs(IPart p)
         {
             return false;
+        }
+
+        public UD_FleshGolems_ReanimatedCorpse RenderDisplayNameSetAltered()
+        {
+            IsAlteredRenderDisplayName = true;
+            return this;
+        }
+        public UD_FleshGolems_ReanimatedCorpse DescriptionSetAltered()
+        {
+            IsAlteredDescription = true;
+            return this;
         }
 
         public static bool TryGetLiquidPortion(string LiquidComponent, out LiquidPortion LiquidPortion)
@@ -341,7 +324,6 @@ namespace XRL.World.Parts
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
-                || ID == AfterPlayerBodyChangeEvent.ID
                 || ID == GetDisplayNameEvent.ID
                 || ID == GetShortDescriptionEvent.ID
                 || ID == DecorateDefaultEquipmentEvent.ID
@@ -352,30 +334,15 @@ namespace XRL.World.Parts
                 || ID == BeforeTakeActionEvent.ID
                 || ID == GetDebugInternalsEvent.ID;
         }
-        public override bool HandleEvent(AfterPlayerBodyChangeEvent E)
-        {
-            if (E.NewBody is GameObject playerCorpse
-                && E.OldBody is GameObject playerPastLife)
-            {
-                if (playerCorpse.Render is Render corpseRender)
-                {
-                    AlteredRenderDisplayName = true;
-                    corpseRender.DisplayName = The.Game.PlayerName;
-                    if (playerCorpse.TryGetPart(out UD_FleshGolems_PastLife pastLifePart))
-                    {
-                        The.Game.PlayerName = pastLifePart.GenerateDisplayName();
-                        corpseRender.DisplayName = The.Game.PlayerName;
-                    }
-                }
-            }
-            return base.HandleEvent(E);
-        }
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
             if (PastLife != null
                 && PastLife.GenerateDisplayName(out IdentityType identityType) is string newDisplayName)
             {
-                E.ReplacePrimaryBase(newDisplayName);
+                if (!E.Object.IsPlayer())
+                {
+                    E.ReplacePrimaryBase(newDisplayName);
+                }
 
                 if (identityType < IdentityType.ParticipantVillager)
                 {
@@ -398,12 +365,12 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
-            if (AlteredDescription
+            if (IsAlteredDescription
                 && IdentityType >= IdentityType.ParticipantVillager
                 && !NewDescription.IsNullOrEmpty()
                 && ParentObject.TryGetPart(out Description description))
             {
-                AlteredDescription = true;
+                IsAlteredDescription = true;
                 description._Short += "\n\n" + NewDescription;
             }
             return base.HandleEvent(E);
@@ -440,12 +407,11 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             if (ParentObject is GameObject frankenCorpse
-                && frankenCorpse == E.Object
                 && IdentityType > IdentityType.ParticipantVillager
                 && IdentityType < IdentityType.Player)
             {
                 if (!frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
-                    || !AlteredDescription)
+                    || !IsAlteredDescription)
                 {
                     Debug.LogCaller(indent,
                         ArgPairs: new Debug.ArgPair[]
@@ -454,7 +420,7 @@ namespace XRL.World.Parts
                             Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
                         });
                 }
-                if (!AlteredDescription
+                if (!IsAlteredDescription
                     && !NewDescription.IsNullOrEmpty()
                     && ParentObject.TryGetPart(out Description description))
                 {
@@ -462,12 +428,12 @@ namespace XRL.World.Parts
                     if (IdentityType == IdentityType.Librarian
                         && description._Short.Contains(LIBRARIAN_FRAGMENT))
                     {
-                        Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[2]);
+                        Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[2]);
                         if (frankenCorpse.GetBlueprint().TryGetPartParameter(nameof(Description), nameof(Description._Short), out string corpseDescription)
                             && !corpseDescription.IsNullOrEmpty())
                         {
-                            Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[3]);
-                            AlteredDescription = true;
+                            Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[3]);
+                            IsAlteredDescription = true;
                             string combinedDescription = corpseDescription + "\n\n" + NewDescription;
                             description._Short = combinedDescription;
                         }
@@ -475,9 +441,9 @@ namespace XRL.World.Parts
                     else
                     if (IdentityType > IdentityType.Librarian)
                     {
-                        AlteredDescription = true;
+                        IsAlteredDescription = true;
                         description._Short += "\n\n" + NewDescription;
-                        Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[2]);
+                        Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[2]);
                     }
                 }
                 PastLife.AlignWithPreviouslySentientBeings();
@@ -493,7 +459,7 @@ namespace XRL.World.Parts
                 && IdentityType < IdentityType.Player)
             {
                 if (!frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
-                    || !AlteredDescription)
+                    || !IsAlteredDescription)
                 {
                     Debug.LogCaller(indent,
                         ArgPairs: new Debug.ArgPair[]
@@ -502,7 +468,7 @@ namespace XRL.World.Parts
                             Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
                         });
                 }
-                if (!AlteredDescription
+                if (!IsAlteredDescription
                     && !NewDescription.IsNullOrEmpty()
                     && ParentObject.TryGetPart(out Description description))
                 {
@@ -510,12 +476,12 @@ namespace XRL.World.Parts
                     if (IdentityType == IdentityType.Librarian
                         && description._Short.Contains(LIBRARIAN_FRAGMENT))
                     {
-                        Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[2]);
+                        Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[2]);
                         if (frankenCorpse.GetBlueprint().TryGetPartParameter(nameof(Description), nameof(Description._Short), out string corpseDescription)
                             && !corpseDescription.IsNullOrEmpty())
                         {
-                            Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[3]);
-                            AlteredDescription = true;
+                            Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[3]);
+                            IsAlteredDescription = true;
                             string combinedDescription = corpseDescription + "\n\n" + NewDescription;
                             description._Short = combinedDescription;
                         }
@@ -523,9 +489,9 @@ namespace XRL.World.Parts
                     else
                     if (IdentityType > IdentityType.Librarian)
                     {
-                        AlteredDescription = true;
+                        IsAlteredDescription = true;
                         description._Short += "\n\n" + NewDescription;
-                        Debug.Log(nameof(AlteredDescription), AlteredDescription, Indent: indent[2]);
+                        Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[2]);
                     }
                 }
                 PastLife.AlignWithPreviouslySentientBeings();
@@ -616,8 +582,8 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
             E.AddEntry(this, nameof(IdentityType), IdentityType.ToStringWithNum());
 
-            E.AddEntry(this, nameof(AlteredRenderDisplayName), AlteredRenderDisplayName);
-            E.AddEntry(this, nameof(AlteredDescription), AlteredDescription);
+            E.AddEntry(this, nameof(IsAlteredRenderDisplayName), IsAlteredRenderDisplayName);
+            E.AddEntry(this, nameof(IsAlteredDescription), IsAlteredDescription);
 
             E.AddEntry(this, nameof(BleedLiquid), BleedLiquid);
             return base.HandleEvent(E);
