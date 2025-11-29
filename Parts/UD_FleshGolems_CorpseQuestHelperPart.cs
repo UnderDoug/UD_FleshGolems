@@ -26,7 +26,7 @@ namespace XRL.World.Parts
         public bool Primed;
 
         public bool IsCorpse => ParentObject != null
-            && ParentObject.GetBlueprint().InheritsFrom("Corpse");
+            && ParentObject.IsCorpse();
 
         public bool IsBrainBrine => ParentObject != null
             && ParentObject.TryGetPart(out LiquidVolume liquidVolume)

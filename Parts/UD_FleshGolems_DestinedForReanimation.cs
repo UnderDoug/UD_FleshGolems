@@ -427,7 +427,7 @@ namespace XRL.World.Parts
                 GameObject thirdBestMatch = null;
                 foreach (GameObject dropItem in dropInventory.GetObjects())
                 {
-                    if (!dropItem.GetBlueprint().InheritsFrom("Corpse"))
+                    if (!dropItem.IsCorpse())
                     {
                         continue;
                     }

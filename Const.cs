@@ -23,6 +23,8 @@ namespace UD_FleshGolems
 
         public const int MAX_DIST = 9999999;
 
-        public const string GAME_MOD_EXCEOPTION = "game_mod_exception";
+        public const string GAME_MOD_EXCEPTION = "game_mod_exception";
+
+        public const string PSEUDOCORPSE = "UD_FleshGolems PseudoCorpse";
     }
 }

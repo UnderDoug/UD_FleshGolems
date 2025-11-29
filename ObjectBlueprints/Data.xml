@@ -12,10 +12,12 @@
   
   Priority:
   1. UD_FleshGolems_PastLife_TileOverride: tag goes directly on the corpse blueprint is whatever file the corpse is defined in.
-      a. See Creatures.xml, UD_FleshGolems Jofo Qudwufo
+      a. See Creatures.xml, "UD_FleshGolems Jofo Qudwufo"
   2. Blueprint: comma separated list. Targets any past life with a listed blueprint.
-  3. Species: targets a specific species, in the event that there's no golem equivalent and "oddity" doesn't make sense.
-  4. Golem: aligns with a specific type of golem.
+  3. Taxon: xtagUD_FleshGolems_Taxa attribute : comma separated list. Targets any past life with the indicated xtag and attribute matching the specified final "parameter".
+      a. See Creatures.xml, "Bestowing Taxa", "Saltwurm"
+  4. Species: targets a specific species, in the event that there's no golem equivalent and "oddity" doesn't make sense.
+  5. Golem: aligns with a specific type of golem.
   
   -->
   <object Name="UD_FleshGolems_TileMappings" Inherits="DataBucket">

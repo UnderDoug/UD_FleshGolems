@@ -47,28 +47,28 @@ namespace XRL.World.QuestManagers
                 this.Taxonomy = Taxonomy;
                 this.Value = Value;
             }
-
+            
             public bool CorpseCompletesThisStep(GameObject CorpseObject) => Taxonomy switch
             {
-                CorpseTaxonomy.Any =>
-                    IsCorpse(CorpseObject),
+                CorpseTaxonomy.Any
+                    => CorpseObject.IsCorpse(),
 
-                CorpseTaxonomy.Species =>
-                    IsCorpse(CorpseObject)
+                CorpseTaxonomy.Species
+                    => CorpseObject.IsCorpse()
                     && GetAllCorpsesOfSpecies(Value).Contains(CorpseObject.Blueprint),
 
-                CorpseTaxonomy.Base =>
-                    IsCorpse(CorpseObject)
+                CorpseTaxonomy.Base
+                    => CorpseObject.IsCorpse()
                     && CorpseObject.GetBlueprint().InheritsFrom(Value),
 
-                CorpseTaxonomy.Faction =>
-                    IsCorpse(CorpseObject)
+                CorpseTaxonomy.Faction
+                    => CorpseObject.IsCorpse()
                     && GetAllCorpsesOfFaction(Value).Contains(CorpseObject.Blueprint),
 
                 _ => false,
             };
 
-            static bool ExceptExclusedCorpses(GameObjectBlueprint bp)
+            static bool ExceptExcludedCorpses(GameObjectBlueprint bp)
             {
                 return !bp.IsBaseBlueprint()
                     && !bp.IsExcludedFromDynamicEncounters();
@@ -79,7 +79,7 @@ namespace XRL.World.QuestManagers
                 CorpseTaxonomy.Any =>
                     GameObjectFactory.Factory
                     ?.GetBlueprintsInheritingFrom("Corpse")
-                    ?.GetRandomElementCosmetic(ExceptExclusedCorpses).Name,
+                    ?.GetRandomElementCosmetic(ExceptExcludedCorpses).Name,
 
                 CorpseTaxonomy.Species =>
                     GetAllCorpsesOfSpecies(Value)

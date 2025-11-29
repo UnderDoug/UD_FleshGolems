@@ -423,5 +423,19 @@ namespace UD_FleshGolems.Capabilities.Necromancy
 
         public List<string> GetWeightedListToString(Predicate<GameObjectBlueprint> Filter = null)
             => GetWeightedList(Filter)?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value);
+
+        public CorpseWeight GetCorpseWeight(EntityBlueprint EntityBlueprint)
+        {
+            if (EntityBlueprint == null
+                || !CorpseHasEntity(EntityBlueprint))
+                return null;
+
+            CorpseWeight corpseWeight = new(Corpse, 0);
+            foreach ((Relationship _, EntityWeight entityWeight) in Entities[EntityBlueprint])
+            {
+                corpseWeight.Weight += entityWeight.Weight;
+            }
+            return corpseWeight
+        }
     }
 }

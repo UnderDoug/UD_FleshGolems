@@ -31,6 +31,7 @@ using static UD_FleshGolems.Utils;
 using SerializeField = UnityEngine.SerializeField;
 using System.Linq;
 using static XRL.World.Parts.UD_FleshGolems_PastLife;
+using System.Reflection;
 
 namespace XRL.World.Parts
 {
@@ -40,7 +41,22 @@ namespace XRL.World.Parts
         [UD_FleshGolems_DebugRegistry]
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
         {
-            Registry.Register(nameof(AssignStatsFromStatistics), false);
+            List<string> methodNamesToSilence = new()
+            {
+                nameof(AssignStatsFromStatistics),
+                nameof(AssignStatsFromBlueprint),
+                nameof(AssignStatsFromPastLifeWithFactor),
+                nameof(ParseTileMappings),
+            };
+            List<MethodBase> methodsToSilence = typeof(UD_FleshGolems_CorpseReanimationHelper)
+                ?.GetMethods()
+                ?.Where(m => methodNamesToSilence.Contains(m.Name))
+                ?.Select(m => m as MethodBase)
+                ?.ToList();
+            foreach (MethodBase method in methodsToSilence)
+            {
+                Registry.Register(method, false);
+            }
             return Registry;
         }
 
@@ -693,7 +709,7 @@ namespace XRL.World.Parts
         }
         public static bool MeleeWeaponSlotMatchesBlueprint(GameObjectBlueprint GameObjectBlueprint, string Slot)
         {
-            if (!GameObjectBlueprint.TryGetPartParameter(nameof(Parts.MeleeWeapon), nameof(Parts.MeleeWeapon.Slot), out string blueprintMeleeWeaponSlot)
+            if (!GameObjectBlueprint.TryGetPartParameter(nameof(MeleeWeapon), nameof(MeleeWeapon.Slot), out string blueprintMeleeWeaponSlot)
                 || Slot != blueprintMeleeWeaponSlot)
             {
                 return false;
@@ -706,7 +722,7 @@ namespace XRL.World.Parts
         }
         public static bool MeleeWeaponSkillMatchesBlueprint(GameObjectBlueprint GameObjectBlueprint, string Skill)
         {
-            if (!GameObjectBlueprint.TryGetPartParameter(nameof(Parts.MeleeWeapon), nameof(Parts.MeleeWeapon.Skill), out string blueprintMeleeWeaponSkill)
+            if (!GameObjectBlueprint.TryGetPartParameter(nameof(MeleeWeapon), nameof(MeleeWeapon.Skill), out string blueprintMeleeWeaponSkill)
                 || Skill != blueprintMeleeWeaponSkill)
             {
                 return false;
@@ -1311,7 +1327,7 @@ namespace XRL.World.Parts
                         AssignSkillsFromBlueprint(frankenSkills, golemBodyBlueprint);
                     }
 
-                    bool generateInventory = frankenCorpse.HasPropertyOrTag(REANIMATED_GEN_SOURCE_INV_PROPTAG);
+                    bool generateInventory = frankenCorpse.HasPropertyOrTag(REANIMATED_GEN_SOURCE_INV_PROPTAG) || PastLife.WasBuiltReanimated;
 
                     Debug.Log("Granting SourceBlueprint Natural Equipment...", Indent: indent[2]);
                     Debug.Log(sourceBlueprint.Name, nameof(sourceBlueprint.Inventory), indent[3]);
@@ -1453,6 +1469,8 @@ namespace XRL.World.Parts
                         Debug.CheckNah(limbLabel + "nuffin'", Indent: indent[4]);
                     }
                 }
+
+                UD_FleshGolems_Reanimated.EquipPastLifeItems(Corpse, true);
 
                 Debug.Log("Getting New Tile!", Indent: indent[2]);
                 string chosenTile = null;

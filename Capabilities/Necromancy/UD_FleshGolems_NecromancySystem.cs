@@ -240,17 +240,22 @@ namespace UD_FleshGolems.Capabilities
             return RequireCorpseSheet(Blueprint.ToString());
         }
 
-        public bool TryGetEntityBluprint(string Entity, out EntityBlueprint EntityBlueprint)
+        public bool TryGetEntityBlueprint(string Entity, out EntityBlueprint EntityBlueprint)
         {
             EntityBlueprints ??= new();
             return EntityBlueprints.TryGetValue(Entity, out EntityBlueprint);
         }
+        public bool TryGetEntityBlueprint(GameObject Entity, out EntityBlueprint EntityBlueprint)
+        {
+            return TryGetEntityBlueprint(Entity.Blueprint, out EntityBlueprint);
+        }
+
         public EntityBlueprint RequireEntityBlueprint(string Blueprint)
         {
             using Indent indent = new();
             Debug.LogCaller(indent[1], ArgPairs: Debug.Arg(Blueprint));
 
-            if (!TryGetEntityBluprint(Blueprint, out EntityBlueprint entityBlueprint))
+            if (!TryGetEntityBlueprint(Blueprint, out EntityBlueprint entityBlueprint))
             {
                 Debug.Log("No existing entity entry; creating new one...", Indent: indent[2]);
                 entityBlueprint = new EntityBlueprint(Blueprint);
@@ -265,6 +270,10 @@ namespace UD_FleshGolems.Capabilities
         public EntityBlueprint RequireEntityBlueprint(GameObjectBlueprint Blueprint)
         {
             return RequireEntityBlueprint(Blueprint.Name);
+        }
+        public EntityBlueprint RequireEntityBlueprint(GameObject Entity)
+        {
+            return RequireEntityBlueprint(Entity.Blueprint);
         }
 
         public static bool IsReanimatableCorpse(GameObjectBlueprint Blueprint)
@@ -432,6 +441,22 @@ namespace UD_FleshGolems.Capabilities
                 if (Filter == null || Filter(corpseSheet))
                 {
                     yield return corpseSheet.GetCorpse();
+                }
+            }
+        }
+        public IEnumerable<CorpseSheet> GetCorpseSheets(Predicate<CorpseSheet> Filter)
+        {
+            if (!CorpseSheetsInitialized)
+            {
+                string cacheName = nameof(UD_FleshGolems_NecromancySystem) + "." + nameof(Necronomicon);
+                MetricsManager.LogModError(ThisMod, "Attempted to iterate " + cacheName + " before it was initialized");
+                yield break;
+            }
+            foreach ((_, CorpseSheet corpseSheet) in Necronomicon)
+            {
+                if (Filter == null || Filter(corpseSheet))
+                {
+                    yield return corpseSheet;
                 }
             }
         }
@@ -840,11 +865,11 @@ namespace UD_FleshGolems.Capabilities
             switch (keyword)
             {
                 case "Living":
-                    keywordBlueprintList = entitiesWithCorpses.Where(bp => !bp.IsCorpse()).ToList();
+                    keywordBlueprintList = entitiesWithCorpses.Where(Extensions.IsCorpse).ToList();
                     break;
                 case "Dead":
                 case "Corpse":
-                    keywordBlueprintList = entitiesWithCorpses.Where(bp => bp.IsCorpse()).ToList();
+                    keywordBlueprintList = entitiesWithCorpses.Where(Extensions.IsCorpse).ToList();
                     break;
             }
             if (isNot)

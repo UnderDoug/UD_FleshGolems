@@ -323,6 +323,10 @@
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Chute Crab Corpse" />
   </object>
   
+  <object Name="Agolzvuv" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Agolzvuv Corpse" />
+  </object>
+  
   <object Name="BaseIssachari" Load="Merge">
     <part Name="Corpse" CorpseBlueprint="Human Corpse" />
   </object>
@@ -343,12 +347,40 @@
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Slynth Corpse" CorpseChance="20" />
   </object>
 
+  <object Name="BaseInsect" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Insect Corpse" CorpseChance="20" />
+  </object>
+
   <object Name="Albino ape" Load="Merge">
     <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::Y;;DetailColor::w" />
   </object>
 
   <object Name="Ogre Ape" Load="Merge">
     <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::W;;DetailColor::w" />
+  </object>
+
+  <object Name="Oboroqoru" Load="Merge">
+    <part Name="Corpse" CorpseChance="100" CorpseBlueprint="UD_FleshGolems Corpse of the Ape God" />
+    <part Name="DropOnDeath" Blueprints="Fist of the Ape God" />
+  </object>
+
+  <object Name="Agolgot" Load="Merge">
+    <part Name="Corpse" CorpseChance="100" CorpseBlueprint="UD_FleshGolems Agolgot Corpse" />
+  </object>
+  <object Name="Bethsaida" Load="Merge">
+    <part Name="Corpse" CorpseChance="100" CorpseBlueprint="UD_FleshGolems Bethsaida Corpse" />
+  </object>
+  <object Name="Qas" Load="Merge">
+    <part Name="Corpse" CorpseChance="100" CorpseBlueprint="UD_FleshGolems Qas Corpse" />
+  </object>
+  <object Name="Qon" Load="Merge">
+    <part Name="Corpse" CorpseChance="100" CorpseBlueprint="UD_FleshGolems Qon Corpse" />
+  </object>
+  <object Name="Rermadon" Load="Merge">
+    <part Name="Corpse" CorpseChance="100" CorpseBlueprint="UD_FleshGolems Rermadon Corpse" />
+  </object>
+  <object Name="Shugruith" Load="Merge">
+    <part Name="Corpse" CorpseChance="100" CorpseBlueprint="UD_FleshGolems Shugruith Corpse" />
   </object>
 
   <!--

@@ -75,7 +75,7 @@ namespace UD_FleshGolems
             }
             catch (Exception x)
             {
-                MetricsManager.LogException(nameof(GetFirstCallingModNot), x, GAME_MOD_EXCEOPTION);
+                MetricsManager.LogException(nameof(GetFirstCallingModNot), x, GAME_MOD_EXCEPTION);
             }
             return null;
         }
@@ -556,83 +556,6 @@ namespace UD_FleshGolems
          * Wishes!
          * 
          */
-        [WishCommand( Command = "UD_FleshGolems test kit" )]
-        public static bool ReanimationTestKit_WishHandler()
-        {
-            return ReanimationTestKit_WishHandler(null);
-        }
-        [WishCommand( Command = "UD_FleshGolems test kit" )]
-        public static bool ReanimationTestKit_WishHandler(string Parameters)
-        {
-            if (Parameters.IsNullOrEmpty() || (!Parameters.EqualsNoCase("Corpse") && !Parameters.EqualsNoCase("Corpses")))
-            {
-                The.Player.ReceiveObject("Neuro Animator");
-                The.Player.ReceiveObject("Antimatter Cell");
-                Examiner.IDAll();
-                Mutations playerMutations = The.Player.RequirePart<Mutations>();
-                if (The.Player.GetPartsDescendedFrom<UD_FleshGolems_NanoNecroAnimation>().IsNullOrEmpty()
-                    && !The.Player.HasPart<UD_FleshGolems_NanoNecroAnimation>())
-                {
-                    Dictionary<string, string> reanimationMutationEntries = new()
-                    {
-                        { "Physical", nameof(UD_FleshGolems_NanoNecroAnimation) },
-                        { "Mental", nameof(UD_FleshGolems_NecromanticAura) }
-                    };
-                    if (The.Player.IsChimera())
-                    {
-                        playerMutations.AddMutation(reanimationMutationEntries["Physical"]);
-                    }
-                    else
-                    if (The.Player.IsEsper())
-                    {
-                        playerMutations.AddMutation(reanimationMutationEntries["Mental"]);
-                    }
-                    else
-                    {
-                        playerMutations.AddMutation(reanimationMutationEntries.GetRandomElementCosmetic().Value);
-                    }
-                }
-            }
-            if (Popup.AskNumber("How many corpses do you want?", Start: 20, Min: 0, Max: 100) is int corpseCount
-                && corpseCount > 0)
-            {
-                int corpseRadius = corpseCount / 4;
-                int maxAttempts = corpseCount * 2;
-                int originalCorpseCount = corpseCount;
-                List<string> corpseBlueprints = new();
-                Loading.SetLoadingStatus("Summoning " + 0 + "/" + originalCorpseCount + " fresh corpses...");
-                while (corpseCount > 0 && maxAttempts > 0)
-                {
-                    maxAttempts--;
-                    if (GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(Extensions.IsCorpse)) is GameObject corpseObject)
-                    {
-                        Loading.SetLoadingStatus("Summoning " + (corpseBlueprints.Count + 1) + "/" + originalCorpseCount + " (" + corpseObject.Blueprint + ")...");
-                        The.Player.CurrentCell
-                            .GetAdjacentCells(corpseRadius)
-                            .GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject))
-                            .AddObject(corpseObject);
-
-                        if (corpseObject.CurrentCell != null)
-                        {
-                            corpseBlueprints.Add(corpseObject.Blueprint);
-                            corpseCount--;
-                        }
-                        else
-                        {
-                            corpseObject?.Obliterate();
-                        }
-                    }
-                }
-                Loading.SetLoadingStatus("Summoned " + corpseBlueprints.Count + "/" + originalCorpseCount + " fresh corpses...");
-                if (corpseBlueprints.Count > 0)
-                {
-                    string corpseListLabel = "Generated " + corpseBlueprints.Count + " corpses of various types, in a radius of " + corpseRadius + " cells.";
-                    string corpseListOutput = corpseBlueprints.GenerateBulletList(Label: corpseListLabel);
-                    Popup.Show(corpseListOutput);
-                }
-                Loading.SetLoadingStatus(null);
-            }
-            return true;
-        }
+        
     }
 }

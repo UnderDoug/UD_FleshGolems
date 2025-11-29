@@ -311,11 +311,8 @@
   Corpse Additions/Fixes/Adjustments
   
   -->
-  <object Name="UD_FleshGolems Cragmensch Corpse" Inherits="Humanoid Corpse">
-    <mixin Name="LargeBoulder" />
+  <object Name="UD_FleshGolems Mineral Corpse Attributes">
     <tag Name="UD_FleshGolems Necrology Taxon Kingdom" Value="Mineral" />
-    <part Name="Render" ColorString="&amp;W" TileColor="&amp;W" DetailColor="Y" />
-    <removebuilder Name="RandomTile" />
     <removepart Name="Food" />
     <removetag Name="CanCookTemporary" />
     <tag Name="Breakable" />
@@ -344,16 +341,69 @@
       HardMaterial="rock,mineral,stone" />
   </object>
   
+  <object Name="UD_FleshGolems Cragmensch Corpse" Inherits="Humanoid Corpse">
+    <mixin Name="LargeBoulder" />
+    <mixin Name="UD_FleshGolems Mineral Corpse Attributes" />
+    <part Name="Render" ColorString="&amp;W" TileColor="&amp;W" DetailColor="Y" />
+    <removebuilder Name="RandomTile" />
+  </object>
+  
   <object Name="UD_FleshGolems Chute Crab Corpse" Inherits="Crab Corpse">
     <part Name="Physics" Weight="20" />
     <part Name="Render" DisplayName="chute crab corpse" ColorString="&amp;Y" />
-    <part Name="Butcherable" OnSuccess="@Eyeless Crab Corpse" />
+    <removepart Name="Butcherable" />
+    <tag Name="Tier" Value="2" />
+  </object>
+  
+  <object Name="UD_FleshGolems Agolzvuv Corpse" Inherits="Arthropod Corpse">
+    <part Name="Render" DisplayName="agolzvuv corpse" ColorString="&amp;w" TileColor="&amp;w" DetailColor="y" />
+    <part Name="Physics" Weight="20" />
     <tag Name="Tier" Value="2" />
   </object>
   
   <object Name="UD_FleshGolems Slynth Corpse" Inherits="UD_FleshGolems Plant Corpse">
-    <part Name="Render" DisplayName="{{g|slynth}} corpse" Tile="items/sw_splat1.bmp" DetailColor="M" />
+    <part Name="Render" DisplayName="{{g|slynth}} corpse" DetailColor="M" />
     <part Name="Physics" Weight="200" />
+  </object>
+  
+  <object Name="UD_FleshGolems Insect Corpse" Inherits="Arthropod Corpse">
+    <part Name="Render" DisplayName="insect corpse" ColorString="&amp;w" TileColor="&amp;w" DetailColor="y" />
+  </object>
+  
+  <object Name="UD_FleshGolems God Corpse" Inherits="Corpse">
+    <part Name="Render" DisplayName="{{M|immense}} corpse" ColorString="&amp;r" TileColor="&amp;r" DetailColor="M" />
+    <part Name="Description" Short="Simple gore and the reality of death are, in their own right, some manner of disturbing to behold, but are both wholly mundane in the face of the apparent violence necessary to bring about this particular monument to mortality. Worshipped in life, and, perhaps, in death, worshipped at; for what makes a better shrine to the inevitable, than the single most compelling evidence for its existince?" />
+    <part Name="Physics" Weight="1200" />
+    <part Name="Commerce" Value="250" />
+    <tag Name="Tier" Value="8" />
+    <tag Name="BaseObject" Value="*noinherit" />
+    <tag Name="ExcludeFromDynamicEncounters" />
+  </object>
+  
+  <object Name="UD_FleshGolems Corpse of the Ape God" Inherits="UD_FleshGolems God Corpse">
+    <part Name="Render" DisplayName="{{r|Corpse}} of the {{Y|Ape God}}" />
+  </object>
+  
+  <object Name="UD_FleshGolems Base Nephal Corpse" Inherits="UD_FleshGolems God Corpse">
+    <tag Name="BaseObject" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Agolgot Corpse" Inherits="UD_FleshGolems Base Nephal Corpse">
+    <part Name="Render" DisplayName="corpse in the form of {{agolgot|Agolgot}}" />
+  </object>
+  <object Name="UD_FleshGolems Bethsaida Corpse" Inherits="UD_FleshGolems Base Nephal Corpse">
+    <part Name="Render" DisplayName="corpse in the form of {{bethsaida|Bethsaida}}" />
+  </object>
+  <object Name="UD_FleshGolems Qas Corpse" Inherits="UD_FleshGolems Base Nephal Corpse">
+    <part Name="Render" DisplayName="corpse in the form of {{qas|Qas}}" />
+  </object>
+  <object Name="UD_FleshGolems Qon Corpse" Inherits="UD_FleshGolems Base Nephal Corpse">
+    <part Name="Render" DisplayName="corpse in the form of {{qon|Qon}}" />
+  </object>
+  <object Name="UD_FleshGolems Rermadon Corpse" Inherits="UD_FleshGolems Base Nephal Corpse">
+    <part Name="Render" DisplayName="corpse in the form of {{rermadon|Rermadon}}" />
+  </object>
+  <object Name="UD_FleshGolems Shugruith Corpse" Inherits="UD_FleshGolems Base Nephal Corpse">
+    <part Name="Render" DisplayName="corpse in the form of {{shugruith|Shugruith}}" />
   </object>
 
   <object Name="Goatfolk Corpse" Load="Merge">
@@ -366,6 +416,56 @@
 
   <object Name="Charred Goatfolk Corpse" Load="Merge">
     <tag Name="UD_FleshGolems PastLife CountsAs" Value="Blueprint:Goatfolk Thrall,Crazed Goatfolk Shaman 1,Crazed Goatfolk Shaman 2:100" />
+  </object>
+  
+  <object Name="Amaranthine Ashes" Load="Merge">
+    <tag Name="UD_FleshGolems PseudoCorpse" />
+    <part Name="UD_FleshGolems_CorpseReanimationHelper" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Amaranthine Ashes Corpse" CorpseChance="0" />
+    <tag Name="Animatable" />
+    <removetag Name="Tier" />
+    <builder Name="Animated" ChanceOneIn="3000" />
+    <builder Name="UD_FleshGolems_OptionallyAnimated" ChanceOneIn="1" />
+    <tag Name="UD_FleshGolems Ragged Taxonomy" Value="Ragged" />
+    <tag Name="UD_FleshGolems Necrology Taxon Kingdom" Value="Mineral" />
+    <tag Name="HeroNameTitleDescriptor" Value="Suffering,Waiting,Silent" />
+    <tag Name="HeroNameTitleAdmirers" Value="Cultists,Mediums,Scientists,Scientists of the Mad Variety" />
+    <tag Name="DynamicObjectsTable:AnimatableFurniture" />
+    <tag Name="BodyType" Value="Jelly" />
+    <tag Name="Species" Value="jelly" />
+    <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:2:U:UD_FleshGolems_CorpseText:Components= are brought =subject.uD_xTag:UD_FleshGolems_CorpseText:WretchedVerbs= back into a horrific facsimile of life. =subject.UD_xTag:UD_FleshGolems_CorpseText:UnappealingAdjectives= =subject.uD_xTag:2:U:UD_FleshGolems_CorpseText:UnsettlingNoises= escape =subject.possessive= every movement and twist the gut of anyone unfortunate enough to hear it." />
+    <xtagTextFragments
+      Skin="crust"
+      PoeticFeatures="insubstantial form,smokey trail,ghostly countenance"
+      YounglingNoise="..."
+      Activity="suffering endlessly"
+      VillageActivity="steeping in perpetual existential pain"
+      NeedsItemFor="to persue oblivion,to finally have peace,because I want it,because it was mine while I lived,just to have,because it would ease my suffering,for secret reasons I won't tell you"
+      SacredThing="oblivion,a way to cease the endless suffering,the answer to why this was allowed to happen"
+      ArableLand="somwhere forgetten to the ravages of time,peace"
+      ValuedOre="m...minds?..,answers to existential questions" />
+    <stag Name="HardMaterial" Value="mineral" />
+    <xtagUD_FleshGolems_CorpseText
+      CorpseDescription="apparition"
+      Components="ash,dust,powder"
+      WretchedVerbs="skittering,swirling,whisking,curling"
+      UnappealingAdjectives="soft,echoing,faded,otherwhere,elsewhence"
+      UnsettlingNoises="whispers,cries,laughter,chanting,wailing" />
+    <xtagUD_FleshGolems_Ragged
+      GrossAdjective="dusty,formless,insubstantial"
+      SoftMaterial="sediment,ash,dust"
+      Skin="crust"
+      HarshAdjective="faded,insubstantial,eroded,collapsing"
+      HardMaterial="mineral" />
+    <tag Name="AnimatedSkills" Value="CookingAndGathering,CookingAndGathering_Butchery,Discipline_MindOverBody,Persuasion_Intimidate,Multiweapon_Fighting,ShortBlades,Axe,Cudgel,LongBlades" />
+  </object>
+  
+  <object Name="UD_FleshGolems Amaranthine Ashes Corpse" Inherits="Amaranthine Ashes">
+    <part Name="Render" DisplayName="streak of {{R|amaranthine}} powder" />
+    <part Name="Description" Short="Echoes of an elsewhence violence linger in the absence marked by this smudge of powder." />
+    <tag Name="BodyType" Value="Ooze" />
+    <tag Name="Species" Value="ooze" />
+    <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:3:U:UD_FleshGolems_CorpseText:Components= are brought =subject.uD_xTag:2:U:UD_FleshGolems_CorpseText:WretchedVerbs= back into an abject affront to the natural order. =subject.UD_xTag:UD_FleshGolems_CorpseText:UnappealingAdjectives= =subject.uD_xTag:3:U:UD_FleshGolems_CorpseText:UnsettlingNoises= escape =subject.possessive= every movement, and =subject.possessive= very being seemingly screams for =subject.possessive= existence to cease." />
   </object>
 
   <object Name="Charred Corpse" Load="Merge">

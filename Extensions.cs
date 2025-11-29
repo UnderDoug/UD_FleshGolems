@@ -469,7 +469,7 @@ namespace UD_FleshGolems
         public static bool IsCorpse(this GameObjectBlueprint Blueprint, Predicate<GameObjectBlueprint> Filter)
         {
             return Blueprint != null
-                && (Blueprint.InheritsFrom("Corpse") || Blueprint.Name == "Corpse")
+                && (Blueprint.InheritsFrom("Corpse") || Blueprint.Name == "Corpse" || Blueprint.HasTag(PSEUDOCORPSE))
                 && (Filter == null || Filter(Blueprint));
         }
 
@@ -1006,10 +1006,15 @@ namespace UD_FleshGolems
 
         public static string SafeJoin<T>(this IEnumerable<T> Enumerable, string Delimiter = ", ")
         {
-            if (Enumerable.IsNullOrEmpty())
+            if (Enumerable == null || Enumerable.Count() < 1)
                 return null;
 
-            return Enumerable.Join(delimiter: Delimiter);
+            return Enumerable.ConvertToStringList(t => t?.ToString() ?? "").Join(delimiter: Delimiter);
         }
+
+        public static GameObject CreateSample(this GameObjectBlueprint Model, Action<GameObject> BeforeObjectCreated = null)
+            => Model != null
+            ? GameObjectFactory.Factory.CreateSampleObject(Model, BeforeObjectCreated)
+            : null;
     }
 }

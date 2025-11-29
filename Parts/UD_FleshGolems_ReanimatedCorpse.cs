@@ -140,10 +140,40 @@ namespace XRL.World.Parts
         public List<LiquidPortion> BleedLiquidPortions;
 
         [SerializeField]
-        private bool IsAlteredRenderDisplayName;
+        private bool _IsAlteredRenderDisplayName;
+        private bool IsAlteredRenderDisplayName
+        {
+            get
+            {
+                using Indent indent = new();
+                Debug.LogMethod(indent);
+                return _IsAlteredRenderDisplayName;
+            }
+            set
+            {
+                using Indent indent = new();
+                Debug.LogMethod(indent, ArgPairs: Debug.Arg(value.ToString()));
+                _IsAlteredRenderDisplayName = value;
+            }
+        }
 
         [SerializeField]
-        private bool IsAlteredDescription;
+        private bool _IsAlteredDescription;
+        private bool IsAlteredDescription
+        {
+            get
+            {
+                using Indent indent = new();
+                Debug.LogMethod(indent);
+                return _IsAlteredDescription;
+            }
+            set
+            {
+                using Indent indent = new();
+                Debug.LogMethod(indent, ArgPairs: Debug.Arg(value.ToString()));
+                _IsAlteredDescription = value;
+            }
+        }
 
         public UD_FleshGolems_ReanimatedCorpse()
         {
@@ -407,8 +437,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             if (ParentObject is GameObject frankenCorpse
-                && IdentityType > IdentityType.ParticipantVillager
-                && IdentityType < IdentityType.Player)
+                && IdentityType > IdentityType.ParticipantVillager)
             {
                 if (!frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
                     || !IsAlteredDescription)
@@ -455,8 +484,7 @@ namespace XRL.World.Parts
             using Indent indent = new(1);
             if (ParentObject is GameObject frankenCorpse
                 && frankenCorpse.CurrentZone == E.Zone
-                && IdentityType > IdentityType.ParticipantVillager
-                && IdentityType < IdentityType.Player)
+                && IdentityType > IdentityType.ParticipantVillager)
             {
                 if (!frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
                     || !IsAlteredDescription)

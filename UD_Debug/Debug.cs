@@ -60,7 +60,7 @@ namespace UD_FleshGolems.Logging
                 }
                 catch (Exception x)
                 {
-                    MetricsManager.LogException(typeof(Debug) + "." + nameof(DoDebug), x, GAME_MOD_EXCEOPTION);
+                    MetricsManager.LogException(typeof(Debug) + "." + nameof(DoDebug), x, GAME_MOD_EXCEPTION);
                 }
                 return DoDebugSetting;
             }
@@ -128,7 +128,7 @@ namespace UD_FleshGolems.Logging
             }
             catch (Exception x)
             {
-                MetricsManager.LogException(nameof(Debug) + "." + nameof(GetRegistry), x, GAME_MOD_EXCEOPTION);
+                MetricsManager.LogException(nameof(Debug) + "." + nameof(GetRegistry), x, GAME_MOD_EXCEPTION);
                 _GotRegistry = true;
             }
             _GotRegistry = true;
@@ -233,9 +233,10 @@ namespace UD_FleshGolems.Logging
             CallingMethod = null;
             try
             {
-                Type[] debugTypes = new Type[2]
+                Type[] debugTypes = new Type[3]
                 {
                     typeof(UD_FleshGolems.Logging.Debug),
+                    typeof(UD_FleshGolems.Logging.Debug.ArgPair),
                     typeof(UD_FleshGolems.Logging.Indent),
                 };
                 StackTrace stackTrace = new();
@@ -253,7 +254,7 @@ namespace UD_FleshGolems.Logging
             }
             catch (Exception x)
             {
-                MetricsManager.LogException(nameof(TryGetCallingTypeAndMethod), x, GAME_MOD_EXCEOPTION);
+                MetricsManager.LogException(nameof(TryGetCallingTypeAndMethod), x, GAME_MOD_EXCEPTION);
             }
             return false;
         }
@@ -300,6 +301,18 @@ namespace UD_FleshGolems.Logging
                 => Log(null, CallingMethod);
             public Indent Log(int Offset, [CallerMemberName] string CallingMethod = "")
                 => Log(LastIndent[Offset], CallingMethod);
+
+            public override bool Equals(object obj)
+            {
+                if (obj is ArgPair argPairObj)
+                {
+                    return this == argPairObj;
+                }
+                return base.Equals(obj);
+            }
+
+            public override int GetHashCode()
+                => (Name?.GetHashCode() ?? 0) ^ (Value?.GetHashCode() ?? 0);
 
             public static bool operator ==(ArgPair Operand1, ArgPair Operand2)
             {

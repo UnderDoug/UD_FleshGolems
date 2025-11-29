@@ -110,12 +110,6 @@ namespace XRL.World.QuestManagers
             GameObject.FindByBlueprint(QuestGiverBlueprint) 
             ?? GameObject.CreateSample(QuestGiverBlueprint);
 
-        public static bool IsCorpse(GameObject Object)
-        {
-            return Object != null
-                && Object.GetBlueprint().InheritsFrom("Corpse");
-        }
-
         public static bool IsCorpse(UD_FleshGolems_CorpseQuestStep QuestItem, out CorpseItem CorpseItem)
         {
             CorpseItem = QuestItem?.Corpse;
@@ -165,7 +159,7 @@ namespace XRL.World.QuestManagers
                     && species == Species
                     && bp.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string corpseBleprint)
                     && GameObjectFactory.Factory.GetBlueprintIfExists(corpseBleprint) is GameObjectBlueprint corpseBP
-                    && corpseBP.InheritsFrom("Corpse")
+                    && corpseBP.IsCorpse()
                     && !corpseBlueprintList.Contains(corpseBleprint))
                 {
                     corpseBlueprintList.Add(corpseBleprint);
@@ -176,7 +170,7 @@ namespace XRL.World.QuestManagers
         public static bool CheckCorpseSpecies(UD_FleshGolems_CorpseQuestStep QuestItem, GameObject CorpseObject)
         {
             return IsCorpse(QuestItem, out CorpseItem corpseItem)
-                && IsCorpse(CorpseObject)
+                && CorpseObject.IsCorpse()
                 && corpseItem.IsSpecies
                 && GetAllCorpsesOfSpecies(corpseItem.Value).Contains(CorpseObject.Blueprint);
         }
@@ -281,7 +275,7 @@ namespace XRL.World.QuestManagers
         {
             foreach (UD_FleshGolems_CorpseQuestStep questStep in Steps)
             {
-                if (!IsCorpse(CorpseObject))
+                if (!CorpseObject.IsCorpse())
                 {
                     continue;
                 }
@@ -460,7 +454,7 @@ namespace XRL.World.QuestManagers
         }
 
         static bool IsCorpseWithQuestHelperPart(GameObject GO)
-            => GO.GetBlueprint().InheritsFrom("Corpse")
+            => GO.IsCorpse()
             && GO.HasPart<UD_FleshGolems_CorpseQuestHelperPart>();
 
         public static bool CheckItem(UD_FleshGolems_CorpseQuestSystem CorpseQuestSystem, GameObject Item, bool Unfinish = false)

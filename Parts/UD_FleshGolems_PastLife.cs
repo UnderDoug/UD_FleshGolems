@@ -51,9 +51,13 @@ namespace XRL.World.Parts
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
         {
             Registry.Register(nameof(GenerateDisplayName), false);
+            Registry.Register(nameof(RoughlyCopyAdditionalLimbs), false);
+            Registry.Register(nameof(GeneratePostDescription), false);
+
             Registry.Register(nameof(GetCorpseBlueprints), true);
             Registry.Register(nameof(GetAnEntityForCorpseWeighted), true);
             Registry.Register(nameof(GetAnEntityForCorpse), true);
+
             return Registry;
         }
 
@@ -90,7 +94,28 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_PastLife PastPastLife => BrainInAJar?.GetPart<UD_FleshGolems_PastLife>();
 
-        public bool Init { get; protected set; }
+        [SerializeField]
+        private bool _Init;
+        public bool Init
+        { 
+            get => _Init; 
+            protected set
+            {
+                _Init = value;
+            }
+        }
+
+        [SerializeField]
+        private bool _WasBuiltReanimated;
+        public bool WasBuiltReanimated
+        {
+            get => _WasBuiltReanimated;
+            protected set
+            {
+                _WasBuiltReanimated = value;
+            }
+        }
+
         public bool WasCorpse => (Blueprint?.IsCorpse()).GetValueOrDefault();
 
         public bool WasPlayer 
@@ -160,7 +185,8 @@ namespace XRL.World.Parts
         public UD_FleshGolems_PastLife()
         {
             BrainInAJar = GetNewBrainInAJar();
-            Init = false;
+            _Init = false;
+            _WasBuiltReanimated = false;
 
             TimesReanimated = 0;
 
@@ -302,6 +328,13 @@ namespace XRL.World.Parts
 
                         Blueprint ??= PastLife?.Blueprint;
 
+                        if (PastLife.HasStringProperty(REANIMATED_BYBUILDER)
+                            || (ParentObject.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper)
+                                && reanimationHelper.AlwaysAnimate))
+                        {
+                            WasBuiltReanimated = true;
+                        }
+
                         Debug.Log(nameof(PastLife), PastLife?.DebugName ?? NULL, indent[2]);
 
                         if (PastLife.TryGetPart(out UD_FleshGolems_PastLife prevPastLife)
@@ -321,7 +354,7 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(WasPlayer), WasPlayer, indent[2]);
 
                         if (PastLife.GetBlueprint().InheritsFrom(BRAIN_IN_A_JAR_BLUEPRINT)
-                            || PastLife.GetBlueprint().InheritsFrom("Corpse")
+                            || PastLife.IsCorpse()
                             || WasCorpse)
                         {
                             TimesReanimated++;
@@ -856,16 +889,15 @@ namespace XRL.World.Parts
                 Debug.CheckNah("Failed or skipped.", indent[1]);
                 return false;
             }
-            bool wasBuiltReanimated = frankenCorpse.HasPropertyOrTag(REANIMATED_BYBUILDER);
 
             int previouslySentientBeingsRep = 100;
             Debug.Log(nameof(previouslySentientBeingsRep), previouslySentientBeingsRep, indent[1]);
 
             Debug.Log("Altering " + nameof(previouslySentientBeingsRep), Indent: indent[1]);
-            if (wasBuiltReanimated)
+            if (PastLife.WasBuiltReanimated)
             {
                 previouslySentientBeingsRep -= 25;
-                Debug.CheckYeh(nameof(wasBuiltReanimated), nameof(previouslySentientBeingsRep) + "-" + previouslySentientBeingsRep, indent[2]);
+                Debug.CheckYeh(nameof(PastLife.WasBuiltReanimated), nameof(previouslySentientBeingsRep) + "-" + previouslySentientBeingsRep, indent[2]);
             }
             if (!UD_FleshGolems_Reanimated.HasWorldGenerated
                 || (frankenCorpse.TryGetPart(out UD_FleshGolems_DestinedForReanimation destinedForReanimation)
@@ -907,15 +939,13 @@ namespace XRL.World.Parts
             if (FrankenBrain != null
                 && PastLife?.Brain is Brain pastBrain)
             {
-                bool wasBuiltReanimated = FrankenCorpse.HasPropertyOrTag(REANIMATED_BYBUILDER);
-
                 FrankenBrain.Allegiance ??= new();
                 FrankenBrain.Allegiance.Clear();
                 Debug.Log(nameof(FrankenBrain.Allegiance), "Cleared", indent[1]);
 
                 if (!UD_FleshGolems_Reanimated.HasWorldGenerated
                     || ExcludedFromDynamicEncounters
-                    || wasBuiltReanimated
+                    || PastLife.WasBuiltReanimated
                     || PastLife.WasPlayer)
                 {
                     Debug.LogArgs("Any of: (", ")", indent[1],
@@ -923,7 +953,7 @@ namespace XRL.World.Parts
                         {
                             Debug.Arg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated), 
                             Debug.Arg(nameof(ExcludedFromDynamicEncounters), ExcludedFromDynamicEncounters), 
-                            Debug.Arg(nameof(wasBuiltReanimated), wasBuiltReanimated), 
+                            Debug.Arg(nameof(PastLife.WasBuiltReanimated), PastLife.WasBuiltReanimated), 
                             Debug.Arg(nameof(PastLife.WasPlayer), PastLife.WasPlayer), 
                         });
 
@@ -1584,7 +1614,7 @@ namespace XRL.World.Parts
                     baseMutationToAdd.BaseLevel += baseMutation.Level;
                 }
                 FrankenMutations.AddMutation(baseMutationToAdd, baseMutation.BaseLevel);
-                Debug.CheckYeh(baseMutationToAdd.DebugName, baseMutationToAdd.Level, indent[1]);
+                Debug.CheckYeh(baseMutationToAdd.GetDisplayName(), baseMutationToAdd.Level, indent[1]);
                 any = true;
             }
             return any;
@@ -1783,6 +1813,7 @@ namespace XRL.World.Parts
         public override bool HandleEvent(GetDebugInternalsEvent E)
         {
             E.AddEntry(this, nameof(Init), Init);
+            E.AddEntry(this, nameof(WasBuiltReanimated), WasBuiltReanimated);
             E.AddEntry(this, nameof(WasCorpse), WasCorpse);
             E.AddEntry(this, nameof(WasPlayer), WasPlayer);
             E.AddEntry(this, nameof(TimesReanimated), TimesReanimated);

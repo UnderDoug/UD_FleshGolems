@@ -1,8 +1,9 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 using XRL.World.Parts;
+
+using UD_FleshGolems;
 
 using static UD_FleshGolems.Options;
 
@@ -23,13 +24,16 @@ namespace XRL.World.ObjectBuilders
 
         public override void Apply(GameObject Object, string Context)
         {
-            if (SpecialChanceOneIn > 0 && 1.ChanceIn(SpecialChanceOneIn) && !ContextsToIgnore.Contains(Context))
+            if (SpecialChanceOneIn > 0 
+                && 1.ChanceIn(SpecialChanceOneIn) 
+                && !ContextsToIgnore.Contains(Context)
+                && !Object.IsCorpse())
             {
                 if (UD_FleshGolems_Reanimated.HasWorldGenerated)
                 {
                     Object.SetStringProperty("UD_FleshGolems_Reanimator", "UD_FleshGolems Mad Monger");
                 }
-                Object.SetStringProperty(REANIMATED_BYBUILDER, "Yep! I should be loyal to my primary faction.");
+                Object.SetStringProperty(REANIMATED_BYBUILDER, "Yep! I was built reanimated.");
                 Object.RequireAbilities();
                 UD_FleshGolems_Reanimated.Unkill(Object, Context);
             }
