@@ -84,11 +84,14 @@ namespace XRL.World.Parts
             nameof(Parts.Mutations),
             nameof(ReplaceObject),
             nameof(Spawner),
+            nameof(ConvertSpawner),
             nameof(CherubimSpawner),
             nameof(AnimatedObject),
             nameof(UD_FleshGolems_ReanimatedCorpse),
             nameof(UD_FleshGolems_DestinedForReanimation),
         };
+
+        public GameObject DelayedPastLife;
 
         public GameObject BrainInAJar;
 
@@ -184,6 +187,8 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_PastLife()
         {
+            DelayedPastLife = null;
+
             BrainInAJar = GetNewBrainInAJar();
             _Init = false;
             _WasBuiltReanimated = false;
@@ -296,6 +301,15 @@ namespace XRL.World.Parts
                 {
                     Debug.Arg(nameof(PastLife), PastLife?.DebugName ?? NULL),
                 });
+
+            if (ParentObject.TryGetPart(out UD_FleshGolems_DestinedForReanimation destinedReanimation)
+                && destinedReanimation.DelayTillZoneBuild
+                && false)
+            {
+                Debug.Log(nameof(destinedReanimation.DelayTillZoneBuild), destinedReanimation.DelayTillZoneBuild, indent[1]);
+                DelayedPastLife = PastLife;
+                return this;
+            }
 
             string callingTypeAndMethod = Debug.GetCallingTypeAndMethod();
             if (!Init)
@@ -535,25 +549,27 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(bleedLiquid), bleedLiquid ?? NULL, indent[2]);
 
                         Corpse bIAJ_Corpse = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Corpse>());
-                        if (!ParentObject.HasPart<ReplaceObject>())
+                        if (bIAJ_Corpse.CorpseBlueprint.IsNullOrEmpty()
+                            && Blueprint
+                                .GetGameObjectBlueprint()
+                                .TryGetCorpseBlueprint(out string corpseBlueprint))
+                        {
+                            bIAJ_Corpse.CorpseBlueprint = corpseBlueprint;
+                        }
+                        if (bIAJ_Corpse.CorpseBlueprint.IsNullOrEmpty()
+                            && !ParentObject.HasPart<ReplaceObject>())
                         {
                             bIAJ_Corpse.CorpseBlueprint = ParentObject.Blueprint;
                         }
-                        if (bIAJ_Corpse.CorpseBlueprint.IsNullOrEmpty())
+                        if (bIAJ_Corpse.CorpseBlueprint.IsNullOrEmpty()
+                            && (PastLife.GetSpecies() + " Corpse").GetGameObjectBlueprint() is var corpseModel)
                         {
-                            if (Blueprint
-                                .GetGameObjectBlueprint()
-                                .TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string corpseBlueprint))
-                            {
-                                bIAJ_Corpse.CorpseBlueprint = corpseBlueprint;
-                            }
-                            else
-                            if ((PastLife.GetSpecies() + " Corpse").GetGameObjectBlueprint() is GameObjectBlueprint corpseGameObjectBlueprint
-                                && corpseGameObjectBlueprint
-                                    .TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string speciesCorpseBlueprint))
-                            {
-                                bIAJ_Corpse.CorpseBlueprint = speciesCorpseBlueprint;
-                            }
+                            bIAJ_Corpse.CorpseBlueprint = corpseModel.Name;
+                        }
+                        if (bIAJ_Corpse.CorpseBlueprint.IsNullOrEmpty()
+                            && ("UD_FleshGolems " + PastLife.GetSpecies() + " Corpse").GetGameObjectBlueprint() is var corpseModdedModel)
+                        {
+                            bIAJ_Corpse.CorpseBlueprint = corpseModdedModel.Name;
                         }
                         Debug.Log(
                             nameof(bIAJ_Corpse.CorpseBlueprint), bIAJ_Corpse.CorpseBlueprint + " (" + 
@@ -680,7 +696,7 @@ namespace XRL.World.Parts
                         }
 
                         Debug.Log(nameof(PastLife.PartsList) + "...", Indent: indent[2]);
-                        if (!PastLife.PartsList.IsNullOrEmpty() && false)
+                        if (!PastLife.PartsList.IsNullOrEmpty())
                         {
                             foreach (IPart pastPart in PastLife.PartsList)
                             {
@@ -1097,6 +1113,38 @@ namespace XRL.World.Parts
         public IdentityType GetIdentityType()
             => GetIdentityType(this);
 
+        public static IdentityType GetLivingIdentityType(GameObject Entity)
+        {
+            if (Entity == null)
+                return IdentityType.None;
+
+            if (Entity.IsPlayer() || Entity.HasPlayerBlueprint())
+                return IdentityType.Player;
+
+            if (Entity.IsLibrarian())
+                return IdentityType.Librarian;
+
+            if (Entity.IsVillageWarden())
+                return IdentityType.Warden;
+
+            if (Entity.IsNamedVillager())
+                return IdentityType.NamedVillager;
+
+            if (Entity.IsCorpse())
+                return IdentityType.Corpse;
+
+            if (WasProperlyNamed(Entity))
+                return IdentityType.Named;
+
+            if (Entity.IsParticipantVillager())
+                return IdentityType.ParticipantVillager;
+
+            if (Entity.IsVillager())
+                return IdentityType.Villager;
+
+            return IdentityType.Nobody;
+        }
+
         public static string GenerateDisplayName(UD_FleshGolems_PastLife PastLife, out IdentityType IdentityType)
         {
             IdentityType = IdentityType.None;
@@ -1126,19 +1174,20 @@ namespace XRL.World.Parts
 
                 IdentityType.Librarian
                 or IdentityType.Warden
-                or IdentityType.NamedVillager => frankenCorpse?.Render?.DisplayName,
+                or IdentityType.NamedVillager => "corpse of " + frankenCorpse?.ShortDisplayName,
 
-                IdentityType.Named 
-                or IdentityType.ParticipantVillager 
-                or IdentityType.Villager 
-                or IdentityType.Nobody => PastLife.RefName,
+                IdentityType.Named
+                or IdentityType.ParticipantVillager => "corpse of " + PastLife.RefName,
+
+                IdentityType.Villager
+                or IdentityType.Nobody => PastLife.RefName + " corpse",
 
                 IdentityType.Corpse => PastLife.BrainInAJar?.Render?.DisplayName,
 
                 _ => frankenCorpse?.DisplayName,
             };
             Debug.Log(nameof(newIdentity) + "(" + IdentityType + ")", newIdentity ?? NULL, indent[1]);
-            return newIdentity?.Replace("[", "").Replace("]", "");
+            return newIdentity?.OutRemove(out newIdentity, "[", "]");
         }
         public string GenerateDisplayName(out IdentityType IdentityType)
             => GenerateDisplayName(this, out IdentityType);
@@ -1175,11 +1224,22 @@ namespace XRL.World.Parts
 
             if (IdentityType == IdentityType.Corpse)
             {
+                if (PastLife?.PastPastLife?.GetIdentityType() < IdentityType.Villager)
+                {
+                    whoTheyWere = "the " + whoTheyWere;
+                }
+                else
+                {
+                    whoTheyWere = Grammar.A(whoTheyWere);
+                }
                 oldDescription = null;
                 endMark = ".";
             }
-            if (IdentityType > IdentityType.Named)
+            else
+            if (IdentityType > IdentityType.ParticipantVillager
+                || whoTheyWere.ContainsAny('[', ']'))
             {
+                whoTheyWere.OutRemove(out whoTheyWere, "[", "]");
                 whoTheyWere = Grammar.A(whoTheyWere);
             }
             if (IdentityType == IdentityType.Librarian)
@@ -1208,7 +1268,8 @@ namespace XRL.World.Parts
                 oldDescription = null;
                 endMark = ".";
             }
-            string postDescription = inLife + whoTheyWere + endMark + oldDescription;
+
+            string postDescription = inLife + whoTheyWere.OutRemove(out whoTheyWere, "[", "]") + endMark + oldDescription;
             Debug.Log(nameof(postDescription), postDescription ?? NULL, indent[1]);
             return postDescription;
         }
@@ -1393,12 +1454,14 @@ namespace XRL.World.Parts
                     }
                     pseudoLimb.GiveToEntity(destinationObject, targetBodyPart, ref amountGiven);
                 }
-                Debug.Log(nameof(totalSourceParts), totalSourceParts, Indent: indent[1]);
-
-                Debug.Log(nameof(amountGiven), amountGiven, Indent: indent[1]);
-
                 totalDestinationParts = DestinationBody?.LoopParts()?.Count() ?? 0;
-                Debug.Log(nameof(totalDestinationParts), totalDestinationParts, Indent: indent[1]);
+                Debug.LogArgs("Body Copy Info (", ")", indent[1],
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(totalSourceParts), totalSourceParts),
+                        Debug.Arg(nameof(amountGiven), amountGiven),
+                        Debug.Arg(nameof(totalDestinationParts), totalDestinationParts),
+                    });
                 /*
                 Debug.CheckYeh("Looping all DestinationBody (" + (destinationObject?.DebugName ?? NULL) + ") parts.", Indent: indent[1]);
                 foreach (BodyPart bodyPart in DestinationBody.LoopParts())
@@ -1486,20 +1549,23 @@ namespace XRL.World.Parts
                     }
                 }
             }
-            Debug.Log(nameof(totalSourceParts), totalSourceParts, Indent: indent[1]);
-
-            Debug.Log(nameof(amountStored), amountStored, Indent: indent[1]);
-            Debug.Log(nameof(amountGiven), amountGiven, Indent: indent[1]);
-
             totalDestinationParts = DestinationBody?.LoopParts()?.Count() ?? 0;
-            Debug.Log(nameof(totalDestinationParts), totalDestinationParts, Indent: indent[1]);
-
+            Debug.LogArgs("Body Copy Info (", ")", indent[1],
+                ArgPairs: new Debug.ArgPair[]
+                {
+                        Debug.Arg(nameof(totalSourceParts), totalSourceParts),
+                        Debug.Arg(nameof(amountStored), amountStored),
+                        Debug.Arg(nameof(amountGiven), amountGiven),
+                        Debug.Arg(nameof(totalDestinationParts), totalDestinationParts),
+                });
+            /*
             Debug.CheckYeh("Looping all DestinationBody (" + (destinationObject?.DebugName ?? NULL) + ") parts.", Indent: indent[1]);
             foreach (BodyPart bodyPart in DestinationBody.LoopParts())
             {
                 int depth = DestinationBody.GetBody().GetPartDepth(bodyPart, 0);
                 Debug.Log(bodyPart.BodyPartString(WithManager: true, WithParent: true), Indent: indent[depth + 2]);
             }
+            */
             return true;
         }
         public static bool RestoreAdditionalLimbs(
@@ -1807,10 +1873,26 @@ namespace XRL.World.Parts
         public bool RestoreParts(Predicate<IPart> Filter = null)
             => RestoreParts(ParentObject, this, Filter);
 
+        public override void Register(GameObject Object, IEventRegistrar Registrar)
+        {
+            int eventOrder = EventOrder.EXTREMELY_EARLY + EventOrder.EXTREMELY_EARLY + EventOrder.SLIGHTLY_EARLY;
+            Registrar.Register(BeforeZoneBuiltEvent.ID, eventOrder);
+            base.Register(Object, Registrar);
+        }
+
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
             || ID == GetDebugInternalsEvent.ID;
 
+        public override bool HandleEvent(BeforeZoneBuiltEvent E)
+        {
+            if (!ParentObject.TryGetPart(out UD_FleshGolems_DestinedForReanimation destinedReanimation)
+                || !destinedReanimation.DelayTillZoneBuild)
+            {
+                Initialize(DelayedPastLife);
+            }
+            return base.HandleEvent(E);
+        }
         public override bool HandleEvent(GetDebugInternalsEvent E)
         {
             E.AddEntry(this, nameof(Init), Init);

@@ -22,11 +22,17 @@ namespace XRL.World.ObjectBuilders
             "Wish",
         };
 
+        public static List<string> BlueprintsToIgnore => new()
+        {
+            "Mechanimist Convert Librarian",
+        };
+
         public override void Apply(GameObject Object, string Context)
         {
             if (SpecialChanceOneIn > 0 
                 && 1.ChanceIn(SpecialChanceOneIn) 
                 && !ContextsToIgnore.Contains(Context)
+                && !BlueprintsToIgnore.Contains(Object.Blueprint)
                 && !Object.IsCorpse())
             {
                 if (UD_FleshGolems_Reanimated.HasWorldGenerated)

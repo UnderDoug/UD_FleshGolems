@@ -49,7 +49,7 @@
     <tag Name="UD_FleshGolems_Reanimator" Value="UD_FleshGolems Mad Monger" />
     <part Name="Brain" Hostile="false" />
     <stat Name="Energy" ShortName="EN" Min="-100000" Max="100000" Value="0" />
-    <tag Name="UD_FleshGolems_NoReanimatedNamePrefix" Value="1" />
+    <tag Name="UD_FleshGolems ReanimatedCorpse NoPrefix" Value="1" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
     <tag Name="UD_FleshGolems_ReanimatedConversationID" Value="UD_FleshGolems Jofo Qudwufo" />
     <tag Name="UD_FleshGolems_ReanimatedEpithets" Value=", {{UD_FleshGolems_reanimated|reanimated}} snapjaw" />
@@ -77,6 +77,8 @@
     <part Name="Honorifics" Primary="the Mad" />
     <xtagGrammar Proper="true" />
     <intproperty Name="ProperNoun" Value="1" />
+    <removebuilder Name="UD_FleshGolems_Reanimated" />
+    <removebuilder Name="UD_FleshGolems_OptionallyReanimated" />
     <mutation Name="Myopia" />
     <mutation Name="IrritableGenome" />
     <mutation Name="TonicAllergy" />

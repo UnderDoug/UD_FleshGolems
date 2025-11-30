@@ -160,6 +160,8 @@ namespace XRL.World.Parts
 
         private static bool IfPlayerStartUndeadUseTurnTickNotStringy => false;
 
+        public GameObject Entity;
+
         public GameObject Corpse;
 
         public bool BuiltToBeReanimated;
@@ -386,10 +388,6 @@ namespace XRL.World.Parts
                     ThirdPersonReason: reason,
                     DoAchievement: DoAchievement);
 
-                killer?.Obliterate();
-                weapon?.Obliterate();
-                projectile?.Obliterate();
-
                 return deathFaked;
             }
             finally
@@ -416,55 +414,6 @@ namespace XRL.World.Parts
                 DoAchievement: DoAchievement);
         }
 
-        public static bool IsDyingCreatureCorpse(GameObject Dying, out GameObject Corpse)
-        {
-            Corpse = null;
-            if (Dying.HasPart<Corpse>()
-                && Dying.GetDropInventory() is Inventory dropInventory)
-            {
-                GameObject bestMatch = null;
-                GameObject secondBestMatch = null;
-                GameObject thirdBestMatch = null;
-                foreach (GameObject dropItem in dropInventory.GetObjects())
-                {
-                    if (!dropItem.IsCorpse())
-                    {
-                        continue;
-                    }
-                    if (Dying.ID == dropItem.GetStringProperty("SourceID"))
-                    {
-                        Corpse = dropItem;
-                        break;
-                    }
-                    if (Dying.Blueprint == dropItem.GetStringProperty("SourceBlueprint"))
-                    {
-                        if (bestMatch != null)
-                        {
-                            secondBestMatch ??= dropItem;
-                            continue;
-                        }
-                        bestMatch ??= dropItem;
-                    }
-                    string dropItemBlueprint = dropItem.Blueprint;
-                    if (Dying.GetSpecies() == dropItemBlueprint.Replace(" Corpse", "").Replace("UD_FleshGolems ", ""))
-                    {
-                        if (secondBestMatch != null)
-                        {
-                            thirdBestMatch ??= dropItem;
-                            continue;
-                        }
-                        secondBestMatch ??= dropItem;
-                    }
-                }
-                Corpse ??= bestMatch ?? secondBestMatch ?? thirdBestMatch;
-            }
-            return Corpse != null;
-        }
-        public bool IsDyingCreatureCorpse(GameObject Dying)
-        {
-            return IsDyingCreatureCorpse(Dying, out _);
-        }
-
         public bool ActuallyDoTheFakeDieAndReanimate()
         {
             if (ParentObject == null
@@ -473,8 +422,8 @@ namespace XRL.World.Parts
             {
                 return false;
             }
-            bool success = UD_FleshGolems_Reanimated.ReplaceCreatureWithCorpse(
-                Creature: ParentObject,
+            bool success = UD_FleshGolems_Reanimated.ReplaceEntityWithCorpse(
+                Entity: ParentObject,
                 FakeDeath: PlayerWantsFakeDie,
                 FakedDeath: out HaveFakedDeath,
                 DeathEvent: null,
@@ -486,11 +435,9 @@ namespace XRL.World.Parts
 
         public bool ProcessObjectCreationEvent(IObjectCreationEvent E)
         {
-            bool goAhead = true || UD_FleshGolems_Reanimated.HasWorldGenerated;
-            if (goAhead
-                && !Attempted
+            if (!Attempted
                 && BuiltToBeReanimated
-                && !DelayTillZoneBuild
+                // && !DelayTillZoneBuild
                 && ParentObject is GameObject soonToBeCorpse
                 && soonToBeCorpse == E.Object
                 && Corpse is GameObject soonToBeCreature)
@@ -500,6 +447,12 @@ namespace XRL.World.Parts
                     if (!soonToBeCorpse.IsPlayer()
                         && !soonToBeCorpse.Blueprint.IsPlayerBlueprint())
                     {
+                        if (GameObject.Validate(ref Entity)
+                            && soonToBeCorpse.TryGetPart(out UD_FleshGolems_PastLife pastLife))
+                        {
+                            pastLife.Initialize(Entity);
+                            Entity?.Obliterate();
+                        }
                         reanimationHelper.Animate();
                         E.ReplacementObject = soonToBeCreature;
                         Attempted = true;
@@ -561,8 +514,8 @@ namespace XRL.World.Parts
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
-                || (ID == BeforeObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID))
-                // || (ID == AfterObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(AfterObjectCreatedEvent.ID))
+                // || (ID == BeforeObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID))
+                || (ID == AfterObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(AfterObjectCreatedEvent.ID))
                 || (ID == EnvironmentalUpdateEvent.ID && FailedToRegisterEvents.Contains(EnvironmentalUpdateEvent.ID))
                 || (ID == BeforeZoneBuiltEvent.ID && DelayTillZoneBuild)
                 || ID == GetShortDescriptionEvent.ID
@@ -610,7 +563,7 @@ namespace XRL.World.Parts
                 if (!soonToBeCorpse.IsPlayer())
                 {   
                     Attempted = true;
-                    ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
+                    UD_FleshGolems_Reanimated.ReplaceEntityWithCorpse(soonToBeCorpse, Corpse: ref Corpse);
                 }
             }
             return base.HandleEvent(E);
@@ -634,9 +587,10 @@ namespace XRL.World.Parts
                 && soonToBeCorpse.CurrentZone == E.Zone
                 && !soonToBeCorpse.IsPlayer()
                 && !soonToBeCorpse.Blueprint.IsPlayerBlueprint()
-                && UD_FleshGolems_Reanimated.TryProduceCorpse(soonToBeCorpse, out Corpse)
-                && Corpse is GameObject soonToBeCreature
-                && soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
+                // && UD_FleshGolems_Reanimated.TryProduceCorpse(soonToBeCorpse, out Corpse)
+                // && Corpse is GameObject soonToBeCreature
+                // && soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper)
+                )
             {
                 using Indent indent = new(1);
                 Debug.LogMethod(indent,
@@ -644,10 +598,11 @@ namespace XRL.World.Parts
                     {
                         Debug.Arg(nameof(BeforeZoneBuiltEvent)),
                         Debug.Arg(nameof(soonToBeCorpse), soonToBeCorpse?.DebugName ?? NULL),
-                        Debug.Arg(nameof(soonToBeCreature), soonToBeCreature?.DebugName ?? NULL),
+                        // Debug.Arg(nameof(soonToBeCreature), soonToBeCreature?.DebugName ?? NULL),
                     });
-                bool reanimated = reanimationHelper.Animate();
-                ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
+                // bool reanimated = reanimationHelper.Animate();
+                bool reanimated = UD_FleshGolems_Reanimated.ReplaceEntityWithCorpse(soonToBeCorpse, Corpse: ref Corpse);
+                // ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
                 Attempted = true;
                 Debug.YehNah((reanimated ? "Success" : "Fail") + "!", reanimated, indent[1]);
             }
@@ -676,8 +631,8 @@ namespace XRL.World.Parts
                 && !dyingCorpse.CorpseBlueprint.IsNullOrEmpty()
                 && dying.IsPlayer()
                 && (!PlayerWantsFakeDie || !HaveFakedDeath)
-                && UD_FleshGolems_Reanimated.ReplaceCreatureWithCorpse(
-                    Creature: ParentObject,
+                && UD_FleshGolems_Reanimated.ReplaceEntityWithCorpse(
+                    Entity: ParentObject,
                     FakeDeath: PlayerWantsFakeDie,
                     FakedDeath: out HaveFakedDeath,
                     DeathEvent: E,
