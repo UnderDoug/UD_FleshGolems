@@ -94,7 +94,13 @@ namespace XRL.World.ObjectBuilders
                 {
                     List<CorpseWeight> corpseWeights = new();
 
-                    foreach (CorpseSheet corpseSheet in NecromancySystem.GetCorpseSheets((CorpseSheet cs) => cs.CorpseHasEntity(entityBlueprint)))
+                    bool corpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet)
+                        => CorpseSheet.CorpseHasEntity(entityBlueprint)
+                        && CorpseSheet.GetCorpse() is CorpseBlueprint corpseBlueprint
+                        && corpseBlueprint.GetGameObjectBlueprint() is GameObjectBlueprint corpseModel
+                        && !corpseModel.IsExcludedFromDynamicEncounters();
+
+                    foreach (CorpseSheet corpseSheet in NecromancySystem.GetCorpseSheets(corpseSheetHasAcceptableCorpse))
                         if (corpseSheet.GetCorpseWeight(entityBlueprint) is CorpseWeight corpseWeight)
                             corpseWeights.Add(corpseWeight);
 

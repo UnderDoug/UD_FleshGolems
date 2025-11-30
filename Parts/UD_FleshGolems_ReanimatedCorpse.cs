@@ -146,13 +146,23 @@ namespace XRL.World.Parts
             get
             {
                 using Indent indent = new();
-                Debug.LogMethod(indent);
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(ParentObject?.DebugName ?? NULL),
+                        Debug.Arg("get", _IsAlteredRenderDisplayName),
+                    });
                 return _IsAlteredRenderDisplayName;
             }
             set
             {
                 using Indent indent = new();
-                Debug.LogMethod(indent, ArgPairs: Debug.Arg(value.ToString()));
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(ParentObject?.DebugName ?? NULL),
+                        Debug.Arg("set", value.ToString()),
+                    });
                 _IsAlteredRenderDisplayName = value;
             }
         }
@@ -164,13 +174,23 @@ namespace XRL.World.Parts
             get
             {
                 using Indent indent = new();
-                Debug.LogMethod(indent);
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(ParentObject?.DebugName ?? NULL),
+                        Debug.Arg("get", _IsAlteredDescription),
+                    });
                 return _IsAlteredDescription;
             }
             set
             {
                 using Indent indent = new();
-                Debug.LogMethod(indent, ArgPairs: Debug.Arg(value.ToString()));
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(ParentObject?.DebugName ?? NULL),
+                        Debug.Arg("set", value.ToString()),
+                    });
                 _IsAlteredDescription = value;
             }
         }
@@ -395,8 +415,8 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
-            if (IsAlteredDescription
-                && IdentityType >= IdentityType.ParticipantVillager
+            if (!IsAlteredDescription
+                && IdentityType > IdentityType.Librarian
                 && !NewDescription.IsNullOrEmpty()
                 && ParentObject.TryGetPart(out Description description))
             {
@@ -439,7 +459,7 @@ namespace XRL.World.Parts
             if (ParentObject is GameObject frankenCorpse
                 && IdentityType > IdentityType.ParticipantVillager)
             {
-                if (!frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
+                if (frankenCorpse.Brain.Allegiance.All(a => a.Key != UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
                     || !IsAlteredDescription)
                 {
                     Debug.LogCaller(indent,

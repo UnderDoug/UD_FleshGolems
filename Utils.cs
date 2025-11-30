@@ -551,6 +551,8 @@ namespace UD_FleshGolems
                     typeof(bool),
                 });
 
+        //public static bool 
+
         /* 
          * 
          * Wishes!

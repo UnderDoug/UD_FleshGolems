@@ -1399,13 +1399,14 @@ namespace XRL.World.Parts
 
                 totalDestinationParts = DestinationBody?.LoopParts()?.Count() ?? 0;
                 Debug.Log(nameof(totalDestinationParts), totalDestinationParts, Indent: indent[1]);
-
+                /*
                 Debug.CheckYeh("Looping all DestinationBody (" + (destinationObject?.DebugName ?? NULL) + ") parts.", Indent: indent[1]);
                 foreach (BodyPart bodyPart in DestinationBody.LoopParts())
                 {
                     int depth = DestinationBody.GetBody().GetPartDepth(bodyPart, 0);
                     Debug.Log(bodyPart.BodyPartString(WithManager: true, WithParent: true), Indent: indent[depth + 2]);
                 }
+                */
                 return true;
             }
             List<BodyPart> bodyPartsToLoop = SourceBody?.LoopParts()

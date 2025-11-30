@@ -40,29 +40,29 @@
 - Lichen (brothers)
 - Mopango (brothers)
 - Mopango Charioteer (brothers)
-- Nest
+- Nest (brothers)
 - Oddity (brothers)
-- Ooze
-- Quadrupedal Robot
-- Reptile
-- Root
-- Slug
-- Slynth
-- Snail
-- Snapjaw
-- Spider
-- Succulent
-- Svardym
-- Swine
-- Table
-- Tortoise
-- Tripedal Robot
-- Tree
-- Troll
-- Turret
-- Urchin
-- Urshiib
-- Vine
-- Wall
-- Wheeled Robot
-- Worm
+- Ooze (brothers)
+- Quadrupedal Robot (brothers)
+- Reptile (brothers)
+- Root (brothers)
+- Slug (brothers)
+- Slynth (brothers)
+- Snail (brothers)
+- Snapjaw (brothers)
+- Spider (brothers)
+- Succulent (brothers)
+- Svardym (brothers)
+- Swine (brothers)
+- Table (brothers)
+- Tortoise (brothers)
+- Tripedal Robot (brothers)
+- Tree (brothers)
+- Troll (brothers)
+- Turret (brothers)
+- Urchin (brothers)
+- Urshiib (brothers)
+- Vine (brothers)
+- Wall (brothers)
+- Wheeled Robot (brothers)
+- Worm (brothers)

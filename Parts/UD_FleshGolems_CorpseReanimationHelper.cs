@@ -44,8 +44,8 @@ namespace XRL.World.Parts
             List<string> methodNamesToSilence = new()
             {
                 nameof(AssignStatsFromStatistics),
-                nameof(AssignStatsFromBlueprint),
-                nameof(AssignStatsFromPastLifeWithFactor),
+                // nameof(AssignStatsFromBlueprint),
+                // nameof(AssignStatsFromPastLifeWithFactor),
                 nameof(ParseTileMappings),
             };
             List<MethodBase> methodsToSilence = typeof(UD_FleshGolems_CorpseReanimationHelper)
@@ -1160,7 +1160,8 @@ namespace XRL.World.Parts
                         Keyword: TileMappingKeyword.Blueprint,
                         Lookup: sourceBlueprint.Name);
 
-                    if (sourceBlueprint.xTags.TryGetValue(REANIMATED_TAXA_XTAG, out Dictionary<string, string> sourceTaxa))
+                    
+                    if (sourceBlueprint.xTags != null && sourceBlueprint.xTags.TryGetValue(REANIMATED_TAXA_XTAG, out Dictionary<string, string> sourceTaxa))
                     {
                         foreach ((string taxonLabel, string taxon) in sourceTaxa)
                         {

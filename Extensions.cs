@@ -74,7 +74,7 @@ namespace UD_FleshGolems
 
         public static bool EqualsAny<T>(this T Value, params T[] args)
             => !args.IsNullOrEmpty()
-            && !args.Where(t => t.Equals(Value)).IsNullOrEmpty();
+            && !args.Where(t => (Utils.EitherNull(Value, t, out bool areEqual) && areEqual) || (Value != null && Value.Equals(t))).IsNullOrEmpty();
 
         public static bool EqualsAll<T>(this T Value, params T[] args)
             => !args.IsNullOrEmpty()
@@ -404,7 +404,7 @@ namespace UD_FleshGolems
         }
         public static IReadOnlyList<GameObjectBlueprint> GetBlueprintInheritsList(this GameObjectBlueprint Blueprint)
         {
-            return GetBlueprintInherits(Blueprint)?.ToList();
+            return Blueprint?.GetBlueprintInherits()?.ToList();
         }
 
         public static string GetCorpseBlueprint(this GameObjectBlueprint Blueprint)

@@ -303,33 +303,28 @@ namespace UD_FleshGolems.Logging
                 => Log(LastIndent[Offset], CallingMethod);
 
             public override bool Equals(object obj)
+                => (obj is ArgPair argPairObj
+                    && Equals(argPairObj))
+                || base.Equals(obj);
+
+            public bool Equals(ArgPair Other)
             {
-                if (obj is ArgPair argPairObj)
+                if (Name != Other.Name)
                 {
-                    return this == argPairObj;
+                    return false;
                 }
-                return base.Equals(obj);
+                if ((Value != null) != (Other.Value != null))
+                {
+                    return false;
+                }
+                return Value == Other.Value;
             }
 
             public override int GetHashCode()
                 => (Name?.GetHashCode() ?? 0) ^ (Value?.GetHashCode() ?? 0);
 
             public static bool operator ==(ArgPair Operand1, ArgPair Operand2)
-            {
-                if (Operand1.Equals(Empty) != Operand2.Equals(Empty))
-                {
-                    return false;
-                }
-                if (Operand1.Name != Operand2.Name)
-                {
-                    return false;
-                }
-                if ((Operand1.Value != null) != (Operand2.Value != null))
-                {
-                    return false;
-                }
-                return Operand1.Value == Operand2.Value;
-            }
+                => Operand1.Equals(Operand2);
             public static bool operator !=(ArgPair Operand1, ArgPair Operand2)
                 => !(Operand1 == Operand2);
         }

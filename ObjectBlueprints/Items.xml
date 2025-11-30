@@ -177,6 +177,7 @@
   </object>
   
   <object Name="UD_FleshGolems Plant Corpse" Inherits="Corpse">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Root Corpse" CorpseChance="0" />
     <tag Name="UD_FleshGolems Necrology Taxon Kingdom" Value="Plant" />
     <part Name="Render" DisplayName="{{g|plant}} corpse" Tile="items/sw_splat1.bmp"
           TileColor="&amp;g" DetailColor="w" RenderString="%"
@@ -211,6 +212,26 @@
       Skin="fibres"
       HarshAdjective="shorn,cracked,crooked"
       HardMaterial="wood" />
+  </object>
+  
+  <object Name="UD_FleshGolems Root Corpse" Inherits="UD_FleshGolems Plant Corpse">
+    <part Name="Render" DisplayName="pile of {{g|gunk}}" ColorString="&amp;K"
+          TileColor="&amp;K" DetailColor="g" />
+    <part Name="Description" Short="Violence is splayed in a slick smear across the environment." />
+    <part Name="Physics" Weight="20" />
+    <tag Name="BodyType" Value="Bush" />
+    <tag Name="Species" Value="root" />
+    <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:3:U:UD_FleshGolems_CorpseText:Components= are brought =subject.uD_xTag:2:U:UD_FleshGolems_CorpseText:WretchedVerbs= back into an abject affront to the natural order. =subject.UD_xTag:UD_FleshGolems_CorpseText:UnappealingAdjectives= =subject.uD_xTag:3:U:UD_FleshGolems_CorpseText:UnsettlingNoises= escape =subject.possessive= every movement, and =subject.possessive= very being seemingly screams for =subject.possessive= existence to cease." />
+    <xtagUD_FleshGolems_CorpseText
+      CorpseDescription="smear"
+      Components="pulp,goo,sap,fibre,roots,muck,rot"
+      WretchedVerbs="squirming,wriggling,squelching,shambling,writhing,wretching,bubbling"
+      UnappealingAdjectives="wet,moist,meaty,sloppy,sick,wretched"
+      UnsettlingNoises="gurgles,slurps,squelches,pops" />
+    <tag Name="UD_FleshGolems_ExcludeFromCorpseQuest" Value="*noinherit" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::K;;DetailColor::w" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Keyword:Dead" />
   </object>
   
   <object Name="UD_FleshGolems Bush Corpse" Inherits="UD_FleshGolems Plant Corpse">

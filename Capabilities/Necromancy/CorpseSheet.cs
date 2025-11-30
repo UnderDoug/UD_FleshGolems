@@ -250,6 +250,8 @@ namespace UD_FleshGolems.Capabilities.Necromancy
         }
         public CorpseSheet InitializeInheritedCorpseList()
         {
+            // using Indent indent = new(1);
+            // Debug.LogMethod(indent, ArgPairs: Debug.Arg(nameof(Corpse), Corpse.ToString()));
             InheritedCorpses = GetInheritedCorpses().ToList();
             return this;
         }
@@ -435,7 +437,7 @@ namespace UD_FleshGolems.Capabilities.Necromancy
             {
                 corpseWeight.Weight += entityWeight.Weight;
             }
-            return corpseWeight
+            return corpseWeight;
         }
     }
 }
