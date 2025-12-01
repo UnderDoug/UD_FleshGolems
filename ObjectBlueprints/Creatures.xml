@@ -16,7 +16,6 @@
 
   <object Name="UD_FleshGolems Brain In A Jar Widget" Inherits="Widget">
     <part Name="Render" DisplayName="unfortunate soul" />
-    <part Name="ActivatedAbilities" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
@@ -40,7 +39,7 @@
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
-    <part Name="Render" TileColor="&amp;r" DetailColor="w"
+    <part Name="Render" DetailColor="K" TileColor="&amp;r"
           DisplayName="the corpse of Jofo Qudwufo" />
     <property Name="CreatureName" Value="Jofo Qudwufo" />
     <property Name="UD_FleshGolems_CreatureProperName" Value="Jofo Qudwufo" />

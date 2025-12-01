@@ -179,70 +179,66 @@ namespace XRL.World.Parts
 
         public override void Attach()
         {
-            if (ParentObject is GameObject frankenCorpse)
-            {
-                using Indent indent = new(1);
-                Debug.LogCaller(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                    Debug.Arg(nameof(frankenCorpse), frankenCorpse?.DebugName ?? NULL),
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
                     Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
                     Debug.Arg(nameof(IsAlteredDescription), IsAlteredDescription),
                     Debug.Arg(nameof(NewDescription), !NewDescription.IsNullOrEmpty()),
-                    });
+                });
 
-                frankenCorpse?.AddPart(new UD_FleshGolems_CorpseIconColor(frankenCorpse));
-                Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[1]);
-                foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
-                {
-                    Debug.YehNah(
-                        Message: partToRemove,
-                        Good: frankenCorpse.RemovePart(partToRemove),
-                        Indent: indent[2]);
-                }
-                Debug.Log(nameof(BleedLiquid), BleedLiquid ?? NULL, indent[1]);
-                if (BleedLiquid.IsNullOrEmpty())
-                {
-                    Debug.Log(
-                        nameof(GetBleedLiquidEvent) + "." +
-                        nameof(GetBleedLiquidEvent.GetFor),
-                        GetBleedLiquidEvent.GetFor(frankenCorpse),
-                        indent[3]);
-                }
-
-                HaltGreaterVoiderLairCreation(frankenCorpse, Reanimator);
-
-                if (IdentityType > IdentityType.ParticipantVillager)
-                {
-                    if (!IsAlteredDescription
-                        && !NewDescription.IsNullOrEmpty()
-                        && frankenCorpse.TryGetPart(out Description description)
-                        && !description._Short.Contains(NewDescription))
-                    {
-                        description._Short += "\n\n" + NewDescription;
-                    }
-
-                    if (!IsAlteredRenderDisplayName
-                        && PastLife?.GenerateDisplayName(out IdentityType identityType) is string newDisplayName
-                        && !newDisplayName.IsNullOrEmpty()
-                        && frankenCorpse.Render is Render corpseRender)
-                    {
-                        corpseRender.DisplayName = newDisplayName;
-                        if (AllowReanimatedPrefix(frankenCorpse))
-                        {
-                            corpseRender.DisplayName = REANIMATED_ADJECTIVE + " " + corpseRender.DisplayName;
-                        }
-                        frankenCorpse.RemovePart<Titles>();
-                        frankenCorpse.RemovePart<Epithets>();
-                        frankenCorpse.RemovePart<Honorifics>();
-                        IsAlteredRenderDisplayName = true;
-                    }
-
-                    PastLife?.AlignWithPreviouslySentientBeings();
-                }
-
-                AttemptToSuffer();
+            ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
+            Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[1]);
+            foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
+            {
+                Debug.YehNah(
+                    Message: partToRemove,
+                    Good: ParentObject?.RemovePart(partToRemove),
+                    Indent: indent[2]);
             }
+            Debug.Log(nameof(BleedLiquid), BleedLiquid ?? NULL, indent[1]);
+            if (BleedLiquid.IsNullOrEmpty())
+            {
+                Debug.Log(
+                    nameof(GetBleedLiquidEvent) + "." + 
+                    nameof(GetBleedLiquidEvent.GetFor), 
+                    GetBleedLiquidEvent.GetFor(ParentObject),
+                    indent[3]);
+            }
+
+            HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
+
+            if (IdentityType > IdentityType.ParticipantVillager)
+            {
+                if (!IsAlteredDescription
+                    && !NewDescription.IsNullOrEmpty()
+                    && ParentObject.TryGetPart(out Description description))
+                {
+                    description._Short += "\n\n" + NewDescription;
+                }
+
+                if (!IsAlteredRenderDisplayName
+                    && PastLife?.GenerateDisplayName(out IdentityType identityType) is string newDisplayName 
+                    && !newDisplayName.IsNullOrEmpty()
+                    && ParentObject.Render is Render corpseRender)
+                {
+                    corpseRender.DisplayName = newDisplayName;
+                    if (AllowReanimatedPrefix(ParentObject))
+                    {
+                        corpseRender.DisplayName = REANIMATED_ADJECTIVE + " " + corpseRender.DisplayName;
+                    }
+                    ParentObject.RemovePart<Titles>();
+                    ParentObject.RemovePart<Epithets>();
+                    ParentObject.RemovePart<Honorifics>();
+                    IsAlteredRenderDisplayName = true;
+                }
+
+                PastLife?.AlignWithPreviouslySentientBeings();
+            }
+
+            AttemptToSuffer();
             base.Attach();
         }
 
@@ -389,7 +385,6 @@ namespace XRL.World.Parts
                 || ID == GetShortDescriptionEvent.ID
                 || ID == DecorateDefaultEquipmentEvent.ID
                 || ID == EndTurnEvent.ID
-                || ID == EnvironmentalUpdateEvent.ID
                 || ID == TakeOnRoleEvent.ID
                 || ID == AfterZoneBuiltEvent.ID
                 || ID == GetBleedLiquidEvent.ID
@@ -461,11 +456,6 @@ namespace XRL.World.Parts
             AttemptToSuffer();
             return base.HandleEvent(E);
         }
-        public override bool HandleEvent(EnvironmentalUpdateEvent E)
-        {
-            PastLife?.AlignWithPreviouslySentientBeings();
-            return base.HandleEvent(E);
-        }
         public override bool HandleEvent(TakeOnRoleEvent E)
         {
             using Indent indent = new(1);
@@ -483,25 +473,21 @@ namespace XRL.World.Parts
                         Debug.Arg(nameof(NewDescription), !NewDescription.IsNullOrEmpty()),
                     });
 
-                PastLife.PastRender.DisplayName = frankenCorpse.GetReferenceDisplayName();
+                PastLife.PastRender.DisplayName = ParentObject.GetReferenceDisplayName();
 
                 if (!newDisplayName.IsNullOrEmpty()
-                    && frankenCorpse.Render is Render corpseRender)
+                    && ParentObject.Render is Render corpseRender)
                 {
                     Debug.Log(nameof(newDisplayName), !newDisplayName.IsNullOrEmpty(), Indent: indent[1]);
                     corpseRender.DisplayName = newDisplayName;
-                    if (AllowReanimatedPrefix(frankenCorpse))
-                    {
-                        corpseRender.DisplayName = REANIMATED_ADJECTIVE + " " + corpseRender.DisplayName;
-                    }
-                    frankenCorpse.RemovePart<Titles>();
-                    frankenCorpse.RemovePart<Epithets>();
-                    frankenCorpse.RemovePart<Honorifics>();
+                    ParentObject.RemovePart<Titles>();
+                    ParentObject.RemovePart<Epithets>();
+                    ParentObject.RemovePart<Honorifics>();
                     IsAlteredRenderDisplayName = true;
                 }
 
                 if (!NewDescription.IsNullOrEmpty()
-                    && frankenCorpse.TryGetPart(out Description description))
+                    && ParentObject.TryGetPart(out Description description))
                 {
                     if (!description._Short.Contains(NewDescription))
                     {
