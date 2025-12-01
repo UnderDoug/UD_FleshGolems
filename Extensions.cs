@@ -88,10 +88,9 @@ namespace UD_FleshGolems
                 && inheritedTypes.Contains(Type));
 
         public static bool IsPlayerBlueprint(this string Blueprint)
-            => Blueprint == Startup.PlayerBlueprint;
-
-        public static bool HasPlayerBlueprint(this GameObject Entity)
-            => Entity.Blueprint.IsPlayerBlueprint();
+        {
+            return Blueprint == Startup.PlayerBlueprint;
+        }
 
         public static string ThisManyTimes(this string @string, int Times = 1)
         {
@@ -227,29 +226,9 @@ namespace UD_FleshGolems
         public static T GetRandomElementCosmeticExcluding<T>(this IEnumerable<T> Enumerable, Predicate<T> Exclude)
             where T : class
         {
-            if (Enumerable.IsNullOrEmpty())
-                return default;
-
-            if (Exclude == null)
-                return Enumerable.GetRandomElementCosmetic();
-
-            return Enumerable
-                ?.Where(t => !Exclude(t))
-                ?.GetRandomElementCosmetic();
-        }
-
-        public static T GetRandomElementCosmetic<T>(this IEnumerable<T> Enumerable, Predicate<T> Filter)
-            where T : class
-        {
-            if (Enumerable.IsNullOrEmpty())
-                return default;
-
-            if (Filter == null)
-                return Enumerable.GetRandomElementCosmetic();
-
-            return Enumerable
-                ?.Where(t => Filter(t))
-                ?.GetRandomElementCosmetic();
+            List<T> filteredList = new(Enumerable);
+            filteredList.RemoveAll(m => Exclude != null && Exclude(m));
+            return filteredList.GetRandomElementCosmetic();
         }
 
         public static Commerce BlurValue(this Commerce Commerce, int Margin)
@@ -289,15 +268,6 @@ namespace UD_FleshGolems
             return false;
         }
 
-        public static bool ContainsAny<T>(this IEnumerable<T> Enumerable, params T[] Items)
-        {
-            if (Items == null || Enumerable == null)
-            {
-                return (Items == null) == (Enumerable == null);
-            }
-            return Enumerable.OverlapsWith(Items);
-        }
-
         public static bool ContainsAll<T>(this ICollection<T> Collection1, ICollection<T> Collection2)
         {
             int matches = 0;
@@ -321,14 +291,6 @@ namespace UD_FleshGolems
                 }
             }
             return targetMatches >= matches;
-        }
-        public static bool ContainsAll<T>(this ICollection<T> Collection, params T[] Items)
-        {
-            if (Items == null || Collection == null)
-            {
-                return (Items == null) == (Collection == null);
-            }
-            return Collection.ContainsAll((ICollection<T>)Items);
         }
 
         public static GameObject SetWontSell(this GameObject Item, bool WontSell)
@@ -543,13 +505,10 @@ namespace UD_FleshGolems
             return false;
         }
 
-        public static bool InheritsFrom(this GameObject Object, string BaseBlueprint)
-            => Object != null
-            && Object.Blueprint.InheritsFrom(BaseBlueprint);
-
         public static bool InheritsFrom(this string Blueprint, string BaseBlueprint)
-            => Utils.ThisBlueprintInheritsFromThatOne(Blueprint, BaseBlueprint);
-
+        {
+            return Utils.ThisBlueprintInheritsFromThatOne(Blueprint, BaseBlueprint);
+        }
         public static bool InheritsFromAny(this string Blueprint, List<string> BaseBlueprints)
         {
             foreach (string baseBlueprint in BaseBlueprints)
@@ -862,31 +821,6 @@ namespace UD_FleshGolems
                 Int = Max;
             }
             return Int;
-        }
-
-        public static string OutReplace(this string Text, string Old, string New, out string Result)
-        {
-            Result = Text;
-            if (!Text.IsNullOrEmpty())
-                Result = Text.Replace(Old, New);
-
-            return Result;
-        }
-        public static string OutRemove(this string Text, string String, out string Result)
-        {
-            return Text.OutReplace(String, "", out Result);
-        }
-        public static string OutRemove(this string Text, out string Result, params string[] Items)
-        {
-            Result = Text;
-            if (!Items.IsNullOrEmpty())
-            {
-                foreach (string item in Items)
-                {
-                    Result.OutRemove(item, out Result);
-                }
-            }
-            return Result;
         }
 
         public static string YehNah(this bool? Yeh)

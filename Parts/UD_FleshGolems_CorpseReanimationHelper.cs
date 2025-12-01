@@ -87,7 +87,6 @@ namespace XRL.World.Parts
             // nameof(Lovely),
             nameof(SecretObject),
             nameof(ConvertSpawner),
-            nameof(CherubimSpawner),
             // nameof(Leader),
             // nameof(Followers),
             nameof(DromadCaravan),
@@ -1042,14 +1041,14 @@ namespace XRL.World.Parts
                         ?.CachedCommaExpansion()
                         ?.ToArray());
 
-                // PastLife.RestoreParts(p => !IsPartToSkip(p, frankenCorpse));
+                IdentityType identityType = PastLife.GetIdentityType();
 
                 frankenCorpse.SetStringProperty("OverlayColor", "&amp;G^k");
 
                 frankenCorpse.Physics.Organic = PastLife.Physics.Organic;
 
                 Debug.Log("Assigning string and int properties...", Indent: indent[2]);
-                if (UD_FleshGolems_Reanimated.HasWorldGenerated || true)
+                if (UD_FleshGolems_Reanimated.HasWorldGenerated)
                 {
                     Debug.Log(nameof(PastLife.StringProperties), PastLife?.StringProperties?.Count ?? 0, indent[3]);
                     foreach ((string stringProp, string value) in PastLife?.StringProperties)
@@ -1069,15 +1068,12 @@ namespace XRL.World.Parts
                     Debug.CheckNah("Skipped.", indent[3]);
                 }
 
-                IdentityType identityType = PastLife.GetIdentityType();
-
                 bool wasPlayer = PastLife != null && PastLife.WasPlayer;
 
                 bool excludedFromDynamicEncounters = PastLife.ExcludeFromDynamicEncounters;
 
                 Debug.YehNah(nameof(wasPlayer), wasPlayer, indent[2]);
                 Debug.YehNah(nameof(excludedFromDynamicEncounters), excludedFromDynamicEncounters, indent[2]);
-                Debug.Log(nameof(identityType), identityType, indent[2]);
 
                 frankenCorpse.SetIntProperty("NoAnimatedNamePrefix", 1);
                 frankenCorpse.SetIntProperty("Bleeds", 1);
@@ -1085,6 +1081,8 @@ namespace XRL.World.Parts
                 frankenCorpse.Render.RenderLayer = 10;
 
                 PastLife.RestoreBrain(excludedFromDynamicEncounters, out Brain frankenBrain);
+
+                // PastLife.RestoreParts(p => !IsPartToSkip(p, frankenCorpse));
 
                 bool wantOldIdentity = identityType == IdentityType.Librarian || 50.in100();
 
@@ -1414,9 +1412,7 @@ namespace XRL.World.Parts
                         Debug.CheckNah("Skipped", Indent: indent[3]);
                     }
                 }
-
-                _ = indent[2];
-
+                _ = indent[1];
                 PastLife?.RestoreAdditionalLimbs();
 
                 frankenBody ??= frankenCorpse.Body;
@@ -1474,8 +1470,6 @@ namespace XRL.World.Parts
                         Debug.CheckNah(limbLabel + "nuffin'", Indent: indent[4]);
                     }
                 }
-
-                _ = indent[2];
 
                 UD_FleshGolems_Reanimated.EquipPastLifeItems(Corpse, true);
 

@@ -18,14 +18,10 @@ using XRL.World.Capabilities;
 using XRL.World.ObjectBuilders;
 using XRL.World.Parts;
 using XRL.World.Parts.Mutation;
-using XRL.World.WorldBuilders;
-
-using IdentityType = XRL.World.Parts.UD_FleshGolems_PastLife.IdentityType;
-using static XRL.World.Parts.UD_FleshGolems_PastLife;
-using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
 
 using UD_FleshGolems;
 using static UD_FleshGolems.Const;
+using XRL.World.WorldBuilders;
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Capabilities;
 using UD_FleshGolems.Capabilities.Necromancy;
@@ -53,7 +49,7 @@ namespace XRL.World.ObjectBuilders
         {
             "BaseCherubimSpawn",
         };
-        public static List<string> PropTagsIndicatingNeedDelayedReanimation => new()
+        public static List<string> PropertiesAndTagsIndicatingNeedDelayedReanimation => new()
         {
             "AlternateCreatureType",
         };
@@ -71,14 +67,10 @@ namespace XRL.World.ObjectBuilders
         {
             return PartsThatNeedDelayedReanimation.Any(s => Creature.HasPart(s))
                 || BlueprintsThatNeedDelayedReanimation.Any(s => Creature.GetBlueprint().InheritsFrom(s))
-                || PropTagsIndicatingNeedDelayedReanimation.Any(s => Creature.HasPropertyOrTag(s));
+                || PropertiesAndTagsIndicatingNeedDelayedReanimation.Any(s => Creature.HasPropertyOrTag(s));
         }
 
-        public static bool IsOntologicallyAnEntity(GameObject Object)
-            => (Object.HasPart<Combat>() && Object.HasPart<Body>())
-            || Object.HasTagOrProperty("BodySubstitute");
-
-        public static GameObject ProduceCorpse(GameObject Entity,
+        public static GameObject ProduceCorpse(GameObject Creature,
             bool ForImmediateReanimation = true,
             bool OverridePastLife = true,
             bool PreemptivelyGiveEnergy = true)
@@ -86,40 +78,19 @@ namespace XRL.World.ObjectBuilders
             GameObject corpse = null;
             try
             {
-                using Indent indent = new(1);
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(Entity), Entity?.DebugName ?? NULL),
-                        Debug.Arg(nameof(ForImmediateReanimation), ForImmediateReanimation),
-                        Debug.Arg(nameof(OverridePastLife), OverridePastLife),
-                        Debug.Arg(nameof(PreemptivelyGiveEnergy), PreemptivelyGiveEnergy),
-                    });
-
-                Body body = Entity.Body;
-                string corpseBlueprint = null;
-                GameObjectBlueprint corpseModel = null;
-
-                static bool corpseModelIsAcceptable(GameObjectBlueprint CorpseModel)
-                    => CorpseModel != null
-                    && !CorpseModel.IsBaseBlueprint()
-                    && !CorpseModel.IsExcludedFromDynamicEncounters();
-
-                if ((corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())
-                    && Entity.TryGetPart(out Corpse corpsePart)
+                Body body = Creature.Body;
+                string corpseBlueprintName = null;
+                GameObjectBlueprint corpseBlueprint = null;
+                if (Creature.TryGetPart(out Corpse corpsePart)
                     && !corpsePart.CorpseBlueprint.IsNullOrEmpty())
                 {
-                    corpseModel = GameObjectFactory.Factory.GetBlueprintIfExists(corpsePart?.CorpseBlueprint);
-                    if (corpseModel != null
-                        && corpseModel.IsCorpse())
-                    {
-                        corpseBlueprint = corpsePart.CorpseBlueprint;
-                        Debug.CheckYeh("Entity's " + nameof(corpseBlueprint), corpseBlueprint ?? NULL, Indent: indent[1]);
-                    }
+                    corpseBlueprint = GameObjectFactory.Factory.GetBlueprintIfExists(corpsePart?.CorpseBlueprint);
+                    if (corpseBlueprint != null
+                        && corpseBlueprint.IsCorpse())
+                        corpseBlueprintName = corpsePart.CorpseBlueprint;
                 }
-                if ((corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())
-                    && NecromancySystem != null
-                    && NecromancySystem.RequireEntityBlueprint(Entity) is EntityBlueprint entityBlueprint)
+                if (NecromancySystem != null
+                    && NecromancySystem.RequireEntityBlueprint(Creature) is EntityBlueprint entityBlueprint)
                 {
                     List<CorpseWeight> corpseWeights = new();
 
@@ -127,106 +98,73 @@ namespace XRL.World.ObjectBuilders
                         => CorpseSheet.CorpseHasEntity(entityBlueprint)
                         && CorpseSheet.GetCorpse() is CorpseBlueprint corpseBlueprint
                         && corpseBlueprint.GetGameObjectBlueprint() is GameObjectBlueprint corpseModel
-                        && corpseModelIsAcceptable(corpseModel);
+                        && !corpseModel.IsExcludedFromDynamicEncounters();
 
                     foreach (CorpseSheet corpseSheet in NecromancySystem.GetCorpseSheets(corpseSheetHasAcceptableCorpse))
                         if (corpseSheet.GetCorpseWeight(entityBlueprint) is CorpseWeight corpseWeight)
                             corpseWeights.Add(corpseWeight);
 
-                    corpseBlueprint = corpseWeights
-                        ?.ToDictionary(cw => cw.GetBlueprint().ToString(), cw => cw.Weight)
-                        ?.GetWeightedRandom();
-
-                    if (!corpseBlueprint.IsNullOrEmpty())
-                    {
-                        corpseModel = corpseBlueprint?.GetGameObjectBlueprint();
-                        Debug.CheckYeh(nameof(NecromancySystem) + " " + nameof(corpseBlueprint), corpseBlueprint ?? NULL, Indent: indent[1]);
-                    }
+                    if (!(corpseBlueprintName = corpseWeights?.ToDictionary(cw => cw.GetBlueprint().ToString(), cw => cw.Weight)?.GetWeightedRandom()).IsNullOrEmpty())
+                        corpseBlueprint = corpseBlueprintName?.GetGameObjectBlueprint();
                 }
-                if (corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())
+                if (corpseBlueprintName.IsNullOrEmpty())
                 { 
-                    string creatureBaseBlueprint = Entity.GetBlueprint().GetBaseTypeName();
-                    corpseBlueprint = creatureBaseBlueprint + " Corpse";
-                    corpseModel = GameObjectFactory.Factory.GetBlueprintIfExists(corpseBlueprint);
+                    string creatureBaseBlueprint = Creature.GetBlueprint().GetBaseTypeName();
+                    corpseBlueprintName = creatureBaseBlueprint + " Corpse";
+                    corpseBlueprint = GameObjectFactory.Factory.GetBlueprintIfExists(corpseBlueprintName);
 
-                    if (corpseModel == null
-                        || !corpseModelIsAcceptable(corpseModel))
-                    {
-                        corpseModel = creatureBaseBlueprint
-                            ?.GetGameObjectBlueprint() // get the creature's model
-                            ?.GetCorpseBlueprint() // get the corpse blueprint for creature's model
-                            ?.GetGameObjectBlueprint(); // get the corpse model
-                        corpseBlueprint = corpseModel?.GetCorpseBlueprint();
-                    }
-                    Debug.CheckYeh("Base " + nameof(corpseBlueprint), corpseBlueprint ?? NULL, Indent: indent[1]);
-                }
-                if (corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())
-                {
-                    string speciesCorpseBlueprint = Entity.GetSpecies() + " " + nameof(Corpse);
-                    if (speciesCorpseBlueprint.GetGameObjectBlueprint() is var speciesCorpseModel
-                        && corpseModelIsAcceptable(speciesCorpseModel))
-                    {
-                        corpseModel = speciesCorpseModel;
-                        corpseBlueprint = speciesCorpseBlueprint;
-                        Debug.CheckYeh("Species " + nameof(corpseBlueprint), corpseBlueprint ?? NULL, Indent: indent[1]);
-                    }
-                }
-                if (corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())
-                {
+                    string speciesCorpse = Creature.GetSpecies() + " " + nameof(Corpse);
                     string fallbackCorpse = "Fresh " + nameof(Corpse);
-                    if (fallbackCorpse.GetGameObjectBlueprint() is var fallbackCorpseModel
-                        && corpseModelIsAcceptable(fallbackCorpseModel))
+
+                    if (corpseBlueprint == null)
                     {
-                        corpseBlueprint = fallbackCorpse;
-                        corpseModel = fallbackCorpseModel;
-                        Debug.CheckYeh("Fallback " + nameof(corpseBlueprint), corpseBlueprint ?? NULL, Indent: indent[1]);
+                        corpseBlueprint = creatureBaseBlueprint?.GetGameObjectBlueprint()?.GetCorpseBlueprint()?.GetGameObjectBlueprint();
+                        corpseBlueprintName = corpseBlueprint?.GetCorpseBlueprint();
                     }
+
+                    corpseBlueprintName = corpseBlueprint?.Name ?? fallbackCorpse;
                 }
-                if (!corpseModel.IsCorpse())
+                if (!corpseBlueprintName.IsNullOrEmpty() && !corpseBlueprintName.GetGameObjectBlueprint().IsCorpse())
                 {
-                    corpseBlueprint = null;
-                    corpseModel = null;
+                    corpseBlueprintName = null;
                 }
-                if ((corpse = GameObject.Create(corpseBlueprint, Context: nameof(UD_FleshGolems_PastLife))) == null)
+                if ((corpse = GameObject.Create(corpseBlueprintName, Context: nameof(UD_FleshGolems_PastLife))) == null)
                 {
-                    Debug.CheckNah("Unable to find suitable corpse...", Indent: indent[1]);
                     return null;
                 }
-                Parts.Temporary.CarryOver(Entity, corpse);
-                Phase.carryOver(Entity, corpse);
-                if (GetLivingIdentityType(Entity) < IdentityType.ParticipantVillager)
+                Parts.Temporary.CarryOver(Creature, corpse);
+                Phase.carryOver(Creature, corpse);
+                if (Utils.WasProperlyNamed(Creature))
                 {
-                    corpse.SetStringProperty("CreatureName", Entity.BaseDisplayName);
+                    corpse.SetStringProperty("CreatureName", Creature.BaseDisplayName);
                 }
                 else
                 {
-                    string creatureName = NameMaker.MakeName(Entity, FailureOkay: true);
+                    string creatureName = NameMaker.MakeName(Creature, FailureOkay: true);
                     if (creatureName != null)
                     {
                         corpse.SetStringProperty("CreatureName", creatureName);
                     }
                 }
-                if (Entity.HasID)
+                if (Creature.HasID)
                 {
-                    corpse.SetStringProperty("SourceID", Entity.ID);
+                    corpse.SetStringProperty("SourceID", Creature.ID);
                 }
-                corpse.SetStringProperty("SourceBlueprint", Entity.Blueprint);
+                corpse.SetStringProperty("SourceBlueprint", Creature.Blueprint);
                 if (50.in100())
                 {
                     string killerBlueprint = EncountersAPI.GetACreatureBlueprint();
                     if (50.in100())
                     {
-                        List<GameObject> cachedObjects = The.ZoneManager?.CachedObjects?.Values?.ToList();
-
-                        if (!cachedObjects.IsNullOrEmpty())
+                        List<GameObject> cachedObjects = Event.NewGameObjectList(The.ZoneManager.CachedObjects.Values);
+                        cachedObjects.RemoveAll(GO => (!GO.HasPart<Combat>() || !GO.HasPart<Body>()) && !GO.HasTagOrProperty("BodySubstitute"));
+                        if (cachedObjects.GetRandomElement() is GameObject killer
+                            && killer.HasID)
                         {
-                            if (cachedObjects.GetRandomElementCosmetic(IsOntologicallyAnEntity) is GameObject killer
-                                && killer.HasID)
-                            {
-                                killerBlueprint = killer.Blueprint;
-                                corpse.SetStringProperty("KillerID", killer.ID);
-                            }
+                            killerBlueprint = killer.Blueprint;
+                            corpse.SetStringProperty("KillerID", killer.ID);
                         }
+                        cachedObjects.Clear();
                     }
                     corpse.SetStringProperty("KillerBlueprint", killerBlueprint);
                 }
@@ -241,7 +179,7 @@ namespace XRL.World.ObjectBuilders
 
                 corpse.SetStringProperty("DeathReason", deathReason);
 
-                string genotype = Entity.GetGenotype();
+                string genotype = Creature.GetGenotype();
                 if (!genotype.IsNullOrEmpty())
                 {
                     corpse.SetStringProperty("FromGenotype", genotype);
@@ -255,8 +193,8 @@ namespace XRL.World.ObjectBuilders
                         {
                             list ??= Event.NewGameObjectList();
                             list.Add(part.Cybernetics);
-                            UnimplantedEvent.Send(Entity, part.Cybernetics, part);
-                            ImplantRemovedEvent.Send(Entity, part.Cybernetics, part);
+                            UnimplantedEvent.Send(Creature, part.Cybernetics, part);
+                            ImplantRemovedEvent.Send(Creature, part.Cybernetics, part);
                         }
                     }
                     if (list != null)
@@ -266,13 +204,45 @@ namespace XRL.World.ObjectBuilders
                         corpse.RemovePart<Food>();
                     }
                 }
+                if (OverridePastLife)
+                {
+                    corpse.RemovePart<UD_FleshGolems_PastLife>();
+                }
+
+                var pastLife = corpse.RequirePart<UD_FleshGolems_PastLife>();
+
+                if (Creature.TryGetPart(out UD_FleshGolems_PastLife prevPastLife)
+                    && prevPastLife.Init && prevPastLife.WasCorpse)
+                {
+                    corpse.RemovePart(pastLife);
+                    pastLife = corpse.AddPart(prevPastLife);
+                }
+                else
+                {
+                    pastLife.Initialize(Creature);
+                }
+
+                corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(Creature);
+                if (ForImmediateReanimation)
+                {
+                    var corpseReanimationHelper = corpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>();
+                    corpseReanimationHelper.AlwaysAnimate = true;
+
+                    var destinedForReanimation = Creature.RequirePart<UD_FleshGolems_DestinedForReanimation>();
+                    destinedForReanimation.Corpse = corpse;
+                    destinedForReanimation.BuiltToBeReanimated = true;
+                    if (PartsThatNeedDelayedReanimation.Any(s => Creature.HasPart(s)))
+                    {
+                        destinedForReanimation.DelayTillZoneBuild = true;
+                    }
+                }
 
                 if (PreemptivelyGiveEnergy) // fixes cases where corpses are being added to the action queue before they've been animated.
                 {
                     corpse.Statistics ??= new();
                     string energyStatName = "Energy";
                     Statistic energyStat = null;
-                    if (GameObjectFactory.Factory.GetBlueprintIfExists(nameof(Entity)) is var baseCreatureBlueprint)
+                    if (GameObjectFactory.Factory.GetBlueprintIfExists(nameof(Creature)) is var baseCreatureBlueprint)
                     {
                         if (!baseCreatureBlueprint.Stats.IsNullOrEmpty()
                             && baseCreatureBlueprint.Stats.ContainsKey(energyStatName))
@@ -290,40 +260,6 @@ namespace XRL.World.ObjectBuilders
                     corpse.Statistics.TryAdd(energyStatName, energyStat);
                 }
                 corpse.RequireAbilities();
-
-                if (OverridePastLife)
-                {
-                    corpse.RemovePart<UD_FleshGolems_PastLife>();
-                }
-
-                var pastLife = corpse.RequirePart<UD_FleshGolems_PastLife>();
-
-                if (Entity.TryGetPart(out UD_FleshGolems_PastLife prevPastLife)
-                    && prevPastLife.Init && prevPastLife.WasCorpse)
-                {
-                    corpse.RemovePart(pastLife);
-                    pastLife = corpse.AddPart(prevPastLife);
-                }
-
-                if (ForImmediateReanimation)
-                {
-                    var corpseReanimationHelper = corpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>();
-                    corpseReanimationHelper.AlwaysAnimate = true;
-
-                    var destinedForReanimation = Entity.RequirePart<UD_FleshGolems_DestinedForReanimation>();
-                    destinedForReanimation.Corpse = corpse;
-                    destinedForReanimation.BuiltToBeReanimated = true;
-                    destinedForReanimation.Entity = Entity;
-                    /*
-                    if (CreatureNeedsDelayedReanimation(Creature))
-                    {
-                        destinedForReanimation.DelayTillZoneBuild = true;
-                    }
-                    */
-
-                }
-                corpse.RequirePart<UD_FleshGolems_PastLife>();
-                    //.Initialize(Entity);
             }
             catch (Exception x)
             {
@@ -502,6 +438,10 @@ namespace XRL.World.ObjectBuilders
         public static bool Unkill(GameObject Creature, out GameObject Corpse, string Context = null)
         {
             Corpse = null;
+            if (!HasWorldGenerated)
+            {
+                // return false;
+            }
             if (Context == "Sample")
             {
                 return false;
@@ -514,7 +454,7 @@ namespace XRL.World.ObjectBuilders
             {
                 return false;
             }
-            if (!ReplaceEntityWithCorpse(Creature))
+            if (!TryProduceCorpse(Creature, out Corpse))
             {
                 return false;
             }
@@ -530,7 +470,7 @@ namespace XRL.World.ObjectBuilders
             else
             if (HasWorldGenerated)
             {
-                if (Corpse == null || !ReplaceEntityWithCorpse(Creature, FakeDeath: true, Corpse: Corpse, ForImmediateReanimation: true, OverridePastLife: true))
+                if (Corpse == null || !ReplaceCreatureWithCorpse(Creature, FakeDeath: true, Corpse: Corpse, ForImmediateReanimation: true, OverridePastLife: true))
                 {
                     return false;
                 }
@@ -542,8 +482,8 @@ namespace XRL.World.ObjectBuilders
             return Unkill(Creature, out _, Context);
         }
 
-        public static bool ReplaceEntityWithCorpse(
-            GameObject Entity,
+        public static bool ReplaceCreatureWithCorpse(
+            GameObject Creature,
             bool FakeDeath,
             out bool FakedDeath,
             IDeathEvent DeathEvent = null,
@@ -552,16 +492,16 @@ namespace XRL.World.ObjectBuilders
             bool OverridePastLife = true)
         {
             FakedDeath = false;
-            if (Entity == null
+            if (Creature == null
                 || (Corpse == null
-                    && !TryProduceCorpse(Entity, out Corpse, ForImmediateReanimation, OverridePastLife)))
+                    && !TryProduceCorpse(Creature, out Corpse, ForImmediateReanimation, OverridePastLife)))
             {
                 return false;
             }
-            if (!TryTransferInventoryToCorpse(Entity, Corpse))
+            if (!TryTransferInventoryToCorpse(Creature, Corpse))
             {
                 MetricsManager.LogModError(Utils.ThisMod, 
-                    "Failed to " + nameof(ReplaceEntityWithCorpse) + " due to failure of " + nameof(TryTransferInventoryToCorpse));
+                    "Failed to " + nameof(ReplaceCreatureWithCorpse) + " due to failure of " + nameof(TryTransferInventoryToCorpse));
                 return false;
             }
             bool replaced = false;
@@ -571,95 +511,75 @@ namespace XRL.World.ObjectBuilders
                 {
                     if (DeathEvent == null)
                     {
-                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(Entity);
+                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(Creature);
                     }
                     else
                     {
-                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(Entity, DeathEvent, DoAchievement: true);
+                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(Creature, DeathEvent, DoAchievement: true);
                     }
                 }
 
                 Corpse.RequireAbilities();
 
-                if (Entity.IsPlayer() || Entity.Blueprint.IsPlayerBlueprint())
+                if (Creature.IsPlayer() || Creature.Blueprint.IsPlayerBlueprint())
                 {
                     Corpse.SetIntProperty("UD_FleshGolems_SkipLevelsOnReanimate", 1);
                 }
 
-                ReplaceInContextEvent.Send(Entity, Corpse);
+                ReplaceInContextEvent.Send(Creature, Corpse);
 
-                if (Entity.IsPlayer() || Entity.Blueprint.IsPlayerBlueprint())
+                if (Creature.IsPlayer() || Creature.Blueprint.IsPlayerBlueprint())
                 {
                     The.Game.Player.SetBody(Corpse);
-
-                    if (Corpse.TryGetPart(out UD_FleshGolems_ReanimatedCorpse reanimatedCorpsePart))
+                    if (Corpse.Render is Render corpseRender
+                        && Corpse.TryGetPart(out UD_FleshGolems_ReanimatedCorpse reanimatedCorpsePart))
                     {
-                        if (Corpse.Render is Render corpseRender)
+                        reanimatedCorpsePart.RenderDisplayNameSetAltered();
+                        corpseRender.DisplayName = The.Game.PlayerName;
+                        if (Corpse.TryGetPart(out UD_FleshGolems_PastLife pastLifePart))
                         {
-                            reanimatedCorpsePart.RenderDisplayNameSetAltered();
-                            corpseRender.DisplayName = REANIMATED_ADJECTIVE;
-                            if (Corpse.TryGetPart(out UD_FleshGolems_PastLife pastLifePart))
-                            {
-                                pastLifePart.BrainInAJar.Render.DisplayName = The.Game.PlayerName;
-                                corpseRender.DisplayName = REANIMATED_ADJECTIVE + " corpse of " + The.Game.PlayerName;
-                            }
-                        }
-                        if (Corpse.TryGetPart(out Description description)
-                            && reanimatedCorpsePart.NewDescription is string newDescription)
-                        {
-                            reanimatedCorpsePart.DescriptionSetAltered();
-                            description._Short += "\n\n" + newDescription;
+                            pastLifePart.BrainInAJar.Render.DisplayName = The.Game.PlayerName;
+                            The.Game.PlayerName = pastLifePart.GenerateDisplayName();
+                            corpseRender.DisplayName = The.Game.PlayerName;
                         }
                     }
                 }
 
-                Entity.MakeInactive();
+                Creature.MakeInactive();
                 Corpse.MakeActive();
 
                 bool doIDSwap = true;
                 if (doIDSwap)
                 {
-                    string creatureID = Entity.ID;
-                    int creatureBaseID = Entity.BaseID;
+                    string creatureID = Creature.ID;
+                    int creatureBaseID = Creature.BaseID;
 
-                    Entity.ID = Corpse.ID;
-                    Entity.BaseID = Corpse.BaseID;
+                    Creature.ID = Corpse.ID;
+                    Creature.BaseID = Corpse.BaseID;
 
                     Corpse.ID = creatureID;
                     Corpse.BaseID = creatureBaseID;
                 }
 
-                if (ForImmediateReanimation
-                    && !Corpse.TryGetPart(out UD_FleshGolems_DestinedForReanimation destinedForReanimation))
-                {
-                    Entity.Obliterate();
-                }
-
+                Creature.Obliterate();
                 replaced = true;
             }
             catch (Exception x)
             {
-                MetricsManager.LogException(nameof(UD_FleshGolems_Reanimated) + "." + nameof(ReplaceEntityWithCorpse), x, "game_mod_exception");
+                MetricsManager.LogException(nameof(UD_FleshGolems_Reanimated) + "." + nameof(ReplaceCreatureWithCorpse), x, "game_mod_exception");
                 replaced = false;
             }
             return replaced;
         }
-        public static bool ReplaceEntityWithCorpse(
-            GameObject Entity,
+        public static bool ReplaceCreatureWithCorpse(
+            GameObject Player,
             bool FakeDeath = true,
             IDeathEvent DeathEvent = null,
             GameObject Corpse = null,
             bool ForImmediateReanimation = true,
             bool OverridePastLife = true)
         {
-            return ReplaceEntityWithCorpse(Entity, FakeDeath, out _, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
-        }
-        public static bool ReplaceEntityWithCorpse(
-            GameObject Entity,
-            ref GameObject Corpse)
-        {
-            Corpse ??= ProduceCorpse(Entity);
-            return ReplaceEntityWithCorpse(Entity, Corpse: Corpse);
+            return ReplaceCreatureWithCorpse(Player, FakeDeath, out _, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
         }
         public static bool ReplacePlayerWithCorpse(
             bool FakeDeath,
@@ -669,7 +589,7 @@ namespace XRL.World.ObjectBuilders
             bool ForImmediateReanimation = true,
             bool OverridePastLife = true)
         {
-            return ReplaceEntityWithCorpse(The.Player, FakeDeath, out FakedDeath, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
+            return ReplaceCreatureWithCorpse(The.Player, FakeDeath, out FakedDeath, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
         }
         public static bool ReplacePlayerWithCorpse(
             bool FakeDeath = true,
@@ -678,14 +598,8 @@ namespace XRL.World.ObjectBuilders
             bool ForImmediateReanimation = true,
             bool OverridePastLife = true)
         {
-            return ReplaceEntityWithCorpse(The.Player, FakeDeath, out _, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
+            return ReplaceCreatureWithCorpse(The.Player, FakeDeath, out _, DeathEvent, Corpse, ForImmediateReanimation, OverridePastLife);
         }
-
-        /*
-         * 
-         * Wishes!
-         * 
-         */
 
         [WishCommand("UD_FleshGolems reanimated")]
         public static void Reanimated_WishHandler()
@@ -729,7 +643,7 @@ namespace XRL.World.ObjectBuilders
                 else
                 if (Blueprint == null)
                 {
-                    if (soonToBeCreature == null && !ReplaceEntityWithCorpse(soonToBeCorpse, true, null, soonToBeCreature))
+                    if (soonToBeCreature == null && !ReplaceCreatureWithCorpse(soonToBeCorpse, true, null, soonToBeCreature))
                     {
                         Popup.Show("Something terrible has happened (not really, it just failed).\n\nCheck Player.log for errors.");
                         return false;
