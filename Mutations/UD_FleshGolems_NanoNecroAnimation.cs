@@ -308,13 +308,15 @@ namespace XRL.World.Parts.Mutation
                 ParentObject?.SmallTeleportSwirl(Color: "&K", Sound: "Sounds/StatusEffects/sfx_statusEffect_negativeVitality");
             }
             Corpse?.SmallTeleportSwirl(Color: "&r", Sound: "Sounds/StatusEffects/sfx_statusEffect_positiveVitality", IsOut: true);
+            string corpseTile = Corpse.Render.Tile;
+            string corpseForeground = Corpse.Render.GetTileForegroundColor();
+            char corpseDetail = Corpse.Render.getDetailColor();
             AnimateObject.Animate(Corpse, ParentObject, ParentObject);
             CombatJuice.playPrefabAnimation(
                 gameObject: Corpse,
                 animation: "Abilities/AbilityVFXAnimated",
                 objectId: Corpse.ID,
-                configurationString: Corpse.Render.Tile + ";" + Corpse.Render.GetTileForegroundColor() + ";" + Corpse.Render.getDetailColor(),
-                async: true);
+                configurationString: corpseTile + ";" + corpseForeground + ";" + corpseDetail);
 
             "=subject.Name= =subject.verb:ranimate= =object.refname=."
                 .StartReplace()

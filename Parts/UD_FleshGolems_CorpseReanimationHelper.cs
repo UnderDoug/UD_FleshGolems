@@ -991,7 +991,7 @@ namespace XRL.World.Parts
                 ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
-                    Debug.Arg(nameof(PastLife), PastLife == null ? NULL : ("not " + NULL)),
+                    Debug.Arg(nameof(PastLife), YehNah(PastLife != null)),
                 });
 
             if (Corpse is GameObject frankenCorpse

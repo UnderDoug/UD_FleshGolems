@@ -66,7 +66,7 @@ namespace XRL.World.Parts
 
             // Corpses are non-furniture objects (items), so it's conceivable they might have one of these.
             nameof(ThrownWeapon),
-            nameof(MeleeWeapon),
+            // nameof(MeleeWeapon), // apparently *are* melee weapons...
             nameof(MissileWeapon),
         };
 
@@ -96,6 +96,7 @@ namespace XRL.World.Parts
                         Debug.Arg(nameof(_Reanimator), _Reanimator?.DebugName ?? NULL),
                         Debug.Arg(nameof(value), value?.DebugName ?? NULL),
                     });
+
                 if (_Reanimator != value)
                 {
                     _Reanimator = value;
@@ -141,32 +142,7 @@ namespace XRL.World.Parts
         public List<LiquidPortion> BleedLiquidPortions;
 
         [SerializeField]
-        private bool _IsAlteredRenderDisplayName;
-        private bool IsAlteredRenderDisplayName
-        {
-            get
-            {
-                using Indent indent = new();
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(ParentObject?.DebugName ?? NULL),
-                        Debug.Arg("get", _IsAlteredRenderDisplayName),
-                    });
-                return _IsAlteredRenderDisplayName;
-            }
-            set
-            {
-                using Indent indent = new();
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(ParentObject?.DebugName ?? NULL),
-                        Debug.Arg("set", value.ToString()),
-                    });
-                _IsAlteredRenderDisplayName = value;
-            }
-        }
+        private bool IsRenderDisplayNameUpdated;
 
         [SerializeField]
         private bool _IsAlteredDescription;
@@ -202,6 +178,7 @@ namespace XRL.World.Parts
             _NewDisplayName = null;
             BleedLiquid = null;
             BleedLiquidPortions = null;
+            IsRenderDisplayNameUpdated = false;
         }
 
         public override void Attach()
@@ -248,7 +225,7 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_ReanimatedCorpse RenderDisplayNameSetAltered()
         {
-            IsAlteredRenderDisplayName = true;
+            IsRenderDisplayNameUpdated = true;
             return this;
         }
         public UD_FleshGolems_ReanimatedCorpse DescriptionSetAltered()
@@ -384,6 +361,7 @@ namespace XRL.World.Parts
                 || ID == DecorateDefaultEquipmentEvent.ID
                 || ID == EndTurnEvent.ID
                 || ID == EnteredCellEvent.ID
+                || ID == EnvironmentalUpdateEvent.ID
                 || ID == AfterZoneBuiltEvent.ID
                 || ID == GetBleedLiquidEvent.ID
                 || ID == BeforeTakeActionEvent.ID
@@ -391,13 +369,28 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
-            if (PastLife != null
+            if (E.Context == "CreatureType" && E.Reference)
+            {
+                E.ReplacePrimaryBase(E.Object.GetBlueprint().DisplayName());
+
+                if (IdentityType < IdentityType.ParticipantVillager)
+                {
+                    E.AddAdjective("corpse of", CorpseAdjective);
+                }
+                else
+                if (IdentityType < IdentityType.Corpse)
+                {
+                    E.AddClause("corpse", CorpseClause);
+                }
+
+                E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
+            }
+            else
+            if (!IsRenderDisplayNameUpdated
+                && PastLife != null
                 && PastLife.GenerateDisplayName(out IdentityType identityType) is string newDisplayName)
             {
-                if (!E.Object.IsPlayer())
-                {
-                    E.ReplacePrimaryBase(newDisplayName);
-                }
+                E.ReplacePrimaryBase(newDisplayName);
 
                 if (identityType < IdentityType.ParticipantVillager)
                 {
@@ -408,10 +401,10 @@ namespace XRL.World.Parts
                 {
                     E.AddClause("corpse", CorpseClause);
                 }
-            }
-            if (AllowReanimatedPrefix(E.Object))
-            {
-                E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
+                if (AllowReanimatedPrefix(E.Object))
+                {
+                    E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
+                }
             }
             return base.HandleEvent(E);
         }
@@ -498,6 +491,25 @@ namespace XRL.World.Parts
                     }
                 }
                 PastLife.AlignWithPreviouslySentientBeings();
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(EnvironmentalUpdateEvent E)
+        {
+            if (!IsRenderDisplayNameUpdated
+                && !ParentObject.IsPlayer()
+                && !ParentObject.HasPlayerBlueprint()
+                && ParentObject.BaseID != 1)
+            {
+                IsRenderDisplayNameUpdated = true;
+                PastLife?.AlignWithPreviouslySentientBeings();
+                if (ParentObject.Render is Render corpseRender)
+                {
+                    corpseRender.DisplayName = ParentObject.GetReferenceDisplayName(Short: true);
+                    ParentObject.RemovePart<Titles>();
+                    ParentObject.RemovePart<Epithets>();
+                    ParentObject.RemovePart<Honorifics>();
+                }
             }
             return base.HandleEvent(E);
         }
@@ -632,7 +644,7 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
             E.AddEntry(this, nameof(IdentityType), IdentityType.ToStringWithNum());
 
-            E.AddEntry(this, nameof(IsAlteredRenderDisplayName), IsAlteredRenderDisplayName);
+            E.AddEntry(this, nameof(IsRenderDisplayNameUpdated), IsRenderDisplayNameUpdated);
             E.AddEntry(this, nameof(IsAlteredDescription), IsAlteredDescription);
 
             E.AddEntry(this, nameof(BleedLiquid), BleedLiquid);

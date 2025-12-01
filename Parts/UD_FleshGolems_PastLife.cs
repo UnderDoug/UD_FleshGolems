@@ -884,15 +884,19 @@ namespace XRL.World.Parts
             if (FrankenBrain == null
                 || PastLife == null
                 || PastLife?.Brain is not Brain pastBrain
-                || FrankenBrain.ParentObject is not GameObject frankenCorpse
-                || (frankenCorpse.GetIntProperty("UD_FleshGolems Alignment Adjusted") > 0
-                    && FrankenBrain.Allegiance.Any(a => a.Key == PREVIOUSLY_SENTIENT_BEINGS)))
+                || FrankenBrain.ParentObject is not GameObject frankenCorpse)
             {
-                Debug.CheckNah("Failed or skipped.", indent[1]);
+                Debug.CheckNah("Failed.", indent[1]);
+                return false;
+            }
+            if (frankenCorpse.GetIntProperty("UD_FleshGolems Alignment Adjusted") > 0
+                && FrankenBrain.Allegiance.Any(a => a.Key == PREVIOUSLY_SENTIENT_BEINGS))
+            {
+                Debug.CheckNah("Skipped.", indent[1]);
                 return false;
             }
 
-            int previouslySentientBeingsRep = 100;
+                int previouslySentientBeingsRep = 100;
             Debug.Log(nameof(previouslySentientBeingsRep), previouslySentientBeingsRep, indent[1]);
 
             Debug.Log("Altering " + nameof(previouslySentientBeingsRep), Indent: indent[1]);
@@ -1139,19 +1143,13 @@ namespace XRL.World.Parts
                 return null;
             }
             IdentityType = PastLife.GetIdentityType();
-            bool corpseHasSpecialIdentity = HasSpecialIdentity(frankenCorpse);
-
-            string whoTheyWere =
-                corpseHasSpecialIdentity
-                ? frankenCorpse?.Render?.DisplayName
-                : PastLife.RefName;
 
             using Indent indent = new();
             Debug.LogMethod(indent[1],
                 ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(frankenCorpse), frankenCorpse?.DebugName ?? NULL),
-                    Debug.Arg(nameof(whoTheyWere), whoTheyWere ?? NULL),
+                    Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
                 });
 
             string newIdentity = IdentityType switch

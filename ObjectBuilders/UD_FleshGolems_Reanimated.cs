@@ -647,7 +647,7 @@ namespace XRL.World.ObjectBuilders
                             {
                                 pastLifePart.BrainInAJar.Render.DisplayName = The.Game.PlayerName;
                                 The.Game.PlayerName = pastLifePart.GenerateDisplayName();
-                                corpseRender.DisplayName = The.Game.PlayerName;
+                                corpseRender.DisplayName = Corpse.GetReferenceDisplayName(Short: true);
                             }
                         }
                         if (Corpse.TryGetPart(out Description description)
@@ -656,6 +656,19 @@ namespace XRL.World.ObjectBuilders
                             reanimatedCorpsePart.DescriptionSetAltered();
                             description._Short += "\n\n" + newDescription;
                         }
+                    }
+
+                    if (Entity.HasIntProperty("OriginalPlayerBody"))
+                    {
+                        Corpse.SetStringProperty("OriginalPlayerBody", "1");
+                        Corpse.InjectGeneID("OriginalPlayer");
+                    }
+                    Corpse.Brain.Allegiance.Clear();
+                    Corpse.Brain.Allegiance["Player"] = 100;
+
+                    if (Corpse.TryGetPart(out UD_FleshGolems_PastLife pastLife))
+                    {
+                        pastLife.AlignWithPreviouslySentientBeings();
                     }
                 }
 
