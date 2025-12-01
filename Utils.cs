@@ -551,6 +551,29 @@ namespace UD_FleshGolems
                     typeof(bool),
                 });
 
+        public static string RefReplace(ref string Text, string Old, string New)
+        {
+            if (!Text.IsNullOrEmpty())
+                Text = Text.Replace(Old, New);
+
+            return Text;
+        }
+        public static string RefRemove(ref string Text, string String)
+        {
+            return RefReplace(ref Text, String, "");
+        }
+        public static string RefRemove(ref string Text, params string[] Items)
+        {
+            if (!Items.IsNullOrEmpty())
+            {
+                foreach (string item in Items)
+                {
+                    RefRemove(ref Text, item);
+                }
+            }
+            return Text;
+        }
+
         //public static bool 
 
         /* 
@@ -558,6 +581,6 @@ namespace UD_FleshGolems
          * Wishes!
          * 
          */
-        
+
     }
 }

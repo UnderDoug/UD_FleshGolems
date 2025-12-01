@@ -898,11 +898,15 @@ namespace XRL.World.Parts
             if (FrankenBrain == null
                 || PastLife == null
                 || PastLife?.Brain is not Brain pastBrain
-                || FrankenBrain.ParentObject is not GameObject frankenCorpse
-                || (frankenCorpse.GetIntProperty("UD_FleshGolems Alignment Adjusted") > 0
-                    && FrankenBrain.Allegiance.Any(a => a.Key == PREVIOUSLY_SENTIENT_BEINGS)))
+                || FrankenBrain.ParentObject is not GameObject frankenCorpse)
             {
-                Debug.CheckNah("Failed or skipped.", indent[1]);
+                Debug.CheckNah("Failed.", indent[1]);
+                return false;
+            }
+            if (frankenCorpse.GetIntProperty("UD_FleshGolems Alignment Adjusted") > 0
+                && FrankenBrain.Allegiance.Any(a => a.Key == PREVIOUSLY_SENTIENT_BEINGS))
+            {
+                Debug.CheckNah("Skipped.", indent[1]);
                 return false;
             }
 
@@ -1144,8 +1148,7 @@ namespace XRL.World.Parts
 
             return IdentityType.Nobody;
         }
-
-        public static string GenerateDisplayName(UD_FleshGolems_PastLife PastLife, out IdentityType IdentityType)
+        public static string GenerateWhoTheyWere(UD_FleshGolems_PastLife PastLife, out IdentityType IdentityType)
         {
             IdentityType = IdentityType.None;
             if (PastLife?.ParentObject is not GameObject frankenCorpse)
@@ -1153,20 +1156,51 @@ namespace XRL.World.Parts
                 return null;
             }
             IdentityType = PastLife.GetIdentityType();
-            bool corpseHasSpecialIdentity = HasSpecialIdentity(frankenCorpse);
-
-            string whoTheyWere =
-                corpseHasSpecialIdentity
-                ? frankenCorpse?.Render?.DisplayName
-                : PastLife.RefName;
 
             using Indent indent = new();
             Debug.LogMethod(indent[1],
                 ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(frankenCorpse), frankenCorpse?.DebugName ?? NULL),
-                    Debug.Arg(nameof(whoTheyWere), whoTheyWere ?? NULL),
+                    Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
                 });
+
+            string whoTheyWere = IdentityType switch
+            {
+                IdentityType.Player => The.Game.PlayerName,
+
+                IdentityType.Librarian
+                or IdentityType.Warden
+                or IdentityType.NamedVillager => frankenCorpse?.ShortDisplayName,
+
+                IdentityType.Named
+                or IdentityType.ParticipantVillager
+                or IdentityType.Villager
+                or IdentityType.Nobody => PastLife.RefName,
+
+                IdentityType.Corpse => PastLife.BrainInAJar?.Render?.DisplayName,
+
+                _ => frankenCorpse?.DisplayName,
+            };
+            Debug.Log(nameof(whoTheyWere) + " [" + IdentityType.ToStringWithNum() + "]", whoTheyWere ?? NULL, indent[1]);
+            return RefRemove(ref whoTheyWere, "[", "]");
+        }
+        public static string GenerateDisplayName(UD_FleshGolems_PastLife PastLife, out IdentityType IdentityType)
+        {
+            IdentityType = IdentityType.None;
+            if (PastLife?.ParentObject is not GameObject frankenCorpse)
+            {
+                return null;
+            }
+
+            using Indent indent = new();
+            Debug.LogMethod(indent[1],
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(frankenCorpse), frankenCorpse?.DebugName ?? NULL),
+                });
+
+            string whoTheyWere = GenerateWhoTheyWere(PastLife, out IdentityType);
 
             string newIdentity = IdentityType switch
             {
@@ -1174,20 +1208,30 @@ namespace XRL.World.Parts
 
                 IdentityType.Librarian
                 or IdentityType.Warden
-                or IdentityType.NamedVillager => "corpse of " + frankenCorpse?.ShortDisplayName,
-
-                IdentityType.Named
-                or IdentityType.ParticipantVillager => "corpse of " + PastLife.RefName,
+                or IdentityType.NamedVillager
+                or IdentityType.Named
+                or IdentityType.ParticipantVillager => "corpse of " + whoTheyWere,
 
                 IdentityType.Villager
-                or IdentityType.Nobody => PastLife.RefName + " corpse",
+                or IdentityType.Nobody => whoTheyWere + " corpse",
 
                 IdentityType.Corpse => PastLife.BrainInAJar?.Render?.DisplayName,
 
-                _ => frankenCorpse?.DisplayName,
+                _ => whoTheyWere,
             };
-            Debug.Log(nameof(newIdentity) + "(" + IdentityType + ")", newIdentity ?? NULL, indent[1]);
-            return newIdentity?.OutRemove(out newIdentity, "[", "]");
+            if (IdentityType == IdentityType.Corpse)
+            {
+                if (PastLife?.PastPastLife?.GetIdentityType() < IdentityType.Villager)
+                {
+                    whoTheyWere = "the " + newIdentity;
+                }
+                else
+                {
+                    whoTheyWere = Grammar.A(newIdentity);
+                }
+            }
+            Debug.Log(nameof(newIdentity) + " [" + IdentityType.ToStringWithNum() + "]", newIdentity ?? NULL, indent[1]);
+            return RefRemove(ref newIdentity, "[", "]");
         }
         public string GenerateDisplayName(out IdentityType IdentityType)
             => GenerateDisplayName(this, out IdentityType);
@@ -1206,10 +1250,8 @@ namespace XRL.World.Parts
                 return null;
             }
 
-            IdentityType = PastLife.GetIdentityType();
-
             string inLife = "In life this =subject.uD_xTag:UD_FleshGolems_CorpseText:CorpseDescription= was ";
-            string whoTheyWere = (PastLife.RefName ?? PastLife.GetBlueprint()?.DisplayName() ?? "unfortunate soul");
+            string whoTheyWere = GenerateWhoTheyWere(PastLife, out IdentityType) ?? "unfortunate soul";
             string endMark = ":\n";
             string oldDescription = PastLife.Description;
 
@@ -1224,14 +1266,6 @@ namespace XRL.World.Parts
 
             if (IdentityType == IdentityType.Corpse)
             {
-                if (PastLife?.PastPastLife?.GetIdentityType() < IdentityType.Villager)
-                {
-                    whoTheyWere = "the " + whoTheyWere;
-                }
-                else
-                {
-                    whoTheyWere = Grammar.A(whoTheyWere);
-                }
                 oldDescription = null;
                 endMark = ".";
             }
@@ -1239,7 +1273,7 @@ namespace XRL.World.Parts
             if (IdentityType > IdentityType.ParticipantVillager
                 || whoTheyWere.ContainsAny('[', ']'))
             {
-                whoTheyWere.OutRemove(out whoTheyWere, "[", "]");
+                RefRemove(ref whoTheyWere, "[", "]");
                 whoTheyWere = Grammar.A(whoTheyWere);
             }
             if (IdentityType == IdentityType.Librarian)
@@ -1269,7 +1303,7 @@ namespace XRL.World.Parts
                 endMark = ".";
             }
 
-            string postDescription = inLife + whoTheyWere.OutRemove(out whoTheyWere, "[", "]") + endMark + oldDescription;
+            string postDescription = inLife + RefRemove(ref whoTheyWere, "[", "]") + endMark + oldDescription;
             Debug.Log(nameof(postDescription), postDescription ?? NULL, indent[1]);
             return postDescription;
         }

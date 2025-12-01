@@ -864,31 +864,6 @@ namespace UD_FleshGolems
             return Int;
         }
 
-        public static string OutReplace(this string Text, string Old, string New, out string Result)
-        {
-            Result = Text;
-            if (!Text.IsNullOrEmpty())
-                Result = Text.Replace(Old, New);
-
-            return Result;
-        }
-        public static string OutRemove(this string Text, string String, out string Result)
-        {
-            return Text.OutReplace(String, "", out Result);
-        }
-        public static string OutRemove(this string Text, out string Result, params string[] Items)
-        {
-            Result = Text;
-            if (!Items.IsNullOrEmpty())
-            {
-                foreach (string item in Items)
-                {
-                    Result.OutRemove(item, out Result);
-                }
-            }
-            return Result;
-        }
-
         public static string YehNah(this bool? Yeh)
             => Utils.YehNah(Yeh);
 

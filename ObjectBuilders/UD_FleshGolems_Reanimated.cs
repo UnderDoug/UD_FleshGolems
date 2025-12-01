@@ -36,6 +36,7 @@ namespace XRL.World.ObjectBuilders
     [HasWishCommand]
     public class UD_FleshGolems_Reanimated : IObjectBuilder
     {
+        public const string CREATURE_BLUEPRINT = "Creature";
         public static bool IsGameRunning => The.Game != null && The.Game.Running;
         public static bool HasWorldGenerated => IsGameRunning && The.Player != null;
 
@@ -67,7 +68,7 @@ namespace XRL.World.ObjectBuilders
             Unkill(Object, Context);
         }
 
-        public static bool CreatureNeedsDelayedReanimation(GameObject Creature)
+        public static bool EntityNeedsDelayedReanimation(GameObject Creature)
         {
             return PartsThatNeedDelayedReanimation.Any(s => Creature.HasPart(s))
                 || BlueprintsThatNeedDelayedReanimation.Any(s => Creature.GetBlueprint().InheritsFrom(s))
@@ -272,7 +273,7 @@ namespace XRL.World.ObjectBuilders
                     corpse.Statistics ??= new();
                     string energyStatName = "Energy";
                     Statistic energyStat = null;
-                    if (GameObjectFactory.Factory.GetBlueprintIfExists(nameof(Entity)) is var baseCreatureBlueprint)
+                    if (CREATURE_BLUEPRINT.GetGameObjectBlueprint() is GameObjectBlueprint baseCreatureBlueprint)
                     {
                         if (!baseCreatureBlueprint.Stats.IsNullOrEmpty()
                             && baseCreatureBlueprint.Stats.ContainsKey(energyStatName))
@@ -287,6 +288,7 @@ namespace XRL.World.ObjectBuilders
                     {
                         energyStat = new(energyStatName, -100000, 100000, 0, corpse);
                     }
+                    corpse.Statistics ??= new();
                     corpse.Statistics.TryAdd(energyStatName, energyStat);
                 }
                 corpse.RequireAbilities();
@@ -314,16 +316,14 @@ namespace XRL.World.ObjectBuilders
                     destinedForReanimation.Corpse = corpse;
                     destinedForReanimation.BuiltToBeReanimated = true;
                     destinedForReanimation.Entity = Entity;
-                    /*
-                    if (CreatureNeedsDelayedReanimation(Creature))
+
+                    if (EntityNeedsDelayedReanimation(Entity))
                     {
                         destinedForReanimation.DelayTillZoneBuild = true;
                     }
-                    */
-
                 }
-                corpse.RequirePart<UD_FleshGolems_PastLife>();
-                    //.Initialize(Entity);
+                corpse.RequirePart<UD_FleshGolems_PastLife>()//;
+                    .Initialize(Entity);
             }
             catch (Exception x)
             {
@@ -337,10 +337,7 @@ namespace XRL.World.ObjectBuilders
             out GameObject Corpse,
             bool ForImmediateReanimation = true,
             bool OverridePastLife = true)
-        {
-            Corpse = ProduceCorpse(Creature, ForImmediateReanimation, OverridePastLife);
-            return Corpse != null;
-        }
+            => (Corpse = ProduceCorpse(Creature, ForImmediateReanimation, OverridePastLife)) != null;
 
         public static bool TransferInventory(GameObject Creature, GameObject Corpse)
         {
@@ -354,6 +351,7 @@ namespace XRL.World.ObjectBuilders
             Corpse.Inventory = corpseInventory;
             int erroredItems = 0;
             bool any = false;
+            bool anyToTransfer = creatureInventory.Objects.Count > 1;
             while (creatureInventory.Objects.Count > erroredItems)
             {
                 try
@@ -372,7 +370,7 @@ namespace XRL.World.ObjectBuilders
             if (Creature.Body is not Body creatureBody
                 || Corpse.Body is not Body corpseBody)
             {
-                return any;
+                return any || !anyToTransfer;
             }
             List<GameObject> equippedItems = Event.NewGameObjectList();
             List<BodyPart> equippedLimbs = new();
@@ -486,9 +484,6 @@ namespace XRL.World.ObjectBuilders
             bool transferred;
             try
             {
-                soonToBeCreature.RequirePart<Inventory>();
-                soonToBeCorpse.RequirePart<Inventory>();
-
                 transferred = TransferInventory(soonToBeCorpse, soonToBeCreature);
             }
             catch (Exception x)
@@ -499,7 +494,7 @@ namespace XRL.World.ObjectBuilders
             return transferred;
         }
 
-        public static bool Unkill(GameObject Creature, out GameObject Corpse, string Context = null)
+        public static bool Unkill(GameObject Entity, out GameObject Corpse, string Context = null)
         {
             Corpse = null;
             if (Context == "Sample")
@@ -510,16 +505,22 @@ namespace XRL.World.ObjectBuilders
             {
                 return false;
             }
-            if (Creature.HasPart<UD_FleshGolems_ReanimatedCorpse>())
+            if (Entity.HasPart<UD_FleshGolems_ReanimatedCorpse>())
             {
                 return false;
             }
-            if (!ReplaceEntityWithCorpse(Creature))
+            if (!ReplaceEntityWithCorpse(Entity))
             {
                 return false;
             }
-
-            if (Creature.IsPlayer())
+            if (!TryTransferInventoryToCorpse(Entity, Corpse))
+            {
+                MetricsManager.LogModError(Utils.ThisMod,
+                    "Failed to " + nameof(ReplaceEntityWithCorpse) + " due to failure of " + nameof(TryTransferInventoryToCorpse));
+                return false;
+            }
+            /*
+            if (Entity.IsPlayer())
             {
                 if (Corpse == null || !ReplacePlayerWithCorpse(Corpse: Corpse))
                 {
@@ -530,11 +531,12 @@ namespace XRL.World.ObjectBuilders
             else
             if (HasWorldGenerated)
             {
-                if (Corpse == null || !ReplaceEntityWithCorpse(Creature, FakeDeath: true, Corpse: Corpse, ForImmediateReanimation: true, OverridePastLife: true))
+                if (Corpse == null || !ReplaceEntityWithCorpse(Entity, FakeDeath: true, Corpse: Corpse, ForImmediateReanimation: true, OverridePastLife: true))
                 {
                     return false;
                 }
             }
+            */
             return true;
         }
         public static bool Unkill(GameObject Creature, string Context = null)
@@ -556,12 +558,6 @@ namespace XRL.World.ObjectBuilders
                 || (Corpse == null
                     && !TryProduceCorpse(Entity, out Corpse, ForImmediateReanimation, OverridePastLife)))
             {
-                return false;
-            }
-            if (!TryTransferInventoryToCorpse(Entity, Corpse))
-            {
-                MetricsManager.LogModError(Utils.ThisMod, 
-                    "Failed to " + nameof(ReplaceEntityWithCorpse) + " due to failure of " + nameof(TryTransferInventoryToCorpse));
                 return false;
             }
             bool replaced = false;
