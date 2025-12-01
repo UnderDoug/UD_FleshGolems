@@ -313,7 +313,8 @@ namespace XRL.World.Parts.Mutation
                 gameObject: Corpse,
                 animation: "Abilities/AbilityVFXAnimated",
                 objectId: Corpse.ID,
-                configurationString: Corpse.Render.Tile + ";" + Corpse.Render.GetTileForegroundColor() + ";" + Corpse.Render.getDetailColor());
+                configurationString: Corpse.Render.Tile + ";" + Corpse.Render.GetTileForegroundColor() + ";" + Corpse.Render.getDetailColor(),
+                async: true);
 
             "=subject.Name= =subject.verb:ranimate= =object.refname=."
                 .StartReplace()

@@ -26,8 +26,8 @@ namespace UD_FleshGolems.Logging
             Char = ' ';
             if (Debug.HaveIndents())
             {
-                BaseValue = Debug.LastIndent.CapIndent();
-                LastValue = Debug.LastIndent.CapIndent();
+                BaseValue = CapIndent(Debug.LastIndent.LastValue);
+                LastValue = CapIndent(Debug.LastIndent.LastValue);
                 Factor = Debug.LastIndent.Factor;
                 Char = Debug.LastIndent.Char;
             }

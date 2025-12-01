@@ -51,6 +51,7 @@ namespace XRL.World.Parts
         }
 
         public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolems_reanimated|reanimated}}";
+        public const string REANIMATED_NO_ADJECTIVE_PROPTAG = "UD_FleshGolems ReanimatedCorpse NoPrefix";
 
         private const string LIBRARIAN_FRAGMENT = "In the narthex of the Stilt, cloistered beneath a marble arch and close to";
 
@@ -216,22 +217,22 @@ namespace XRL.World.Parts
                 });
 
             ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
-            Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[2]);
+            Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[1]);
             foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
             {
                 Debug.YehNah(
                     Message: partToRemove,
                     Good: ParentObject?.RemovePart(partToRemove),
-                    Indent: indent[3]);
+                    Indent: indent[2]);
             }
-            Debug.Log(nameof(BleedLiquid), BleedLiquid ?? NULL, indent[2]);
+            Debug.Log(nameof(BleedLiquid), BleedLiquid ?? NULL, indent[1]);
             if (BleedLiquid.IsNullOrEmpty())
             {
                 Debug.Log(
                     nameof(GetBleedLiquidEvent) + "." + 
                     nameof(GetBleedLiquidEvent.GetFor), 
                     GetBleedLiquidEvent.GetFor(ParentObject),
-                    indent[3]);
+                    indent[2]);
             }
 
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
@@ -255,6 +256,10 @@ namespace XRL.World.Parts
             IsAlteredDescription = true;
             return this;
         }
+        public static bool AllowReanimatedPrefix(GameObject Corpse)
+            => Corpse.GetPropertyOrTag(REANIMATED_NO_ADJECTIVE_PROPTAG) is not string noAdjectivePropTag
+            || !int.TryParse(noAdjectivePropTag, out int noAdjectiveResult)
+            || noAdjectiveResult < 1;
 
         public static bool TryGetLiquidPortion(string LiquidComponent, out LiquidPortion LiquidPortion)
         {
@@ -403,11 +408,8 @@ namespace XRL.World.Parts
                 {
                     E.AddClause("corpse", CorpseClause);
                 }
-                // E.AddTag(identityType.ToString() + " (" + (int)identityType + ")");
             }
-            E.ReplacePrimaryBase(PastLife.GenerateDisplayName());
-            if (int.TryParse(E.Object?.GetPropertyOrTag("UD_FleshGolems_NoReanimatedNamePrefix", "0"), out int NoReanimatedNamePrefix)
-                && NoReanimatedNamePrefix < 1)
+            if (AllowReanimatedPrefix(E.Object))
             {
                 E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
             }
@@ -439,7 +441,7 @@ namespace XRL.World.Parts
                 foreach (BodyPart bodyPart in frankenBody.LoopParts(BodyPartHasRaggedNaturalWeapon))
                 {
                     if (bodyPart.DefaultBehavior is GameObject defaultBehavior
-                        && defaultBehavior.GetBlueprint().InheritsFrom("UD_FleshGolems Ragged Weapon")
+                        && defaultBehavior.InheritsFrom("UD_FleshGolems Ragged Weapon")
                         && defaultBehavior.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedNaturalWeaponPart))
                     {
                         raggedNaturalWeaponPart.Wielder = ParentObject;

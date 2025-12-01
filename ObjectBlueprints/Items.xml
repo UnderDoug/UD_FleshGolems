@@ -365,8 +365,9 @@
   <object Name="UD_FleshGolems Cragmensch Corpse" Inherits="Humanoid Corpse">
     <mixin Name="LargeBoulder" />
     <mixin Name="UD_FleshGolems Mineral Corpse Attributes" />
-    <part Name="Render" ColorString="&amp;W" TileColor="&amp;W" DetailColor="Y" />
+    <part Name="Render" DisplayName="large boulder" ColorString="&amp;W" TileColor="&amp;W" DetailColor="Y" />
     <removebuilder Name="RandomTile" />
+    <removepart Name="SizeAdjective" />
   </object>
   
   <object Name="UD_FleshGolems Chute Crab Corpse" Inherits="Crab Corpse">

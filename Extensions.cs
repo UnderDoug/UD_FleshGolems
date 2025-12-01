@@ -88,9 +88,10 @@ namespace UD_FleshGolems
                 && inheritedTypes.Contains(Type));
 
         public static bool IsPlayerBlueprint(this string Blueprint)
-        {
-            return Blueprint == Startup.PlayerBlueprint;
-        }
+            => Blueprint == Startup.PlayerBlueprint;
+
+        public static bool HasPlayerBlueprint(this GameObject Entity)
+            => Entity.Blueprint.IsPlayerBlueprint();
 
         public static string ThisManyTimes(this string @string, int Times = 1)
         {
@@ -268,6 +269,15 @@ namespace UD_FleshGolems
             return false;
         }
 
+        public static bool ContainsAny<T>(this IEnumerable<T> Enumerable, params T[] Items)
+        {
+            if (Items == null || Enumerable == null)
+            {
+                return (Items == null) == (Enumerable == null);
+            }
+            return Enumerable.OverlapsWith(Items);
+        }
+
         public static bool ContainsAll<T>(this ICollection<T> Collection1, ICollection<T> Collection2)
         {
             int matches = 0;
@@ -287,10 +297,18 @@ namespace UD_FleshGolems
                         {
                             break;
                         }
-                    }    
+                    }
                 }
             }
             return targetMatches >= matches;
+        }
+        public static bool ContainsAll<T>(this ICollection<T> Collection, params T[] Items)
+        {
+            if (Items == null || Collection == null)
+            {
+                return (Items == null) == (Collection == null);
+            }
+            return Collection.ContainsAll((ICollection<T>)Items);
         }
 
         public static GameObject SetWontSell(this GameObject Item, bool WontSell)
@@ -505,10 +523,13 @@ namespace UD_FleshGolems
             return false;
         }
 
+        public static bool InheritsFrom(this GameObject Object, string BaseBlueprint)
+            => Object != null
+            && Object.Blueprint.InheritsFrom(BaseBlueprint);
+
         public static bool InheritsFrom(this string Blueprint, string BaseBlueprint)
-        {
-            return Utils.ThisBlueprintInheritsFromThatOne(Blueprint, BaseBlueprint);
-        }
+            => Utils.ThisBlueprintInheritsFromThatOne(Blueprint, BaseBlueprint);
+
         public static bool InheritsFromAny(this string Blueprint, List<string> BaseBlueprints)
         {
             foreach (string baseBlueprint in BaseBlueprints)
@@ -522,34 +543,24 @@ namespace UD_FleshGolems
         }
 
         public static bool IsBaseBlueprint(this string Blueprint)
-        {
-            return Utils.IsBaseGameObjectBlueprint(Blueprint);
-        }
+            => Utils.IsBaseGameObjectBlueprint(Blueprint);
 
         public static bool IsExcludedFromDynamicEncounters(this string Blueprint)
-        {
-            return Utils.IsGameObjectBlueprintExcludedFromDynamicEncounters(Blueprint);
-        }
+            => Utils.IsGameObjectBlueprintExcludedFromDynamicEncounters(Blueprint);
 
         public static bool HasSTag(this GameObjectBlueprint Blueprint, string STag)
-        {
-            return Blueprint.HasTag("Semantic" + STag);
-        }
+            => Blueprint.HasTag("Semantic" + STag);
+
         public static bool HasSTag(this string Blueprint, string STag)
-        {
-            return Blueprint.GetGameObjectBlueprint() is var gameObjectBlueprint
-                && gameObjectBlueprint.HasSTag(STag);
-        }
+            => Blueprint.GetGameObjectBlueprint() is var gameObjectBlueprint
+            && gameObjectBlueprint.HasSTag(STag);
 
         public static bool IsChiliad(this GameObjectBlueprint Blueprint)
-        {
-            return Blueprint.HasSTag("Chiliad");
-        }
+            => Blueprint.HasSTag("Chiliad");
+
         public static bool IsChiliad(this string Blueprint)
-        {
-            return Blueprint.GetGameObjectBlueprint() is var gameObjectBlueprint
-                && gameObjectBlueprint.IsChiliad();
-        }
+            => Blueprint.GetGameObjectBlueprint() is var gameObjectBlueprint
+            && gameObjectBlueprint.IsChiliad();
 
         public static IEnumerable<BodyPart> LoopParts(this Body Body, Predicate<BodyPart> Filter)
         {
@@ -821,6 +832,19 @@ namespace UD_FleshGolems
                 Int = Max;
             }
             return Int;
+        }
+
+        public static string Remove(this string Text, string String)
+            => Text.Replace(String, "");
+
+        public static string RemoveAll(this string Text, params string[] Items)
+        {
+            if (!Items.IsNullOrEmpty())
+                foreach (string item in Items)
+                    if (!item.IsNullOrEmpty())
+                        Text = Text.Remove(item);
+
+            return Text;
         }
 
         public static string YehNah(this bool? Yeh)
