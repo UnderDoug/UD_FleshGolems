@@ -366,7 +366,7 @@
     <mixin Name="UD_FleshGolems Plastiform Corpse Attributes" />
     <part Name="LiquidVolume" MaxVolume="-1" Volume="120" StartVolume="40-200" InitialLiquid="proteangunk-1000" />
     <part Name="Physics" FlameTemperature="5000" VaporTemperature="9000" />
-    <part Name="Render" DisplayName="puddle of gunk" 
+    <part Name="Render" DisplayName="[puddle of gunk]" 
           RenderString="~" ColorString="&amp;c"
           Tile="Liquids/Water/puddle_1.png" TileColor="&amp;c" DetailColor="y"
           RenderLayer="2" RenderIfDark="true" />
