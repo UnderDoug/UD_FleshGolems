@@ -48,6 +48,7 @@
   <object Name="UD_FleshGolems Corpse AlwaysReanimated" >
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
     <part Name="Brain" Factions="Previously Sentient Beings-100" />
+    <tag Name="AssociatedFactions" Value="Previously Sentient Beings" />
   </object>
 
   <object Name="UD_FleshGolems Reanimated Corpse" Inherits="Corpse">
