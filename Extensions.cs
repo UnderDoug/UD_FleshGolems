@@ -434,10 +434,11 @@ namespace UD_FleshGolems
             return null;
         }
         public static bool TryGetCorpseBlueprint(this GameObjectBlueprint Blueprint, out string CorpseBlueprint)
-        {
-            return (CorpseBlueprint = Blueprint.GetCorpseBlueprint()) != null
-                && GameObjectFactory.Factory.HasBlueprint(CorpseBlueprint);
-        }
+            => (CorpseBlueprint = Blueprint?.GetCorpseBlueprint()) != null
+            && GameObjectFactory.Factory.HasBlueprint(CorpseBlueprint);
+
+        public static bool TryGetCorpseModel(this GameObjectBlueprint Blueprint, out GameObjectBlueprint CorpseModel)
+            => (CorpseModel = Blueprint?.GetCorpseBlueprint()?.GetGameObjectBlueprint()) != null;
 
         public static int? GetCorpseChance(this GameObjectBlueprint Blueprint)
         {

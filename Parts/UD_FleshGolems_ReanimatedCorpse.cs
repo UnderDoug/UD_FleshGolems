@@ -193,7 +193,10 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(NewDescription), !NewDescription.IsNullOrEmpty()),
                 });
 
-            ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
+            if (!ParentObject.HasPartDescendedFrom<IIconColorPart>())
+            {
+                ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
+            }
             Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[1]);
             foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
             {
@@ -386,8 +389,7 @@ namespace XRL.World.Parts
                 E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
             }
             else
-            if (!IsRenderDisplayNameUpdated
-                && PastLife != null
+            if (PastLife != null
                 && PastLife.GenerateDisplayName(out IdentityType identityType) is string newDisplayName)
             {
                 E.ReplacePrimaryBase(newDisplayName);
@@ -505,10 +507,8 @@ namespace XRL.World.Parts
                 PastLife?.AlignWithPreviouslySentientBeings();
                 if (ParentObject.Render is Render corpseRender)
                 {
+                    PastLife.RenderDisplayName = null;
                     corpseRender.DisplayName = ParentObject.GetReferenceDisplayName(Short: true);
-                    ParentObject.RemovePart<Titles>();
-                    ParentObject.RemovePart<Epithets>();
-                    ParentObject.RemovePart<Honorifics>();
                 }
             }
             return base.HandleEvent(E);

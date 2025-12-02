@@ -327,9 +327,120 @@
       HardMaterial="stipe" />
   </object>
 
-  <!-- 
+  <!--
   
-  Corpse Additions/Fixes/Adjustments
+  Ooze & Jelly Corpses
+  
+  -->
+  <object Name="UD_FleshGolems Plastiform Corpse Attributes">
+    <tag Name="UD_FleshGolems Necrology Taxon Kingdom" Value="Plastiform" />
+    <removepart Name="Food" />
+    <removetag Name="CanCookTemporary" />
+    <xtagTextFragments
+      Skin="film"
+      PoeticFeatures="split membrane,leaking fluid,torn pouch,congealed liquid"
+      YounglingNoise="*gurgle*"
+      Activity="suffering endlessly"
+      VillageActivity="steeping in perpetual existential pain"
+      NeedsItemFor="to persue oblivion,because I want it,because it was mine while I lived,just to have,because it would ease my suffering,for secret reasons I won't tell you"
+      SacredThing="oblivion,a way to cease the endless suffering,the answer to why this was allowed to happen"
+      ArableLand="a place to truly belong,a vast ocean of still liquid,somwhere forgetten to the ravages of time"
+      ValuedOre="liquids,fluids,b...brains?..,answers to existential questions" />
+    <stag Name="HardMaterial" Value="membrane" />
+    <xtagUD_FleshGolems_CorpseText
+      CorpseDescription="puddle"
+      Components="grime,liquid,gunk"
+      WretchedVerbs="slurping,gushing,crashing,swirling"
+      UnappealingAdjectives="wet,moist,sloshing"
+      UnsettlingNoises="slaps,bubbles,pops,squelch,slurps,gurgles" />
+    <xtagUD_FleshGolems_Ragged
+      GrossAdjective="slick,sticky,viscous"
+      SoftMaterial="slime,viscera,ooze,goo,film"
+      Skin="film"
+      HarshAdjective="split,slashed,shorn,torn"
+      HardMaterial="membrane" />
+  </object>
+  
+  <object Name="UD_FleshGolems Base Ooze Corpse" Inherits="Corpse">
+    <mixin Name="Water" />
+    <mixin Name="UD_FleshGolems Plastiform Corpse Attributes" />
+    <part Name="LiquidVolume" MaxVolume="-1" Volume="120" StartVolume="40-200" InitialLiquid="proteangunk-1000" />
+    <part Name="Physics" FlameTemperature="5000" VaporTemperature="9000" />
+    <part Name="Render" DisplayName="puddle of gunk" 
+          RenderString="~" ColorString="&amp;c"
+          Tile="Liquids/Water/puddle_1.png" TileColor="&amp;c" DetailColor="y"
+          RenderLayer="2" RenderIfDark="true" />
+    <tag Name="BodyType" Value="Jelly" />
+    <tag Name="Species" Value="jelly" />
+    <removetag Name="Meat" />
+    <tag Name="BaseObject" Value="*noinherit" />
+    <tag Name="ExcludeFromDynamicEncounters" />
+  </object>
+  
+  <object Name="UD_FleshGolems Ooze Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,slime-500" />
+    <part Name="Render" DisplayName="{{g|slimy}} puddle of gunk" DetailColor="g" />
+  </object>
+  
+  <object Name="UD_FleshGolems Brown Sludge Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,sludge-500" />
+    <part Name="Render" DisplayName="{{w|sludgy}} puddle of gunk" DetailColor="w" />
+  </object>
+  <object Name="UD_FleshGolems Green Goo Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,goo-500" />
+    <part Name="Render" DisplayName="{{G|gooey}} puddle of gunk" DetailColor="G" />
+  </object>
+  <object Name="UD_FleshGolems Black Jel Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,ooze-500" />
+    <part Name="Render" DisplayName="{{K|oozing}} puddle of gunk" DetailColor="K" />
+  </object>
+  <object Name="UD_FleshGolems Blue Jel Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,convalessence-500" />
+    <part Name="Render" DisplayName="{{C|luminous}} puddle of gunk" DetailColor="C" />
+  </object>
+  <object Name="UD_FleshGolems Purple Jell Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,wine-250,acid-250" />
+    <part Name="Render" DisplayName="{{m|lush}} {{G|acidic}} puddle of gunk" DetailColor="m" />
+  </object>
+  <object Name="UD_FleshGolems Red Jell Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,lava-500" />
+    <part Name="Render" DisplayName="{{lava|magmatic}} puddle of gunk" DetailColor="R" />
+  </object>
+  <object Name="UD_FleshGolems Zero Jell Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,water-499,warmstatic-1" />
+    <part Name="Render" DisplayName="{{Y|dilute}} {{Y|entropic}} puddle of gunk" DetailColor="Y" />
+  </object>
+  
+  <object Name="UD_FleshGolems Gelatinous Frustum Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,putrid-500" />
+    <part Name="Render" DisplayName="{{putrid|putrid}} puddle of gunk" DetailColor="K" />
+  </object>
+  <object Name="UD_FleshGolems Gelatinous Prism Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,salt-500" />
+    <part Name="Render" DisplayName="{{Y|salty}} puddle of gunk" DetailColor="Y" />
+  </object>
+  <object Name="UD_FleshGolems Gelatinous Antiprism Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,brainbrine-500" />
+    <part Name="Render" DisplayName="{{nervous|nervous}} puddle of gunk" DetailColor="W" />
+  </object>
+  
+  <object Name="UD_FleshGolems Humor Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,acid-166,lava-166,convalessence-166,2-sunslag" />
+    <part Name="Render" DisplayName="{{C-G-W-R alternation|volatile}} puddle of gunk" DetailColor="w" />
+  </object>
+  
+  <object Name="UD_FleshGolems SoupSludge Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="Render" DisplayName="{{c|potential}} puddle of gunk" DetailColor="C" />
+  </object>
+  
+  <object Name="UD_FleshGolems Plasma Jelly Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="lava-498,acid-498,sunslag-2" />
+    <part Name="Render" DisplayName="{{plasma|plasmatic}} puddle of gunk" DetailColor="G" />
+  </object>
+  
+  <!--
+  
+  Mineral Corpses
   
   -->
   <object Name="UD_FleshGolems Mineral Corpse Attributes">
@@ -369,32 +480,122 @@
     <removebuilder Name="RandomTile" />
     <removepart Name="SizeAdjective" />
   </object>
+
+  <!-- 
   
+  Corpse Additions/Fixes/Adjustments
+  
+  -->
   <object Name="UD_FleshGolems Chute Crab Corpse" Inherits="Crab Corpse">
     <part Name="Physics" Weight="20" />
     <part Name="Render" DisplayName="chute crab corpse" ColorString="&amp;Y" />
     <removepart Name="Butcherable" />
     <tag Name="Tier" Value="2" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
   <object Name="UD_FleshGolems Agolzvuv Corpse" Inherits="Arthropod Corpse">
     <part Name="Render" DisplayName="agolzvuv corpse" ColorString="&amp;w" TileColor="&amp;w" DetailColor="y" />
     <part Name="Physics" Weight="20" />
     <tag Name="Tier" Value="2" />
-  </object>
-  
-  <object Name="UD_FleshGolems Slynth Corpse" Inherits="UD_FleshGolems Plant Corpse">
-    <part Name="Render" DisplayName="{{g|slynth}} corpse" DetailColor="M" />
-    <part Name="Physics" Weight="200" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
   </object>
   
   <object Name="UD_FleshGolems Insect Corpse" Inherits="Arthropod Corpse">
     <part Name="Render" DisplayName="insect corpse" ColorString="&amp;w" TileColor="&amp;w" DetailColor="y" />
   </object>
+  <object Name="UD_FleshGolems Winged Insect Corpse" Inherits="Winged Arthropod Corpse">
+    <part Name="Render" DisplayName="winged insect corpse" ColorString="&amp;w" TileColor="&amp;w" DetailColor="y" />
+  </object>
+  
+  <object Name="UD_FleshGolems Cat Corpse" Inherits="Small Animal Corpse">
+    <part Name="Render" DisplayName="cat corpse" />
+  </object>
+  <object Name="UD_FleshGolems Dog Corpse" Inherits="Small Animal Corpse">
+    <part Name="Render" DisplayName="dog corpse" />
+  </object>
+  <object Name="UD_FleshGolems Honey Skunk Corpse" Inherits="Small Animal Corpse">
+    <part Name="Render" DisplayName="honey skunk corpse" />
+  </object>
+  <object Name="UD_FleshGolems Crypt Ferret Corpse" Inherits="Small Animal Corpse">
+    <part Name="Render" DisplayName="crypt ferret corpse" DetailColor="K" />
+    <part Name="Description" Short="A mound of wet fur and rotting flesh puts some elevation to the ground." />
+    <part Name="Food" Message="The bite burst into so many strands of sinew." />
+    <part Name="Physics" Weight="40" />
+    <tag Name="Tier" Value="4" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <object Name="UD_FleshGolems Rimewyk Corpse" Inherits="Scaled Reptile Corpse">
+    <part Name="Render" DisplayName="rimewyk corpse" DetailColor="C" />
+    <tag Name="Tier" Value="3" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <object Name="UD_FleshGolems Bird Corpse" Inherits="Corpse">
+    <part Name="Description" Short="A mound of slick feathers and rotting flesh puts some elevation to the ground." />
+    <part Name="Physics" Weight="10" />
+    <part Name="Food" Message="The meat is gamey." />
+    <tag Name="BaseObject" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Glowcrow Corpse" Inherits="UD_FleshGolems Bird Corpse">
+    <part Name="Render" DisplayName="glowcrow corpse" ColorString="&amp;m" />
+    <part Name="Description" Short="Dimmed motes dot the feathers." />
+    <part Name="Commerce" Value="1" />
+    <tag Name="Tier" Value="1" />
+  </object>
+  <object Name="UD_FleshGolems Dream Wren Corpse" Inherits="UD_FleshGolems Bird Corpse">
+    <part Name="Render" DisplayName="dream wren corpse" ColorString="&amp;b" />
+    <part Name="Commerce" Value="40" />
+    <tag Name="Tier" Value="6" />
+  </object>
+  
+  <object Name="UD_FleshGolems Ixlthyxl Corpse" Inherits="Fish Corpse">
+    <part Name="Render" DisplayName="ixlthyxl corpse" ColorString="&amp;m" />
+    <tag Name="Tier" Value="3" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems Prism Perch Corpse" Inherits="Fish Corpse">
+    <part Name="Render" DisplayName="prism perch corpse" ColorString="&amp;Y" />
+    <tag Name="Tier" Value="3" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <object Name="UD_FleshGolems Phase Spider Corpse" Inherits="Arthropod Corpse">
+    <part Name="Render" DisplayName="phase spider corpse" ColorString="&amp;c" />
+    <part Name="Physics" Weight="90" />
+    <part Name="Commerce" Value="20" />
+    <part Name="Food" Message="Somehow your stomach still feels empty." />
+    <tag Name="Tier" Value="6" />
+    <tag Name="Role" Value="Rare" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  
+  <object Name="UD_FleshGolems Tortoise Corpse" Inherits="Scaled Reptile Corpse">
+    <part Name="Render" DisplayName="tortoise corpse" ColorString="&amp;g" />
+    <part Name="Food" Message="Out of the cracked pieces of shell a few strips of salt-coffined meat preserve." />
+    <part Name="Description" Short="A mound of cracked keratin and rotting flesh puts some elevation to the ground." />
+    <part Name="Physics" Weight="1200" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems n-Dimensional Starshell Corpse" Inherits="Scaled Reptile Corpse">
+    <part Name="Render" DisplayName="n-dimensional starshell corpse" ColorString="&amp;O" />
+    <part Name="Food" Message="It tastes out of this world." />
+    <part Name="Description" Short="A mosaic of cracked keratin and dematierialising flesh puts some elevation to the ground." />
+    <tag Name="Tier" Value="7" />
+    <tag Name="Role" Value="Epic" />
+    <part Name="RevealDimensionOnLook" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems Slynth Corpse" Inherits="UD_FleshGolems Plant Corpse">
+    <part Name="Render" DisplayName="{{g|slynth}} corpse" DetailColor="M" />
+    <part Name="Physics" Weight="200" />
+  </object>
   
   <object Name="UD_FleshGolems God Corpse" Inherits="Corpse">
     <part Name="Render" DisplayName="{{M|immense}} corpse" ColorString="&amp;r" TileColor="&amp;r" DetailColor="M" />
-    <part Name="Description" Short="Simple gore and the reality of death are, in their own right, some manner of disturbing to behold, but are both wholly mundane in the face of the apparent violence necessary to bring about this particular monument to mortality. Worshipped in life, and, perhaps, in death, worshipped at; for what makes a better shrine to the inevitable, than the single most compelling evidence for its existince?" />
+    <part Name="Description" Short="Simple gore and the reality of death are, in their own right, some manner of disturbing to behold, but are both wholly mundane in the face of the apparent violence necessary to bring about this particular monument to mortality. Worshipped in life, and, perhaps, in death, worshipped at; for what makes a better shrine to the inevitable, than the single most compelling evidence for its existence?" />
     <part Name="Physics" Weight="1200" />
     <part Name="Commerce" Value="250" />
     <tag Name="Tier" Value="8" />

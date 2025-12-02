@@ -62,21 +62,22 @@ namespace UD_FleshGolems.Capabilities
         [Serializable]
         public enum CountsAs
         {
-            None,
             Any,
-            Keyword,
             Blueprint,
-            Population,
-            Faction,
-            Species,
-            Genotype,
-            Subtype,
             OtherCorpse,
+            Subtype,
+            Genotype,
+            Species,
+            Faction,
+            Population,
+            Keyword,
+            None,
         }
 
         public const string EXCLUDE_FROM_CACHE_PROPTAG = "UD_FleshGolems Necromancy ExcludeFromNecronomicon";
         public const string IGNORE_EXCLUDE_PROPTAG = "UD_FleshGolems PastLife Ignore ExcludeFromDynamicEncounters WhenFinding";
         public const string CORPSE_COUNTS_AS_PROPTAG = "UD_FleshGolems PastLife CountsAs";
+        public const string CORPSE_EXCLUDE_COUNTS_AS_PROPTAG = "UD_FleshGolems PastLife ExcludeFrom CountsAs";
         public const string CORPSE_COUNTS_AS_POSTLOAD_PROPTAG = "UD_FleshGolems_PostLoad_CountsAs";
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
 
@@ -268,24 +269,17 @@ namespace UD_FleshGolems.Capabilities
             return entityBlueprint;
         }
         public EntityBlueprint RequireEntityBlueprint(GameObjectBlueprint Blueprint)
-        {
-            return RequireEntityBlueprint(Blueprint.Name);
-        }
+            => RequireEntityBlueprint(Blueprint.Name);
+
         public EntityBlueprint RequireEntityBlueprint(GameObject Entity)
-        {
-            return RequireEntityBlueprint(Entity.Blueprint);
-        }
+            => RequireEntityBlueprint(Entity.Blueprint);
 
         public static bool IsReanimatableCorpse(GameObjectBlueprint Blueprint)
-        {
-            return UD_FleshGolems_NanoNecroAnimation.IsReanimatableCorpse(Blueprint);
-        }
+            => UD_FleshGolems_NanoNecroAnimation.IsReanimatableCorpse(Blueprint);
 
         public static bool IsReanimatableCacheableCorpse(GameObjectBlueprint Blueprint)
-        {
-            return IsReanimatableCorpse(Blueprint)
-                && !Blueprint.HasTagOrProperty(EXCLUDE_FROM_CACHE_PROPTAG);
-        }
+            => IsReanimatableCorpse(Blueprint)
+            && !Blueprint.HasTagOrProperty(EXCLUDE_FROM_CACHE_PROPTAG);
 
         public UD_FleshGolems_NecromancySystem InitializeCorpseSheetsCorpses(out bool Initialized)
         {
@@ -307,25 +301,20 @@ namespace UD_FleshGolems.Capabilities
             return this;
         }
 
-        private static IEnumerable<GameObjectBlueprint> GetEntitiesWithCorpseForInit(Predicate<GameObjectBlueprint> Filter = null)
-            => GameObjectFactory.Factory.BlueprintList
-                .Where(bp => bp.HasPart(nameof(Corpse)))
-                .Where(bp => !bp.IsBaseBlueprint())
-                .Where(bp => !bp.IsChiliad())
-                .Where(bp => Filter == null || Filter(bp));
-
         public IEnumerable<EntityBlueprint> GetEntityBlueprintsWithCorpse(Predicate<GameObjectBlueprint> Filter = null)
         {
             if (!EntityPrimaryCorpsesInitialized)
             {
                 yield break;
             }
-            foreach (EntityBlueprint entityBlueprint in EntityBlueprints.Values)
+            List<EntityBlueprint> entityBlueprints = EntityBlueprints
+                ?.Where(entry => Filter == null || Filter(entry.Value.GetGameObjectBlueprint()))
+                ?.Select(entry => entry.Value)
+                ?.ToList();
+
+            foreach (EntityBlueprint entityBlueprint in entityBlueprints)
             {
-                if (Filter == null || Filter(entityBlueprint.GetGameObjectBlueprint()))
-                {
-                    yield return entityBlueprint;
-                }
+                yield return entityBlueprint;
             }
         }
         public IEnumerable<GameObjectBlueprint> GetEntityModelsWithCorpse(Predicate<GameObjectBlueprint> Filter = null)
@@ -336,7 +325,10 @@ namespace UD_FleshGolems.Capabilities
             }
         }
 
-        public static bool BlueprintHasCorpse(GameObjectBlueprint Blueprint) => Blueprint.HasPart(nameof(Corpse));
+        public static bool BlueprintHasCorpseThatIsCorpse(GameObjectBlueprint Blueprint)
+            => Blueprint.HasPart(nameof(Corpse))
+            && Blueprint.TryGetCorpseModel(out GameObjectBlueprint corpseModel)
+            && corpseModel.IsCorpse();
 
         public UD_FleshGolems_NecromancySystem InitializeEntityPrimaryCorpses(out bool Initialized)
         {
@@ -345,15 +337,11 @@ namespace UD_FleshGolems.Capabilities
             if (!EntityPrimaryCorpsesInitialized)
             {
                 int counter = 0;
-                foreach (GameObjectBlueprint corpseHavingEntity in GameObjectFactory.Factory.GetBlueprints(BlueprintHasCorpse))
+                foreach (GameObjectBlueprint corpseHavingEntity in GameObjectFactory.Factory.GetBlueprints(BlueprintHasCorpseThatIsCorpse))
                 {
                     SetLoadingStatusCorpses(counter++ % 50 == 0);
-                    if (
-                        //!corpseHavingEntity.IsBaseBlueprint()
-                        //&& 
-                        !corpseHavingEntity.IsChiliad()
-                        && corpseHavingEntity.TryGetCorpseBlueprintAndChance(out string corpseBlueprint, out int corpseChance)
-                        && corpseBlueprint.IsCorpse())
+                    if (!corpseHavingEntity.IsChiliad()
+                        && corpseHavingEntity.TryGetCorpseBlueprintAndChance(out string corpseBlueprint, out int corpseChance))
                     {
                         RequireCorpseSheet(corpseBlueprint)
                             .AddPrimaryEntity(corpseHavingEntity, corpseChance);
@@ -633,24 +621,33 @@ namespace UD_FleshGolems.Capabilities
             && Blueprint.HasTagOrProperty(IGNORE_EXCLUDE_PROPTAG)
             || !Blueprint.IsExcludedFromDynamicEncounters();
 
-        public bool IsEntityWithCorpse(GameObjectBlueprint Entity) => GetEntityModelsWithCorpse().Contains(Entity);
+        public bool IsEntityWithCorpse(GameObjectBlueprint Entity)
+            => GetEntityModelsWithCorpse().Contains(Entity);
+
+        public bool IsNotExcludedFromCountsAs(GameObjectBlueprint EntityModel, CountsAs CountsAs)
+            => CountsAs > CountsAs.OtherCorpse
+            || !EntityModel.HasTagOrProperty(CORPSE_EXCLUDE_COUNTS_AS_PROPTAG);
 
         private List<EntityWeightCountsAs> GetCorpseCountsAsEntityWeights(
-            CountsAs countsAs,
-            List<string> countsAsParamaters)
+            CountsAs CountsAs,
+            List<string> CountsAsParamaters)
         {
             using Indent indent = new();
             Debug.LogMethod(indent,
                 ArgPairs: new ArgPair[]
                 {
-                    Debug.Arg(nameof(countsAs), countsAs),
-                    Debug.Arg(nameof(countsAsParamaters), "\"" + countsAsParamaters.SafeJoin() + "\""),
+                    Debug.Arg(nameof(CountsAs), CountsAs),
+                    Debug.Arg(nameof(CountsAsParamaters), "\"" + CountsAsParamaters.SafeJoin() + "\""),
                 });
 
             List<GameObjectBlueprint> entitiesWithCorpses = new();
             foreach (EntityBlueprint entityBlueprint in EntityBlueprints.Values)
             {
-                entitiesWithCorpses.Add(entityBlueprint.GetGameObjectBlueprint());
+                if (entityBlueprint.GetGameObjectBlueprint() is var entityModel
+                    && IsNotExcludedFromCountsAs(entityModel, CountsAs))
+                {
+                    entitiesWithCorpses.Add(entityBlueprint.GetGameObjectBlueprint());
+                }
             }
 
             List<GameObjectBlueprint> countsAsModels = new();
@@ -684,20 +681,20 @@ namespace UD_FleshGolems.Capabilities
             }
             GameObjectBlueprint toGameObjectBlueprint(string blueprint) => blueprint.GetGameObjectBlueprint();
             bool isNot = false;
-            string primaryCountsAsParam = countsAsParamaters[1];
+            string primaryCountsAsParam = CountsAsParamaters[1];
             if (primaryCountsAsParam.EqualsNoCase("not"))
             {
-                primaryCountsAsParam = countsAsParamaters[2];
+                primaryCountsAsParam = CountsAsParamaters[2];
                 isNot = true;
             }
-            switch (countsAs)
+            switch (CountsAs)
             {
                 case CountsAs.Any:
                     countsAsModels = entitiesWithCorpses;
                     break;
 
                 case CountsAs.Keyword:
-                    countsAsModels = ProcessCountsAsKeyword(countsAsParamaters);
+                    countsAsModels = ProcessCountsAsKeyword(CountsAsParamaters);
                     break;
 
                 case CountsAs.Blueprint:
@@ -804,9 +801,9 @@ namespace UD_FleshGolems.Capabilities
             else
             {
                 int weight = 0;
-                if (countsAs == CountsAs.Any)
+                if (CountsAs == CountsAs.Any)
                 {
-                    if (countsAsParamaters.Count > 1
+                    if (CountsAsParamaters.Count > 1
                         && int.TryParse(primaryCountsAsParam, out int countsAsAnyParamWeight))
                     {
                         weight = Math.Min(countsAsAnyParamWeight, 100);
@@ -816,8 +813,8 @@ namespace UD_FleshGolems.Capabilities
                         weight = 100;
                     }
                 }
-                if (countsAsParamaters.Count > 2
-                    && int.TryParse(countsAsParamaters[^1], out int countsAsParamWeight))
+                if (CountsAsParamaters.Count > 2
+                    && int.TryParse(CountsAsParamaters[^1], out int countsAsParamWeight))
                 {
                     weight = Math.Min(countsAsParamWeight, 100);
                 }
@@ -829,13 +826,13 @@ namespace UD_FleshGolems.Capabilities
                         => new EntityWeightCountsAs(
                             Entity: RequireEntityBlueprint(bpm.Name),
                             Weight: weight,
-                            CountsAs: countsAs));
+                            CountsAs: CountsAs));
                 }
                 return countsAsModels.ConvertAll(bpm 
                     => new EntityWeightCountsAs(
                         Entity: RequireEntityBlueprint(bpm.Name),
                         Weight: weight,
-                        CountsAs: countsAs));
+                        CountsAs: CountsAs));
             }
             return new();
         }
@@ -895,11 +892,11 @@ namespace UD_FleshGolems.Capabilities
                         Debug.CheckNah(corpseBlueprint.ToString() + " has no model or doesn't have defined CountsAs!", indent[1]);
                         continue;
                     }
-                    if (CorpseCountsAs.GetCorpseCountsAs(corpseBlueprint, rawCountsAsParams) is CorpseCountsAs corpseCoutnasAs
-                        && corpseCoutnasAs.CountasAs != CountsAs.None)
+                    if (CorpseCountsAs.GetCorpseCountsAs(corpseBlueprint, rawCountsAsParams) is CorpseCountsAs corpseCountsAs
+                        && corpseCountsAs.CountasAs != CountsAs.None)
                     {
-                        Debug.CheckYeh(corpseBlueprint.ToString(), corpseCoutnasAs.ToString(), indent[1]);
-                        corpseCountsAsList.Add(corpseCoutnasAs);
+                        Debug.CheckYeh(corpseBlueprint.ToString(), corpseCountsAs.ToString(), indent[1]);
+                        corpseCountsAsList.Add(corpseCountsAs);
                     }
                 }
                 _ = indent[0];

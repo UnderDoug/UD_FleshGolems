@@ -133,9 +133,19 @@ namespace XRL.World.Parts
         public string BaseDisplayName => _BaseDisplayName ??= BrainInAJar?.BaseDisplayName;
 
         [SerializeField]
+        private string _RenderDisplayName;
+        public string RenderDisplayName
+        {
+            get => _RenderDisplayName ??= BrainInAJar?.Render?.DisplayName;
+            set => _RenderDisplayName = value;
+        }
+
+        [SerializeField]
         private string _RefName;
         public string RefName => _RefName ??= BrainInAJar?.GetReferenceDisplayName(Short: true);
+
         public bool WasProperlyNamed => WasProperlyNamed(BrainInAJar);
+
         public DisplayNameAdjectives DisplayNameAdjectives => BrainInAJar?.GetPart<DisplayNameAdjectives>();
         public Titles Titles => BrainInAJar?.GetPart<Titles>();
         public Epithets Epithets => BrainInAJar?.GetPart<Epithets>();
@@ -710,7 +720,8 @@ namespace XRL.World.Parts
                                     continue;
                                 }
 
-                                BrainInAJar.AddPart(pastPart);
+                                BrainInAJar.OverrideWithDeepCopyOrRequirePart(pastPart, DeepCopyMapInventory);
+                                pastPart.ParentObject = BrainInAJar;
                                 Debug.CheckYeh(pastPart.Name + " added", Indent: indent[3]);
                             }
                         }
@@ -1158,14 +1169,14 @@ namespace XRL.World.Parts
 
                 IdentityType.Librarian
                 or IdentityType.Warden
-                or IdentityType.NamedVillager => frankenCorpse?.Render?.DisplayName,
+                or IdentityType.NamedVillager => PastLife.RenderDisplayName,
 
                 IdentityType.Named 
                 or IdentityType.ParticipantVillager 
                 or IdentityType.Villager 
                 or IdentityType.Nobody => PastLife.RefName,
 
-                IdentityType.Corpse => PastLife.BrainInAJar?.Render?.DisplayName,
+                IdentityType.Corpse => PastLife.RenderDisplayName,
 
                 _ => frankenCorpse?.DisplayName,
             };

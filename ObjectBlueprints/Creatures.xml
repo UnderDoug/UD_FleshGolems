@@ -36,6 +36,7 @@
     <skill Name="Pistol_SteadyHands" />
     <skill Name="Pistol_Akimbo" />
     <property Name="UD_FleshGolems_PastLife_TileOverride" Value="FleshGolems/ud_flesh_golem_snapjaw_jofo.png" />
+    <tag Name="UD_FleshGolems PastLife ExcludeFrom CountsAs" />
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
@@ -67,7 +68,7 @@
     <!--(Add this dynamically by completing the quest)-->
     <tag Name="Kernelmethod_BetterPetSelector_Description" Value="A mound of wet fur and rotting flesh, uncontent with remaining still." />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
-    <tag Name="UD_FleshGolems PastLife CountsAs" Value="UD_FleshGolems Late Jofo Qudwufo" />
+    <tag Name="UD_FleshGolems PastLife CountsAs" Value="Blueprint:UD_FleshGolems Late Jofo Qudwufo" />
     <tag Name="UD_FleshGolems ReanimationHelper GenerateSourceInventory" />
   </object>
   
@@ -314,6 +315,122 @@
   <object Name="UD_FleshGolems Skybear Corpse" Inherits="Ancient Corpse">
     <part Name="Render" DisplayName="ancient human's corpse" ColorString="&amp;r" TileColor="&amp;r" DetailColor="M" />
     <tag Name="UD_FleshGolems ReanimationHelper SetColors" Value="TileColor::M;;DetailColor::Y" />
+  </object>
+  
+  <object Name="BaseOoze" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Ooze Corpse" CorpseChance="0" />
+  </object>
+  <object Name="Brown Sludge" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Brown Sludge Corpse" />
+  </object>
+  <object Name="Green Goo" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Green Goo Corpse" />
+  </object>
+  <object Name="Black Jel" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Black Jel Corpse" />
+  </object>
+  <object Name="Blue Jel" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Blue Jel Corpsee" />
+  </object>
+  <object Name="Purple Jell" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Purple Jell Corpse" />
+  </object>
+  <object Name="Red Jell" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Red Jell Corpse" />
+  </object>
+  <object Name="Zero Jell" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Zero Jell Corpse" />
+  </object>
+  
+  <object Name="Gelatinous Frustum" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Gelatinous Frustum Corpse" />
+  </object>
+  <object Name="Gelatinous Prism" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Gelatinous Prism Corpse" />
+  </object>
+  <object Name="Gelatinous Cupola" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Gelatinous Prism Corpse" />
+  </object>
+  <object Name="Gelatinous Wedge" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Gelatinous Prism Corpse" />
+  </object>
+  <object Name="Gelatinous Antiprism" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Gelatinous Antiprism Corpse" />
+  </object>
+  
+  <object Name="Humor" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Humor Corpse" />
+  </object>
+  <object Name="Gyrohumor" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Humor Corpse" />
+  </object>
+  <object Name="Panhumor" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Humor Corpse" />
+  </object>
+  
+  <object Name="SoupSludge" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems SoupSludge Corpse" />
+  </object>
+  
+  <object Name="Plasma Jelly" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Plasma Jelly Corpse" CorpseChance="0" />
+    <part Name="DropOnDeath" Blueprints="Plasma1000" />
+  </object>
+  
+  <object Name="BaseCat" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Cat Corpse" CorpseChance="0" />
+  </object>
+  <object Name="BaseDog" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Dog Corpse" CorpseChance="0" />
+  </object>
+  <object Name="Honey Skunk" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Honey Skunk Corpse" CorpseChance="0" />
+  </object>
+  <object Name="Crypt Ferret" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Crypt Ferret Corpse" CorpseChance="0" />
+  </object>
+  
+  <object Name="Rimewyk" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Rimewyk Corpse" CorpseChance="0" />
+  </object>
+  
+  <object Name="Glowcrow" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Glowcrow Corpse" CorpseChance="0" />
+  </object>
+  <object Name="Dream Wren" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Dream Wren Corpse" CorpseChance="0" />
+  </object>
+  
+  <object Name="Ixlthyxl" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Ixlthyxl Corpse" CorpseChance="0" />
+  </object>
+  <object Name="Prism Perch" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Prism Perch Corpse" CorpseChance="0" />
+  </object>
+  
+  <object Name="Adiyy" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Winged Insect Corpse" CorpseChance="0" />
+  </object>
+  <object Name="Agolfly" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Winged Insect Corpse" CorpseChance="0" />
+  </object>
+  <object Name="Gamma Moth" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Winged Insect Corpse" CorpseChance="0" />
+  </object>
+  
+  <object Name="Mirror Bug" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Insect Corpse" CorpseChance="0" />
+  </object>
+  
+  <object Name="Phase Spider" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Phase Spider Corpse" CorpseChance="0" />
+  </object>
+  
+  <object Name="BaseTortoise" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Tortoise Corpse" CorpseChance="0" />
+  </object>
+  <object Name="n-Dimensional Starshell" Load="Merge">
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems n-Dimensional Starshell Corpse" CorpseChance="0" />
   </object>
   
   <!--
