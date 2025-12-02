@@ -193,10 +193,7 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(NewDescription), !NewDescription.IsNullOrEmpty()),
                 });
 
-            if (!ParentObject.HasPartDescendedFrom<IIconColorPart>())
-            {
-                ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
-            }
+            ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
             Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[1]);
             foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
             {

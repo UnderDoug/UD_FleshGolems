@@ -362,7 +362,6 @@
   </object>
   
   <object Name="UD_FleshGolems Base Ooze Corpse" Inherits="Corpse">
-    <mixin Name="Water" />
     <mixin Name="UD_FleshGolems Plastiform Corpse Attributes" />
     <part Name="LiquidVolume" MaxVolume="-1" Volume="120" StartVolume="40-200" InitialLiquid="proteangunk-1000" />
     <part Name="Physics" FlameTemperature="5000" VaporTemperature="9000" />

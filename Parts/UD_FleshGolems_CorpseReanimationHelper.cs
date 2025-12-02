@@ -1042,9 +1042,6 @@ namespace XRL.World.Parts
                     return false;
                 }
 
-                string reanimatedDisplayName = UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE + " " + frankenCorpse.Render.DisplayName + " corpse";
-                frankenCorpse.Render.DisplayName = reanimatedDisplayName;
-
                 Dictionary<TileMappingKeyword, List<string>> prospectiveTiles = null;
 
                 CollectProspectiveTiles(

@@ -312,6 +312,9 @@ namespace XRL.World.ObjectBuilders
                 corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(Entity);
                 if (ForImmediateReanimation)
                 {
+                    string reanimatedDisplayName = REANIMATED_ADJECTIVE + " " + corpse.Render.DisplayName;
+                    corpse.Render.DisplayName = reanimatedDisplayName;
+
                     var corpseReanimationHelper = corpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>();
                     corpseReanimationHelper.AlwaysAnimate = true;
 
