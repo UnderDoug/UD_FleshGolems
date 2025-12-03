@@ -48,12 +48,17 @@ namespace XRL.World.Parts
                 }
                 if (replacementCorpse != null)
                 {
+                    bool doReplacement = true;
                     if (corpseToReplace.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper oldCorpseReanimationHelper)
-                        && replacementCorpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper newCorpseReanimationHelper))
+                        && replacementCorpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper newCorpseReanimationHelper)
+                        && oldCorpseReanimationHelper.AlwaysAnimate)
                     {
-                        newCorpseReanimationHelper.AlwaysAnimate = oldCorpseReanimationHelper.AlwaysAnimate;
+                        doReplacement = newCorpseReanimationHelper.Animate();
                     }
-                    E.ReplacementObject = replacementCorpse;
+                    if (doReplacement)
+                    {
+                        E.ReplacementObject = replacementCorpse;
+                    }
                 }
             }
             return base.HandleEvent(E);

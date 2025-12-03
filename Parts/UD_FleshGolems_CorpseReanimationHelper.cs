@@ -199,6 +199,7 @@ namespace XRL.World.Parts
                     }
                        
                 }
+                statistic.Owner = FrankenCorpse;
                 if (!FrankenCorpse.HasStat(statName))
                 {
                     FrankenCorpse.Statistics.Add(statName, statistic);
@@ -215,7 +216,6 @@ namespace XRL.World.Parts
                     FrankenCorpse.Statistics[statName].BaseValue += StatAdjustments[statName];
                     statAdjust = StatAdjustments[statName];
                 }
-                statistic.Owner = FrankenCorpse;
 
                 int statValue = FrankenCorpse.Statistics[statName].Value;
                 int statBaseValue = FrankenCorpse.Statistics[statName].BaseValue;

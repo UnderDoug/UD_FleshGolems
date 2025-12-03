@@ -313,7 +313,7 @@ namespace XRL.World.ObjectBuilders
                 if (ForImmediateReanimation)
                 {
                     string reanimatedDisplayName = REANIMATED_ADJECTIVE + " " + corpse.Render.DisplayName;
-                    corpse.Render.DisplayName = reanimatedDisplayName;
+                    // corpse.Render.DisplayName = reanimatedDisplayName;
 
                     var corpseReanimationHelper = corpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>();
                     corpseReanimationHelper.AlwaysAnimate = true;

@@ -45,16 +45,47 @@
     <!--xtagUD_FleshGolems_CountsAs Keyword="not:Dead" /-->
   </object>
   
-  <object Name="UD_FleshGolems Corpse AlwaysReanimated" >
+  <object Name="UD_FleshGolems Corpse AlwaysReanimated Parts" >
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
     <part Name="Brain" Factions="Previously Sentient Beings-100" />
     <tag Name="AssociatedFactions" Value="Previously Sentient Beings" />
   </object>
 
-  <object Name="UD_FleshGolems Reanimated Corpse" Inherits="Corpse">
-    <mixin Name="UD_FleshGolems Corpse AlwaysReanimated" />
+  <object Name="UD_FleshGolems Base Reanimated Corpse" Inherits="Corpse">
+    <mixin Name="UD_FleshGolems Corpse AlwaysReanimated Parts" />
     <part Name="UD_FleshGolems_ReplaceCorpse" />
     <tag Name="UD_FleshGolems Necromancy ExcludeFromNecronomicon" />
+    <tag Name="Creature" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="BaseObject" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems Reanimated Corpse0" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <stat Name="Level" Value="1" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Corpse1" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <stat Name="Level" Value="5" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Corpse2" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <stat Name="Level" Value="10" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Corpse3" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <stat Name="Level" Value="15" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Corpse4" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <stat Name="Level" Value="20" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Corpse5" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <stat Name="Level" Value="25" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Corpse6" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <stat Name="Level" Value="30" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Corpse7" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <stat Name="Level" Value="35" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Corpse8" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <stat Name="Level" Value="40" />
   </object>
   
   <object Name="UD_FleshGolems Corpse Corpse" Inherits="Corpse">
@@ -380,61 +411,62 @@
   <object Name="UD_FleshGolems Ooze Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,slime-500" />
     <part Name="Render" DisplayName="{{g|slimy}} puddle of gunk" DetailColor="g" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Ooze Corpse" CorpseChance="0" />
   </object>
   
-  <object Name="UD_FleshGolems Brown Sludge Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems Brown Sludge Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,sludge-500" />
     <part Name="Render" DisplayName="{{w|sludgy}} puddle of gunk" DetailColor="w" />
   </object>
-  <object Name="UD_FleshGolems Green Goo Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems Green Goo Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,goo-500" />
     <part Name="Render" DisplayName="{{G|gooey}} puddle of gunk" DetailColor="G" />
   </object>
-  <object Name="UD_FleshGolems Black Jel Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems Black Jel Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,ooze-500" />
     <part Name="Render" DisplayName="{{K|oozing}} puddle of gunk" DetailColor="K" />
   </object>
-  <object Name="UD_FleshGolems Blue Jel Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems Blue Jel Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,convalessence-500" />
     <part Name="Render" DisplayName="{{C|luminous}} puddle of gunk" DetailColor="C" />
   </object>
-  <object Name="UD_FleshGolems Purple Jell Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems Purple Jell Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,wine-250,acid-250" />
     <part Name="Render" DisplayName="{{m|lush}} {{G|acidic}} puddle of gunk" DetailColor="m" />
   </object>
-  <object Name="UD_FleshGolems Red Jell Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems Red Jell Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,lava-500" />
     <part Name="Render" DisplayName="{{lava|magmatic}} puddle of gunk" DetailColor="R" />
   </object>
-  <object Name="UD_FleshGolems Zero Jell Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
-    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,water-499,warmstatic-1" />
+  <object Name="UD_FleshGolems Zero Jell Corpse" Inherits="UD_FleshGolems Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,water-490,warmstatic-10" />
     <part Name="Render" DisplayName="{{Y|dilute}} {{Y|entropic}} puddle of gunk" DetailColor="Y" />
   </object>
   
-  <object Name="UD_FleshGolems Gelatinous Frustum Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems Gelatinous Frustum Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,putrid-500" />
     <part Name="Render" DisplayName="{{putrid|putrid}} puddle of gunk" DetailColor="K" />
   </object>
-  <object Name="UD_FleshGolems Gelatinous Prism Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems Gelatinous Prism Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,salt-500" />
     <part Name="Render" DisplayName="{{Y|salty}} puddle of gunk" DetailColor="Y" />
   </object>
-  <object Name="UD_FleshGolems Gelatinous Antiprism Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems Gelatinous Antiprism Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,brainbrine-500" />
     <part Name="Render" DisplayName="{{nervous|nervous}} puddle of gunk" DetailColor="W" />
   </object>
   
-  <object Name="UD_FleshGolems Humor Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
-    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,acid-166,lava-166,convalessence-166,2-sunslag" />
+  <object Name="UD_FleshGolems Humor Corpse" Inherits="UD_FleshGolems Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,acid-160,lava-160,convalessence-160,20-sunslag" />
     <part Name="Render" DisplayName="{{C-G-W-R alternation|volatile}} puddle of gunk" DetailColor="w" />
   </object>
   
-  <object Name="UD_FleshGolems SoupSludge Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
+  <object Name="UD_FleshGolems SoupSludge Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="Render" DisplayName="{{c|potential}} puddle of gunk" DetailColor="C" />
   </object>
   
-  <object Name="UD_FleshGolems Plasma Jelly Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
-    <part Name="LiquidVolume" InitialLiquid="lava-498,acid-498,sunslag-2" />
+  <object Name="UD_FleshGolems Plasma Jelly Corpse" Inherits="UD_FleshGolems Ooze Corpse">
+    <part Name="LiquidVolume" InitialLiquid="lava-495,acid-495,sunslag-10" />
     <part Name="Render" DisplayName="{{plasma|plasmatic}} puddle of gunk" DetailColor="G" />
   </object>
   
@@ -656,6 +688,7 @@
     <tag Name="DynamicObjectsTable:AnimatableFurniture" />
     <tag Name="BodyType" Value="Jelly" />
     <tag Name="Species" Value="jelly" />
+    <property Name="BleedLiquid" Value="salt-1000" />
     <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:2:U:UD_FleshGolems_CorpseText:Components= are brought =subject.uD_xTag:UD_FleshGolems_CorpseText:WretchedVerbs= back into a horrific facsimile of life. =subject.UD_xTag:UD_FleshGolems_CorpseText:UnappealingAdjectives= =subject.uD_xTag:2:U:UD_FleshGolems_CorpseText:UnsettlingNoises= escape =subject.possessive= every movement and twist the gut of anyone unfortunate enough to hear it." />
     <xtagTextFragments
       Skin="crust"

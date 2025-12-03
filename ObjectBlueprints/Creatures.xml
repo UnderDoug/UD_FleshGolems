@@ -330,7 +330,7 @@
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Black Jel Corpse" />
   </object>
   <object Name="Blue Jel" Load="Merge">
-    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Blue Jel Corpsee" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Blue Jel Corpse" />
   </object>
   <object Name="Purple Jell" Load="Merge">
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Purple Jell Corpse" />

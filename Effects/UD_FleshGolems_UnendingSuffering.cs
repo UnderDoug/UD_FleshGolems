@@ -425,14 +425,14 @@ namespace XRL.World.Effects
 
             bool firstRange = currentFrame > FrameRanges[0] && currentFrame < FrameRanges[1];
             bool secondRange = currentFrame > FrameRanges[2] && currentFrame < FrameRanges[3];
-            string foregroundColor = (firstRange == !FlipRenderColors) ? "&K" : ("&" + SufferColor);
-            string detailColor = E.DetailColor;
             if (firstRange || secondRange)
             {
+                string foregroundColor = (firstRange == !FlipRenderColors) ? "&K" : ("&" + SufferColor);
                 E.RenderString = "\u0003";
-                E.ApplyColors(foregroundColor, detailColor, ICON_COLOR_PRIORITY, ICON_COLOR_PRIORITY);
+                E.ApplyColors(foregroundColor, ICON_COLOR_PRIORITY);
+                return false;
             }
-            return true;
+            return base.Render(E);
         }
         public override bool HandleEvent(GetDebugInternalsEvent E)
         {

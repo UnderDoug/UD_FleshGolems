@@ -16,6 +16,7 @@ using UD_FleshGolems.Logging;
 
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Options;
+using XRL.World.Tinkering;
 
 namespace UD_FleshGolems
 {
@@ -156,9 +157,28 @@ namespace UD_FleshGolems
                         playerMutations.AddMutation(reanimationMutationEntries.GetRandomElementCosmetic().Value);
                     }
                 }
+                foreach (GameObjectBlueprint recoilerModel in GameObjectFactory.Factory.GetBlueprints(IsStaticRecoiler))
+                {
+                    GameObject recoilerObject = recoilerModel.createUnmodified();
+                    TinkeringHelpers.StripForTinkering(recoilerObject);
+                    recoilerObject.MakeUnderstood();
+
+                    GameObject antiMatterCell = GameObject.Create("Antimatter Cell", AutoMod: "ModRadioPowered");
+                    antiMatterCell.MakeUnderstood();
+
+                    CellChangedEvent.Send(null, recoilerObject, null, antiMatterCell);
+
+                    player.ReceiveObject(recoilerObject);
+                }
             }
-            
         }
+        public static bool IsStaticRecoiler(GameObjectBlueprint Model)
+            => Model.InheritsFrom("BaseRecoiler")
+            && !Model.IsBaseBlueprint()
+            && !Model.HasPart(nameof(RandomRuinRecoiler))
+            && !Model.HasPart(nameof(ProgrammableRecoiler))
+            && Model.TryGetPartParameter(nameof(Teleporter), nameof(Teleporter.DestinationZone), out string destinationZone)
+            && !destinationZone.IsNullOrEmpty();
     }
 
     // [CallAfterGameLoaded]

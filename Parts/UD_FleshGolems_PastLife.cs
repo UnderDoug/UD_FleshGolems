@@ -386,6 +386,20 @@ namespace XRL.World.Parts
                             || (PastLife.GetxTag("Grammar", "Proper") is string properGrammar
                                 && properGrammar.EqualsNoCase("true"));
 
+                        if (ParentObject.Render.DisplayName != ParentObject.GetBlueprint().DisplayName())
+                        {
+                            ParentObject.SetStringProperty("CreatureName", ParentObject.Render.DisplayName);
+                        }
+                        else
+                        if (BrainInAJar.HasProperName)
+                        {
+                            ParentObject.SetStringProperty("CreatureName", PastLife.GetReferenceDisplayName(Short: true));
+                        }
+                        else
+                        {
+                            ParentObject.SetStringProperty("CreatureName", null);
+                        }
+
                         Debug.Log(nameof(BrainInAJar.HasProperName), BrainInAJar.HasProperName, indent[2]);
 
                         if (PastLife.HasPart<DisplayNameAdjectives>())
@@ -466,6 +480,7 @@ namespace XRL.World.Parts
                         Physics bIAJ_Physics = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Physics);
                         BrainInAJar.Physics = bIAJ_Physics;
 
+                        PastLife.Brain ??= PastLife.RequirePart<Brain>();
                         Brain bIAJ_Brain = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.Brain);
                         BrainInAJar.Brain = bIAJ_Brain;
                         Brain pastBrain = PastLife.Brain;
@@ -483,6 +498,7 @@ namespace XRL.World.Parts
                         try
                         {
                             Debug.Log("Storing " + nameof(bIAJ_Brain.PartyMembers) + "...", Indent: indent[2]);
+                            pastBrain.PartyMembers ??= new();
                             foreach ((int flags, PartyMember partyMember) in pastBrain.PartyMembers)
                             {
                                 PartyMember partyMemberCopy = new(partyMember.Reference, partyMember.Flags);
@@ -498,6 +514,7 @@ namespace XRL.World.Parts
                         try
                         {
                             Debug.Log("Storing " + nameof(bIAJ_Brain.Opinions) + "...", Indent: indent[2]);
+                            pastBrain.Opinions ??= new();
                             foreach ((int opinionSubjectID, OpinionList opinionList) in pastBrain.Opinions)
                             {
                                 OpinionList opinionsCopy = new();
@@ -885,29 +902,29 @@ namespace XRL.World.Parts
             UD_FleshGolems_PastLife PastLife)
         {
             using Indent indent = new(1);
+
+            if (FrankenBrain == null
+                || PastLife == null
+                || PastLife.Brain is not Brain pastBrain
+                || FrankenBrain.ParentObject is not GameObject frankenCorpse)
+            {
+                Debug.CheckNah(Debug.GetCallingMethod(true) + "failed", indent[1]);
+                return false;
+            }
+            if (frankenCorpse.GetIntProperty("UD_FleshGolems Alignment Adjusted") > 0
+                && FrankenBrain.Allegiance.Any(a => a.Key == PREVIOUSLY_SENTIENT_BEINGS && a.Value > 0))
+            {
+                Debug.CheckNah(Debug.GetCallingMethod(true) + "skipped", indent[1]);
+                return false;
+            }
+
             Debug.LogMethod(indent,
                 ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(FrankenBrain), FrankenBrain != null),
                     Debug.Arg(nameof(PastLife), PastLife != null),
                 });
-
-            if (FrankenBrain == null
-                || PastLife == null
-                || PastLife?.Brain is not Brain pastBrain
-                || FrankenBrain.ParentObject is not GameObject frankenCorpse)
-            {
-                Debug.CheckNah("Failed.", indent[1]);
-                return false;
-            }
-            if (frankenCorpse.GetIntProperty("UD_FleshGolems Alignment Adjusted") > 0
-                && FrankenBrain.Allegiance.Any(a => a.Key == PREVIOUSLY_SENTIENT_BEINGS))
-            {
-                Debug.CheckNah("Skipped.", indent[1]);
-                return false;
-            }
-
-                int previouslySentientBeingsRep = 100;
+            int previouslySentientBeingsRep = 100;
             Debug.Log(nameof(previouslySentientBeingsRep), previouslySentientBeingsRep, indent[1]);
 
             Debug.Log("Altering " + nameof(previouslySentientBeingsRep), Indent: indent[1]);
@@ -1163,20 +1180,40 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
                 });
 
+
+            if (frankenCorpse.Render.DisplayName != frankenCorpse.GetBlueprint().DisplayName())
+            {
+                frankenCorpse.SetStringProperty("CreatureName", frankenCorpse.Render.DisplayName);
+            }
+            else
+            if (IdentityType <= IdentityType.Named)
+            {
+                frankenCorpse.SetStringProperty("CreatureName", PastLife.BrainInAJar.GetReferenceDisplayName(Short: true));
+            }
+            else
+            {
+                frankenCorpse.SetStringProperty("CreatureName", null);
+            }
+            string creatureName = frankenCorpse.GetStringProperty("CreatureName");
+            if (creatureName.IsNullOrEmpty())
+            {
+                frankenCorpse.SetStringProperty("CreatureName", creatureName = frankenCorpse.Render?.DisplayName);
+            }
             string newIdentity = IdentityType switch
             {
                 IdentityType.Player => The.Game.PlayerName,
 
-                IdentityType.Librarian
-                or IdentityType.Warden
-                or IdentityType.NamedVillager => PastLife.RenderDisplayName,
+                IdentityType.Librarian => frankenCorpse.Render?.DisplayName,
+                
+                IdentityType.Warden
+                or IdentityType.NamedVillager => creatureName,
 
                 IdentityType.Named 
                 or IdentityType.ParticipantVillager 
                 or IdentityType.Villager 
                 or IdentityType.Nobody => PastLife.RefName,
 
-                IdentityType.Corpse => PastLife.RenderDisplayName,
+                IdentityType.Corpse => frankenCorpse.Render?.DisplayName,
 
                 _ => frankenCorpse?.DisplayName,
             };

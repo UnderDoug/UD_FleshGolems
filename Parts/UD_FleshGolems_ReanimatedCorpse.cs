@@ -172,6 +172,8 @@ namespace XRL.World.Parts
             }
         }
 
+        public bool NoSuffer;
+
         public UD_FleshGolems_ReanimatedCorpse()
         {
             _Reanimator = null;
@@ -179,6 +181,7 @@ namespace XRL.World.Parts
             BleedLiquid = null;
             BleedLiquidPortions = null;
             IsRenderDisplayNameUpdated = false;
+            NoSuffer = false;
         }
 
         public override void Attach()
@@ -213,6 +216,7 @@ namespace XRL.World.Parts
             }
 
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
+            SecretlySealLiquidVolume(ParentObject);
 
             AttemptToSuffer();
             base.Attach();
@@ -292,32 +296,36 @@ namespace XRL.World.Parts
             using Indent indent = new();
             if (ParentObject is GameObject frankenCorpse)
             {
-                if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
+                if (!NoSuffer)
                 {
-                    int tier = GetTierFromLevel(frankenCorpse);
-                    Debug.LogMethod(indent[1],
-                        ArgPairs: new Debug.ArgPair[]
-                        {
+                    if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
+                    {
+                        int tier = GetTierFromLevel(frankenCorpse);
+                        Debug.LogMethod(indent[1],
+                            ArgPairs: new Debug.ArgPair[]
+                            {
                             Debug.Arg(nameof(unendingSuffering), unendingSuffering != null),
                             Debug.Arg(nameof(tier), tier),
-                        });
-                    int timesReanimated = 1;
-                    if (ParentObject.TryGetPart(out UD_FleshGolems_PastLife pastLife))
-                    {
-                        timesReanimated = pastLife.TimesReanimated;
-                    }
-                    return frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier, timesReanimated + 1), Reanimator);
-                }
-                if (unendingSuffering.SourceObject != Reanimator)
-                {
-                    Debug.LogMethod(indent[1],
-                        ArgPairs: new Debug.ArgPair[]
+                            });
+                        int timesReanimated = 1;
+                        if (ParentObject.TryGetPart(out UD_FleshGolems_PastLife pastLife))
                         {
+                            timesReanimated = pastLife.TimesReanimated;
+                        }
+                        NoSuffer = !frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier, timesReanimated + 1), Reanimator);
+                        return !NoSuffer;
+                    }
+                    if (unendingSuffering.SourceObject != Reanimator)
+                    {
+                        Debug.LogMethod(indent[1],
+                            ArgPairs: new Debug.ArgPair[]
+                            {
                             Debug.Arg(nameof(unendingSuffering.SourceObject), unendingSuffering.SourceObject?.DebugName ?? NULL),
                             Debug.Arg(nameof(Reanimator), Reanimator?.DebugName ?? NULL),
-                        });
-                    unendingSuffering.SourceObject = Reanimator;
-                    return true;
+                            });
+                        unendingSuffering.SourceObject = Reanimator;
+                        return true;
+                    }
                 }
             }
             return false;
@@ -350,6 +358,16 @@ namespace XRL.World.Parts
                     lairOrigin = new(Stat.RandomCosmetic(0, 79), Stat.RandomCosmetic(0, 24));
                 }
                 greaterVoider.lairRect = new(lairOrigin.X - 1, lairOrigin.Y - 1, lairOrigin.X + 1, lairOrigin.Y + 1);
+            }
+        }
+
+        public static void SecretlySealLiquidVolume(GameObject FrankenCorpse)
+        {
+            if (FrankenCorpse.TryGetPart(out LiquidVolume liquidVolume))
+            {
+                liquidVolume.Sealed = true;
+                liquidVolume.ShowSeal = false;
+                liquidVolume.LiquidVisibleWhenSealed = true;
             }
         }
 
@@ -394,6 +412,7 @@ namespace XRL.World.Parts
                 if (identityType < IdentityType.ParticipantVillager)
                 {
                     E.AddAdjective("corpse of", CorpseAdjective);
+                    E.AddAdjective("the", CorpseAdjective - 2);
                 }
                 else
                 if (identityType < IdentityType.Corpse)
@@ -451,9 +470,11 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             if (ParentObject is GameObject frankenCorpse
-                && IdentityType > IdentityType.ParticipantVillager)
+                && IdentityType <= IdentityType.ParticipantVillager
+                )
             {
-                if (frankenCorpse.Brain.Allegiance.All(a => a.Key != UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
+                bool wantsToAlign = !frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS && a.Value > 0);
+                if (wantsToAlign
                     || !IsAlteredDescription)
                 {
                     Debug.LogCaller(indent,
@@ -489,7 +510,10 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[2]);
                     }
                 }
-                PastLife.AlignWithPreviouslySentientBeings();
+                if (wantsToAlign)
+                {
+                    PastLife.AlignWithPreviouslySentientBeings();
+                }
             }
             return base.HandleEvent(E);
         }
@@ -504,8 +528,8 @@ namespace XRL.World.Parts
                 PastLife?.AlignWithPreviouslySentientBeings();
                 if (ParentObject.Render is Render corpseRender)
                 {
-                    PastLife.RenderDisplayName = null;
-                    corpseRender.DisplayName = ParentObject.GetReferenceDisplayName(Short: true);
+                    // PastLife.RenderDisplayName = null;
+                    // corpseRender.DisplayName = ParentObject.GetReferenceDisplayName(Short: true);
                 }
             }
             return base.HandleEvent(E);
@@ -645,6 +669,7 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(IsAlteredDescription), IsAlteredDescription);
 
             E.AddEntry(this, nameof(BleedLiquid), BleedLiquid);
+            E.AddEntry(this, nameof(NoSuffer), NoSuffer);
             return base.HandleEvent(E);
         }
     }
