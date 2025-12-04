@@ -64,6 +64,9 @@ namespace XRL.World.Parts
 
             nameof(SizeAdjective),
 
+            nameof(RandomTileOnMove),
+            nameof(RandomColorsOnMove),
+
             // Corpses are non-furniture objects (items), so it's conceivable they might have one of these.
             nameof(ThrownWeapon),
             // nameof(MeleeWeapon), // apparently *are* melee weapons...

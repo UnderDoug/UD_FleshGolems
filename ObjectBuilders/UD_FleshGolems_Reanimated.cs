@@ -70,14 +70,30 @@ namespace XRL.World.ObjectBuilders
         }
 
         public static bool EntityNeedsDelayedReanimation(GameObject Creature)
-        {
-            return PartsThatNeedDelayedReanimation.Any(s => Creature.HasPart(s))
-                || BlueprintsThatNeedDelayedReanimation.Any(s => Creature.GetBlueprint().InheritsFrom(s))
-                || PropTagsIndicatingNeedDelayedReanimation.Any(s => Creature.HasPropertyOrTag(s));
-        }
+            => PartsThatNeedDelayedReanimation.Any(s => Creature.HasPart(s))
+            || BlueprintsThatNeedDelayedReanimation.Any(s => Creature.GetBlueprint().InheritsFrom(s))
+            || PropTagsIndicatingNeedDelayedReanimation.Any(s => Creature.HasPropertyOrTag(s));
+
         public static bool IsOntologicallyAnEntity(GameObject Object)
             => (Object.HasPart<Combat>() && Object.HasPart<Body>())
             || Object.HasTagOrProperty("BodySubstitute");
+
+        public static bool CorpseModelIsAcceptable(GameObjectBlueprint CorpseModel)
+            => CorpseModel != null
+            && !CorpseModel.IsBaseBlueprint()
+            && !CorpseModel.IsExcludedFromDynamicEncounters();
+
+        public static bool CorpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet, string Entity)
+                => CorpseSheet.CorpseHasEntity(Entity)
+                && CorpseSheet.GetCorpse() is CorpseBlueprint corpseBlueprint
+                && corpseBlueprint.GetGameObjectBlueprint() is GameObjectBlueprint corpseModel
+                && CorpseModelIsAcceptable(corpseModel);
+
+        public static bool TryGetRandomCorpseFromNecronomicon(string Entity, out GameObjectBlueprint CorpseModel, Predicate<CorpseSheet> CorpseSheetFilter = null)
+            => (CorpseModel = NecromancySystem
+                ?.GetWeightedCorpseStringsForEntity(Entity, CorpseSheetFilter)
+                ?.GetWeightedRandom()
+                ?.GetGameObjectBlueprint()) != null;
 
         public static GameObject ProduceCorpse(
             GameObject Entity,
@@ -102,11 +118,6 @@ namespace XRL.World.ObjectBuilders
                 string corpseBlueprint = null;
                 GameObjectBlueprint corpseModel = null;
 
-                static bool corpseModelIsAcceptable(GameObjectBlueprint CorpseModel)
-                    => CorpseModel != null
-                    && !CorpseModel.IsBaseBlueprint()
-                    && !CorpseModel.IsExcludedFromDynamicEncounters();
-
                 if ((corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())
                     && Entity.TryGetPart(out Corpse corpsePart)
                     && !corpsePart.CorpseBlueprint.IsNullOrEmpty())
@@ -119,31 +130,15 @@ namespace XRL.World.ObjectBuilders
                         Debug.CheckYeh("Entity's " + nameof(corpseBlueprint), corpseBlueprint ?? NULL, Indent: indent[1]);
                     }
                 }
-                if ((corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())
-                    && NecromancySystem != null
-                    && NecromancySystem.RequireEntityBlueprint(Entity) is EntityBlueprint entityBlueprint)
+
+                bool corpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet)
+                    => CorpseSheetHasAcceptableCorpse(CorpseSheet, Entity.Blueprint);
+
+                if (corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse()
+                    && TryGetRandomCorpseFromNecronomicon(Entity.Blueprint, out corpseModel, corpseSheetHasAcceptableCorpse))
                 {
-                    List<CorpseWeight> corpseWeights = new();
-
-                    bool corpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet)
-                        => CorpseSheet.CorpseHasEntity(entityBlueprint)
-                        && CorpseSheet.GetCorpse() is CorpseBlueprint corpseBlueprint
-                        && corpseBlueprint.GetGameObjectBlueprint() is GameObjectBlueprint corpseModel
-                        && corpseModelIsAcceptable(corpseModel);
-
-                    foreach (CorpseSheet corpseSheet in NecromancySystem.GetCorpseSheets(corpseSheetHasAcceptableCorpse))
-                        if (corpseSheet.GetCorpseWeight(entityBlueprint) is CorpseWeight corpseWeight)
-                            corpseWeights.Add(corpseWeight);
-
-                    corpseBlueprint = corpseWeights
-                        ?.ToDictionary(cw => cw.GetBlueprint().ToString(), cw => cw.Weight)
-                        ?.GetWeightedRandom();
-
-                    if (!corpseBlueprint.IsNullOrEmpty())
-                    {
-                        corpseModel = corpseBlueprint?.GetGameObjectBlueprint();
-                        Debug.CheckYeh(nameof(NecromancySystem) + " " + nameof(corpseBlueprint), corpseBlueprint ?? NULL, Indent: indent[1]);
-                    }
+                    corpseBlueprint = corpseModel.Name;
+                    Debug.CheckYeh(nameof(NecromancySystem) + " " + nameof(corpseBlueprint), corpseBlueprint ?? NULL, Indent: indent[1]);
                 }
                 if (corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())
                 {
@@ -152,7 +147,7 @@ namespace XRL.World.ObjectBuilders
                     corpseModel = GameObjectFactory.Factory.GetBlueprintIfExists(corpseBlueprint);
 
                     if (corpseModel == null
-                        || !corpseModelIsAcceptable(corpseModel))
+                        || !CorpseModelIsAcceptable(corpseModel))
                     {
                         corpseModel = creatureBaseBlueprint
                             ?.GetGameObjectBlueprint() // get the creature's model
@@ -166,7 +161,7 @@ namespace XRL.World.ObjectBuilders
                 {
                     string speciesCorpseBlueprint = Entity.GetSpecies() + " " + nameof(Corpse);
                     if (speciesCorpseBlueprint.GetGameObjectBlueprint() is var speciesCorpseModel
-                        && corpseModelIsAcceptable(speciesCorpseModel))
+                        && CorpseModelIsAcceptable(speciesCorpseModel))
                     {
                         corpseModel = speciesCorpseModel;
                         corpseBlueprint = speciesCorpseBlueprint;
@@ -177,7 +172,7 @@ namespace XRL.World.ObjectBuilders
                 {
                     string fallbackCorpse = "Fresh " + nameof(Corpse);
                     if (fallbackCorpse.GetGameObjectBlueprint() is var fallbackCorpseModel
-                        && corpseModelIsAcceptable(fallbackCorpseModel))
+                        && CorpseModelIsAcceptable(fallbackCorpseModel))
                     {
                         corpseBlueprint = fallbackCorpse;
                         corpseModel = fallbackCorpseModel;

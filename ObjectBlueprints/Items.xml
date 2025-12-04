@@ -398,76 +398,90 @@
     <part Name="LiquidVolume" MaxVolume="-1" Volume="120" StartVolume="40-200" InitialLiquid="proteangunk-1000" />
     <part Name="Physics" FlameTemperature="5000" VaporTemperature="9000" />
     <part Name="Render" DisplayName="[puddle of gunk]" 
-          RenderString="~" ColorString="&amp;c"
-          Tile="Liquids/Water/puddle_1.png" TileColor="&amp;c" DetailColor="y"
-          RenderLayer="2" RenderIfDark="true" />
+          RenderString="~" ColorString="&amp;y"
+          Tile="Liquids/Water/puddle_1.png"
+          TileColor="&amp;y" DetailColor="c" />
     <tag Name="BodyType" Value="Jelly" />
     <tag Name="Species" Value="jelly" />
     <removetag Name="Meat" />
+    <part Name="Corpse" CorpseChance="100" />
     <tag Name="BaseObject" Value="*noinherit" />
     <tag Name="ExcludeFromDynamicEncounters" />
   </object>
   
   <object Name="UD_FleshGolems Ooze Corpse" Inherits="UD_FleshGolems Base Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,slime-500" />
-    <part Name="Render" DisplayName="{{g|slimy}} puddle of gunk" DetailColor="g" />
-    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Ooze Corpse" CorpseChance="0" />
+    <part Name="Render" DisplayName="{{g|slimy}} puddle of gunk" ColorString="&amp;g" TileColor="&amp;g" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Ooze Corpse" />
   </object>
   
   <object Name="UD_FleshGolems Brown Sludge Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,sludge-500" />
-    <part Name="Render" DisplayName="{{w|sludgy}} puddle of gunk" DetailColor="w" />
+    <part Name="Render" DisplayName="{{w|sludgy}} puddle of gunk" ColorString="&amp;w" TileColor="&amp;w" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Brown Sludge Corpse" />
   </object>
   <object Name="UD_FleshGolems Green Goo Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,goo-500" />
-    <part Name="Render" DisplayName="{{G|gooey}} puddle of gunk" DetailColor="G" />
+    <part Name="Render" DisplayName="{{G|gooey}} puddle of gunk" ColorString="&amp;G" TileColor="&amp;G" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Green Goo Corpse" />
   </object>
   <object Name="UD_FleshGolems Black Jel Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,ooze-500" />
-    <part Name="Render" DisplayName="{{K|oozing}} puddle of gunk" DetailColor="K" />
+    <part Name="Render" DisplayName="{{K|oozing}} puddle of gunk" ColorString="&amp;K" TileColor="&amp;K" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Black Jel Corpse" />
   </object>
   <object Name="UD_FleshGolems Blue Jel Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,convalessence-500" />
-    <part Name="Render" DisplayName="{{C|luminous}} puddle of gunk" DetailColor="C" />
+    <part Name="Render" DisplayName="{{C|luminous}} puddle of gunk" ColorString="&amp;C" TileColor="&amp;C" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Blue Jel Corpse" />
   </object>
   <object Name="UD_FleshGolems Purple Jell Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,wine-250,acid-250" />
-    <part Name="Render" DisplayName="{{m|lush}} {{G|acidic}} puddle of gunk" DetailColor="m" />
+    <part Name="Render" DisplayName="{{m|lush}} {{G|acidic}} puddle of gunk" ColorString="&amp;m" TileColor="&amp;m" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Purple Jell Corpse" />
   </object>
   <object Name="UD_FleshGolems Red Jell Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,lava-500" />
-    <part Name="Render" DisplayName="{{lava|magmatic}} puddle of gunk" DetailColor="R" />
+    <part Name="Render" DisplayName="{{lava|magmatic}} puddle of gunk" ColorString="&amp;R" TileColor="&amp;R" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Red Jell Corpse" />
   </object>
   <object Name="UD_FleshGolems Zero Jell Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,water-490,warmstatic-10" />
-    <part Name="Render" DisplayName="{{Y|dilute}} {{Y|entropic}} puddle of gunk" DetailColor="Y" />
+    <part Name="Render" DisplayName="{{Y|dilute}} {{Y|entropic}} puddle of gunk" ColorString="&amp;Y" TileColor="&amp;Y" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Zero Jell Corpse" />
   </object>
   
   <object Name="UD_FleshGolems Gelatinous Frustum Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,putrid-500" />
-    <part Name="Render" DisplayName="{{putrid|putrid}} puddle of gunk" DetailColor="K" />
+    <part Name="Render" DisplayName="{{putrid|putrid}} puddle of gunk" ColorString="&amp;K" TileColor="&amp;K" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Gelatinous Frustum Corpse" />
   </object>
   <object Name="UD_FleshGolems Gelatinous Prism Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,salt-500" />
-    <part Name="Render" DisplayName="{{Y|salty}} puddle of gunk" DetailColor="Y" />
+    <part Name="Render" DisplayName="{{Y|salty}} puddle of gunk" ColorString="&amp;Y" TileColor="&amp;Y" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Gelatinous Prism Corpse" />
   </object>
   <object Name="UD_FleshGolems Gelatinous Antiprism Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="proteangunk-500,brainbrine-500" />
-    <part Name="Render" DisplayName="{{nervous|nervous}} puddle of gunk" DetailColor="W" />
+    <part Name="Render" DisplayName="{{nervous|nervous}} puddle of gunk" ColorString="&amp;W" TileColor="&amp;W" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Gelatinous Antiprism Corpse" />
   </object>
   
   <object Name="UD_FleshGolems Humor Corpse" Inherits="UD_FleshGolems Ooze Corpse">
-    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,acid-160,lava-160,convalessence-160,20-sunslag" />
-    <part Name="Render" DisplayName="{{C-G-W-R alternation|volatile}} puddle of gunk" DetailColor="w" />
+    <part Name="LiquidVolume" InitialLiquid="proteangunk-500,acid-160,lava-160,convalessence-160,sunslag-20" />
+    <part Name="Render" DisplayName="{{C-G-W-R alternation|volatile}} puddle of gunk" ColorString="&amp;w" TileColor="&amp;w" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Humor Corpse" />
   </object>
   
   <object Name="UD_FleshGolems SoupSludge Corpse" Inherits="UD_FleshGolems Ooze Corpse">
-    <part Name="Render" DisplayName="{{c|potential}} puddle of gunk" DetailColor="C" />
+    <part Name="Render" DisplayName="{{c|potential}} puddle of gunk" ColorString="&amp;C" TileColor="&amp;C" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems SoupSludge Corpse" />
   </object>
   
   <object Name="UD_FleshGolems Plasma Jelly Corpse" Inherits="UD_FleshGolems Ooze Corpse">
     <part Name="LiquidVolume" InitialLiquid="lava-495,acid-495,sunslag-10" />
-    <part Name="Render" DisplayName="{{plasma|plasmatic}} puddle of gunk" DetailColor="G" />
+    <part Name="Render" DisplayName="{{plasma|plasmatic}} puddle of gunk" ColorString="&amp;G" TileColor="&amp;G" />
+    <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Plasma Jelly Corpse" />
   </object>
   
   <!--
@@ -674,6 +688,7 @@
   </object>
   
   <object Name="Amaranthine Ashes" Load="Merge">
+    <part Name="Render" TileColor="&amp;R" DetailColor="y" />
     <tag Name="UD_FleshGolems PseudoCorpse" />
     <part Name="UD_FleshGolems_CorpseReanimationHelper" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Amaranthine Ashes Corpse" CorpseChance="0" />
@@ -717,7 +732,7 @@
   </object>
   
   <object Name="UD_FleshGolems Amaranthine Ashes Corpse" Inherits="Amaranthine Ashes">
-    <part Name="Render" DisplayName="streak of {{R|amaranthine}} powder" />
+    <part Name="Render" DisplayName="streak of {{R|amaranthine}} powder" DetailColor="K" />
     <part Name="Description" Short="Echoes of an elsewhence violence linger in the absence marked by this smudge of powder." />
     <tag Name="BodyType" Value="Ooze" />
     <tag Name="Species" Value="ooze" />

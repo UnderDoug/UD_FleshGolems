@@ -18,6 +18,7 @@ namespace XRL.World.ObjectBuilders
         public static List<string> ContextsToIgnore => new()
         {
             nameof(UD_FleshGolems_PastLife),
+            nameof(UD_FleshGolems_ReplaceCorpse),
             "Sample",
             "Wish",
         };
@@ -33,7 +34,8 @@ namespace XRL.World.ObjectBuilders
                 && 1.ChanceIn(SpecialChanceOneIn) 
                 && !ContextsToIgnore.Contains(Context)
                 && !BlueprintsToIgnore.Contains(Object.Blueprint)
-                && !Object.IsCorpse())
+                && !Object.IsCorpse()
+                && !Object.HasTagOrProperty("UD_FleshGolems OptionallyReanimated Excluded"))
             {
                 if (UD_FleshGolems_Reanimated.HasWorldGenerated)
                 {

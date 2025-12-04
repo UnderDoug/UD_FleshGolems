@@ -1266,7 +1266,7 @@ namespace XRL.World.Parts
                 oldDescription = null;
                 endMark = ".";
             }
-            if (IdentityType > IdentityType.Named)
+            if (IdentityType > IdentityType.Named && IdentityType < IdentityType.Corpse)
             {
                 whoTheyWere = Grammar.A(whoTheyWere);
             }

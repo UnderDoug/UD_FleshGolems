@@ -11,7 +11,7 @@
   EmblemTileColor="r"
   EmblemDetailColor="w"
   >
-    <feeling About="*" Value="-50" />
+    <feeling About="*" Value="0" />
     <partreputation About="UD_FleshGolems_ReanimatedCorpse" Value="50" />
     <waterritual
       Skill="Discipline_MindOverBody"

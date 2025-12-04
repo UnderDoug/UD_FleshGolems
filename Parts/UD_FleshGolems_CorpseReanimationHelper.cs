@@ -536,10 +536,13 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(FrankenCorpse), FrankenCorpse?.DebugName ?? NULL),
                 });
             AnyImplanted = false;
+            bool anyToImplant = false;
             if (FrankenCorpse.Body is Body frankenBody)
             {
                 if (FrankenCorpse.TryGetPart(out CyberneticsButcherableCybernetic butcherableCybernetics))
                 {
+                    anyToImplant = true;
+
                     int startingLicenses = Stat.RollCached("2d2-1");
 
                     FrankenCorpse.SetIntProperty(CYBERNETICS_LICENSES, startingLicenses);
@@ -568,6 +571,7 @@ namespace XRL.World.Parts
                                         && !bodyPart.HasInstalledCybernetics())
                                     {
                                         bodyPart.Implant(butcherableCybernetic);
+                                        AnyImplanted = true;
                                         break;
                                     }
                                 }
@@ -576,7 +580,6 @@ namespace XRL.World.Parts
                         }
                     }
                     FrankenCorpse.RemovePart(butcherableCybernetics);
-                    AnyImplanted = true || AnyImplanted;
                 }
                 if (!AnyImplanted)
                 {
@@ -584,6 +587,8 @@ namespace XRL.World.Parts
                     {
                         if (sourceRandomImplants.ImplantChance.RollCached().in100())
                         {
+                            anyToImplant = true;
+
                             int attempts = 0;
                             int maxAttempts = 30;
                             int atLeastLicensePoints = sourceRandomImplants.LicensesAtLeast.RollCached();
@@ -642,7 +647,7 @@ namespace XRL.World.Parts
                                                 {
                                                     spentLicensePoints += cyberneticsBaseItem.Cost;
                                                     implantTargetBodyPart.Implant(cyberneticObject);
-                                                    AnyImplanted = true || AnyImplanted;
+                                                    AnyImplanted = true;
                                                     break;
                                                 }
                                             }
@@ -659,6 +664,8 @@ namespace XRL.World.Parts
 
                     if (FrankenCorpse.TryGetPart(out CyberneticsHasImplants sourceImplants))
                     {
+                        anyToImplant = true;
+
                         List<string> implantsAtLocationList = new(sourceImplants.Implants.Split(','));
 
                         foreach (string implantBlueprintLocation in implantsAtLocationList)
@@ -669,7 +676,7 @@ namespace XRL.World.Parts
                                 if (frankenBody.GetPartByNameWithoutCybernetics(implantAtLocation[1]) is BodyPart bodyPartWithoutImplant)
                                 {
                                     bodyPartWithoutImplant.Implant(implantObject);
-                                    AnyImplanted = true || AnyImplanted;
+                                    AnyImplanted = true;
                                 }
                                 else
                                 {
@@ -680,7 +687,7 @@ namespace XRL.World.Parts
                     }
                 }
             }
-            return true;
+            return anyToImplant || AnyImplanted;
         }
 
         public static bool ProcessMoveToDeathCell(GameObject corpse, UD_FleshGolems_PastLife PastLife)
@@ -1091,7 +1098,7 @@ namespace XRL.World.Parts
                 frankenCorpse.SetIntProperty("NoAnimatedNamePrefix", 1);
                 frankenCorpse.SetIntProperty("Bleeds", 1);
 
-                frankenCorpse.Render.RenderLayer = 10;
+                frankenCorpse.Render.RenderLayer = PastLife.PastRender.RenderLayer;
 
                 PastLife.RestoreBrain(excludedFromDynamicEncounters, out Brain frankenBrain);
 
@@ -1134,12 +1141,6 @@ namespace XRL.World.Parts
                 PastLife.RestoreAnatomy(out Body frankenBody);
 
                 bool taxonomyRestored = PastLife.RestoreTaxonomy();
-
-                PastLife.RestoreCybernetics(out bool installedCybernetics);
-                if (!installedCybernetics)
-                {
-                    ImplantCyberneticsFromAttachedParts(frankenCorpse, out installedCybernetics);
-                }
 
                 PastLife.RestoreMutations(out Mutations frankenMutations);
                 
@@ -1214,6 +1215,11 @@ namespace XRL.World.Parts
                         HitpointsFallbackToMinimum: true);
 
                     AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: iIsProblemPartOrFollowerPartOrPartAlreadyHave);
+
+                    if (!sourceBlueprint.HasPart(nameof(Combat)))
+                    {
+                        frankenCorpse.RemovePart<Combat>(); // this makes clams continue to work like clams.
+                    }
 
                     AssignMutationsFromBlueprint(frankenMutations, sourceBlueprint);
 
@@ -1487,6 +1493,12 @@ namespace XRL.World.Parts
                 _ = indent[2];
 
                 UD_FleshGolems_Reanimated.EquipPastLifeItems(Corpse, true);
+
+                PastLife.RestoreCybernetics(out bool installedCybernetics);
+                if (!installedCybernetics)
+                {
+                    ImplantCyberneticsFromAttachedParts(frankenCorpse, out installedCybernetics);
+                }
 
                 Debug.Log("Getting New Tile!", Indent: indent[2]);
                 string chosenTile = null;

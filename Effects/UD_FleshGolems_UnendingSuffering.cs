@@ -38,13 +38,11 @@ namespace XRL.World.Effects
         private bool? _FlipRenderColors;
         private bool FlipRenderColors => GetFlipRenderColors();
 
-        private List<int> FrameRanges => new()
-        {
-            15 + FrameOffset,
-            25 + FrameOffset,
-            45 + FrameOffset,
-            55 + FrameOffset,
-        };
+        [SerializeField]
+        private bool ColorToggle;
+
+        private static int FrameMod => 60;
+        private static int FrameOffsetMod => 5;
 
         public static string MeatSufferColor = "R";
         public static string RobotSufferColor = "W";
@@ -131,8 +129,8 @@ namespace XRL.World.Effects
                 return _FrameOffset;
             }
             return (Object != null && int.TryParse(Object.ID, out int result))
-                ? _FrameOffset = (result % 3) + 1
-                : Stat.RollCached("1d3");
+                ? _FrameOffset = (result % FrameOffsetMod) + 1
+                : Stat.RollCached("1d" + FrameOffsetMod);
         }
 
         public bool GetFlipRenderColors()
@@ -421,15 +419,14 @@ namespace XRL.World.Effects
         public override bool Render(RenderEvent E)
         {
             _ = Object.Render;
-            int currentFrame = XRLCore.CurrentFrame % 60;
+            int currentFrame = (XRLCore.CurrentFrame + FrameOffset) % FrameMod;
 
-            bool firstRange = currentFrame > FrameRanges[0] && currentFrame < FrameRanges[1];
-            bool secondRange = currentFrame > FrameRanges[2] && currentFrame < FrameRanges[3];
-            if (firstRange || secondRange)
+            if (currentFrame > 25 && currentFrame < 35)
             {
-                string foregroundColor = (firstRange == !FlipRenderColors) ? "&K" : ("&" + SufferColor);
+                string foregroundColor = (ColorToggle == !FlipRenderColors) ? "&K" : ("&" + SufferColor);
                 E.RenderString = "\u0003";
                 E.ApplyColors(foregroundColor, ICON_COLOR_PRIORITY);
+                ColorToggle = !ColorToggle;
                 return false;
             }
             return base.Render(E);

@@ -60,7 +60,7 @@ namespace UD_FleshGolems.Capabilities
         }
 
         [Serializable]
-        public enum CountsAs
+        public enum CountsAs : int
         {
             Any,
             Blueprint,
@@ -90,7 +90,7 @@ namespace UD_FleshGolems.Capabilities
         [SerializeField]
         private StringMap<EntityBlueprint> EntityBlueprints;
 
-        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
+        [ModSensitiveStaticCache( CreateEmptyInstance = false )]
         [SerializeField]
         private bool Initialized;
 
@@ -986,6 +986,23 @@ namespace UD_FleshGolems.Capabilities
             bool Include0Weight = true,
             Predicate<GameObjectBlueprint> Filter = null)
             => GetWeightedEntityStringsThisCorpseCouldBe(Corpse.Blueprint, Include0Weight, Filter);
+
+        public Dictionary<string, int> GetWeightedCorpseStringsForEntity(EntityBlueprint EntityBlueprint, Predicate<CorpseSheet> CorpseSheetFilter = null)
+        {
+            List<CorpseWeight> corpseWeights = new();
+
+            foreach (CorpseSheet corpseSheet in GetCorpseSheets(CorpseSheetFilter))
+                if (corpseSheet.GetCorpseWeight(EntityBlueprint) is CorpseWeight corpseWeight)
+                    corpseWeights.Add(corpseWeight);
+
+            return corpseWeights?.ToDictionary(cw => cw.GetBlueprint().ToString(), cw => cw.Weight);
+        }
+
+        public Dictionary<string, int> GetWeightedCorpseStringsForEntity(string Entity, Predicate<CorpseSheet> CorpseSheetFilter = null)
+            => GetWeightedCorpseStringsForEntity(RequireEntityBlueprint(Entity), CorpseSheetFilter);
+
+        public Dictionary<string, int> GetWeightedCorpseStringsForEntity(GameObjectBlueprint EntityModel, Predicate<CorpseSheet> CorpseSheetFilter = null)
+            => GetWeightedCorpseStringsForEntity(EntityModel.Name, CorpseSheetFilter);
 
         /*
          * 

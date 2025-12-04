@@ -473,9 +473,12 @@
   <object Name="Albino ape" Load="Merge">
     <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::Y;;DetailColor::w" />
   </object>
-
   <object Name="Ogre Ape" Load="Merge">
     <tag Name="UD_FleshGolems CorpseIconColor" Value="TileColor::W;;DetailColor::w" />
+  </object>
+
+  <object Name="Crowsong" Load="Merge">
+    <tag Name="UD_FleshGolems OptionallyReanimated Excluded" />
   </object>
 
   <object Name="Oboroqoru" Load="Merge">

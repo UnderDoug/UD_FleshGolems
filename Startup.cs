@@ -166,7 +166,17 @@ namespace UD_FleshGolems
                     GameObject antiMatterCell = GameObject.Create("Antimatter Cell", AutoMod: "ModRadioPowered");
                     antiMatterCell.MakeUnderstood();
 
-                    CellChangedEvent.Send(null, recoilerObject, null, antiMatterCell);
+                    if (recoilerObject.TryGetPart(out EnergyCellSocket cellSocket))
+                    {
+                        cellSocket.Cell = antiMatterCell;
+                        CellChangedEvent.Send(null, recoilerObject, null, antiMatterCell);
+
+                        if (cellSocket.Cell != antiMatterCell
+                            && GameObject.Validate(ref antiMatterCell))
+                        {
+                            antiMatterCell.Obliterate();
+                        }
+                    }
 
                     player.ReceiveObject(recoilerObject);
                 }
