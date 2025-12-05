@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 
+using XRL.Rules;
+using XRL.World.ObjectBuilders;
+
 using UD_FleshGolems;
 using UD_FleshGolems.Capabilities;
 using UD_FleshGolems.Capabilities.Necromancy;
-
-using XRL.Rules;
-using XRL.World.ObjectBuilders;
+using static UD_FleshGolems.Utils;
 
 namespace XRL.World.Parts
 {
@@ -15,16 +16,25 @@ namespace XRL.World.Parts
     {
         public static UD_FleshGolems_NecromancySystem NecromancySystem => UD_FleshGolems_NecromancySystem.System;
 
-        public string Spec;
-
-        public Dictionary<string, string> SpecParameters => Spec?.CachedDictionaryExpansion();
+        public string Level;
+        public string Species;
+        public string Faction;
+        public string Tags;
+        public string Population;
 
         public bool FallbackOnSpecFail;
 
+        public bool ExcludeCorpsesFromOriginEntity;
+
         public UD_FleshGolems_ReplaceCorpse()
         {
-            Spec = null;
+            Level = null;
+            Species = null;
+            Faction = null;
+            Tags = null;
+            Population = null;
             FallbackOnSpecFail = false;
+            ExcludeCorpsesFromOriginEntity = true;
         }
 
         public override bool AllowStaticRegistration()
@@ -47,104 +57,113 @@ namespace XRL.World.Parts
             {
                 GameObject replacementCorpse = null;
 
-                if (!SpecParameters.IsNullOrEmpty())
+                DieRoll specLevel = null;
+                List<string> specSpecies = null;
+                List<string> specFaction = null;
+                List<string> specTags = null;
+                string specPopulation = null;
+                bool anySpec = false;
+                if (!Level.IsNullOrEmpty())
                 {
-                    DieRoll specLevel = null;
-                    List<string> specSpecies = null;
-                    List<string> specFaction = null;
-                    List<string> specTags = null;
-                    string specPopulation = null;
-
-                    if (SpecParameters.ContainsKey("Level"))
+                    specLevel = new();
+                    specLevel.Parse(Level, out bool isInvalidDie);
+                    anySpec = true;
+                    if (isInvalidDie)
                     {
-                        specLevel = new();
-                        specLevel.Parse(SpecParameters["Level"], out bool isInvalidDie);
-                        if (isInvalidDie)
-                        {
-                            specLevel = null;
-                        }
+                        specLevel = null;
+                        anySpec = false;
                     }
-                    if (SpecParameters.ContainsKey("Species"))
+                }
+                if (!Species.IsNullOrEmpty())
+                {
+                    specSpecies = Species.CachedCommaExpansion();
+                    anySpec = true;
+                }
+                if (!Faction.IsNullOrEmpty())
+                {
+                    specFaction = Faction.CachedCommaExpansion();
+                    anySpec = true;
+                }
+                if (!Tags.IsNullOrEmpty())
+                {
+                    specTags = Tags.CachedCommaExpansion();
+                    anySpec = true;
+                }
+
+                if (!Population.IsNullOrEmpty()
+                    && Population.CachedCommaExpansion()?.GetRandomElement() is string rolledPopulation)
+                {
+                    specPopulation = rolledPopulation;
+                    anySpec = true;
+                }
+                if (replacementCorpse == null
+                    && !specPopulation.IsNullOrEmpty()
+                    && PopulationManager.RollOneFrom(specPopulation).Blueprint.GetGameObjectBlueprint() is var populationEntityModel)
+                {
+                    bool corpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet)
+                        => UD_FleshGolems_Reanimated.CorpseSheetHasAcceptableCorpse(CorpseSheet, populationEntityModel.Name);
+
+                    if (UD_FleshGolems_Reanimated.TryGetRandomCorpseFromNecronomicon(populationEntityModel.Name, out GameObjectBlueprint corpseModel, corpseSheetHasAcceptableCorpse))
                     {
-                        specSpecies = SpecParameters["Species"]?.CachedCommaExpansion();
-                    }
-                    if (SpecParameters.ContainsKey("Faction"))
-                    {
-                        specFaction = SpecParameters["Faction"]?.CachedCommaExpansion();
-                    }
-                    if (SpecParameters.ContainsKey("Tags"))
-                    {
-                        specTags = SpecParameters["Tags"]?.CachedCommaExpansion();
-                    }
-                    if (SpecParameters.ContainsKey("Population")
-                        && SpecParameters["Population"]?.CachedCommaExpansion()?.GetRandomElement() is string rolledPopulation)
-                    {
-                        specPopulation = rolledPopulation;
-                    }
-
-                    if (specPopulation.IsNullOrEmpty()
-                        && PopulationManager.RollOneFrom(specPopulation).Blueprint.GetGameObjectBlueprint() is var populationEntityModel)
-                    {
-                        bool corpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet)
-                            => UD_FleshGolems_Reanimated.CorpseSheetHasAcceptableCorpse(CorpseSheet, populationEntityModel.Name);
-
-                        if (UD_FleshGolems_Reanimated.TryGetRandomCorpseFromNecronomicon(populationEntityModel.Name, out GameObjectBlueprint corpseModel, corpseSheetHasAcceptableCorpse))
-                        {
-                            replacementCorpse = corpseModel.createUnmodified();
-                        }
-                    }
-                    else
-                    {
-                        bool isAccordingToSpec(GameObjectBlueprint entityModel)
-                        {
-                            if (specLevel != null)
-                            {
-                                if (entityModel.GetStat("Level") is not Statistic levelStat)
-                                    return false;
-
-                                DieRoll levelDieRoll = new();
-
-                                levelDieRoll.Parse(levelStat.ValueOrSValue, out bool isInvalidDie);
-                                if (isInvalidDie)
-                                    return false;
-
-                                int specLevelRounded = specLevel.AverageRounded();
-                                if (specLevelRounded < levelDieRoll.Min() || specLevelRounded > levelDieRoll.Max())
-                                    return false;
-                            }
-
-                            if (!specSpecies.IsNullOrEmpty()
-                                && (!entityModel.TryGetStringPropertyOrTag("Species", out string speciesPropTag)
-                                    || !specSpecies.Contains(speciesPropTag)))
-                                return false;
-                                
-                            if (!specFaction.IsNullOrEmpty()
-                                && !specFaction.Contains(entityModel.GetPrimaryFaction()))
-                                return false;
-
-                            if (!specTags.IsNullOrEmpty()
-                                && (entityModel.Tags.IsNullOrEmpty()
-                                    || !entityModel.Tags.Keys.ContainsAll(specTags.ToArray())))
-                                return false;
-
-                            return true;
-                        }
-
-                        GameObjectBlueprint entityToSpec = NecromancySystem
-                            ?.GetEntityModelsWithCorpse(isAccordingToSpec)
-                            ?.GetRandomElementCosmetic();
-
-                        bool corpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet)
-                            => UD_FleshGolems_Reanimated.CorpseSheetHasAcceptableCorpse(CorpseSheet, entityToSpec.Name);
-
-                        if (UD_FleshGolems_Reanimated.TryGetRandomCorpseFromNecronomicon(entityToSpec.Name, out GameObjectBlueprint corpseModel, corpseSheetHasAcceptableCorpse))
-                        {
-                            replacementCorpse = corpseModel.createUnmodified();
-                        }
+                        replacementCorpse = corpseModel.createUnmodified();
                     }
                 }
                 if (replacementCorpse == null
-                    && (SpecParameters.IsNullOrEmpty() || FallbackOnSpecFail)
+                    && anySpec)
+                {
+                    bool isAccordingToSpec(GameObjectBlueprint entityModel)
+                    {
+                        if (specLevel != null)
+                        {
+                            if (entityModel.GetStat("Level") is not Statistic levelStat)
+                                return false;
+
+                            DieRoll levelDieRoll = new();
+
+                            levelDieRoll.Parse(levelStat.ValueOrSValue, out bool isInvalidDie);
+                            if (isInvalidDie)
+                                return false;
+
+                            int modelLevelRounded = levelDieRoll.AverageRounded();
+                            if (modelLevelRounded < specLevel.Min() || modelLevelRounded > specLevel.Max())
+                                return false;
+                        }
+
+                        if (!specSpecies.IsNullOrEmpty()
+                            && (!entityModel.TryGetStringPropertyOrTag("Species", out string speciesPropTag)
+                                || !specSpecies.Contains(speciesPropTag)))
+                            return false;
+                                
+                        if (!specFaction.IsNullOrEmpty()
+                            && !specFaction.Contains(entityModel.GetPrimaryFaction()))
+                            return false;
+
+                        if (!specTags.IsNullOrEmpty()
+                            && (entityModel.Tags.IsNullOrEmpty()
+                                || !entityModel.Tags.Keys.ContainsAll(specTags.ToArray())))
+                            return false;
+
+                        if (ExcludeCorpsesFromOriginEntity && entityModel.IsCorpse())
+                            return false;
+
+                        return true;
+                    }
+
+                    GameObjectBlueprint entityToSpec = NecromancySystem
+                        ?.GetEntityModelsWithCorpse(isAccordingToSpec)
+                        ?.GetRandomElementCosmetic();
+
+                    bool corpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet)
+                        => UD_FleshGolems_Reanimated.CorpseSheetHasAcceptableCorpse(CorpseSheet, entityToSpec.Name);
+
+                    if (entityToSpec != null
+                        && UD_FleshGolems_Reanimated.TryGetRandomCorpseFromNecronomicon(entityToSpec.Name, out GameObjectBlueprint corpseModel, corpseSheetHasAcceptableCorpse))
+                    {
+                        replacementCorpse = corpseModel.createUnmodified();
+                    }
+                }
+                if (replacementCorpse == null
+                    && (!anySpec || FallbackOnSpecFail)
                     && UD_FleshGolems_NecromancySystem.IsReanimatableCorpse(corpseToReplace.GetBlueprint()))
                 {
                     if (!corpseToReplace.TryGetPart(out UD_FleshGolems_PastLife pastLifePart) || !pastLifePart.Init)
@@ -178,6 +197,11 @@ namespace XRL.World.Parts
                     {
                         E.ReplacementObject = replacementCorpse;
                     }
+                }
+                else
+                {
+                    E.ReplacementObject = GameObject.CreateUnmodified("UD_FleshGolems ObliterateSelf Widget");
+                    MetricsManager.LogModError(ThisMod, Name + " " + " failed to find appropriate replacement corpse for " + (ParentObject?.DebugName ?? "null object") + ".");
                 }
             }
             return base.HandleEvent(E);

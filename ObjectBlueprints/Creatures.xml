@@ -20,7 +20,7 @@
   </object>
   
   <object Name="UD_FleshGolems Late Jofo Qudwufo" Inherits="Snapjaw">
-    <part Name="Render" DisplayName="Jofo Qudwufo" />
+    <part Name="Render" DisplayName="Jofo Qudwufo" TileColor="&amp;w" />
     <part Name="Brain" Wanders="false" />
     <xtagGrammar Proper="true" />
     <intproperty Name="ProperNoun" Value="1" />
@@ -40,7 +40,7 @@
   </object>
   <object Name="UD_FleshGolems Jofo Qudwufo" Inherits="Snapjaw Corpse">
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
-    <part Name="Render" DetailColor="K" TileColor="&amp;r"
+    <part Name="Render" ColorString="&amp;r" TileColor="&amp;r" DetailColor="w"
           DisplayName="the corpse of Jofo Qudwufo" />
     <property Name="CreatureName" Value="Jofo Qudwufo" />
     <property Name="UD_FleshGolems_CreatureProperName" Value="Jofo Qudwufo" />
@@ -70,6 +70,7 @@
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="UD_FleshGolems PastLife CountsAs" Value="Blueprint:UD_FleshGolems Late Jofo Qudwufo" />
     <tag Name="UD_FleshGolems ReanimationHelper GenerateSourceInventory" />
+    <tag Name="UD_FleshGolems ReanimatedCorpse UseIconColorPart" />
   </object>
   
   <object Name="UD_FleshGolems Mad Monger" Inherits="Gutsmonger">

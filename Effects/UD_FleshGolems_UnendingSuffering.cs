@@ -38,11 +38,23 @@ namespace XRL.World.Effects
         private bool? _FlipRenderColors;
         private bool FlipRenderColors => GetFlipRenderColors();
 
-        [SerializeField]
+        private bool _ColorLatch;
+        private bool ColorLatch
+        {
+            set
+            {
+                if (_ColorLatch != value && value)
+                {
+                    ColorToggle = !ColorToggle;
+                }
+                _ColorLatch = value;
+            }
+        }
+
         private bool ColorToggle;
 
         private static int FrameMod => 60;
-        private static int FrameOffsetMod => 5;
+        private static int FrameOffsetMod => 24;
 
         public static string MeatSufferColor = "R";
         public static string RobotSufferColor = "W";
@@ -75,6 +87,9 @@ namespace XRL.World.Effects
         {
             _FrameOffset = int.MinValue;
             _FlipRenderColors = null;
+
+            _ColorLatch = false;
+            ColorToggle = false;
 
             GracePeriod = GracePeriodTurns;
 
@@ -377,6 +392,9 @@ namespace XRL.World.Effects
             }
         }
 
+        public string GetForegroundColor()
+            => (ColorToggle == !FlipRenderColors) ? "&K" : ("&" + SufferColor);
+
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
@@ -418,17 +436,17 @@ namespace XRL.World.Effects
         }
         public override bool Render(RenderEvent E)
         {
-            _ = Object.Render;
+            // _ = Object.Render;
             int currentFrame = (XRLCore.CurrentFrame + FrameOffset) % FrameMod;
 
             if (currentFrame > 25 && currentFrame < 35)
             {
-                string foregroundColor = (ColorToggle == !FlipRenderColors) ? "&K" : ("&" + SufferColor);
+                ColorLatch = true;
                 E.RenderString = "\u0003";
-                E.ApplyColors(foregroundColor, ICON_COLOR_PRIORITY);
-                ColorToggle = !ColorToggle;
+                E.ApplyColors(GetForegroundColor(), ICON_COLOR_PRIORITY);
                 return false;
             }
+            ColorLatch = false;
             return base.Render(E);
         }
         public override bool HandleEvent(GetDebugInternalsEvent E)

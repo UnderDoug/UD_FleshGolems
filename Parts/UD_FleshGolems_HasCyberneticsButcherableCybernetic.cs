@@ -196,7 +196,7 @@ namespace XRL.World.Parts
                 {
                     foreach (string cyberneticBlueprint in Cybernetics.CachedCommaExpansion())
                     {
-                        UnityEngine.Debug.Log("    " + nameof(cyberneticBlueprint) + ": " + cyberneticBlueprint);
+                        Debug.Log(nameof(cyberneticBlueprint), cyberneticBlueprint, indent[1]);
                         if (GameObject.Create(cyberneticBlueprint) is GameObject cyberneticObject)
                         {
                             any = EmbedCyberneticWithSuccessChance(butcherableCybernetic, cyberneticObject, 100);

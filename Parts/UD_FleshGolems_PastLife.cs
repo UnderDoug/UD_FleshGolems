@@ -941,7 +941,16 @@ namespace XRL.World.Parts
                 Debug.CheckYeh(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), nameof(previouslySentientBeingsRep) + "-" + previouslySentientBeingsRep, indent[2]);
             }
             Debug.Log("Final " + nameof(previouslySentientBeingsRep), previouslySentientBeingsRep, Indent: indent[1]);
-            FrankenBrain.Allegiance.Add(PREVIOUSLY_SENTIENT_BEINGS, previouslySentientBeingsRep);
+            if (FrankenBrain.Allegiance.ContainsKey(PREVIOUSLY_SENTIENT_BEINGS))
+            {
+                int existingRep = FrankenBrain.Allegiance[PREVIOUSLY_SENTIENT_BEINGS];
+                previouslySentientBeingsRep = Math.Max(-100, Math.Min(previouslySentientBeingsRep + existingRep, 100));
+                FrankenBrain.Allegiance[PREVIOUSLY_SENTIENT_BEINGS] = previouslySentientBeingsRep;
+            }
+            else
+            {
+                FrankenBrain.Allegiance.Add(PREVIOUSLY_SENTIENT_BEINGS, previouslySentientBeingsRep);
+            }
             frankenCorpse.SetIntProperty("UD_FleshGolems Alignment Adjusted", 1);
             return true;
         }
@@ -1206,10 +1215,10 @@ namespace XRL.World.Parts
                 IdentityType.Librarian => frankenCorpse.Render?.DisplayName,
                 
                 IdentityType.Warden
-                or IdentityType.NamedVillager => creatureName,
+                or IdentityType.NamedVillager
+                or IdentityType.Named => creatureName,
 
-                IdentityType.Named 
-                or IdentityType.ParticipantVillager 
+                IdentityType.ParticipantVillager 
                 or IdentityType.Villager 
                 or IdentityType.Nobody => PastLife.RefName,
 

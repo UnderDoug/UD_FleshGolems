@@ -52,6 +52,7 @@ namespace XRL.World.Parts
 
         public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolems_reanimated|reanimated}}";
         public const string REANIMATED_NO_ADJECTIVE_PROPTAG = "UD_FleshGolems ReanimatedCorpse NoPrefix";
+        public const string REANIMATED_USE_ICONCOLOR_PART_PROPTAG = "UD_FleshGolems ReanimatedCorpse UseIconColorPart";
 
         private const string LIBRARIAN_FRAGMENT = "In the narthex of the Stilt, cloistered beneath a marble arch and close to";
 
@@ -199,7 +200,11 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(NewDescription), !NewDescription.IsNullOrEmpty()),
                 });
 
-            ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
+            if (ParentObject.HasTagOrIntProperty(REANIMATED_USE_ICONCOLOR_PART_PROPTAG))
+            {
+                Debug.CheckYeh("Adding " + nameof(UD_FleshGolems_CorpseIconColor), indent[1]);
+                ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
+            }
             Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[1]);
             foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
             {
@@ -410,22 +415,40 @@ namespace XRL.World.Parts
             if (PastLife != null
                 && PastLife.GenerateDisplayName(out IdentityType identityType) is string newDisplayName)
             {
-                E.ReplacePrimaryBase(newDisplayName);
-
-                if (identityType < IdentityType.ParticipantVillager)
+                if (E.BaseOnly) // this is largely for the stone statues, we'll see if it busts anything else.
                 {
-                    E.AddAdjective("corpse of", CorpseAdjective);
-                    E.AddAdjective("the", CorpseAdjective - 2);
+                    if (identityType < IdentityType.ParticipantVillager)
+                    {
+                        newDisplayName = "corpse of " + newDisplayName;
+                    }
+                    else
+                    if (identityType < IdentityType.Corpse)
+                    {
+                        newDisplayName += " corpse";
+                    }
+                    if (AllowReanimatedPrefix(E.Object))
+                    {
+                        newDisplayName = REANIMATED_ADJECTIVE + " " + newDisplayName;
+                    }
                 }
                 else
-                if (identityType < IdentityType.Corpse)
                 {
-                    E.AddClause("corpse", CorpseClause);
+                    if (identityType < IdentityType.ParticipantVillager)
+                    {
+                        E.AddAdjective("corpse of", CorpseAdjective);
+                        E.AddAdjective("the", CorpseAdjective - 2);
+                    }
+                    else
+                    if (identityType < IdentityType.Corpse)
+                    {
+                        E.AddClause("corpse", CorpseClause);
+                    }
+                    if (AllowReanimatedPrefix(E.Object))
+                    {
+                        E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
+                    }
                 }
-                if (AllowReanimatedPrefix(E.Object))
-                {
-                    E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
-                }
+                E.ReplacePrimaryBase(newDisplayName);
             }
             return base.HandleEvent(E);
         }
@@ -473,8 +496,7 @@ namespace XRL.World.Parts
         {
             using Indent indent = new(1);
             if (ParentObject is GameObject frankenCorpse
-                && IdentityType <= IdentityType.ParticipantVillager
-                )
+                && IdentityType <= IdentityType.ParticipantVillager)
             {
                 bool wantsToAlign = !frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS && a.Value > 0);
                 if (wantsToAlign

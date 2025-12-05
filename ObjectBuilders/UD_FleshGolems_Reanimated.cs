@@ -134,10 +134,10 @@ namespace XRL.World.ObjectBuilders
                 bool corpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet)
                     => CorpseSheetHasAcceptableCorpse(CorpseSheet, Entity.Blueprint);
 
-                if (corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse()
+                if ((corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())
                     && TryGetRandomCorpseFromNecronomicon(Entity.Blueprint, out corpseModel, corpseSheetHasAcceptableCorpse))
                 {
-                    corpseBlueprint = corpseModel.Name;
+                    corpseBlueprint = corpseModel?.Name;
                     Debug.CheckYeh(nameof(NecromancySystem) + " " + nameof(corpseBlueprint), corpseBlueprint ?? NULL, Indent: indent[1]);
                 }
                 if (corpseBlueprint.IsNullOrEmpty() || !corpseModel.IsCorpse())

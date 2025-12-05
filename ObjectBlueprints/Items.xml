@@ -60,32 +60,64 @@
     <tag Name="BaseObject" Value="*noinherit" />
   </object>
 
-  <object Name="UD_FleshGolems Reanimated Corpse0" Inherits="UD_FleshGolems Base Reanimated Corpse">
+  <object Name="UD_FleshGolems Extradimensional Eligible Reanimated Corpse" Inherits="UD_FleshGolems Base Reanimated Corpse">
+    <part Name="UD_FleshGolems_ReplaceCorpse" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+    <tag Name="BaseObject" Value="*noinherit" />
+  </object>
+
+  <object Name="UD_FleshGolems Reanimated Corpse0" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
     <stat Name="Level" Value="1" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="1-3" />
   </object>
-  <object Name="UD_FleshGolems Reanimated Corpse1" Inherits="UD_FleshGolems Base Reanimated Corpse">
+  <object Name="UD_FleshGolems Reanimated Corpse1" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
     <stat Name="Level" Value="5" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="3-8" />
   </object>
-  <object Name="UD_FleshGolems Reanimated Corpse2" Inherits="UD_FleshGolems Base Reanimated Corpse">
+  <object Name="UD_FleshGolems Reanimated Corpse2" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
     <stat Name="Level" Value="10" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="8-13" />
   </object>
-  <object Name="UD_FleshGolems Reanimated Corpse3" Inherits="UD_FleshGolems Base Reanimated Corpse">
+  <object Name="UD_FleshGolems Reanimated Corpse3" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
     <stat Name="Level" Value="15" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="13-18" />
   </object>
-  <object Name="UD_FleshGolems Reanimated Corpse4" Inherits="UD_FleshGolems Base Reanimated Corpse">
+  <object Name="UD_FleshGolems Reanimated Corpse4" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
     <stat Name="Level" Value="20" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="18-23" />
   </object>
-  <object Name="UD_FleshGolems Reanimated Corpse5" Inherits="UD_FleshGolems Base Reanimated Corpse">
+  <object Name="UD_FleshGolems Reanimated Corpse5" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
     <stat Name="Level" Value="25" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="23-28" />
   </object>
-  <object Name="UD_FleshGolems Reanimated Corpse6" Inherits="UD_FleshGolems Base Reanimated Corpse">
+  <object Name="UD_FleshGolems Reanimated Corpse6" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
     <stat Name="Level" Value="30" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="28-33" />
   </object>
-  <object Name="UD_FleshGolems Reanimated Corpse7" Inherits="UD_FleshGolems Base Reanimated Corpse">
+  <object Name="UD_FleshGolems Reanimated Corpse7" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
     <stat Name="Level" Value="35" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="33-38" />
   </object>
-  <object Name="UD_FleshGolems Reanimated Corpse8" Inherits="UD_FleshGolems Base Reanimated Corpse">
+  <object Name="UD_FleshGolems Reanimated Corpse8" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
     <stat Name="Level" Value="40" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="38-43" />
+  </object>
+  
+  <object Name="UD_FleshGolems Reanimated Baboon Corpse2" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
+    <stat Name="Level" Value="10" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="8-13" Faction="Baboons" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Snapjaw Corpse2" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
+    <stat Name="Level" Value="10" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="8-13" Species="Snapjaw" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Bear Corpse3" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
+    <stat Name="Level" Value="15" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="13-18" Faction="Bears" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Fish Corpse3" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
+    <stat Name="Level" Value="15" />
+    <part Name="UD_FleshGolems_ReplaceCorpse" Level="13-18" Faction="Fish" />
   </object>
   
   <object Name="UD_FleshGolems Corpse Corpse" Inherits="Corpse">
@@ -223,7 +255,7 @@
     <part Name="Food" Message="The fibers are tough." />
     <xtagTextFragments
       Skin="fibres"
-      PoeticFeatures="wilted leaves,spares twigs,dull foliage,snapped limbs"
+      PoeticFeatures="wilted leaves,sparse twigs,dull foliage,snapped limbs"
       YounglingNoise="*creak*"
       Activity="suffering endlessly"
       VillageActivity="steeping in perpetual existential pain"
@@ -336,7 +368,7 @@
     <part Name="Food" Message="The material is soft and slimy." />
     <xtagTextFragments
       Skin="reticulum"
-      PoeticFeatures="rotten gills,spares teeth,dull skirt,snapped tendrils"
+      PoeticFeatures="rotten gills,sparse teeth,dull skirt,snapped tendrils"
       YounglingNoise="*creak*"
       Activity="suffering endlessly"
       VillageActivity="steeping in perpetual existential pain"

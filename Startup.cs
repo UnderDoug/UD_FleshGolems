@@ -177,9 +177,9 @@ namespace UD_FleshGolems
                             antiMatterCell.Obliterate();
                         }
                     }
-
                     player.ReceiveObject(recoilerObject);
                 }
+                player.ReceiveObject("Floating Glowsphere");
             }
         }
         public static bool IsStaticRecoiler(GameObjectBlueprint Model)
