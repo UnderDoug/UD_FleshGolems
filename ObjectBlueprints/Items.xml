@@ -119,6 +119,16 @@
     <stat Name="Level" Value="15" />
     <part Name="UD_FleshGolems_ReplaceCorpse" Level="13-18" Faction="Fish" />
   </object>
+
+  <object Name="UD_FleshGolems Reanimated Baboon Corpse" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
+    <part Name="UD_FleshGolems_ReplaceCorpse" Faction="Baboons" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Snapjaw Corpse" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
+    <part Name="UD_FleshGolems_ReplaceCorpse" Species="Snapjaw" />
+  </object>
+  <object Name="UD_FleshGolems Reanimated Fish Corpse" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
+    <part Name="UD_FleshGolems_ReplaceCorpse" Faction="Fish" />
+  </object>
   
   <object Name="UD_FleshGolems Corpse Corpse" Inherits="Corpse">
     <part Name="Render" DisplayName="pile of gunk" ColorString="&amp;K"
@@ -427,7 +437,7 @@
   
   <object Name="UD_FleshGolems Base Ooze Corpse" Inherits="Corpse">
     <mixin Name="UD_FleshGolems Plastiform Corpse Attributes" />
-    <part Name="LiquidVolume" MaxVolume="-1" Volume="120" StartVolume="40-200" InitialLiquid="proteangunk-1000" />
+    <part Name="LiquidVolume" MaxVolume="240" Volume="120" StartVolume="40-200" InitialLiquid="proteangunk-1000" />
     <part Name="Physics" FlameTemperature="5000" VaporTemperature="9000" />
     <part Name="Render" DisplayName="[puddle of gunk]" 
           RenderString="~" ColorString="&amp;y"

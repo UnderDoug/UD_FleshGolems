@@ -8,11 +8,12 @@ using XRL.World.ObjectBuilders;
 using UD_FleshGolems;
 using UD_FleshGolems.Capabilities;
 using UD_FleshGolems.Capabilities.Necromancy;
+using UD_FleshGolems.Events;
 using static UD_FleshGolems.Utils;
 
 namespace XRL.World.Parts
 {
-    public class UD_FleshGolems_ReplaceCorpse : IScribedPart
+    public class UD_FleshGolems_ReplaceCorpse : IScribedPart, IReanimateEventHandler
     {
         public static UD_FleshGolems_NecromancySystem NecromancySystem => UD_FleshGolems_NecromancySystem.System;
 
@@ -48,7 +49,8 @@ namespace XRL.World.Parts
 
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
-            ; // || ID == BeforeObjectCreatedEvent.ID;
+            // || ID == BeforeObjectCreatedEvent.ID
+            ;
 
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
         {
@@ -188,21 +190,25 @@ namespace XRL.World.Parts
                 {
                     bool doReplacement = true;
                     if (corpseToReplace.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper oldCorpseReanimationHelper)
-                        && replacementCorpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper newCorpseReanimationHelper)
-                        && oldCorpseReanimationHelper.AlwaysAnimate)
+                        && replacementCorpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper newCorpseReanimationHelper))
                     {
-                        doReplacement = newCorpseReanimationHelper.Animate();
+                        if (oldCorpseReanimationHelper.AlwaysAnimate)
+                        {
+                            doReplacement = newCorpseReanimationHelper.Animate() && GameObject.Validate(ref replacementCorpse);
+                        }
+                        else
+                        {
+                            doReplacement = true;
+                        }
                     }
                     if (doReplacement)
                     {
                         E.ReplacementObject = replacementCorpse;
+                        return base.HandleEvent(E);
                     }
                 }
-                else
-                {
-                    E.ReplacementObject = GameObject.CreateUnmodified("UD_FleshGolems ObliterateSelf Widget");
-                    MetricsManager.LogModError(ThisMod, Name + " " + " failed to find appropriate replacement corpse for " + (ParentObject?.DebugName ?? "null object") + ".");
-                }
+                E.ReplacementObject = GameObject.CreateUnmodified("UD_FleshGolems ObliterateSelf Widget");
+                MetricsManager.LogModError(ThisMod, Name + " " + " failed to find appropriate replacement corpse for " + (ParentObject?.DebugName ?? "null object") + ".");
             }
             return base.HandleEvent(E);
         }

@@ -84,10 +84,10 @@ namespace XRL.World.ObjectBuilders
             && !CorpseModel.IsExcludedFromDynamicEncounters();
 
         public static bool CorpseSheetHasAcceptableCorpse(CorpseSheet CorpseSheet, string Entity)
-                => CorpseSheet.CorpseHasEntity(Entity)
-                && CorpseSheet.GetCorpse() is CorpseBlueprint corpseBlueprint
-                && corpseBlueprint.GetGameObjectBlueprint() is GameObjectBlueprint corpseModel
-                && CorpseModelIsAcceptable(corpseModel);
+            => CorpseSheet.CorpseHasEntity(Entity)
+            && CorpseSheet.GetCorpse() is CorpseBlueprint corpseBlueprint
+            && corpseBlueprint.GetGameObjectBlueprint() is GameObjectBlueprint corpseModel
+            && CorpseModelIsAcceptable(corpseModel);
 
         public static bool TryGetRandomCorpseFromNecronomicon(string Entity, out GameObjectBlueprint CorpseModel, Predicate<CorpseSheet> CorpseSheetFilter = null)
             => (CorpseModel = NecromancySystem

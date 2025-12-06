@@ -33,6 +33,7 @@ using UD_FleshGolems.Logging;
 using UD_FleshGolems.Capabilities;
 using UD_FleshGolems.Capabilities.Necromancy;
 using UD_FleshGolems.Parts.PastLifeHelpers;
+using UD_FleshGolems.Events;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
@@ -45,7 +46,7 @@ namespace XRL.World.Parts
     [HasGameBasedStaticCache]
     [HasWishCommand]
     [Serializable]
-    public class UD_FleshGolems_PastLife : IScribedPart
+    public class UD_FleshGolems_PastLife : IScribedPart, IReanimateEventHandler
     {
         [UD_FleshGolems_DebugRegistry]
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
@@ -428,45 +429,7 @@ namespace XRL.World.Parts
                         PastLife.RemoveAllEffects<LiquidCovered>();
                         PastLife.RemoveAllEffects<LiquidStained>();
 
-                        Debug.Log(nameof(PastLife.Render), Indent: indent[2]);
-                        if (PastLife.Render != null)
-                        {
-                            Render bIAJ_Render = BrainInAJar.Render ?? BrainInAJar.RequirePart<Render>();
-                            BrainInAJar.Render = bIAJ_Render;
-
-                            // Traverse pastRenderWalk = new(PastLife.Render);
-                            Dictionary<string, Traverse> pastRenderFieldsProps = PastLife.Render
-                                ?.GetAssignableDeclaredFieldAndPropertyDictionary(HasValueIsPrimativeType);
-
-                            // Traverse bIAJ_RenderWalk = new(BrainInAJar.Render);
-                            Dictionary<string, Traverse> bIAJ_RenderFieldsProps = BrainInAJar.Render
-                                ?.GetAssignableDeclaredFieldAndPropertyDictionary(HasValueIsPrimativeType);
-
-                            if (!pastRenderFieldsProps.IsNullOrEmpty() && !bIAJ_RenderFieldsProps.IsNullOrEmpty())
-                            {
-                                foreach ((string pastFieldPropName, Traverse pastRenderFieldProp) in pastRenderFieldsProps)
-                                {
-                                    object pastRenderFieldPropValue = pastRenderFieldProp.GetValue();
-                                    try
-                                    {
-                                        if (bIAJ_RenderFieldsProps.ContainsKey(pastFieldPropName)
-                                            && bIAJ_RenderFieldsProps[pastFieldPropName].GetValueType() == pastRenderFieldProp.GetValueType())
-                                        {
-                                            bIAJ_RenderFieldsProps[pastFieldPropName].SetValue(pastRenderFieldPropValue);
-                                            Debug.CheckYeh(pastFieldPropName, pastRenderFieldPropValue.ToString(), indent[3]);
-                                        }
-                                        else
-                                        {
-                                            Debug.CheckNah(pastFieldPropName, pastRenderFieldPropValue.ToString(), indent[3]);
-                                        }
-                                    }
-                                    catch (Exception x)
-                                    {
-                                        MetricsManager.LogException(callingTypeAndMethod + " " + nameof(BrainInAJar.Render) + ": " + pastRenderFieldPropValue, x, "game_mod_exception");
-                                    }
-                                }
-                            }
-                        }
+                        TransferRenderFieldPropsFrom(PastLife);
 
                         Description bIAJ_Description = BrainInAJar.OverrideWithDeepCopyOrRequirePart(PastLife.GetPart<Description>());
 
@@ -807,6 +770,82 @@ namespace XRL.World.Parts
             && (Entry.Key.StartsWith("staticFaction") 
                 || Entry.Key == "NoHateFactions");
 
+        public static bool TransferRenderFieldProps(
+            GameObject Source,
+            GameObject Destination,
+            Predicate<KeyValuePair<string, Type>> Filter = null)
+        {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(Source), Source?.DebugName ?? NULL),
+                    Debug.Arg(nameof(Destination), Destination?.DebugName ?? NULL),
+                });
+
+            if (Source == null
+                || Destination == null
+                || Source.Render is not Render sourceRender)
+            {
+                Debug.CheckNah("No source, or no destination, or no source Render.", indent[1]);
+                return false;
+            }
+            Render destinationRender = Destination.Render ?? Destination.RequirePart<Render>();
+            Destination.Render = destinationRender;
+
+            Dictionary<string, Traverse> sourceRenderFieldsProps = Source.Render
+                ?.GetAssignableDeclaredFieldAndPropertyDictionary(HasValueIsPrimativeType);
+
+            Dictionary<string, Traverse> destinationRenderFieldsProps = Destination.Render
+                ?.GetAssignableDeclaredFieldAndPropertyDictionary(HasValueIsPrimativeType);
+
+            bool any = false;
+            if (!sourceRenderFieldsProps.IsNullOrEmpty() && !destinationRenderFieldsProps.IsNullOrEmpty())
+            {
+                foreach ((string sourceFieldPropName, Traverse sourceRenderFieldProp) in sourceRenderFieldsProps)
+                {
+                    object sourceRenderFieldPropValue = sourceRenderFieldProp.GetValue();
+                    try
+                    {
+                        if (destinationRenderFieldsProps.ContainsKey(sourceFieldPropName)
+                            && destinationRenderFieldsProps[sourceFieldPropName].GetValueType() == sourceRenderFieldProp.GetValueType())
+                        {
+                            if (Filter == null || Filter(new(sourceFieldPropName, sourceRenderFieldProp.GetValueType())))
+                            {
+                                destinationRenderFieldsProps[sourceFieldPropName].SetValue(sourceRenderFieldPropValue);
+                                Debug.CheckYeh(sourceFieldPropName, sourceRenderFieldPropValue.ToString(), indent[1]);
+                                any = true;
+                            }
+                            else
+                            {
+                                Debug.CheckNah("Filtered " + sourceFieldPropName, sourceRenderFieldPropValue.ToString(), indent[1]);
+                            }
+                        }
+                        else
+                        {
+                            Debug.CheckNah(sourceFieldPropName, sourceRenderFieldPropValue.ToString(), indent[1]);
+                        }
+                    }
+                    catch (Exception x)
+                    {
+                        MetricsManager.LogException(
+                            nameof(UD_FleshGolems_PastLife) + " " +
+                            nameof(TransferRenderFieldProps) + " " +
+                            nameof(Destination.Render) + ": " +
+                            sourceRenderFieldPropValue,
+                            x,
+                            "game_mod_exception");
+                    }
+                }
+            }
+            return any;
+        }
+        public bool TransferRenderFieldPropsFrom(GameObject Source, Predicate<KeyValuePair<string, Type>> Filter = null)
+            => TransferRenderFieldProps(Source, BrainInAJar, Filter);
+
+        public bool TransferRenderFieldPropsTo(GameObject Destination, Predicate<KeyValuePair<string, Type>> Filter = null)
+            => TransferRenderFieldProps(BrainInAJar, Destination, Filter);
+
         public static bool RestoreFactionRelationships(
             GameObject FrankenCorpse,
             UD_FleshGolems_PastLife PastLife)
@@ -1099,6 +1138,7 @@ namespace XRL.World.Parts
             Warden,
             NamedVillager,
             Named,
+            Hero,
             ParticipantVillager,
             Villager,
             Nobody,
@@ -1123,11 +1163,19 @@ namespace XRL.World.Parts
             if (frankenCorpse.IsNamedVillager())
                 return IdentityType.NamedVillager;
 
-            if (PastLife.WasCorpse)
-                return IdentityType.Corpse;
-
             if (PastLife.WasProperlyNamed)
                 return IdentityType.Named;
+
+            if (PastLife.BrainInAJar.HasPropertyOrTag("Hero") 
+                || (PastLife.BrainInAJar.GetPropertyOrTag("Role") is string bIAJRolePropTag && bIAJRolePropTag == "Hero"))
+                return IdentityType.Hero;
+
+            if (frankenCorpse.HasPropertyOrTag("Hero") 
+                || (frankenCorpse.GetPropertyOrTag("Role") is string frankenRolePropTag && frankenRolePropTag == "Hero"))
+                return IdentityType.Hero;
+
+            if (PastLife.WasCorpse)
+                return IdentityType.Corpse;
 
             if (frankenCorpse.IsParticipantVillager())
                 return IdentityType.ParticipantVillager;
@@ -1157,11 +1205,15 @@ namespace XRL.World.Parts
             if (Entity.IsNamedVillager())
                 return IdentityType.NamedVillager;
 
-            if (Entity.IsCorpse())
-                return IdentityType.Corpse;
-
             if (WasProperlyNamed(Entity))
                 return IdentityType.Named;
+
+            if (Entity.HasPropertyOrTag("Hero")
+                || (Entity.GetPropertyOrTag("Role") is string rolePropTag && rolePropTag == "Hero"))
+                return IdentityType.Hero;
+
+            if (Entity.IsCorpse())
+                return IdentityType.Corpse;
 
             if (Entity.IsParticipantVillager())
                 return IdentityType.ParticipantVillager;
@@ -1216,7 +1268,8 @@ namespace XRL.World.Parts
                 
                 IdentityType.Warden
                 or IdentityType.NamedVillager
-                or IdentityType.Named => creatureName,
+                or IdentityType.Named
+                or IdentityType.Hero => creatureName,
 
                 IdentityType.ParticipantVillager 
                 or IdentityType.Villager 

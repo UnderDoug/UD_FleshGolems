@@ -20,11 +20,7 @@
       SkillPointAmount=""
       SkillPointCost=""
     />
-    <interests 
-      BuyTargetedSecrets="true"
-      SellTargetedSecrets="true"
-      Blurb=" might have known all sorts of things while alive"
-      >
+    <interests Blurb=" might have known all sorts of things while alive">
       <interest Tags="*" WillBuy="true" WillSell="true" Description="all manner of things" />
     </interests>
     <interests BuyDescription=" interested in esoteic knowledge: ">

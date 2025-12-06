@@ -6,9 +6,9 @@ namespace XRL.World.Parts
     {
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
-            || ID == EnvironmentalUpdateEvent.ID;
+            || ID == EnteredCellEvent.ID;
 
-        public override bool HandleEvent(EnvironmentalUpdateEvent E)
+        public override bool HandleEvent(EnteredCellEvent E)
         {
             if ((ParentObject?.Obliterate()).GetValueOrDefault())
             {

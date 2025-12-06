@@ -16,16 +16,16 @@ using XRL.World.Parts.Mutation;
 using SerializeField = UnityEngine.SerializeField;
 
 using UD_FleshGolems;
-
-using static UD_FleshGolems.Const;
 using UD_FleshGolems.Logging;
+using UD_FleshGolems.Events;
+using static UD_FleshGolems.Const;
 
 namespace XRL.World.Parts
 {
     [Serializable]
-    public class UD_FleshGolems_DestinedForReanimation : IScribedPart
+    public class UD_FleshGolems_DestinedForReanimation : IScribedPart, IReanimateEventHandler
     {
-        // Keys list lifted from Books' https://codeberg.org/librarianmage/EloquentDeath
+        // Keys list lifted from books' https://codeberg.org/librarianmage/EloquentDeath
         // which you should check out for being awesome.
         public static Dictionary<string, List<string>> DeathCategoryDeathMessages => new()
         {

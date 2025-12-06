@@ -1,7 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+
+using HarmonyLib;
+
+using Genkit;
 
 using XRL.Core;
+using XRL.Rules;
 using XRL.World.Anatomy;
 using XRL.World.Effects;
 
@@ -14,16 +20,13 @@ using IdentityType = XRL.World.Parts.UD_FleshGolems_PastLife.IdentityType;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
+using UD_FleshGolems.Events;
 using static UD_FleshGolems.Const;
-using System.Linq;
-using XRL.Rules;
-using Genkit;
-using HarmonyLib;
 
 namespace XRL.World.Parts
 {
     [Serializable]
-    public class UD_FleshGolems_ReanimatedCorpse : IScribedPart
+    public class UD_FleshGolems_ReanimatedCorpse : IScribedPart, IReanimateEventHandler
     {
         [UD_FleshGolems_DebugRegistry]
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
@@ -397,7 +400,7 @@ namespace XRL.World.Parts
         {
             if (E.Context == "CreatureType" && E.Reference)
             {
-                E.ReplacePrimaryBase(E.Object.GetBlueprint().DisplayName());
+                E.ReplacePrimaryBase(E.Object.GetBlueprint().DisplayName().RemoveAll("[", "]"));
 
                 if (IdentityType < IdentityType.ParticipantVillager)
                 {
@@ -413,7 +416,8 @@ namespace XRL.World.Parts
             }
             else
             if (PastLife != null
-                && PastLife.GenerateDisplayName(out IdentityType identityType) is string newDisplayName)
+                && PastLife.GenerateDisplayName(out IdentityType identityType) is string newDisplayName
+                 && identityType != IdentityType.Librarian)
             {
                 if (E.BaseOnly) // this is largely for the stone statues, we'll see if it busts anything else.
                 {
@@ -426,7 +430,7 @@ namespace XRL.World.Parts
                     {
                         newDisplayName += " corpse";
                     }
-                    if (AllowReanimatedPrefix(E.Object))
+                    if (AllowReanimatedPrefix(E.Object) && identityType != IdentityType.Librarian)
                     {
                         newDisplayName = REANIMATED_ADJECTIVE + " " + newDisplayName;
                     }
@@ -443,7 +447,7 @@ namespace XRL.World.Parts
                     {
                         E.AddClause("corpse", CorpseClause);
                     }
-                    if (AllowReanimatedPrefix(E.Object))
+                    if (AllowReanimatedPrefix(E.Object) && identityType != IdentityType.Librarian)
                     {
                         E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
                     }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
+using System.Reflection;
 
 using HarmonyLib;
 
@@ -18,6 +20,8 @@ using XRL.World.Effects;
 using XRL.World.Skills;
 using XRL.World.AI;
 
+using static XRL.World.Parts.UD_FleshGolems_PastLife;
+
 using NanoNecroAnimation = XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
 using RaggedNaturalWeapon = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon;
 using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdjective;
@@ -25,18 +29,16 @@ using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdje
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Parts.PastLifeHelpers;
+using UD_FleshGolems.Events;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
-using System.Linq;
-using static XRL.World.Parts.UD_FleshGolems_PastLife;
-using System.Reflection;
 
 namespace XRL.World.Parts
 {
     [Serializable]
-    public class UD_FleshGolems_CorpseReanimationHelper : IScribedPart
+    public class UD_FleshGolems_CorpseReanimationHelper : IScribedPart, IReanimateEventHandler
     {
         [UD_FleshGolems_DebugRegistry]
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
@@ -67,7 +69,7 @@ namespace XRL.World.Parts
         public const string REANIMATED_TAXA_XTAG = "UD_FleshGolems_Taxa";
         public const string REANIMATED_PART_EXCLUSIONS_PROPTAG = "UD_FleshGolems_Reanimated_PartExclusions";
         public const string REANIMATED_FLIP_COLORS_PROPTAG = "UD_FleshGolems ReanimationHelper FlipColors";
-        public const string REANIMATED_SET_COLORS_PROPTAG = "UD_FleshGolems ReanimationHelper SetColors";
+        public const string REANIMATED_SET_COLORS_PROPTAG = UD_FleshGolems_CorpseIconColor.SET_COLORS_PROPTAG;
         public const string REANIMATED_GEN_SOURCE_INV_PROPTAG = "UD_FleshGolems ReanimationHelper GenerateSourceInventory";
 
         public const string CYBERNETICS_LICENSES = "CyberneticsLicenses";
@@ -991,7 +993,9 @@ namespace XRL.World.Parts
 
         public static bool MakeItALIVE(
             GameObject Corpse,
-            UD_FleshGolems_PastLife PastLife)
+            UD_FleshGolems_PastLife PastLife,
+            GameObject Reanimator = null,
+            GameObject Using = null)
         {
             using Indent indent = new();
             Debug.LogMethod(indent[1],
@@ -1003,18 +1007,20 @@ namespace XRL.World.Parts
 
             if (Corpse is GameObject frankenCorpse
                 && frankenCorpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>() is var reanimationHelper)
-            {
+            {   
                 if (frankenCorpse.GetPropertyOrTag("UD_FleshGolems_Reanimator") is string reanimatorFallback)
                 {
                     if (int.TryParse(reanimatorFallback, out int reanimatorFallbackID))
                     {
-                        reanimationHelper.Reanimator ??= GameObject.FindByID(reanimatorFallbackID.ToString());
+                        Reanimator ??= GameObject.FindByID(reanimatorFallbackID.ToString());
                     }
                     else
                     {
-                        reanimationHelper.Reanimator ??= GameObject.FindByBlueprint(reanimatorFallback);
+                        Reanimator ??= GameObject.FindByBlueprint(reanimatorFallback);
                     }
                 }
+                reanimationHelper.Reanimator = Reanimator;
+
                 Debug.Log(nameof(PastLife) + "?." + nameof(PastLife.Blueprint), PastLife?.Blueprint, indent[2]);
 
                 bool proceedWithMakeLive = true;
@@ -1040,14 +1046,13 @@ namespace XRL.World.Parts
                 {
                     return false;
                 }
-                if (!frankenCorpse.FireEvent(Event.New(
-                        ID: "UD_FleshGolems_BeforeReanimated",
-                        "FrankenCorpse", frankenCorpse,
-                        "Reanimator", reanimationHelper.Reanimator,
-                        "PastLifePart", PastLife)))
+                if (!BeforeReanimateEvent.Check(frankenCorpse, PastLife, Reanimator, Using))
                 {
+                    Debug.CheckNah("Blocked by " + nameof(BeforeReanimateEvent), indent[2]);
                     return false;
                 }
+
+                bool builtToBeReanimated = (frankenCorpse.GetPart<UD_FleshGolems_DestinedForReanimation>()?.BuiltToBeReanimated).GetValueOrDefault();
 
                 Dictionary<TileMappingKeyword, List<string>> prospectiveTiles = null;
 
@@ -1095,10 +1100,30 @@ namespace XRL.World.Parts
 
                 IdentityType identityType = PastLife.GetIdentityType();
 
+                string creatureType = frankenCorpse.GetBlueprint().DisplayName();
+                if (identityType < IdentityType.ParticipantVillager)
+                {
+                    creatureType = "corpse of " + PastLife.GetBlueprint().DisplayName();
+                }
+                else
+                if (identityType < IdentityType.Corpse)
+                {
+                    creatureType = PastLife.GetBlueprint().DisplayName() + " corpse";
+                }
+                creatureType = UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE + " " + creatureType.RemoveAll("[", "]");
+                frankenCorpse.SetStringProperty("CreatureType", creatureType);
+
                 frankenCorpse.SetIntProperty("NoAnimatedNamePrefix", 1);
                 frankenCorpse.SetIntProperty("Bleeds", 1);
 
                 frankenCorpse.Render.RenderLayer = PastLife.PastRender.RenderLayer;
+                frankenCorpse.Render.CustomRender = PastLife.PastRender.CustomRender;
+
+                PastLife.TransferRenderFieldPropsTo(frankenCorpse, fp
+                    => fp.Key != nameof(Parts.Render.DisplayName)
+                    && fp.Key != nameof(Parts.Render.Tile)
+                    && fp.Key != nameof(Parts.Render.RenderString)
+                    && !fp.Key.Contains("Color"));
 
                 PastLife.RestoreBrain(excludedFromDynamicEncounters, out Brain frankenBrain);
 
@@ -1624,24 +1649,20 @@ namespace XRL.World.Parts
                 if (!frankenCorpse.IsPlayer() && frankenCorpse?.CurrentCell is Cell frankenCell)
                 {
                     bool isItemThatNotSelf(GameObject GO)
-                    {
-                        return GO.GetBlueprint().InheritsFrom("Item")
-                            && GO != frankenCorpse;
-                    }
-                    frankenCorpse.TakeObject(Event.NewGameObjectList(frankenCell.GetObjects(isItemThatNotSelf)));
+                        => GO.GetBlueprint().InheritsFrom("Item")
+                        && GO != frankenCorpse;
+
+                    frankenCorpse.TakeObject(Event.NewGameObjectList(frankenCell.GetObjects(isItemThatNotSelf)), Silent: true, EnergyCost: null);
                     frankenCorpse.Brain?.WantToReequip();
 
                     if (frankenCorpse.TryGetPart(out GenericInventoryRestocker frankenRestocker))
                     {
-                        if (!UD_FleshGolems_Reanimated.HasWorldGenerated)
+                        if (!UD_FleshGolems_Reanimated.HasWorldGenerated
+                            || builtToBeReanimated)
                         {
                             frankenRestocker.PerformRestock();
-                            frankenRestocker.LastRestockTick = 0L;
                         }
-                        else
-                        {
-                            frankenRestocker.LastRestockTick = The.Game.TimeTicks;
-                        }
+                        frankenRestocker.LastRestockTick = The.Game?.TimeTicks ?? 0L;
                     }
 
                     frankenCell?.RefreshMinimapColor();
@@ -1658,9 +1679,9 @@ namespace XRL.World.Parts
                 frankenBrain?.WantToReequip();
 
                 var reanimatedCorpse = frankenCorpse.RequirePart<UD_FleshGolems_ReanimatedCorpse>();
-                if (GameObject.Validate(ref reanimationHelper.Reanimator))
+                if (GameObject.Validate(ref Reanimator))
                 {
-                    reanimatedCorpse.Reanimator = reanimationHelper.Reanimator;
+                    reanimatedCorpse.Reanimator = Reanimator;
                 }
 
                 Debug.Log(
@@ -1687,13 +1708,8 @@ namespace XRL.World.Parts
                 {
                     frankenRep.FillInRelatedFactions(true);
                 }
-
-                frankenCorpse.FireEvent(Event.New(
-                    ID: "UD_FleshGolems_Reanimated",
-                    "FrankenCorpse", frankenCorpse,
-                    "Reanimator", reanimationHelper.Reanimator,
-                    "PastLifePart", PastLife));
-
+                ReanimateEvent.Send(frankenCorpse, PastLife, Reanimator, Using);
+                AfterReanimateEvent.Send(frankenCorpse, PastLife, Reanimator, Using);
                 return true;
             }
             return false;
@@ -1763,9 +1779,8 @@ namespace XRL.World.Parts
                 {
                     pastLife = E.Object.RequirePart<UD_FleshGolems_PastLife>().Initialize();
                 }
-                Reanimator = E.Actor;
                 IsALIVE = true;
-                MakeItALIVE(E.Object, pastLife);
+                MakeItALIVE(E.Object, pastLife, E.Actor, E.Using);
                 Debug.Log(nameof(MakeItALIVE) + " resolved", Indent: indent[1]);
             }
             return base.HandleEvent(E);
