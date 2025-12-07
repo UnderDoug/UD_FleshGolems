@@ -29,6 +29,9 @@ using Debug = UD_FleshGolems.Logging.Debug;
 using Options = UD_FleshGolems.Options;
 
 using static UD_FleshGolems.Const;
+using XRL.Rules;
+using UD_FleshGolems.Parts.VengeanceHelpers;
+using XRL.World.Effects;
 
 
 namespace UD_FleshGolems
@@ -85,8 +88,47 @@ namespace UD_FleshGolems
         }
 
         public static IEnumerable<T> GetEnumValues<T>()
+            where T : Enum
+            => Enum.GetValues(typeof(T))?.Cast<T>() ?? new List<T>();
+
+        public static Dictionary<string, T> EnumNamedValues<T>()
+            where T : Enum
+            => GetEnumValues<T>()
+            ?.ToDictionary(
+                keySelector: e => Enum.GetName(typeof(T), e),
+                elementSelector: e => e);
+
+        public static bool EnumHasValue<T>(string Name)
+            where T : Enum
+            => (GetEnumValues<T>()
+            ?.ToList()
+            ?.Any(v => v.ToString() == Name))
+            .GetValueOrDefault();
+
+        public static T GetEnumValue<T>(string Name)
+            where T : Enum
         {
-            return Enum.GetValues(typeof(T)).Cast<T>();
+            if (GetEnumValues<T>()?.ToList() is List<T> enumValues)
+            {
+                return enumValues.FirstOrDefault(v => v.ToString() == Name);
+            }
+            return default;
+        }
+
+        public static void Set<T>(ref T flags, T flag) where T : struct
+        {
+            if (flags is int flagsValue
+                && flag is int flagValue
+                && (flagsValue | flagValue) is T newFlags)
+                flags = newFlags;
+        }
+
+        public static void Unset<T>(ref T flags, T flag) where T : struct
+        {
+            if (flags is int flagsValue
+                && flag is int flagValue
+                && (flagsValue & (~flagValue)) is T newFlags)
+                flags = newFlags;
         }
 
         public static string GetPlayerBlueprint()
@@ -550,8 +592,6 @@ namespace UD_FleshGolems
                     typeof(int),
                     typeof(bool),
                 });
-
-        //public static bool 
 
         /* 
          * 

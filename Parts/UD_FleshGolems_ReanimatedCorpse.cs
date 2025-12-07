@@ -22,6 +22,7 @@ using UD_FleshGolems;
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Events;
 using static UD_FleshGolems.Const;
+using UD_FleshGolems.Parts.VengeanceHelpers;
 
 namespace XRL.World.Parts
 {
@@ -36,7 +37,7 @@ namespace XRL.World.Parts
         }
 
         [Serializable]
-        public struct LiquidPortion : IComposite
+        private struct LiquidPortion : IComposite
         {
             public string Liquid;
             public int Portion;
@@ -56,6 +57,34 @@ namespace XRL.World.Parts
         public const string REANIMATED_ADJECTIVE = "{{UD_FleshGolems_reanimated|reanimated}}";
         public const string REANIMATED_NO_ADJECTIVE_PROPTAG = "UD_FleshGolems ReanimatedCorpse NoPrefix";
         public const string REANIMATED_USE_ICONCOLOR_PART_PROPTAG = "UD_FleshGolems ReanimatedCorpse UseIconColorPart";
+
+        public const int REMEMBERS_DEATH_NONE = 0;
+        public const int REMEMBERS_DEATH_KILLER_NAME = 1;
+        public const int REMEMBERS_DEATH_KILLER_CREATURE = 2;
+        public const int REMEMBERS_DEATH_KILLER = REMEMBERS_DEATH_KILLER_NAME | REMEMBERS_DEATH_KILLER_CREATURE;
+        public const int REMEMBERS_DEATH_KILLER_FEATURE = 4;
+        public const int REMEMBERS_DEATH_WEAPON = 8;
+        public const int REMEMBERS_DEATH_DESCRIPTION = 16;
+        public const int REMEMBERS_DEATH_ALL
+            = REMEMBERS_DEATH_KILLER_NAME
+            & REMEMBERS_DEATH_KILLER_CREATURE
+            & REMEMBERS_DEATH_KILLER_FEATURE
+            & REMEMBERS_DEATH_WEAPON
+            & REMEMBERS_DEATH_DESCRIPTION;
+
+        [Flags]
+        public enum DeathMemoryElements : int
+        {
+            None = 0,
+            KillerName = 1,
+            KillerCreature = 2,
+            Killer = KillerName | KillerCreature,
+            KillerFeature = 4,
+            Weapon = 8,
+            Description = 16,
+            Method = KillerFeature | Weapon | Description,
+            Complete = Killer & Method,
+        }
 
         private const string LIBRARIAN_FRAGMENT = "In the narthex of the Stilt, cloistered beneath a marble arch and close to";
 
@@ -112,6 +141,29 @@ namespace XRL.World.Parts
             }
         }
 
+        public KillerDetails KillerDetails => ParentObject.GetPart<UD_FleshGolems_CorpseReanimationHelper>()?.KillerDetails;
+
+        [SerializeField]
+        private int _DeathMemory;
+        public int DeathMemory
+        {
+            get
+            {
+                if (_DeathMemory != int.MinValue || ParentObject == null)
+                {
+                    return _DeathMemory;
+                }
+                int value = ParentObject.GetSeededRange(nameof(DeathMemory), 1, REMEMBERS_DEATH_ALL);
+                if (ParentObject.BaseID % 6 == 0)
+                {
+                    value = 0;
+                }
+                return _DeathMemory = value;
+            }
+        }
+
+        public bool DeathQuestionsAreRude;
+
         public UD_FleshGolems_PastLife PastLife => ParentObject?.GetPart<UD_FleshGolems_PastLife>();
 
         public IdentityType IdentityType => PastLife?.GetIdentityType() ?? IdentityType.None;
@@ -146,7 +198,7 @@ namespace XRL.World.Parts
 
         public string BleedLiquid;
 
-        public List<LiquidPortion> BleedLiquidPortions;
+        private List<LiquidPortion> BleedLiquidPortions;
 
         [SerializeField]
         private bool IsRenderDisplayNameUpdated;
@@ -185,6 +237,8 @@ namespace XRL.World.Parts
         {
             _Reanimator = null;
             _NewDisplayName = null;
+            _DeathMemory = int.MinValue;
+            DeathQuestionsAreRude = false;
             BleedLiquid = null;
             BleedLiquidPortions = null;
             IsRenderDisplayNameUpdated = false;
@@ -229,6 +283,8 @@ namespace XRL.World.Parts
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
             SecretlySealLiquidVolume(ParentObject);
 
+            DeathQuestionsAreRude = ParentObject.BaseID % 4 == 0;
+
             AttemptToSuffer();
             base.Attach();
         }
@@ -253,7 +309,7 @@ namespace XRL.World.Parts
             || !int.TryParse(noAdjectivePropTag, out int noAdjectiveResult)
             || noAdjectiveResult < 1;
 
-        public static bool TryGetLiquidPortion(string LiquidComponent, out LiquidPortion LiquidPortion)
+        private static bool TryGetLiquidPortion(string LiquidComponent, out LiquidPortion LiquidPortion)
         {
             LiquidPortion = new("water", 0);
             if (LiquidComponent.Contains('-'))
@@ -268,7 +324,7 @@ namespace XRL.World.Parts
             }
             return false;
         }
-        public static List<LiquidPortion> GetBleedLiquids(string BleedLiquids)
+        private static List<LiquidPortion> GetBleedLiquids(string BleedLiquids)
         {
             if (BleedLiquids.IsNullOrEmpty())
             {
@@ -290,10 +346,10 @@ namespace XRL.World.Parts
             return liquids;
         }
 
-        public static Dictionary<string, int> GetBleedLiquidDict(List<LiquidPortion> LiquidPortionsList)
+        private static Dictionary<string, int> GetBleedLiquidDict(List<LiquidPortion> LiquidPortionsList)
             => LiquidPortionsList.ToDictionary(lp => lp.Liquid, lp => lp.Portion);
 
-        public static List<LiquidPortion> GetBleedLiquidPortions(Dictionary<string, int> LiquidDict)
+        private static List<LiquidPortion> GetBleedLiquidPortions(Dictionary<string, int> LiquidDict)
             => LiquidDict.ToList().ConvertAll(kvp => new LiquidPortion(kvp.Key, kvp.Value));
 
         public static int GetTierFromLevel(GameObject Creature)

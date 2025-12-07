@@ -22,6 +22,8 @@ using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using static UD_FleshGolems.Const;
 using Options = UD_FleshGolems.Options;
 using HarmonyLib;
+using UD_FleshGolems.Parts.VengeanceHelpers;
+using XRL.World.Effects;
 
 namespace UD_FleshGolems
 {
@@ -1037,9 +1039,53 @@ namespace UD_FleshGolems
             return Enumerable.ConvertToStringList(t => t?.ToString() ?? "").Join(delimiter: Delimiter);
         }
 
-        public static GameObject CreateSample(this GameObjectBlueprint Model, Action<GameObject> BeforeObjectCreated = null)
-            => Model != null
-            ? GameObjectFactory.Factory.CreateSampleObject(Model, BeforeObjectCreated)
-            : null;
+        public static bool WasKilledByEntity(
+            this GameObject Corpse,
+            GameObject Entity,
+            out UD_FleshGolems_ReanimatedCorpse ReanimatedCorpsePart)
+        {
+            ReanimatedCorpsePart = null;
+            return Corpse != null
+                && Entity != null
+                && Corpse.TryGetPart(out ReanimatedCorpsePart)
+                && ReanimatedCorpsePart.KillerDetails?.ID == Entity.ID;
+        }
+        public static bool WasKilledByEntity(this GameObject Corpse, GameObject Entity)
+            => Corpse.WasKilledByEntity(Entity, out _);
+
+        public static bool KnowsEntityKilledThem(this GameObject Corpse, GameObject Entity, out UD_FleshGolems_ReanimatedCorpse ReanimatedCorpsePart)
+        {
+            if (WasKilledByEntity(Corpse, Entity, out ReanimatedCorpsePart)
+                && ReanimatedCorpsePart.DeathMemory.HasBit(UD_FleshGolems_ReanimatedCorpse.REMEMBERS_DEATH_KILLER)
+                && ReanimatedCorpsePart.KillerDetails is KillerDetails killerDetails
+                && killerDetails?.ID == Entity.ID)
+            {
+                int speakerIntMod = Corpse.StatMod("Intelligence");
+
+                if (Entity.HasEffect<Disguised>()
+                    && Stat.RollCached("1d6") >= (speakerIntMod - 1))
+                    return false;
+
+                if (ReanimatedCorpsePart.DeathMemory.HasBit(UD_FleshGolems_ReanimatedCorpse.REMEMBERS_DEATH_KILLER_NAME)
+                    && ReanimatedCorpsePart.DeathMemory.HasBit(UD_FleshGolems_ReanimatedCorpse.REMEMBERS_DEATH_KILLER_CREATURE)
+                    && Entity.GetReferenceDisplayName(Short: true) != killerDetails.DisplayName
+                    && Stat.RollCached("1d6") >= (speakerIntMod - 1))
+                    return false;
+
+                return true;
+            }
+            return false;
+        }
+        public static bool KnowsEntityKilledThem(this GameObject Corpse, GameObject Entity)
+            => Corpse.KnowsEntityKilledThem(Entity, out _);
+
+        public static bool IsSet<T>(this T flags, T flag) where T : Enum
+            => flags is int flagsValue
+            && flag is int flagValue
+            && (flagsValue & flagValue) != 0;
+
+        public static bool IsSet<T>(this int flags, T flag) where T : Enum
+            => flag is int flagValue
+            && (flags & flagValue) != 0;
     }
 }

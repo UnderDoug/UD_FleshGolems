@@ -7,13 +7,27 @@
         <text>Come along now... {{r|friend}}.</text>
         <part Name="WaterRitualJoinParty" />
       </choice>
+      
+      <choice ID="AskHowDied" Target="HowIDied">
+        <text IfAlreadyAskHowDied="false">
+          How was it that you died?~
+          How did you die?~
+          Do you remember at all how you died?
+        </text>
+        <text IfAlreadyAskHowDied="true">
+          Remind me how you died?~
+          How was it again that you died?~
+          I can't recall how you died...
+        </text>
+      </choice>
+      
       <choice ID="GoEnd" Target="End">
         <text IfSourceOfSuffering="true">Uh... Sorry?</text>
         <text IfSourceOfSuffering="false">Unlive and drink...</text>
       </choice>
     </node>
     
-    <node ID="Start">
+    <start ID="Greeting">
       <text IfSourceOfSuffering="false">
         Hrgh.. urgh.. ghuh?~
         Unlive..... and drink???~
@@ -24,6 +38,38 @@
       </text>
       <choice UseID="JoinPartyChoice" />
       <choice UseID="GoEnd" />
+    </start>
+
+    <node ID="HowIDied">
+      <text MemoryElement="Killer" Known="true">
+        I was killed by =killer=...~
+        =Killer= killed me...~
+        I barely remember, but I'm pretty sure I was killed by =killer=...
+      </text>
+      <text MemoryElement="Killer" Known="False">
+        I can't recall who it was...
+        I was killed by... by.. You know, I can't remember...~
+        I don't remember everything from before my current state... Who killed me is one of those things...
+      </text>
+      <text MemoryElement="Weapon" Known="true">
+        =killer.subjective= killed me with =weapon=..~
+        
+      </text>
+      <text WeaponKnown="false">
+        
+      </text>
+      <text RudeToAsk="true">
+        That's a rather personal thing to ask, don't you think??~
+        How presumptuous... Good for you that it's not a big deal, but maybe I'd rather not think about it.~
+        When did you last expell waste?\n\nNot a fan of inappropriately personal questions, then?
+      </text>
+      <text>
+        
+      </text>
+      <text KilledByPlayer="true">
+        
+      </text>
+      <part Name="UD_FleshGolems_AskHowDied" />
     </node>
     
   </conversation>

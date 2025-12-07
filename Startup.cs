@@ -17,6 +17,8 @@ using UD_FleshGolems.Logging;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Options;
 using XRL.World.Tinkering;
+using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
+using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
 
 namespace UD_FleshGolems
 {
@@ -69,6 +71,8 @@ namespace UD_FleshGolems
                 nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " +
                 nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
             CacheSomeCorpses();
+            RequireCachedEnumValueDictionary<TileMappingKeyword>();
+            RequireCachedEnumValueDictionary<DeathMemoryElements>();
         }
 
         //
@@ -119,6 +123,17 @@ namespace UD_FleshGolems
                 CachedCorpses = true;
                 */
             }
+        }
+
+        public static Dictionary<string, T> RequireCachedEnumValueDictionary<T>()
+            where T : Enum
+        {
+            if (The.Game?.GetObjectGameState(typeof(T).Name + "Values") is not Dictionary<string, T> cachedEnumValues)
+            {
+                cachedEnumValues = Utils.EnumNamedValues<T>();
+                The.Game?.SetObjectGameState(typeof(T).Name + "Values", cachedEnumValues);
+            }
+            return cachedEnumValues;
         }
     }
 

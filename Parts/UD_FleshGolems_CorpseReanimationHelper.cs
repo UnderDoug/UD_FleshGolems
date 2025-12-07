@@ -29,6 +29,7 @@ using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdje
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Parts.PastLifeHelpers;
+using UD_FleshGolems.Parts.VengeanceHelpers;
 using UD_FleshGolems.Events;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
@@ -61,6 +62,9 @@ namespace XRL.World.Parts
             }
             return Registry;
         }
+
+        public static Dictionary<string, TileMappingKeyword> TileMappingKeywordValues
+            => Startup.RequireCachedEnumValueDictionary<TileMappingKeyword>();
 
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";
@@ -108,6 +112,8 @@ namespace XRL.World.Parts
 
         public bool AlwaysAnimate;
 
+        public KillerDetails KillerDetails;
+
         public GameObject Reanimator;
 
         private List<int> FailedToRegisterEvents;
@@ -116,14 +122,13 @@ namespace XRL.World.Parts
         {
             IsALIVE = false;
             AlwaysAnimate = false;
+            KillerDetails = default;
             Reanimator = null;
             FailedToRegisterEvents = new();
         }
 
         public override bool AllowStaticRegistration()
-        {
-            return true;
-        }
+            => true;
 
         public bool Animate(out GameObject FrankenCorpse)
         {
@@ -1527,7 +1532,7 @@ namespace XRL.World.Parts
 
                 Debug.Log("Getting New Tile!", Indent: indent[2]);
                 string chosenTile = null;
-                foreach (TileMappingKeyword keyword in GetEnumValues<TileMappingKeyword>())
+                foreach ((string _, TileMappingKeyword keyword) in TileMappingKeywordValues)
                 {
                     if (prospectiveTiles.IsNullOrEmpty()
                         || !prospectiveTiles.ContainsKey(keyword)
@@ -1741,7 +1746,7 @@ namespace XRL.World.Parts
             => base.WantEvent(ID, Cascade)
             || ID == BeforeObjectCreatedEvent.ID
             || ID == AnimateEvent.ID
-            || ID == EnvironmentalUpdateEvent.ID
+            || ID == EnteredCellEvent.ID
             || (ID == DroppedEvent.ID && FailedToRegisterEvents.Contains(DroppedEvent.ID))
             || ID == GetDebugInternalsEvent.ID;
 
@@ -1785,7 +1790,7 @@ namespace XRL.World.Parts
             }
             return base.HandleEvent(E);
         }
-        public override bool HandleEvent(EnvironmentalUpdateEvent E)
+        public override bool HandleEvent(EnteredCellEvent E)
         {
             if (AlwaysAnimate
                 && !IsALIVE
@@ -1796,7 +1801,7 @@ namespace XRL.World.Parts
                 Debug.LogCaller(indent,
                     ArgPairs: new Debug.ArgPair[]
                     {
-                        Debug.Arg(nameof(EnvironmentalUpdateEvent)),
+                        Debug.Arg(nameof(EnteredCellEvent)),
                         Debug.Arg(nameof(IsALIVE), IsALIVE),
                     });
                 if (!UD_FleshGolems_Reanimated.HasWorldGenerated)
@@ -1843,6 +1848,7 @@ namespace XRL.World.Parts
                         Debug.Arg(nameof(dying), dying?.DebugName ?? null),
                     });
                 corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(dying);
+
             }
             if (AlwaysAnimate
                 && !IsALIVE
