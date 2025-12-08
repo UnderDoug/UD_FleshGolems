@@ -1,6 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <objects>
-  
+  <object Name="PhysicalObject" Load="Merge">
+    <part Name="UD_FleshGolems_VengeanceAssistant" />
+  </object>
   <object Name="Creature" Load="Merge">
     <builder Name="UD_FleshGolems_Reanimated" ChanceOneIn="8000" />
     <builder Name="UD_FleshGolems_OptionallyReanimated" ChanceOneIn="1" />

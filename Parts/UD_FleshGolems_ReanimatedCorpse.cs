@@ -58,20 +58,6 @@ namespace XRL.World.Parts
         public const string REANIMATED_NO_ADJECTIVE_PROPTAG = "UD_FleshGolems ReanimatedCorpse NoPrefix";
         public const string REANIMATED_USE_ICONCOLOR_PART_PROPTAG = "UD_FleshGolems ReanimatedCorpse UseIconColorPart";
 
-        public const int REMEMBERS_DEATH_NONE = 0;
-        public const int REMEMBERS_DEATH_KILLER_NAME = 1;
-        public const int REMEMBERS_DEATH_KILLER_CREATURE = 2;
-        public const int REMEMBERS_DEATH_KILLER = REMEMBERS_DEATH_KILLER_NAME | REMEMBERS_DEATH_KILLER_CREATURE;
-        public const int REMEMBERS_DEATH_KILLER_FEATURE = 4;
-        public const int REMEMBERS_DEATH_WEAPON = 8;
-        public const int REMEMBERS_DEATH_DESCRIPTION = 16;
-        public const int REMEMBERS_DEATH_ALL
-            = REMEMBERS_DEATH_KILLER_NAME
-            & REMEMBERS_DEATH_KILLER_CREATURE
-            & REMEMBERS_DEATH_KILLER_FEATURE
-            & REMEMBERS_DEATH_WEAPON
-            & REMEMBERS_DEATH_DESCRIPTION;
-
         [Flags]
         public enum DeathMemoryElements : int
         {
@@ -83,8 +69,16 @@ namespace XRL.World.Parts
             Weapon = 8,
             Description = 16,
             Method = KillerFeature | Weapon | Description,
-            Complete = Killer & Method,
+            Complete = Killer | Method,
         }
+        public static DeathMemoryElements UndefinedDeathMemoryElement => (DeathMemoryElements)(-1);
+
+        private static Dictionary<string, DeathMemoryElements> _DeathMemoryElementsValues;
+        public static Dictionary<string, DeathMemoryElements> DeathMemoryElementsValues
+            => _DeathMemoryElementsValues ??= Startup.RequireCachedEnumValueDictionary<DeathMemoryElements>();
+
+        public static DeathMemoryElements AllDeathMemoryElements
+            => DeathMemoryElementsValues.Aggregate(DeathMemoryElements.None, (accumulated, next) => accumulated | next.Value, s => s);
 
         private const string LIBRARIAN_FRAGMENT = "In the narthex of the Stilt, cloistered beneath a marble arch and close to";
 
@@ -144,19 +138,19 @@ namespace XRL.World.Parts
         public KillerDetails KillerDetails => ParentObject.GetPart<UD_FleshGolems_CorpseReanimationHelper>()?.KillerDetails;
 
         [SerializeField]
-        private int _DeathMemory;
-        public int DeathMemory
+        private DeathMemoryElements _DeathMemory;
+        public DeathMemoryElements DeathMemory
         {
             get
             {
-                if (_DeathMemory != int.MinValue || ParentObject == null)
+                if (_DeathMemory != UndefinedDeathMemoryElement || ParentObject == null)
                 {
                     return _DeathMemory;
                 }
-                int value = ParentObject.GetSeededRange(nameof(DeathMemory), 1, REMEMBERS_DEATH_ALL);
+                DeathMemoryElements value = (DeathMemoryElements)ParentObject.GetSeededRange(nameof(DeathMemory), 1, (int)AllDeathMemoryElements);
                 if (ParentObject.BaseID % 6 == 0)
                 {
-                    value = 0;
+                    value = DeathMemoryElements.None;
                 }
                 return _DeathMemory = value;
             }
@@ -237,7 +231,7 @@ namespace XRL.World.Parts
         {
             _Reanimator = null;
             _NewDisplayName = null;
-            _DeathMemory = int.MinValue;
+            _DeathMemory = UndefinedDeathMemoryElement;
             DeathQuestionsAreRude = false;
             BleedLiquid = null;
             BleedLiquidPortions = null;

@@ -82,11 +82,12 @@ namespace UD_FleshGolems
         }
 
         [ConversationDelegate(Speaker = false)]
-        public static bool IfAlreadyAskHowDied(DelegateContext Context)
+        public static bool IfAlreadyAskedHowDied(DelegateContext Context)
             => Conversation.Speaker is GameObject speaker
             && The.Player is GameObject player
             && speaker.GetStringProperty(UD_FleshGolems_AskHowDied.ASK_HOW_DIED_PROP) is string whoHasAskedHowDied
             && whoHasAskedHowDied.Contains(";" + player.ID + ";")
+            && !Context.Value.IsNullOrEmpty()
             && Context.Value.EqualsNoCase("true");
 
         [ConversationDelegate(Speaker = false)]

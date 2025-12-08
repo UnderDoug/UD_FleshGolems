@@ -38,12 +38,14 @@ using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
+using DeathMemory = XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse.DeathMemoryElements;
 
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
     [Serializable]
     public class KillerDetails : IComposite
     {
+        public GameObject Killer;
         public string ID;
         public string Blueprint;
         public string DisplayName;
@@ -51,16 +53,19 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public string NotableFeature;
 
-        public string WithWeapon;
+        public GameObject Weapon;
+        public string WeaponName;
+
         public string DeathDescription;
 
         public bool WasAccident;
         public bool WasEnvironment;
 
-        public bool KillerIsDeceased;
+        public bool? KillerIsDeceased;
 
         public KillerDetails()
         {
+            Killer = null;
             ID = null;
             Blueprint = null;
             DisplayName = null;
@@ -68,7 +73,9 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
             NotableFeature = null;
 
-            WithWeapon = null;
+            Weapon = null;
+            WeaponName = null;
+
             DeathDescription = null;
 
             WasAccident = false;
@@ -82,11 +89,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string DisplayName,
             string CreatureType,
             string NotableFeature,
-            string WithWeapon,
+            string WeaponName,
             string DeathDescription,
             bool WasAccident,
-            bool WasEnvironment,
-            bool KillerIsDeceased = false)
+            bool? WasEnvironment = null,
+            bool? KillerIsDeceased = null)
             : this()
         {
             this.ID = ID;
@@ -94,10 +101,22 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             this.DisplayName = DisplayName;
             this.CreatureType = CreatureType;
             this.NotableFeature = NotableFeature;
-            this.WithWeapon = WithWeapon;
+            this.WeaponName = WeaponName;
             this.DeathDescription = DeathDescription;
             this.WasAccident = WasAccident;
-            this.WasEnvironment = WasEnvironment;
+            if (WasEnvironment.HasValue)
+            {
+                this.WasEnvironment = WasEnvironment.GetValueOrDefault();
+            }
+            else
+            {
+                this.WasEnvironment = ID.IsNullOrEmpty()
+                    && Blueprint.IsNullOrEmpty()
+                    && DisplayName.IsNullOrEmpty()
+                    && CreatureType.IsNullOrEmpty()
+                    && NotableFeature.IsNullOrEmpty()
+                    && WeaponName.IsNullOrEmpty();
+            }
             this.KillerIsDeceased = KillerIsDeceased;
         }
         public KillerDetails(
@@ -105,18 +124,25 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             GameObject Weapon,
             string DeathDescription,
             bool WasAccident,
-            bool WasEnvironment)
+            bool? WasEnvironment = null)
             : this(
                   ID: Killer?.ID,
                   Blueprint: Killer?.Blueprint,
                   DisplayName: Killer?.GetReferenceDisplayName(Short: true),
                   CreatureType: Killer?.GetCreatureType(),
                   NotableFeature: GetNotableFeature(Killer),
-                  WithWeapon: Weapon?.GetReferenceDisplayName(Short: true),
+                  WeaponName: Weapon?.GetReferenceDisplayName(Short: true),
                   DeathDescription: DeathDescription,
                   WasAccident: WasAccident,
                   WasEnvironment: WasEnvironment)
-        { }
+        {
+            this.Killer = Killer;
+            this.Weapon = Weapon;
+            if (Killer != null && !Killer.IsNowhere())
+            {
+                KillerIsDeceased = Killer.IsDying;
+            }
+        }
         public KillerDetails(IDeathEvent E)
             : this(
                   Killer: E?.Killer,
@@ -132,7 +158,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     && equipped.IsNatural())
                 || BodyPart.DefaultBehavior != null);
 
-        protected static string GetNotableFeature(GameObject Killer)
+        public static string GetNotableFeature(GameObject Killer)
         {
             if (Killer == null || Killer.Body is not Body killerBody)
                 return "a striking absence";
@@ -176,8 +202,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     && !defaultMeleeWeapon.IsImprovisedWeapon())
                     notableFeatures.TryAdd(defaultBehavior.An(Short: true, Reference: true), naturalWeaponWeight);
             }
-
-            return notableFeatures.GetWeightedRandom();
+            return notableFeatures.GetWeightedSeededRandom(nameof(GetNotableFeature) + "::" + Killer.ID);
         }
 
         public bool IsMystery()
@@ -185,7 +210,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             && Blueprint.IsNullOrEmpty()
             && DisplayName.IsNullOrEmpty()
             && CreatureType.IsNullOrEmpty()
-            && WithWeapon.IsNullOrEmpty()
+            && WeaponName.IsNullOrEmpty()
             && DeathDescription.IsNullOrEmpty();
 
         public bool IsPartialMystery()
@@ -194,17 +219,71 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     && Blueprint.IsNullOrEmpty()
                     && DisplayName.IsNullOrEmpty()
                     && CreatureType.IsNullOrEmpty())
-                || WithWeapon.IsNullOrEmpty()
+                || WeaponName.IsNullOrEmpty()
                 || DeathDescription.IsNullOrEmpty()
                 );
 
-        public string KilledBy() => DisplayName;
+        public string KilledBy(DeathMemory DeathMemory, bool Capitalize = false)
+        {
+            string output = "mysterious entity";
+            if (DeathMemory.HasFlag(DeathMemory.KillerName))
+            {
+                if (!DisplayName.IsNullOrEmpty())
+                    output = DisplayName;
+                else
+                if (Blueprint.GetGameObjectBlueprint() is GameObjectBlueprint killerModel
+                    && killerModel.GetxTag("Grammer", "Proper") is string hasProperName
+                    && hasProperName.EqualsNoCase("true"))
+                    output = killerModel.DisplayName();
+            }
+            else
+            if (DeathMemory.HasFlag(DeathMemory.KillerCreature))
+            {
+                if (!CreatureType.IsNullOrEmpty())
+                    output = CreatureType;
+                else
+                if (Blueprint.GetGameObjectBlueprint() is GameObjectBlueprint killerModel
+                    && (killerModel.GetxTag("Grammer", "Proper") is not string hasProperName
+                        || !hasProperName.EqualsNoCase("true")))
+                    output = killerModel.DisplayName().ToLower();
+            }
+            return Capitalize ? output.Capitalize() : output;
+        }
 
-        public string KilledByA() => CreatureType;
+        public string KilledByA(DeathMemory DeathMemory, bool Capitalize = false)
+        {
+            string output = "a mysterious entity";
+            if (DeathMemory.HasFlag(DeathMemory.KillerCreature))
+            {
+                output = Grammar.A(KilledBy(DeathMemory.KillerCreature));
+            }
+            return Capitalize ? output.Capitalize() : output;
+        }
 
-        public string KilledWith() => WithWeapon;
+        public void KilledHow(DeathMemory DeathMemory, out string Weapon, out string Feature, out string Description, out bool Accidentally, out bool Environment)
+        {
+            Weapon = null;
+            Feature = null;
+            Description = null;
+            Accidentally = WasAccident;
+            Environment = WasEnvironment;
 
-        public string KilledHow() => DeathDescription;
+            if (DeathMemory.HasFlag(DeathMemory.Weapon)
+                && !WeaponName.IsNullOrEmpty())
+            {
+                Weapon = WeaponName;
+            }
+            if (DeathMemory.HasFlag(DeathMemory.KillerFeature)
+                && !NotableFeature.IsNullOrEmpty())
+            {
+                Feature = NotableFeature;
+            }
+            if (DeathMemory.HasFlag(DeathMemory.Description)
+                && !Description.IsNullOrEmpty())
+            {
+                Description = DeathDescription;
+            }
+        }
 
         public bool IsKiller(GameObject Entity)
             => Entity != null

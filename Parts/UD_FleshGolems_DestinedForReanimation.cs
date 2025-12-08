@@ -19,6 +19,9 @@ using UD_FleshGolems;
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Events;
 using static UD_FleshGolems.Const;
+using UD_FleshGolems.Parts.VengeanceHelpers;
+using System.Linq;
+using System.Reflection;
 
 namespace XRL.World.Parts
 {
@@ -189,6 +192,7 @@ namespace XRL.World.Parts
             GameObject Projectile = null,
             bool Accidental = false,
             bool AlwaysUsePopups = false,
+            string Category = null,
             string KillerText = null,
             string Reason = null,
             string ThirdPersonReason = null,
@@ -229,7 +233,7 @@ namespace XRL.World.Parts
             {
                 deathMessage = deathMessage.Replace("You died.", "You became a cord in time's silly carpet.");
             }
-            string deathCategory = The.Game.DeathCategory;
+            string deathCategory = Category ?? The.Game.DeathCategory;
             Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
             string deathMessageTitle = "";
             if (deathMessage.Contains("."))
@@ -243,6 +247,11 @@ namespace XRL.World.Parts
             if (!deathCategory.IsNullOrEmpty() && deathIcons.ContainsKey(deathCategory))
             {
                 deathMessage = deathMessage.Replace("You died.", "");
+                deathMessage = ("=subject.Subjective= " + deathMessage)
+                    .StartReplace()
+                    .AddObject(Dying)
+                    .AddObject(Killer)
+                    .ToString();
                 deathIcon = deathIcons[deathCategory];
             }
             if (DoFakeMessage && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
@@ -259,7 +268,7 @@ namespace XRL.World.Parts
                 IRenderable playerIcon = Dying.RenderForUI();
                 Popup.ShowSpace(
                     Message: "... and yet...\n\n=ud_nbsp:12=...you don't {{UD_FleshGolems_reanimated|relent}}...".StartReplace().ToString(),
-                    AfterRender: deathIcon != null ? (Renderable)playerIcon : null,
+                    AfterRender: playerIcon is Renderable renderablePlayerIcon ? renderablePlayerIcon : null,
                     LogMessage: true,
                     ShowContextFrame: deathIcon != null,
                     PopupID: "DeathMessage");
@@ -335,46 +344,99 @@ namespace XRL.World.Parts
         {
             return FakeDeath(null);
         }
-        public static bool FakeRandomDeath(GameObject Dying, int ChanceRandomKiller = 50, bool DoAchievement = false)
+
+        public static KillerDetails ProduceKillerDetails(
+            out GameObject Killer,
+            out GameObject Weapon,
+            out GameObject Projectile,
+            out string Category,
+            out string Reason,
+            out bool Accidental,
+            out bool KillerIsCached,
+            int ChanceRandomKiller = 50)
+        {
+            Killer = null;
+            Weapon = null;
+            Projectile = null;
+            Category = null;
+            Reason = null;
+            KillerIsCached = false;
+            if (ChanceRandomKiller.in100())
+            {
+                if (50.in100())
+                {
+                    List<GameObject> cachedObjects = Event.NewGameObjectList(The.ZoneManager.CachedObjects.Values)
+                        ?.Where(GO => (GO.HasPart<Combat>() && GO.HasPart<Body>()) || GO.HasTagOrProperty("BodySubstitute"))
+                        ?.ToList();
+                    if (cachedObjects?.GetRandomElement() is GameObject cachedKiller)
+                    {
+                        KillerIsCached = true;
+                        Killer = cachedKiller;
+
+                        Weapon = Killer.GetMissileWeapons()
+                            ?.GetRandomElementCosmetic()
+                            ?? Killer.GetPrimaryWeapon();
+                    }
+                }
+                else
+                if (!1.in10())
+                {
+                    Killer = GameObject.CreateSample(EncountersAPI.GetACreatureBlueprint());
+                }
+                else
+                {
+                    Killer = HeroMaker.MakeHero(GameObject.CreateSample(EncountersAPI.GetALegendaryEligibleCreatureBlueprint()));
+                }
+            }
+            if (Killer != null
+                && !KillerIsCached)
+            {
+                GameObjectBlueprint weaponBlueprint = EncountersAPI.GetAnItemBlueprintModel(
+                    bp => (bp.InheritsFrom("MeleeWeapon") && !bp.InheritsFrom("Projectile"))
+                    || bp.InheritsFrom("BaseMissileWeapon")
+                    || bp.InheritsFrom("BaseThrownWeapon"));
+
+                Weapon = GameObject.CreateSample(weaponBlueprint.Name);
+            }
+            if (Weapon != null
+                && Weapon.HasPart<MissileWeapon>())
+            {
+                if (GetProjectileBlueprintEvent.GetFor(Weapon) is string projectileBlueprint)
+                {
+                    Projectile = GameObject.CreateSample(projectileBlueprint);
+                }
+            }
+
+            Category = DeathCategoryDeathMessages
+                ?.Where(kvp => !kvp.Value.All(entry => entry.IsNullOrEmpty()))
+                ?.GetRandomElementCosmetic().Key;
+
+            Reason = DeathCategoryDeathMessages[Category]
+                    ?.Where(s => !s.IsNullOrEmpty())
+                    ?.GetRandomElementCosmetic()
+                ?? CheckpointingSystem.deathIcons
+                    ?.Keys
+                    ?.GetRandomElement();
+
+            Accidental = Stat.RollCached("1d3") == 1;
+
+            return new(Killer, Weapon, Reason, Accidental);
+        }
+
+        public static bool FakeRandomDeath(
+            GameObject Dying,
+            out KillerDetails KillerDeatails,
+            int ChanceRandomKiller = 50,
+            bool DoAchievement = false)
         {
             GameObject killer = null;
             GameObject weapon = null;
             GameObject projectile = null;
+            KillerDeatails = null;
+            bool killerIsCached = false;
             try
             {
-                if (ChanceRandomKiller.in100())
-                {
-                    if (!1.in10())
-                    {
-                        killer = GameObject.CreateSample(EncountersAPI.GetACreatureBlueprint());
-                    }
-                    else
-                    {
-                        killer = HeroMaker.MakeHero(GameObject.CreateSample(EncountersAPI.GetALegendaryEligibleCreatureBlueprint()));
-                    }
-                }
-                if (killer != null)
-                {
-                    GameObjectBlueprint weaponBlueprint = EncountersAPI.GetAnItemBlueprintModel(
-                        bp => (bp.InheritsFrom("MeleeWeapon") && !bp.InheritsFrom("Projectile"))
-                        || bp.InheritsFrom("BaseMissileWeapon")
-                        || bp.InheritsFrom("BaseThrownWeapon"));
-                    weapon = GameObject.CreateSample(weaponBlueprint.Name);
-                    if (weaponBlueprint.InheritsFrom("BaseMissileWeapon"))
-                    {
-                        if (weaponBlueprint.TryGetPartParameter(nameof(MagazineAmmoLoader), nameof(MagazineAmmoLoader.ProjectileObject), out string projectileObject))
-                        {
-                            projectile = GameObject.CreateSample(projectileObject);
-                        }
-                        else
-                        if (weaponBlueprint.TryGetPartParameter(nameof(MagazineAmmoLoader), nameof(MagazineAmmoLoader.AmmoPart), out string ammoPart))
-                        {
-                            projectile = GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(GO => GO.HasPart(ammoPart)));
-                        }
-                    }
-                }
-                string reason = CheckpointingSystem.deathIcons.Keys.GetRandomElement();
-                bool accidental = Stat.RollCached("1d2") == 1;
+                KillerDeatails = ProduceKillerDetails(out killer, out weapon, out projectile, out string category, out string reason, out bool accidental, out killerIsCached, ChanceRandomKiller);
 
                 bool deathFaked = FakeDeath(
                     Dying: Dying,
@@ -382,36 +444,51 @@ namespace XRL.World.Parts
                     Weapon: weapon,
                     Projectile: projectile,
                     Accidental: accidental,
+                    Category: category,
                     Reason: reason,
                     ThirdPersonReason: reason,
                     DoAchievement: DoAchievement);
 
-                killer?.Obliterate();
-                weapon?.Obliterate();
+                if (!deathFaked)
+                {
+                    KillerDeatails = null;
+                }
+
+                if (!killerIsCached)
+                {
+                    killer?.Obliterate();
+                    weapon?.Obliterate();
+                }
                 projectile?.Obliterate();
 
                 return deathFaked;
             }
             finally
             {
-                if (GameObject.Validate(ref killer))
+                if (!killerIsCached)
                 {
-                    killer.Obliterate();
-                }
-                if (GameObject.Validate(ref weapon))
-                {
-                    weapon.Obliterate();
+                    if (GameObject.Validate(ref killer))
+                        killer.Obliterate();
+
+                    if (GameObject.Validate(ref weapon))
+                        weapon.Obliterate();
                 }
                 if (GameObject.Validate(ref projectile))
-                {
                     projectile.Obliterate();
-                }
             }
+        }
+        public bool FakeRandomDeath(out KillerDetails KillerDetails, int ChanceRandomKiller = 50, bool DoAchievement = false)
+        {
+            return FakeRandomDeath(
+                Dying: ParentObject,
+                out KillerDetails,
+                ChanceRandomKiller: ChanceRandomKiller,
+                DoAchievement: DoAchievement);
         }
         public bool FakeRandomDeath(int ChanceRandomKiller = 50, bool DoAchievement = false)
         {
             return FakeRandomDeath(
-                Dying: ParentObject,
+                out _,
                 ChanceRandomKiller: ChanceRandomKiller,
                 DoAchievement: DoAchievement);
         }

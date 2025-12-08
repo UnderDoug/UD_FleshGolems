@@ -29,6 +29,7 @@ using static UD_FleshGolems.Const;
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Capabilities;
 using UD_FleshGolems.Capabilities.Necromancy;
+using UD_FleshGolems.Parts.VengeanceHelpers;
 
 namespace XRL.World.ObjectBuilders
 {
@@ -208,32 +209,22 @@ namespace XRL.World.ObjectBuilders
                     corpse.SetStringProperty("SourceID", Entity.ID);
                 }
                 corpse.SetStringProperty("SourceBlueprint", Entity.Blueprint);
-                if (50.in100())
-                {
-                    string killerBlueprint = EncountersAPI.GetACreatureBlueprint();
-                    if (50.in100())
-                    {
-                        List<GameObject> cachedObjects = Event.NewGameObjectList(The.ZoneManager.CachedObjects.Values);
-                        cachedObjects.RemoveAll(GO => (!GO.HasPart<Combat>() || !GO.HasPart<Body>()) && !GO.HasTagOrProperty("BodySubstitute"));
-                        if (cachedObjects.GetRandomElement() is GameObject killer
-                            && killer.HasID)
-                        {
-                            killerBlueprint = killer.Blueprint;
-                            corpse.SetStringProperty("KillerID", killer.ID);
-                        }
-                        cachedObjects.Clear();
-                    }
-                    corpse.SetStringProperty("KillerBlueprint", killerBlueprint);
-                }
-                string deathReason =
-                    UD_FleshGolems_DestinedForReanimation.DeathCategoryDeathMessages
-                        ?.Values
-                        ?.GetRandomElementCosmetic()
-                        ?.GetRandomElementCosmetic()
-                    ?? CheckpointingSystem.deathIcons
-                        ?.Keys
-                        ?.GetRandomElement();
 
+                var corpseReanimationHelper = corpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>();
+                corpseReanimationHelper.KillerDetails = UD_FleshGolems_DestinedForReanimation.ProduceKillerDetails(
+                    out GameObject killer,
+                    out GameObject weapon,
+                    out GameObject projectile,
+                    out string deathReason,
+                    out bool accidental,
+                    out bool killerIsCached);
+
+                if (killer != null
+                    && killer.HasID)
+                {
+                    corpse.SetStringProperty("KillerID", corpseReanimationHelper.KillerDetails.ID);
+                    corpse.SetStringProperty("KillerBlueprint", corpseReanimationHelper.KillerDetails.Blueprint);
+                }
                 corpse.SetStringProperty("DeathReason", deathReason);
 
                 string genotype = Entity.GetGenotype();
@@ -310,7 +301,6 @@ namespace XRL.World.ObjectBuilders
                     string reanimatedDisplayName = REANIMATED_ADJECTIVE + " " + corpse.Render.DisplayName;
                     // corpse.Render.DisplayName = reanimatedDisplayName;
 
-                    var corpseReanimationHelper = corpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>();
                     corpseReanimationHelper.AlwaysAnimate = true;
 
                     var destinedForReanimation = Entity.RequirePart<UD_FleshGolems_DestinedForReanimation>();
@@ -621,11 +611,12 @@ namespace XRL.World.ObjectBuilders
                 {
                     if (DeathEvent == null)
                     {
-                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(Entity);
+                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(Entity, out reanimationHelper.KillerDetails);
                     }
                     else
                     {
                         FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(Entity, DeathEvent, DoAchievement: true);
+                        reanimationHelper.KillerDetails = new(DeathEvent);
                     }
                 }
 

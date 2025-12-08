@@ -55,6 +55,7 @@ namespace UD_FleshGolems
                 nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " + 
                 nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
             CacheSomeCorpses();
+            CacheSomeEnumValueDictionaries();
         }
 
         // [PlayerMutator]
@@ -71,8 +72,7 @@ namespace UD_FleshGolems
                 nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " +
                 nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
             CacheSomeCorpses();
-            RequireCachedEnumValueDictionary<TileMappingKeyword>();
-            RequireCachedEnumValueDictionary<DeathMemoryElements>();
+            CacheSomeEnumValueDictionaries();
         }
 
         //
@@ -134,6 +134,11 @@ namespace UD_FleshGolems
                 The.Game?.SetObjectGameState(typeof(T).Name + "Values", cachedEnumValues);
             }
             return cachedEnumValues;
+        }
+        public static void CacheSomeEnumValueDictionaries()
+        {
+            RequireCachedEnumValueDictionary<TileMappingKeyword>();
+            RequireCachedEnumValueDictionary<DeathMemoryElements>();
         }
     }
 

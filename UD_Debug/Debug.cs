@@ -84,7 +84,7 @@ namespace UD_FleshGolems.Logging
             ref List<MethodRegistryEntry> ReturnRegistry)
         {
             string declaringType = MethodBase?.DeclaringType?.Name;
-            UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(Register) + "(" + declaringType + "." + MethodBase.Name + ": " + Value + ")");
+            UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(Register) + "(" + declaringType + "." + MethodBase?.Name + ": " + Value + ")");
             Registry.Add(new(MethodBase, Value));
             ReturnRegistry = Registry;
         }

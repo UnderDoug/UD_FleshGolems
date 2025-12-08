@@ -20,10 +20,12 @@ using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair.Pai
 
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using static UD_FleshGolems.Const;
+using static UD_FleshGolems.Utils;
 using Options = UD_FleshGolems.Options;
 using HarmonyLib;
 using UD_FleshGolems.Parts.VengeanceHelpers;
 using XRL.World.Effects;
+using XRL.World.Conversations;
 
 namespace UD_FleshGolems
 {
@@ -763,7 +765,7 @@ namespace UD_FleshGolems
             return Entries.ConvertToStringListWithKeyValue((Func<T, string>)null);
         }
 
-        public static T GetWeightedRandom<T>(this Dictionary<T, int> WeightedList, bool Include0Weight = true)
+        public static T GetWeightedSeededRandom<T>(this Dictionary<T, int> WeightedList, string Seed, bool Include0Weight = true)
         {
             using Indent indent = new();
 
@@ -777,11 +779,20 @@ namespace UD_FleshGolems
                 }
                 maxWeight += WeightedList[ticket];
             }
-            int rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
-
+            int rolledAmount = 0;
+            if (Seed == null)
+            {
+                rolledAmount = Stat.RandomCosmetic(0, maxWeight - 1);
+            }
+            else
+            {
+                Seed = ThisMod.Manifest.ID + "::" + nameof(GetWeightedSeededRandom) + "::" + Seed;
+                rolledAmount = Stat.GetSeededRandomGenerator(Seed).Next(0, maxWeight);
+            }
             Debug.LogMethod(indent[1],
                 ArgPairs: new Debug.ArgPair[]
                 {
+                    Debug.Arg(nameof(Seed), Seed ?? NULL),
                     Debug.Arg(nameof(rolledAmount), rolledAmount),
                     Debug.Arg(nameof(maxWeight), maxWeight)
                 });
@@ -800,6 +811,10 @@ namespace UD_FleshGolems
                 }
             }
             return default;
+        }
+        public static T GetWeightedRandom<T>(this Dictionary<T, int> WeightedList, bool Include0Weight = true)
+        {
+            return WeightedList.GetWeightedSeededRandom(null, Include0Weight);
         }
 
         public static List<T> ForEach<T>(this List<T> List, Action<T> Action)
@@ -1056,7 +1071,7 @@ namespace UD_FleshGolems
         public static bool KnowsEntityKilledThem(this GameObject Corpse, GameObject Entity, out UD_FleshGolems_ReanimatedCorpse ReanimatedCorpsePart)
         {
             if (WasKilledByEntity(Corpse, Entity, out ReanimatedCorpsePart)
-                && ReanimatedCorpsePart.DeathMemory.HasBit(UD_FleshGolems_ReanimatedCorpse.REMEMBERS_DEATH_KILLER)
+                && ReanimatedCorpsePart.DeathMemory.HasFlag(UD_FleshGolems_ReanimatedCorpse.DeathMemoryElements.Killer)
                 && ReanimatedCorpsePart.KillerDetails is KillerDetails killerDetails
                 && killerDetails?.ID == Entity.ID)
             {
@@ -1066,8 +1081,8 @@ namespace UD_FleshGolems
                     && Stat.RollCached("1d6") >= (speakerIntMod - 1))
                     return false;
 
-                if (ReanimatedCorpsePart.DeathMemory.HasBit(UD_FleshGolems_ReanimatedCorpse.REMEMBERS_DEATH_KILLER_NAME)
-                    && ReanimatedCorpsePart.DeathMemory.HasBit(UD_FleshGolems_ReanimatedCorpse.REMEMBERS_DEATH_KILLER_CREATURE)
+                if (ReanimatedCorpsePart.DeathMemory.HasFlag(UD_FleshGolems_ReanimatedCorpse.DeathMemoryElements.KillerName)
+                    && ReanimatedCorpsePart.DeathMemory.HasFlag(UD_FleshGolems_ReanimatedCorpse.DeathMemoryElements.KillerCreature)
                     && Entity.GetReferenceDisplayName(Short: true) != killerDetails.DisplayName
                     && Stat.RollCached("1d6") >= (speakerIntMod - 1))
                     return false;
@@ -1087,5 +1102,17 @@ namespace UD_FleshGolems
         public static bool IsSet<T>(this int flags, T flag) where T : Enum
             => flag is int flagValue
             && (flags & flagValue) != 0;
+
+        public static bool IsNameOfGameObjectBlueprint(this string BlueprintName)
+            => !BlueprintName.IsNullOrEmpty()
+            && GameObjectFactory.Factory.HasBlueprint(BlueprintName);
+
+        public static bool HasAttribute(this ConversationText ConversationText, string Attribute)
+            => !ConversationText.Attributes.IsNullOrEmpty()
+            && ConversationText.Attributes.ContainsKey(Attribute);
+
+        public static bool HasAttributeWithValue(this ConversationText ConversationText, string Attribute, string Value)
+            => !ConversationText.HasAttribute(Attribute)
+            && ConversationText.Attributes[Attribute].EqualsNoCase(Value);
     }
 }

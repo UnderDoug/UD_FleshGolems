@@ -9,15 +9,20 @@
       </choice>
       
       <choice ID="AskHowDied" Target="HowIDied">
-        <text IfAlreadyAskHowDied="false">
+        <text IfAlreadyAskedHowDied="false" Priority="2">
           How was it that you died?~
           How did you die?~
           Do you remember at all how you died?
         </text>
-        <text IfAlreadyAskHowDied="true">
+        <text IfAlreadyAskedHowDied="true" Priority="2">
           Remind me how you died?~
           How was it again that you died?~
           I can't recall how you died...
+        </text>
+        <text>
+          How was it that you died?~
+          How did you die?~
+          Do you remember at all how you died?
         </text>
       </choice>
       
@@ -36,6 +41,7 @@
         Wh- why??~
         {{emote|*wilhelm scream*}}
       </text>
+      <choice UseID="AskHowDied" />
       <choice UseID="JoinPartyChoice" />
       <choice UseID="GoEnd" />
     </start>
@@ -51,25 +57,75 @@
         I was killed by... by.. You know, I can't remember...~
         I don't remember everything from before my current state... Who killed me is one of those things...
       </text>
-      <text MemoryElement="Weapon" Known="true">
-        =killer.subjective= killed me with =weapon=..~
-        
+      <text MemoryElement="KillerName" Known="true">
+        I was killed by someone called =KilleNamer=...~
+        =KillerName= is the name of who killed me...~
+        I barely remember, but I'm pretty sure I was killed by someone who went by =KillerName=...
       </text>
-      <text WeaponKnown="false">
-        
+      <text MemoryElement="KillerName" Known="False">
+        I can't recall the name of who it was...
+        I was killed by... by.. You know, I can't remember their name...~
+        I don't remember everything from before my current state... The name of who killed me is one of those things...
+      </text>
+      <text MemoryElement="KillerCreature" Known="true">
+        The type of creature that killed me was =aKillerCreature=...~
+        =KillerCreature=... That's what got me... =AKillerCreature...~
+        Would you believe it? =KillerCreature=... {{K|=aKillerCreature=}}...
+        Look out the next time there's =aKillerCreature= nearby... =KillerCreature='s what got me!~
+      </text>
+      <text MemoryElement="KillerCreature" Known="False">
+        I couldn't tell you what =killer.subjective= was... =aKillerCreature=, certainly...~
+        Really struggling to recall... The name of who killed me is one of those things...~
+        Maybe it was my poor memory... Although, I suppose it might not have been bad before... Before, well... {{emote|*gestures at =subject.reflexive=*|}}
+      </text>
+      <text MemoryElement="Weapon" Known="true">
+        ...=killer.Subjective= killed me with =killer.possessive= =weapon=...~
+        ...=killer.Subjective= used =killer.possessive= to kill me...~
+        ...=weapon.An= was used to kill me...
+      </text>
+      <text MemoryElement="Weapon" Known="false">
+        ...I can't remember what I was actually killed with...~
+        ...What I was killed with is a mystery to me...~
+        ...It seems I can't recall what was used to kill me...
+      </text>
+      <text MemoryElement="Feature" Known="true">
+        ...=killer.Subjective= had =feature=, which took me out handily...~
+        ...=killer.Possessive= =feature= made short work of me...~
+        ...=Feature= is what =killer.subjective= used to end my life... I'll leave exactly {{Y|how}} to your imagination...
+      </text>
+      <text MemoryElement="Feature" Known="false">
+        ...I can't even remember any notable features...~
+        ...Not so much as a notable feature comes to mind...~
+        ...=killer.Subjective= must have been truly forgettable, I can't recall anything notable... Except that =killer.subjective= killed me, of course...
+      </text>
+      <text MemoryElement="Description" Known="true">
+        ...I was =descritption=, which I do not recommend...~
+        ...Let me tell you, being =description= is not fun...~
+        ...=Description= is not how I imagined it would happen... And yet, here we are...
+      </text>
+      <text MemoryElement="Description" Known="false">
+        ...Best I can recall is that I was =descritption=, but that's probably self-evident...~
+        ...Any more detailed than =descritption= is more than I can recall, sorry...~
+        ...You'd think I'd remember something like dyin', but I don't...
+      </text>
+      <text MemoryElement="KillerName,KillerCreature,Description">
+        ...=KillerName=, =aKillerCreature= got me... I was =description=, which wasn't fun...~
+        ...=AKillerCreature= called =KillerName= made saw me =description=... Look out if you see =killer.subjective=..~
+        ...I was =description= by =aKillerCreature= called =KillerName=... If I ever see =killer.objective= again...\n\n...Well, I'm not sure what I'd do, actually... =killer.Subject= did kill me the first time, and I'm not keen on a second...
       </text>
       <text RudeToAsk="true">
         That's a rather personal thing to ask, don't you think??~
         How presumptuous... Good for you that it's not a big deal, but maybe I'd rather not think about it.~
         When did you last expell waste?\n\nNot a fan of inappropriately personal questions, then?
       </text>
-      <text>
-        
-      </text>
       <text KilledByPlayer="true">
-        
+        It... it was YOU!~
+        I think... I think {{Y|you}} killed me...\n\n{{R|I'LL RETURN THE FAVOUR!}}~
+        {{R|YOU!}}\n\n{{R|RARGH!!}}
       </text>
       <part Name="UD_FleshGolems_AskHowDied" />
+      <choice UseID="JoinPartyChoice" />
+      <choice UseID="GoEnd" />
     </node>
     
   </conversation>
