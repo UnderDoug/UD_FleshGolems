@@ -123,6 +123,11 @@
         I think... I think {{Y|you}} killed me...\n\n{{R|I'LL RETURN THE FAVOUR!}}~
         {{R|YOU!}}\n\n{{R|RARGH!!}}
       </text>
+      <text Priority="1">
+        I don't actually remember at all...~
+        I'm struggling to recall...~
+        Wait, I {{W|DIED}}??\n\n=ud_nbsp:12=...I'm just joking around! I don't remember, though...
+      </text>
       <part Name="UD_FleshGolems_AskHowDied" />
       <choice UseID="JoinPartyChoice" />
       <choice UseID="GoEnd" />

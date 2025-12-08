@@ -7,6 +7,7 @@ using UD_FleshGolems;
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Parts.VengeanceHelpers;
 
+using XRL.Language;
 using XRL.Rules;
 using XRL.UI;
 using XRL.World.Parts;
@@ -188,55 +189,112 @@ namespace XRL.World.Conversations.Parts
         }
         public override bool HandleEvent(PrepareTextEvent E)
         {
+            GameObject killer = null;
+            GameObject weapon = null;
+
+            string killerName = "mysterious entity";
+            string killerCreatureType = killerName;
+            string aKillerCreature = Grammar.A(killerName);
+            string killerString = killerName;
+
+            string weaponString = "deadly force";
+            string feature = weaponString;
+            string deathMethod = weaponString;
+
+            string description = "killed to death";
+
             if (The.Speaker is GameObject speaker
                 && speaker.TryGetPart(out UD_FleshGolems_ReanimatedCorpse reanimatedCorpsePart)
                 && reanimatedCorpsePart.KillerDetails is KillerDetails killerDetails
                 && reanimatedCorpsePart.DeathMemory != UndefinedDeathMemoryElement)
             {
                 DeathMemoryElements deathMemory = reanimatedCorpsePart.DeathMemory;
-                string killerName = killerDetails.DisplayName ?? "mysterious entity";
-                string creatureType = killerDetails.CreatureType ?? "mysterious entity";
-                killerDetails.KilledHow(deathMemory, out string weapon, out string feature, out string description, out bool accident, out bool environment);
-                string deathMethod = weapon ?? feature ?? "deadly force";
-                weapon ??= "deadly force";
-                feature ??= "deadly force";
-                description ??= "killed to death";
-                ReplaceBuilder RB = E.Text.StartReplace()
-                    .AddReplacer("Killer", killerDetails.KilledBy(deathMemory, true))
-                    .AddReplacer("killer", killerDetails.KilledBy(deathMemory))
-                    .AddReplacer("KillerName", killerName.Capitalize())
-                    .AddReplacer("killerName", killerName[0].ToString().ToLower() + killerName[..1])
-                    .AddReplacer("KillerCreature", creatureType.Capitalize())
-                    .AddReplacer("killerCreature", creatureType[0].ToString().ToLower() + creatureType[..1])
-                    .AddReplacer("AKillerCreature", killerDetails.KilledByA(deathMemory, true))
-                    .AddReplacer("aKillerCreature", killerDetails.KilledByA(deathMemory))
-                    .AddReplacer("Method", deathMethod.Capitalize())
-                    .AddReplacer("method", deathMethod[0].ToString().ToLower() + deathMethod[..1])
-                    .AddReplacer("Weapon", weapon.Capitalize())
-                    .AddReplacer("weapon", weapon[0].ToString().ToLower() + weapon[..1])
-                    .AddReplacer("Feature", feature.Capitalize())
-                    .AddReplacer("feature", feature[0].ToString().ToLower() + feature[..1])
-                    .AddReplacer("Description", description.Capitalize())
-                    .AddReplacer("description", description[0].ToString().ToLower() + description[..1]);
-                
+
+                if (!killerDetails.DisplayName.IsNullOrEmpty()
+                    && deathMemory.HasFlag(DeathMemoryElements.Killer))
+                    killerString = killerDetails.KilledBy(deathMemory);
+
+                if (!killerDetails.DisplayName.IsNullOrEmpty()
+                    && deathMemory.HasFlag(DeathMemoryElements.KillerName))
+                    killerName = killerDetails.DisplayName;
+
+                if (!killerDetails.CreatureType.IsNullOrEmpty()
+                    && deathMemory.HasFlag(DeathMemoryElements.KillerCreature))
+                    killerCreatureType = killerDetails.CreatureType;
+
+                killerDetails.KilledHow(
+                    DeathMemory: deathMemory,
+                    Weapon: out string deathWeapon,
+                    Feature: out string deathFeature,
+                    Description: out string deathDescription,
+                    Accidentally: out bool accident,
+                    Environment: out bool environment);
+
+                if (!deathWeapon.IsNullOrEmpty()
+                    && deathMemory.HasFlag(DeathMemoryElements.Weapon))
+                    weaponString = deathWeapon;
+
+                if (!deathFeature.IsNullOrEmpty()
+                    && deathMemory.HasFlag(DeathMemoryElements.KillerFeature))
+                    feature = deathFeature;
+
+                if (!deathDescription.IsNullOrEmpty()
+                    && deathMemory.HasFlag(DeathMemoryElements.Description))
+                    description = deathDescription;
+
+                if ((!deathWeapon.IsNullOrEmpty()
+                        || !deathFeature.IsNullOrEmpty()
+                        || !deathDescription.IsNullOrEmpty())
+                    && deathMemory.HasFlag(DeathMemoryElements.Method))
+                    deathMethod = deathWeapon ?? deathFeature ?? deathDescription;
+
                 if (GameObject.Validate(killerDetails.Killer))
                 {
-                    RB.AddObject(killerDetails.Killer, "killer");
-                }
-                else
-                {
-                    RB.AddExplicit(killerDetails.DisplayName, "killer", new Gender("nonspecific"));
+                    killer = killerDetails.Killer;
                 }
                 if (GameObject.Validate(killerDetails.Weapon))
                 {
-                    RB.AddObject(killerDetails.Weapon, "weapon");
+                    weapon = killerDetails.Weapon;
                 }
-                else
-                {
-                    RB.AddExplicit(killerDetails.WeaponName, "weapon", new Gender("neuter"));
-                }
-                RB.Execute();
             }
+
+            static string lowerize(string String) => String[0].ToString().ToLower() + String[..1];
+
+            ReplaceBuilder RB = E.Text.StartReplace()
+                .AddReplacer("Killer", killerString.Capitalize())
+                .AddReplacer("killer", lowerize(killerString))
+                .AddReplacer("KillerName", killerName.Capitalize())
+                .AddReplacer("killerName", lowerize(killerName))
+                .AddReplacer("KillerCreature", killerCreatureType.Capitalize())
+                .AddReplacer("killerCreature", lowerize(killerCreatureType))
+                .AddReplacer("AKillerCreature", aKillerCreature.Capitalize())
+                .AddReplacer("aKillerCreature", lowerize(aKillerCreature))
+                .AddReplacer("Method", deathMethod.Capitalize())
+                .AddReplacer("method", lowerize(deathMethod))
+                .AddReplacer("Weapon", weaponString.Capitalize())
+                .AddReplacer("weapon", lowerize(weaponString))
+                .AddReplacer("Feature", feature.Capitalize())
+                .AddReplacer("feature", lowerize(feature))
+                .AddReplacer("Description", description.Capitalize())
+                .AddReplacer("description", lowerize(description));
+
+            if (GameObject.Validate(killer))
+            {
+                RB.AddObject(killer, "killer");
+            }
+            else
+            {
+                RB.AddExplicit(killerName, "killer", new Gender("nonspecific"));
+            }
+            if (GameObject.Validate(weapon))
+            {
+                RB.AddObject(weapon, "weapon");
+            }
+            else
+            {
+                RB.AddExplicit(weaponString, "weapon", new Gender("neuter"));
+            }
+            RB.Execute();
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(EnteredElementEvent E)

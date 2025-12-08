@@ -1061,6 +1061,11 @@ namespace XRL.World.Parts
 
                 bool builtToBeReanimated = (frankenCorpse.GetPart<UD_FleshGolems_DestinedForReanimation>()?.BuiltToBeReanimated).GetValueOrDefault();
 
+                if (reanimationHelper.KillerDetails == null)
+                {
+                    reanimationHelper.KillerDetails = UD_FleshGolems_DestinedForReanimation.ProduceKillerDetails();
+                }
+
                 Dictionary<TileMappingKeyword, List<string>> prospectiveTiles = null;
 
                 CollectProspectiveTiles(
@@ -1979,6 +1984,27 @@ namespace XRL.World.Parts
             else
             {
                 E.AddEntry(this, nameof(FailedToRegisterEvents), "Empty");
+            }
+            if (KillerDetails != null)
+            {
+                Dictionary<string, string> killerDetails = new()
+                {
+                    { nameof(KillerDetails.ID), KillerDetails.ID },
+                    { nameof(KillerDetails.Blueprint), KillerDetails.Blueprint },
+                    { nameof(KillerDetails.DisplayName), KillerDetails.DisplayName },
+                    { nameof(KillerDetails.CreatureType), KillerDetails.CreatureType },
+                    { nameof(KillerDetails.WeaponName), KillerDetails.WeaponName },
+                    { nameof(KillerDetails.NotableFeature), KillerDetails.NotableFeature },
+                    { nameof(KillerDetails.DeathDescription), KillerDetails.DeathDescription },
+                };
+                string killerDetailsString = killerDetails
+                    ?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value)
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null);
+                E.AddEntry(this, nameof(KillerDetails), killerDetailsString);
+            }
+            else
+            {
+                E.AddEntry(this, nameof(KillerDetails), "empty");
             }
             return base.HandleEvent(E);
         }

@@ -215,6 +215,7 @@ namespace XRL.World.ObjectBuilders
                     out GameObject killer,
                     out GameObject weapon,
                     out GameObject projectile,
+                    out string deathCategory,
                     out string deathReason,
                     out bool accidental,
                     out bool killerIsCached);

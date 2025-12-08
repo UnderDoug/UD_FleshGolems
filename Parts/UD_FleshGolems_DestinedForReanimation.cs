@@ -36,10 +36,10 @@ namespace XRL.World.Parts
             {
                 "cooked", new()
                 {
-                    "=subject.verb:was= hard-boiled",
-                    "=subject.verb:was= soft-boiled",
+                    "=subject.verb:was:afterpronoun= hard-boiled",
+                    "=subject.verb:was:afterpronoun= soft-boiled",
                     "broiled for our sins",
-                    "=subject.verb:was= boiled",
+                    "=subject.verb:was:afterpronoun= boiled",
                     "fell in a pot of broth",
                     "fell in a pot of stew",
                     "didn't realize the pot had come to a boil",
@@ -49,11 +49,11 @@ namespace XRL.World.Parts
             {
                 "immolated", new()
                 {
-                    "=subject.verb:was= scorched to death",
+                    "=subject.verb:was:afterpronoun= scorched to death",
                     "couldn't find a way to put yourself out",
-                    "=subject.verb:was= barbequed",
-                    "=subject.verb:was= grilled",
-                    "=subject.verb:was= more \"well-done\" than \"medium-rare\"",
+                    "=subject.verb:was:afterpronoun= barbequed",
+                    "=subject.verb:was:afterpronoun= grilled",
+                    "=subject.verb:was:afterpronoun= more \"well-done\" than \"medium-rare\"",
                     "had to leave the kitchen",
                     "jumped out of the frying pan",
                 }
@@ -62,8 +62,8 @@ namespace XRL.World.Parts
             {
                 "plasma-burned to death", new()
                 {
-                    "=subject.verb:was= deepfried",
-                    "=subject.verb:was= fried",
+                    "=subject.verb:was:afterpronoun= deepfried",
+                    "=subject.verb:was:afterpronoun= fried",
                     "looked in the wrong end of a spacer rifle",
                     "fell into an astral forge",
                 }
@@ -72,16 +72,16 @@ namespace XRL.World.Parts
             {
                 "frozen to death", new()
                 {
-                    "=subject.verb:was= snap frozen",
-                    "=subject.verb:was= flash frozen",
-                    "=subject.verb:was= chilled to death",
+                    "=subject.verb:was:afterpronoun= snap frozen",
+                    "=subject.verb:was:afterpronoun= flash frozen",
+                    "=subject.verb:was:afterpronoun= chilled to death",
                 }
             },
             // Electric damage
             {
                 "electrocuted", new()
                 {
-                    "=subject.verb:was= zapped to death",
+                    "=subject.verb:was:afterpronoun= zapped to death",
                     "",
                 }
             },
@@ -246,7 +246,7 @@ namespace XRL.World.Parts
             Renderable deathIcon = null;
             if (!deathCategory.IsNullOrEmpty() && deathIcons.ContainsKey(deathCategory))
             {
-                deathMessage = deathMessage.Replace("You died.", "");
+                deathMessage = deathMessage.Replace("You died.\n\n", "");
                 deathMessage = ("=subject.Subjective= " + deathMessage)
                     .StartReplace()
                     .AddObject(Dying)
@@ -422,12 +422,33 @@ namespace XRL.World.Parts
 
             return new(Killer, Weapon, Reason, Accidental);
         }
+        public static KillerDetails ProduceKillerDetails()
+        {
+            KillerDetails output = ProduceKillerDetails(
+                Killer: out GameObject killer,
+                Weapon: out GameObject weapon,
+                Projectile: out GameObject projectile,
+                Category: out _,
+                Reason: out _,
+                Accidental: out _,
+                KillerIsCached: out bool killerIsCached);
+
+            if (!killerIsCached)
+            {
+                killer?.Obliterate();
+                weapon?.Obliterate();
+            }
+            projectile?.Obliterate();
+
+            return output;
+        }
 
         public static bool FakeRandomDeath(
             GameObject Dying,
             out KillerDetails KillerDeatails,
             int ChanceRandomKiller = 50,
-            bool DoAchievement = false)
+            bool DoAchievement = false,
+            bool RequireKillerDetails = false)
         {
             GameObject killer = null;
             GameObject weapon = null;
@@ -436,7 +457,15 @@ namespace XRL.World.Parts
             bool killerIsCached = false;
             try
             {
-                KillerDeatails = ProduceKillerDetails(out killer, out weapon, out projectile, out string category, out string reason, out bool accidental, out killerIsCached, ChanceRandomKiller);
+                KillerDeatails = ProduceKillerDetails(
+                    Killer: out killer,
+                    Weapon: out weapon,
+                    Projectile: out projectile,
+                    Category: out string category,
+                    Reason: out string reason,
+                    Accidental: out bool accidental,
+                    KillerIsCached: out killerIsCached,
+                    ChanceRandomKiller: ChanceRandomKiller);
 
                 bool deathFaked = FakeDeath(
                     Dying: Dying,
@@ -460,6 +489,13 @@ namespace XRL.World.Parts
                     weapon?.Obliterate();
                 }
                 projectile?.Obliterate();
+
+                if (RequireKillerDetails
+                    && Dying.IsCorpse()
+                    && Dying.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
+                {
+                    reanimationHelper.KillerDetails ??= KillerDeatails;
+                }
 
                 return deathFaked;
             }

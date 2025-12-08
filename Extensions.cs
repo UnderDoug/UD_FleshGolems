@@ -868,6 +868,9 @@ namespace UD_FleshGolems
         public static string YehNah(this bool? Yeh)
             => Utils.YehNah(Yeh);
 
+        public static string YehNah(this bool Yeh)
+            => Utils.YehNah(Yeh);
+
         public static string BodyPartString(this BodyPart BodyPart, bool WithManager = false, bool WithParent = false, bool Recursive = false)
         {
             if (BodyPart == null)
@@ -1112,7 +1115,7 @@ namespace UD_FleshGolems
             && ConversationText.Attributes.ContainsKey(Attribute);
 
         public static bool HasAttributeWithValue(this ConversationText ConversationText, string Attribute, string Value)
-            => !ConversationText.HasAttribute(Attribute)
+            => ConversationText.HasAttribute(Attribute)
             && ConversationText.Attributes[Attribute].EqualsNoCase(Value);
     }
 }

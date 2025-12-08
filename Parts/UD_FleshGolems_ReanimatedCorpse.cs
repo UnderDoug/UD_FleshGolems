@@ -743,6 +743,17 @@ namespace XRL.World.Parts
         {
             E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
             E.AddEntry(this, nameof(IdentityType), IdentityType.ToStringWithNum());
+            if (DeathMemory != UndefinedDeathMemoryElement)
+            {
+                string deathMemoryHasFlags = DeathMemoryElementsValues
+                    ?.ConvertToStringList(kvp => kvp.Key + ": " + DeathMemory.HasFlag(kvp.Value).YehNah())
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null);
+                E.AddEntry(this, nameof(DeathMemory), deathMemoryHasFlags);
+            }
+            else
+            {
+                E.AddEntry(this, nameof(DeathMemory), nameof(UndefinedDeathMemoryElement));
+            }
 
             E.AddEntry(this, nameof(IsRenderDisplayNameUpdated), IsRenderDisplayNameUpdated);
             E.AddEntry(this, nameof(IsAlteredDescription), IsAlteredDescription);
