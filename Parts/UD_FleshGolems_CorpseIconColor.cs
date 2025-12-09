@@ -10,6 +10,7 @@ namespace XRL.World.Parts
     public class UD_FleshGolems_CorpseIconColor : IIconColorPart
     {
         public const string SET_COLORS_PROPTAG = "UD_FleshGolems CorpseIconColor";
+
         public UD_FleshGolems_CorpseIconColor()
         {
             SetTileColor("&r");

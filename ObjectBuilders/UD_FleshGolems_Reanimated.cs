@@ -612,13 +612,22 @@ namespace XRL.World.ObjectBuilders
                 {
                     if (DeathEvent == null)
                     {
-                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(Entity, out reanimationHelper.KillerDetails);
+                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(
+                            Dying: Entity,
+                            KillerDetails: out reanimationHelper.KillerDetails,
+                            RequireKillerDetails: true,
+                            RelentlessIcon: Corpse.RenderForUI());
                     }
                     else
                     {
-                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(Entity, DeathEvent, DoAchievement: true);
+                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(
+                            Dying: Entity,
+                            E: DeathEvent,
+                            DoAchievement: true,
+                            RelentlessIcon: Corpse.RenderForUI());
                         reanimationHelper.KillerDetails = new(DeathEvent);
                     }
+                    reanimationHelper.KillerDetails.Log();
                 }
 
                 ReplaceInContextEvent.Send(Entity, Corpse);

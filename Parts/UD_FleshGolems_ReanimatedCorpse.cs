@@ -64,11 +64,11 @@ namespace XRL.World.Parts
             None = 0,
             KillerName = 1,
             KillerCreature = 2,
-            Killer = KillerName | KillerCreature,
-            KillerFeature = 4,
+            Killer = KillerName ^ KillerCreature,
+            Feature = 4,
             Weapon = 8,
             Description = 16,
-            Method = KillerFeature | Weapon | Description,
+            Method = Feature ^ Weapon ^ Description,
             Complete = Killer | Method,
         }
         public static DeathMemoryElements UndefinedDeathMemoryElement => (DeathMemoryElements)(-1);
@@ -198,32 +198,7 @@ namespace XRL.World.Parts
         private bool IsRenderDisplayNameUpdated;
 
         [SerializeField]
-        private bool _IsAlteredDescription;
-        private bool IsAlteredDescription
-        {
-            get
-            {
-                using Indent indent = new();
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(ParentObject?.DebugName ?? NULL),
-                        Debug.Arg("get", _IsAlteredDescription),
-                    });
-                return _IsAlteredDescription;
-            }
-            set
-            {
-                using Indent indent = new();
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(ParentObject?.DebugName ?? NULL),
-                        Debug.Arg("set", value.ToString()),
-                    });
-                _IsAlteredDescription = value;
-            }
-        }
+        private bool IsAlteredDescription;
 
         public bool NoSuffer;
 
@@ -236,6 +211,7 @@ namespace XRL.World.Parts
             BleedLiquid = null;
             BleedLiquidPortions = null;
             IsRenderDisplayNameUpdated = false;
+            IsAlteredDescription = false;
             NoSuffer = false;
         }
 
@@ -743,18 +719,20 @@ namespace XRL.World.Parts
         {
             E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
             E.AddEntry(this, nameof(IdentityType), IdentityType.ToStringWithNum());
+            E.AddEntry(this, nameof(DeathQuestionsAreRude), DeathQuestionsAreRude);
             if (DeathMemory != UndefinedDeathMemoryElement)
             {
                 string deathMemoryHasFlags = DeathMemoryElementsValues
-                    ?.ConvertToStringList(kvp => kvp.Key + ": " + DeathMemory.HasFlag(kvp.Value).YehNah())
+                    ?.ConvertToStringList(kvp => kvp.Key + " (" + (int)kvp.Value + "): " + DeathMemory.HasFlag(kvp.Value).YehNah())
                     ?.GenerateBulletList(Bullet: null, BulletColor: null);
-                E.AddEntry(this, nameof(DeathMemory), deathMemoryHasFlags);
+                E.AddEntry(this, nameof(DeathMemory) + " (" + (int)DeathMemory + ")", deathMemoryHasFlags);
+                E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(DeathMemory) + " (" + (int)DeathMemory + ")", deathMemoryHasFlags);
             }
             else
             {
                 E.AddEntry(this, nameof(DeathMemory), nameof(UndefinedDeathMemoryElement));
+                E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(DeathMemory), nameof(UndefinedDeathMemoryElement));
             }
-
             E.AddEntry(this, nameof(IsRenderDisplayNameUpdated), IsRenderDisplayNameUpdated);
             E.AddEntry(this, nameof(IsAlteredDescription), IsAlteredDescription);
 

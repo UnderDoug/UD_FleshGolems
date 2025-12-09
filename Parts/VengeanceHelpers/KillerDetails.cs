@@ -161,7 +161,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public static string GetNotableFeature(GameObject Killer)
         {
             if (Killer == null || Killer.Body is not Body killerBody)
-                return "a striking absence";
+                return "striking absence";
 
             Dictionary<string, int> notableFeatures = new();
 
@@ -185,7 +185,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 foreach (GameObject implant in Killer.GetInstalledCyberneticsReadonly())
                 {
                     cyberneticsCount++;
-                    notableFeatures.TryAdd(implant.An(Short: true, Reference: true), cyberneticsWeight);
+                    notableFeatures.TryAdd(implant.GetReferenceDisplayName(Short: true), cyberneticsWeight);
                 }
             }
             int naturalWeaponWeight = cyberneticsWeight / cyberneticsCount;
@@ -195,12 +195,12 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     && equipped.IsNatural()
                     && equipped.TryGetPart(out MeleeWeapon equippedMeleeWeapon)
                     && !equippedMeleeWeapon.IsImprovisedWeapon())
-                    notableFeatures.TryAdd(equipped.An(Short: true, Reference: true), naturalWeaponWeight);
+                    notableFeatures.TryAdd(equipped.GetReferenceDisplayName(Short: true), naturalWeaponWeight);
                 else
                 if (bodyPart.DefaultBehavior is GameObject defaultBehavior
                     && defaultBehavior.TryGetPart(out MeleeWeapon defaultMeleeWeapon)
                     && !defaultMeleeWeapon.IsImprovisedWeapon())
-                    notableFeatures.TryAdd(defaultBehavior.An(Short: true, Reference: true), naturalWeaponWeight);
+                    notableFeatures.TryAdd(defaultBehavior.GetReferenceDisplayName(Short: true), naturalWeaponWeight);
             }
             return notableFeatures.GetWeightedSeededRandom(nameof(GetNotableFeature) + "::" + Killer.ID);
         }
@@ -273,7 +273,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             {
                 Weapon = WeaponName;
             }
-            if (DeathMemory.HasFlag(DeathMemory.KillerFeature)
+            if (DeathMemory.HasFlag(DeathMemory.Feature)
                 && !NotableFeature.IsNullOrEmpty())
             {
                 Feature = NotableFeature;
@@ -288,5 +288,24 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public bool IsKiller(GameObject Entity)
             => Entity != null
             && Entity.ID == ID;
+
+        public KillerDetails Log()
+        {
+            using Indent indent = new(1);
+            Debug.LogCaller(indent);
+            Debug.Log(nameof(Killer), Killer?.DebugName ?? NULL, indent[1]);
+            Debug.Log(nameof(ID), ID ?? NULL, indent[1]);
+            Debug.Log(nameof(Blueprint), Blueprint ?? NULL, indent[1]);
+            Debug.Log(nameof(DisplayName), DisplayName ?? NULL, indent[1]);
+            Debug.Log(nameof(CreatureType), CreatureType ?? NULL, indent[1]);
+            Debug.Log(nameof(NotableFeature), NotableFeature ?? NULL, indent[1]);
+            Debug.Log(nameof(Weapon), Weapon?.DebugName ?? NULL, indent[1]);
+            Debug.Log(nameof(WeaponName), WeaponName ?? NULL, indent[1]);
+            Debug.Log(nameof(DeathDescription), DeathDescription ?? NULL, indent[1]);
+            Debug.Log(nameof(WasAccident), WasAccident, indent[1]);
+            Debug.Log(nameof(WasEnvironment), WasEnvironment, indent[1]);
+            Debug.Log(nameof(KillerIsDeceased), KillerIsDeceased?.ToString() ?? NULL, indent[1]);
+            return this;
+        }
     }
 }

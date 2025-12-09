@@ -85,6 +85,14 @@ namespace XRL.World.Conversations.Parts
         }
         public override bool HandleEvent(GetTextElementEvent E)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(GetTextElementEvent)),
+                    Debug.Arg(nameof(The.Speaker), The.Speaker?.DebugName),
+                });
+
             if (!E.Texts.IsNullOrEmpty()
                 && The.Speaker is GameObject speaker
                 && The.Player is GameObject player
@@ -96,8 +104,13 @@ namespace XRL.World.Conversations.Parts
                     ?.Where(t => t.CheckPredicates())
                     ?.ToList();
 
+                Debug.Log(nameof(possibleTexts), Indent: indent[1]);
+                foreach (ConversationText possibleText in possibleTexts)
+                    Debug.Log(possibleText.Text + "\n______________________", Indent: indent[2]);
+
                 if (reanimatedCorpsePart.DeathQuestionsAreRude)
                 {
+                    Debug.Log(nameof(reanimatedCorpsePart.DeathQuestionsAreRude), Indent: indent[1]);
                     E.Selected = possibleTexts
                         ?.Where(t => !t.HasAttributeWithValue("RudeToAsk", "true"))
                         ?.ToList()
@@ -108,6 +121,7 @@ namespace XRL.World.Conversations.Parts
                 {
                     DeathMemoryElements corpseDeathMemoryFlags = reanimatedCorpsePart.DeathMemory;
 
+                    Debug.Log("Looping " + nameof(possibleTexts), Indent: indent[1]);
                     Dictionary<DeathMemoryElements, List<ConversationText>> organizedTexts = new();
                     foreach (ConversationText conversationText in possibleTexts)
                     {
@@ -117,9 +131,13 @@ namespace XRL.World.Conversations.Parts
 
                         bool elementIsUnknown = conversationText.HasAttributeWithValue("Known", "true");
 
+                        string memoryElementString = conversationText.Attributes["MemoryElement"];
+
                         DeathMemoryElements key = GetDeathMemoryElementsFromString(conversationText.Attributes["MemoryElement"]);
+
+                        Debug.Log(memoryElementString + " (" + (int)key + ")", Indent: indent[2]);
                         if (key != DeathMemoryElements.None
-                            && (corpseDeathMemoryFlags.HasFlag(key)
+                            && (key.HasFlag(corpseDeathMemoryFlags)
                             || (conversationText.HasAttribute("Known")
                                 && elementIsUnknown)))
                         {
@@ -130,10 +148,16 @@ namespace XRL.World.Conversations.Parts
                             organizedTexts[key] ??= new();
 
                             if (!conversationText.Texts.IsNullOrEmpty())
+                            {
+                                Debug.Log(nameof(conversationText) + " has " + conversationText.Texts.Count + " Texts", Indent: indent[2]);
                                 foreach (ConversationText subText in conversationText.Texts)
                                     organizedTexts[key].Add(subText);
-                            else
+                            }
+                            if (!conversationText.Text.IsNullOrEmpty())
+                            {
+                                Debug.Log(nameof(conversationText) + " has single Text", Indent: indent[2]);
                                 organizedTexts[key].Add(conversationText);
+                            }
                         }
                     }
                     List<ConversationText> killerTexts = organizedTexts
@@ -152,23 +176,23 @@ namespace XRL.World.Conversations.Parts
                         ?.Where(kvp => DeathMemoryElements.Complete.HasFlag(kvp.Key))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
-                        ?? new() { new() { Text = "I don't know who, if anyone, killed me...\n\n... I don't know how I was killed..." }, };
+                        ?? new() { new() { Text = "I don't know who, if anyone, killed me...\n\n... I don't know even how I was killed..." }, };
 
-                    foreach (ConversationText killerText in killerTexts)
-                        foreach (ConversationText methodText in methodTexts)
-                            completeTexts.Add(new()
-                            {
-                                Text = killerText.Text + "\n\n" + methodText.Text,
-                            });
-
-                    using Indent indent = new(1);
-                    Debug.LogMethod(indent,
-                        ArgPairs: new Debug.ArgPair[]
+                    foreach (string killerText in killerTexts.Select(ct => ct.Text))
+                    {
+                        foreach (string methodText in methodTexts.Select(ct => ct.Text))
                         {
-                            Debug.Arg(nameof(speaker), speaker.DebugName),
-                        });
+                            ConversationText newText = new()
+                            {
+                                Text = killerText + "\n\n" + methodText,
+                            };
+                            completeTexts.Add(newText);
+                        }
+                    }
+
+                    Debug.Log(nameof(completeTexts), Indent: indent[1]);
                     foreach (ConversationText completeText in completeTexts)
-                        Debug.Log(completeText.Text, Indent: indent[1]);
+                        Debug.Log(completeText.Text + "\n______________________", Indent: indent[2]);
 
                     E.Selected = completeTexts
                         ?.GetRandomElementCosmetic()
@@ -177,6 +201,7 @@ namespace XRL.World.Conversations.Parts
                 List<ConversationText> playerKilledTexts = null;
                 if (KnowsPlayerKilledThem)
                 {
+                    Debug.Log(nameof(KnowsPlayerKilledThem), Indent: indent[1]);
                     playerKilledTexts = possibleTexts
                         ?.Where(t => t.HasAttributeWithValue("KilledByPlayer", "true"))
                         ?.ToList();
@@ -235,7 +260,7 @@ namespace XRL.World.Conversations.Parts
                     weaponString = deathWeapon;
 
                 if (!deathFeature.IsNullOrEmpty()
-                    && deathMemory.HasFlag(DeathMemoryElements.KillerFeature))
+                    && deathMemory.HasFlag(DeathMemoryElements.Feature))
                     feature = deathFeature;
 
                 if (!deathDescription.IsNullOrEmpty()

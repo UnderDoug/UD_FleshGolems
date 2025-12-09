@@ -36,10 +36,10 @@ namespace XRL.World.Parts
             {
                 "cooked", new()
                 {
-                    "=subject.verb:was:afterpronoun= hard-boiled",
-                    "=subject.verb:was:afterpronoun= soft-boiled",
-                    "broiled for our sins",
-                    "=subject.verb:was:afterpronoun= boiled",
+                    "=subject.verb:were:afterpronoun= hard-boiled",
+                    "=subject.verb:were:afterpronoun= soft-boiled",
+                    "broiled for our sins... Ramen",
+                    "=subject.verb:were:afterpronoun= flash boiled in steam",
                     "fell in a pot of broth",
                     "fell in a pot of stew",
                     "didn't realize the pot had come to a boil",
@@ -49,11 +49,11 @@ namespace XRL.World.Parts
             {
                 "immolated", new()
                 {
-                    "=subject.verb:was:afterpronoun= scorched to death",
-                    "couldn't find a way to put yourself out",
-                    "=subject.verb:was:afterpronoun= barbequed",
-                    "=subject.verb:was:afterpronoun= grilled",
-                    "=subject.verb:was:afterpronoun= more \"well-done\" than \"medium-rare\"",
+                    "=subject.verb:were:afterpronoun= scorched to death",
+                    "couldn't find a way to put =subject.reflexive= out",
+                    "=subject.verb:were:afterpronoun= barbequed",
+                    "=subject.verb:were:afterpronoun= grilled",
+                    "=subject.verb:were:afterpronoun= more \"well-done\" than \"medium-rare\"",
                     "had to leave the kitchen",
                     "jumped out of the frying pan",
                 }
@@ -62,8 +62,8 @@ namespace XRL.World.Parts
             {
                 "plasma-burned to death", new()
                 {
-                    "=subject.verb:was:afterpronoun= deepfried",
-                    "=subject.verb:was:afterpronoun= fried",
+                    "=subject.verb:were:afterpronoun= deepfried",
+                    "=subject.verb:were:afterpronoun= fried",
                     "looked in the wrong end of a spacer rifle",
                     "fell into an astral forge",
                 }
@@ -72,24 +72,22 @@ namespace XRL.World.Parts
             {
                 "frozen to death", new()
                 {
-                    "=subject.verb:was:afterpronoun= snap frozen",
-                    "=subject.verb:was:afterpronoun= flash frozen",
-                    "=subject.verb:was:afterpronoun= chilled to death",
+                    "=subject.verb:were:afterpronoun= snap frozen",
+                    "=subject.verb:were:afterpronoun= flash frozen",
+                    "=subject.verb:were:afterpronoun= chilled to death",
                 }
             },
             // Electric damage
             {
                 "electrocuted", new()
                 {
-                    "=subject.verb:was:afterpronoun= zapped to death",
-                    "",
+                    "=subject.verb:were:afterpronoun= zapped to death",
                 }
             },
             // Thirst
             {
                 "thirst", new()
                 {
-                    "",
                     "",
                 }
             },
@@ -98,14 +96,12 @@ namespace XRL.World.Parts
                 "died of poison", new()
                 {
                     "",
-                    "",
                 }
             },
             // Bleeding damage
             {
                 "bled to death", new()
                 {
-                    "",
                     "",
                 }
             },
@@ -114,14 +110,12 @@ namespace XRL.World.Parts
                 "failed", new()
                 {
                     "",
-                    "",
                 }
             },
             // Asphyxiation damage (osseous ash)
             {
                 "died of asphyxiation", new()
                 {
-                    "",
                     "",
                 }
             },
@@ -130,14 +124,12 @@ namespace XRL.World.Parts
                 "psychically extinguished", new()
                 {
                     "",
-                    "",
                 }
             },
             // Drain damage (syphon vim)
             {
                 "drained to extinction", new()
                 {
-                    "",
                     "",
                 }
             },
@@ -146,14 +138,12 @@ namespace XRL.World.Parts
                 "pricked to death", new()
                 {
                     "",
-                    "",
                 }
             },
             // Bite damage (any bite)
             {
                 "bitten to death", new()
                 {
-                    "",
                     "",
                 }
             },
@@ -198,7 +188,8 @@ namespace XRL.World.Parts
             string ThirdPersonReason = null,
             bool DoFakeMessage = true,
             bool DoJournal = true,
-            bool DoAchievement = false)
+            bool DoAchievement = false,
+            IRenderable RelentlessIcon = null)
         {
             if (Dying == null)
             {
@@ -228,34 +219,30 @@ namespace XRL.World.Parts
                 Reason: Reason,
                 ThirdPersonReason: ThirdPersonReason);
 
-            string deathMessage = "You died.\n\n" + (Reason ?? The.Game.DeathReason);
+            string deathMessageTitle = "You died.";
+            string deathMessage = "=subject.Subjective= " + (Reason ?? The.Game.DeathReason) + ".";
+            string deathCategory = Category ?? The.Game.DeathCategory;
+            Renderable deathIcon = null;
+            Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
+
             if (UI.Options.GetOptionBool("Books_EloquentDeath_EnableEloquentDeathMessage"))
             {
-                deathMessage = deathMessage.Replace("You died.", "You became a cord in time's silly carpet.");
+                deathMessageTitle = "You became a cord in time's silly carpet.";
             }
-            string deathCategory = Category ?? The.Game.DeathCategory;
-            Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
-            string deathMessageTitle = "";
-            if (deathMessage.Contains("."))
-            {
-                int titleSubstring = deathMessage.IndexOf('.') + 1;
-                int messageSubstring = deathMessage.IndexOf('.') + 2;
-                deathMessageTitle = deathMessage[..titleSubstring];
-                deathMessage = deathMessage[messageSubstring..];
-            }
-            Renderable deathIcon = null;
+
             if (!deathCategory.IsNullOrEmpty() && deathIcons.ContainsKey(deathCategory))
             {
-                deathMessage = deathMessage.Replace("You died.\n\n", "");
-                deathMessage = ("=subject.Subjective= " + deathMessage)
+                deathIcon = deathIcons[deathCategory];
+            }
+
+            if (DoFakeMessage && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
+            {
+                deathMessage = deathMessage
                     .StartReplace()
                     .AddObject(Dying)
                     .AddObject(Killer)
                     .ToString();
-                deathIcon = deathIcons[deathCategory];
-            }
-            if (DoFakeMessage && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
-            {
+
                 Popup.ShowSpace(
                     Message: deathMessage,
                     Title: deathMessageTitle,
@@ -265,21 +252,43 @@ namespace XRL.World.Parts
                     ShowContextFrame: deathIcon != null,
                     PopupID: "DeathMessage");
 
-                IRenderable playerIcon = Dying.RenderForUI();
+                string andYetMsg = "... and yet...";
+                string msgSpaces = "=ud_nbsp:12="
+                    .StartReplace()
+                    .ToString();
+                string notRelentMsg = "...=subject.refname= =subject.verb:don't:afterpronoun= {{UD_FleshGolems_reanimated|relent}}..."
+                    .StartReplace()
+                    .AddObject(Dying)
+                    .ToString();
+
+                string fullMsg = andYetMsg + "\n\n" + msgSpaces + notRelentMsg;
+
+                RelentlessIcon ??= Dying.RenderForUI();
+                /*
                 Popup.ShowSpace(
-                    Message: "... and yet...\n\n=ud_nbsp:12=...you don't {{UD_FleshGolems_reanimated|relent}}...".StartReplace().ToString(),
-                    AfterRender: playerIcon is Renderable renderablePlayerIcon ? renderablePlayerIcon : null,
+                    Message: fullMsg,
+                    AfterRender: new(RelentlessIcon),
+                    LogMessage: true,
+                    ShowContextFrame: deathIcon != null,
+                    PopupID: "DeathMessage");
+                */
+                Popup.ShowSpace(
+                    Message: notRelentMsg,
+                    Title: andYetMsg,
+                    AfterRender: new(RelentlessIcon),
                     LogMessage: true,
                     ShowContextFrame: deathIcon != null,
                     PopupID: "DeathMessage");
             }
 
-            string deathReason = Reason ?? The.Game.DeathReason ?? deathCategory;
+            string deathReason = deathMessage;
             if (!deathReason.IsNullOrEmpty())
             {
-                deathReason = deathReason[0].ToString().ToLower() + deathReason.Substring(1);
+                deathReason = deathReason[0].ToString().ToLower() + deathReason[1..];
             }
-            if (DoJournal && !deathReason.IsNullOrEmpty() && The.Player != null && Dying.IsPlayer())
+            if (DoJournal
+                && !deathReason.IsNullOrEmpty()
+                && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
             {
                 // Died
                 JournalAPI.AddAccomplishment(
@@ -295,7 +304,8 @@ namespace XRL.World.Parts
                     gospelText: "=Name= just, sorta... woke back up from dying...");
             }
 
-            if (DoAchievement && Dying.IsPlayer())
+            if (DoAchievement
+                && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
             {
                 Achievement.DIE.Unlock();
             }
@@ -320,7 +330,13 @@ namespace XRL.World.Parts
 
             return true;
         }
-        public static bool FakeDeath(GameObject Dying, IDeathEvent E, bool DoFakeMessage = true, bool DoJournal = true, bool DoAchievement = false)
+        public static bool FakeDeath(
+            GameObject Dying,
+            IDeathEvent E,
+            bool DoFakeMessage = true,
+            bool DoJournal = true,
+            bool DoAchievement = false,
+            IRenderable RelentlessIcon = null)
         {
             return FakeDeath(
                 Dying: Dying,
@@ -334,7 +350,8 @@ namespace XRL.World.Parts
                 ThirdPersonReason: E?.ThirdPersonReason,
                 DoFakeMessage: DoFakeMessage,
                 DoJournal: DoJournal,
-                DoAchievement: DoAchievement);
+                DoAchievement: DoAchievement,
+                RelentlessIcon: RelentlessIcon);
         }
         public bool FakeDeath(IDeathEvent E)
         {
@@ -445,19 +462,20 @@ namespace XRL.World.Parts
 
         public static bool FakeRandomDeath(
             GameObject Dying,
-            out KillerDetails KillerDeatails,
+            out KillerDetails KillerDetails,
             int ChanceRandomKiller = 50,
             bool DoAchievement = false,
-            bool RequireKillerDetails = false)
+            bool RequireKillerDetails = false,
+            IRenderable RelentlessIcon = null)
         {
             GameObject killer = null;
             GameObject weapon = null;
             GameObject projectile = null;
-            KillerDeatails = null;
+            KillerDetails = null;
             bool killerIsCached = false;
             try
             {
-                KillerDeatails = ProduceKillerDetails(
+                KillerDetails = ProduceKillerDetails(
                     Killer: out killer,
                     Weapon: out weapon,
                     Projectile: out projectile,
@@ -476,11 +494,12 @@ namespace XRL.World.Parts
                     Category: category,
                     Reason: reason,
                     ThirdPersonReason: reason,
-                    DoAchievement: DoAchievement);
+                    DoAchievement: DoAchievement,
+                    RelentlessIcon: RelentlessIcon);
 
                 if (!deathFaked)
                 {
-                    KillerDeatails = null;
+                    KillerDetails = null;
                 }
 
                 if (!killerIsCached)
@@ -494,7 +513,7 @@ namespace XRL.World.Parts
                     && Dying.IsCorpse()
                     && Dying.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
                 {
-                    reanimationHelper.KillerDetails ??= KillerDeatails;
+                    reanimationHelper.KillerDetails ??= KillerDetails;
                 }
 
                 return deathFaked;
