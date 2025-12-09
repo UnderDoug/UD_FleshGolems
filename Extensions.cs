@@ -1110,11 +1110,11 @@ namespace UD_FleshGolems
             => !BlueprintName.IsNullOrEmpty()
             && GameObjectFactory.Factory.HasBlueprint(BlueprintName);
 
-        public static bool HasAttribute(this ConversationText ConversationText, string Attribute)
+        public static bool HasAttribute(this IConversationElement ConversationText, string Attribute)
             => !ConversationText.Attributes.IsNullOrEmpty()
             && ConversationText.Attributes.ContainsKey(Attribute);
 
-        public static bool HasAttributeWithValue(this ConversationText ConversationText, string Attribute, string Value)
+        public static bool HasAttributeWithValue(this IConversationElement ConversationText, string Attribute, string Value)
             => ConversationText.HasAttribute(Attribute)
             && ConversationText.Attributes[Attribute].EqualsNoCase(Value);
     }

@@ -1903,15 +1903,17 @@ namespace XRL.World.Parts
             {
                 Dictionary<string, string> killerDetails = new()
                 {
+                    { nameof(KillerDetails.Killer), KillerDetails.Killer?.DebugName?.Strip() ?? NULL },
                     { nameof(KillerDetails.ID), KillerDetails.ID },
                     { nameof(KillerDetails.Blueprint), KillerDetails.Blueprint },
                     { nameof(KillerDetails.DisplayName), KillerDetails.DisplayName.Strip() },
                     { nameof(KillerDetails.CreatureType), KillerDetails.CreatureType.Strip() },
+                    { nameof(KillerDetails.Weapon), KillerDetails.Weapon?.DebugName?.Strip() ?? NULL },
                     { nameof(KillerDetails.WeaponName), KillerDetails.WeaponName.Strip() },
                     { nameof(KillerDetails.NotableFeature), KillerDetails.NotableFeature.Strip() },
                     { 
-                        nameof(KillerDetails.DeathDescription), 
-                        ("=subject.Subjective= " + KillerDetails.DeathDescription)
+                        nameof(KillerDetails.DeathDescription),
+                        KillerDetails.DeathDescription
                             .StartReplace()
                             .AddObject(ParentObject)
                             .ToString() 

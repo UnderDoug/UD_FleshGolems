@@ -603,14 +603,20 @@ namespace XRL.World.Parts.Mutation
                         .AddObject(ParentObject)
                         .ToString();
 
+                    UD_FleshGolems_DestinedForReanimation.RandomDeathCategoryAndReasonAndAccidental(
+                        out string category,
+                        out reason,
+                        out bool accidental);
+
                     if (TargetCreature.Die(
-                        Killer: TargetCreature,
+                        Killer: ParentObject,
                         KillerText: reason,
                         Reason: reason,
                         ThirdPersonReason: reason,
+                        Accidental: accidental,
                         Force: true,
                         DeathVerb: "cease",
-                        DeathCategory: "command"))
+                        DeathCategory: category))
                     {
                         targetCell?.PsychicPulse();
                         ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_success");

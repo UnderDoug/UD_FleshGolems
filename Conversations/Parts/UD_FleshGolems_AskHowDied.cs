@@ -106,7 +106,11 @@ namespace XRL.World.Conversations.Parts
 
                 Debug.Log(nameof(possibleTexts), Indent: indent[1]);
                 foreach (ConversationText possibleText in possibleTexts)
-                    Debug.Log(possibleText.Text + "\n______________________", Indent: indent[2]);
+                {
+                    string attributesString = "(" + possibleText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
+                    Debug.Log(attributesString + possibleText.Text, Indent: indent[2]);
+                    Debug.Log("______________________", Indent: indent[2]);
+                }
 
                 if (reanimatedCorpsePart.DeathQuestionsAreRude)
                 {
@@ -137,7 +141,7 @@ namespace XRL.World.Conversations.Parts
 
                         Debug.Log(memoryElementString + " (" + (int)key + ")", Indent: indent[2]);
                         if (key != DeathMemoryElements.None
-                            && (key.HasFlag(corpseDeathMemoryFlags)
+                            && (corpseDeathMemoryFlags.HasFlag(key)
                             || (conversationText.HasAttribute("Known")
                                 && elementIsUnknown)))
                         {
@@ -161,22 +165,22 @@ namespace XRL.World.Conversations.Parts
                         }
                     }
                     List<ConversationText> killerTexts = organizedTexts
-                        ?.Where(kvp => DeathMemoryElements.Killer.HasFlag(kvp.Key))
+                        ?.Where(kvp => kvp.Key.HasFlag(DeathMemoryElements.Killer))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
-                        ?? new() { new() { Text = "I don't know who, if anyone, killed me..." }, };
+                        ?? new() { new() { Text = "I don't know, if anyone, who killed me..." }, };
 
                     List<ConversationText> methodTexts = organizedTexts
-                        ?.Where(kvp => DeathMemoryElements.Method.HasFlag(kvp.Key))
+                        ?.Where(kvp => kvp.Key.HasFlag(DeathMemoryElements.Method))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
                         ?? new() { new() { Text = "... I don't know how I was killed..." }, };
 
                     List<ConversationText> completeTexts = organizedTexts
-                        ?.Where(kvp => DeathMemoryElements.Complete.HasFlag(kvp.Key))
+                        ?.Where(kvp => kvp.Key.HasFlag(DeathMemoryElements.Complete))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
-                        ?? new() { new() { Text = "I don't know who, if anyone, killed me...\n\n... I don't know even how I was killed..." }, };
+                        ?? new() { new() { Text = "I don't know, if anyone, who killed me...\n\n... I don't know even how I was killed..." }, };
 
                     foreach (string killerText in killerTexts.Select(ct => ct.Text))
                     {
@@ -207,7 +211,10 @@ namespace XRL.World.Conversations.Parts
                         ?.ToList();
 
                     int roughlyHalfSelectedText = (E.Selected.Text.Length / 2) + Stat.RandomCosmetic(-5, 5);
-                    E.Selected.Text = E.Selected.Text[roughlyHalfSelectedText..] + "\n\n...\n\n" + playerKilledTexts.GetRandomElementCosmetic().Text;
+                    E.Selected.Text =
+                        E.Selected.Text[..roughlyHalfSelectedText] +
+                        "\n\n...\n\n" +
+                        playerKilledTexts.GetRandomElementCosmetic().Text;
                 }
             }
             return base.HandleEvent(E);
@@ -285,23 +292,25 @@ namespace XRL.World.Conversations.Parts
 
             static string lowerize(string String) => String[0].ToString().ToLower() + String[..1];
 
-            ReplaceBuilder RB = E.Text.StartReplace()
-                .AddReplacer("Killer", killerString.Capitalize())
-                .AddReplacer("killer", lowerize(killerString))
-                .AddReplacer("KillerName", killerName.Capitalize())
-                .AddReplacer("killerName", lowerize(killerName))
-                .AddReplacer("KillerCreature", killerCreatureType.Capitalize())
-                .AddReplacer("killerCreature", lowerize(killerCreatureType))
-                .AddReplacer("AKillerCreature", aKillerCreature.Capitalize())
-                .AddReplacer("aKillerCreature", lowerize(aKillerCreature))
-                .AddReplacer("Method", deathMethod.Capitalize())
-                .AddReplacer("method", lowerize(deathMethod))
-                .AddReplacer("Weapon", weaponString.Capitalize())
-                .AddReplacer("weapon", lowerize(weaponString))
-                .AddReplacer("Feature", feature.Capitalize())
-                .AddReplacer("feature", lowerize(feature))
-                .AddReplacer("Description", description.Capitalize())
-                .AddReplacer("description", lowerize(description));
+            E.Text
+                .Replace("=Killer=", killerString.Capitalize())
+                .Replace("=killer=", lowerize(killerString))
+                .Replace("=KillerName=", killerName.Capitalize())
+                .Replace("=killerName=", lowerize(killerName))
+                .Replace("=KillerCreature=", killerCreatureType.Capitalize())
+                .Replace("=killerCreature=", lowerize(killerCreatureType))
+                .Replace("=AKillerCreature=", aKillerCreature.Capitalize())
+                .Replace("=aKillerCreature=", lowerize(aKillerCreature))
+                .Replace("=Method=", deathMethod.Capitalize())
+                .Replace("=method=", lowerize(deathMethod))
+                .Replace("=Weapon=", weaponString.Capitalize())
+                .Replace("=weapon=", lowerize(weaponString))
+                .Replace("=Feature=", feature.Capitalize())
+                .Replace("=feature=", lowerize(feature))
+                .Replace("=Description=", description.Capitalize())
+                .Replace("=description=", lowerize(description));
+
+            ReplaceBuilder RB = E.Text.StartReplace();
 
             if (GameObject.Validate(killer))
             {
@@ -337,7 +346,8 @@ namespace XRL.World.Conversations.Parts
 
                 if (KnowsPlayerKilledThem)
                 {
-                    if (E.Element.Attributes.ContainsKey("AllowEscape"))
+                    E.Element.Attributes ??= new();
+                    if (E.Element.HasAttribute("AllowEscape"))
                     {
                         E.Element.Attributes["AllowEscape"] = "false";
                     }

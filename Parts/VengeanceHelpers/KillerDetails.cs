@@ -147,7 +147,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             : this(
                   Killer: E?.Killer,
                   Weapon: E?.Weapon,
-                  DeathDescription: E?.Reason,
+                  DeathDescription: E?.ThirdPersonReason,
                   WasAccident: E == null || E.Accidental,
                   WasEnvironment: E != null && (E?.Killer == null || !E.Killer.IsCreature) && E.Accidental)
         { }

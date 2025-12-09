@@ -57,7 +57,7 @@
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Hexapodal Robot" Value="FleshGolems/brothers_flesh_golem_hexapodal_robot.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Hindren" Value="FleshGolems/brothers_flesh_golem_hindren.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Hover" Value="FleshGolems/brothers_flesh_golem_hover_robot.png" />
-    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Human" Value="FleshGolems/brothers_flesh_golem_human.png,FleshGolems/brothers_flesh_golem_human.png,FleshGolems/ud_flesh_golem_human.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Human" Value="FleshGolems/brothers_flesh_golem_human.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Humanoid Robot" Value="FleshGolems/brothers_flesh_golem_humanoid_robot.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Infrastructure" Value="FleshGolems/brothers_flesh_golem_infrastructure.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Insect" Value="FleshGolems/brothers_flesh_golem_insect.png" />

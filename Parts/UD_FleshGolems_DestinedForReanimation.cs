@@ -220,7 +220,7 @@ namespace XRL.World.Parts
                 ThirdPersonReason: ThirdPersonReason);
 
             string deathMessageTitle = "You died.";
-            string deathMessage = "=subject.Subjective= " + (Reason ?? The.Game.DeathReason) + ".";
+            string deathMessage = /*"=subject.Subjective= " + */(Reason ?? The.Game.DeathReason) + ".";
             string deathCategory = Category ?? The.Game.DeathCategory;
             Renderable deathIcon = null;
             Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
@@ -264,21 +264,22 @@ namespace XRL.World.Parts
                 string fullMsg = andYetMsg + "\n\n" + msgSpaces + notRelentMsg;
 
                 RelentlessIcon ??= Dying.RenderForUI();
-                /*
+                
                 Popup.ShowSpace(
                     Message: fullMsg,
                     AfterRender: new(RelentlessIcon),
                     LogMessage: true,
                     ShowContextFrame: deathIcon != null,
-                    PopupID: "DeathMessage");
-                */
+                    PopupID: "UndeathMessage");
+                /*
                 Popup.ShowSpace(
                     Message: notRelentMsg,
                     Title: andYetMsg,
                     AfterRender: new(RelentlessIcon),
                     LogMessage: true,
                     ShowContextFrame: deathIcon != null,
-                    PopupID: "DeathMessage");
+                    PopupID: "UndeathMessage");
+                */
             }
 
             string deathReason = deathMessage;
@@ -362,6 +363,26 @@ namespace XRL.World.Parts
             return FakeDeath(null);
         }
 
+        public static void RandomDeathCategoryAndReasonAndAccidental(out string Category, out string Reason, out bool Accidental)
+        {
+            Category = DeathCategoryDeathMessages
+                    ?.Where(kvp => !kvp.Value.All(entry => entry.IsNullOrEmpty()))
+                    ?.GetRandomElementCosmetic().Key
+                ?? CheckpointingSystem.deathIcons
+                    ?.Keys
+                    ?.GetRandomElement();
+
+            List<string> possibleReasons = DeathCategoryDeathMessages[Category]
+                    ?.Where(s => !s.IsNullOrEmpty())
+                    ?.ToList()
+                    ?? new();
+            possibleReasons.Add(Category);
+
+            Reason = "=subject.Subjective= " + possibleReasons?.GetRandomElementCosmetic();
+
+            Accidental = Stat.RollCached("1d3") == 1;
+        }
+
         public static KillerDetails ProduceKillerDetails(
             out GameObject Killer,
             out GameObject Weapon,
@@ -424,18 +445,7 @@ namespace XRL.World.Parts
                 }
             }
 
-            Category = DeathCategoryDeathMessages
-                ?.Where(kvp => !kvp.Value.All(entry => entry.IsNullOrEmpty()))
-                ?.GetRandomElementCosmetic().Key;
-
-            Reason = DeathCategoryDeathMessages[Category]
-                    ?.Where(s => !s.IsNullOrEmpty())
-                    ?.GetRandomElementCosmetic()
-                ?? CheckpointingSystem.deathIcons
-                    ?.Keys
-                    ?.GetRandomElement();
-
-            Accidental = Stat.RollCached("1d3") == 1;
+            RandomDeathCategoryAndReasonAndAccidental(out Category, out Reason, out Accidental);
 
             return new(Killer, Weapon, Reason, Accidental);
         }
