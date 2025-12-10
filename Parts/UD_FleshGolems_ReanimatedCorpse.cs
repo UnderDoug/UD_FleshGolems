@@ -64,12 +64,12 @@ namespace XRL.World.Parts
             None = 0,
             KillerName = 1,
             KillerCreature = 2,
-            Killer = KillerName ^ KillerCreature,
+            Killer = KillerName | KillerCreature,
             Feature = 4,
             Weapon = 8,
             Description = 16,
-            Method = Feature ^ Weapon ^ Description,
-            Complete = Killer | Method,
+            Method = Feature | Weapon | Description,
+            Complete = Killer ^ Method,
         }
         public static DeathMemoryElements UndefinedDeathMemoryElement => (DeathMemoryElements)(-1);
 
@@ -733,6 +733,7 @@ namespace XRL.World.Parts
                 E.AddEntry(this, nameof(DeathMemory), nameof(UndefinedDeathMemoryElement));
                 E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(DeathMemory), nameof(UndefinedDeathMemoryElement));
             }
+            E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(DeathQuestionsAreRude), DeathQuestionsAreRude);
             E.AddEntry(this, nameof(IsRenderDisplayNameUpdated), IsRenderDisplayNameUpdated);
             E.AddEntry(this, nameof(IsAlteredDescription), IsAlteredDescription);
 

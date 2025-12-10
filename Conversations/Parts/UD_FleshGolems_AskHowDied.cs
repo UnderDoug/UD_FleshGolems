@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using UD_FleshGolems;
-using UD_FleshGolems.Logging;
-using UD_FleshGolems.Parts.VengeanceHelpers;
-
 using XRL.Language;
 using XRL.Rules;
 using XRL.UI;
 using XRL.World.Parts;
 using XRL.World.Text;
+
+using UD_FleshGolems;
+using UD_FleshGolems.Logging;
+using UD_FleshGolems.Parts.VengeanceHelpers;
+
+using static UD_FleshGolems.Const;
 
 using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
 
@@ -19,7 +21,18 @@ namespace XRL.World.Conversations.Parts
 {
     public class UD_FleshGolems_AskHowDied : IConversationPart
     {
+        public const string RUDE_TO_ASK = "RudeToAsk";
+        public const string MEMORY_ELEMENT = "MemoryElement";
+        public const string KNOWN = "Known";
+
         public const string ASK_HOW_DIED_PROP = "UD_FleshGolems AskedHowDied";
+
+        public static ConversationText DefaultRudeToAskText => new() { Text = "... That's a rude thing to ask..." };
+        public static ConversationText DefaultKillerText => new() { Text = "I don't know, if anyone, who killed me..." };
+        public static ConversationText DefaultMethodText => new() { Text = "... I don't know how I was killed..." };
+        public static ConversationText DefaultCompleteText => new() { Text = "I don't know, if anyone, who killed me...\n\n... I don't know even how I was killed..." };
+        public static ConversationText DefaultNoText => new() { Text = "... I actually can't remember at all...\n\nStrange!" };
+        public static ConversationText DefaultPlayerKilledText => new() { Text = "IT WAS YOU!!" };
 
         public static Dictionary<string, DeathMemoryElements> DeathMemoryElementsValues
             => UD_FleshGolems_ReanimatedCorpse.DeathMemoryElementsValues;
@@ -50,6 +63,22 @@ namespace XRL.World.Conversations.Parts
         public static DeathMemoryElements GetDeathMemoryElementsFromString(string String)
             => GetDeathMemoryElementsFromStringList(String?.CachedCommaExpansion());
 
+        public static List<ConversationText> GetConversationTextsWithTextRetainingMemoryAttributes(
+            ConversationText ConversationText,
+            List<ConversationText> ConversationTextList)
+            => ConversationText?.GetConversationTextsWithText(
+                ConversationTextList: ConversationTextList,
+                Proc: delegate (ConversationText subText)
+                {
+                    subText.Attributes ??= new();
+                    if (ConversationText.HasAttribute(MEMORY_ELEMENT))
+                        subText.Attributes[MEMORY_ELEMENT] = ConversationText.Attributes[MEMORY_ELEMENT];
+
+                    if (ConversationText.HasAttribute(KNOWN))
+                        subText.Attributes[KNOWN] = ConversationText.Attributes[KNOWN];
+                })
+            ?? new();
+
         public override void Awake()
         {
             base.Awake();
@@ -65,7 +94,6 @@ namespace XRL.World.Conversations.Parts
             || ID == PrepareTextEvent.ID
             || ID == EnteredElementEvent.ID
             ;
-
         public override bool HandleEvent(IsElementVisibleEvent E)
         {
             GameObject speaker = The.Speaker;
@@ -102,24 +130,27 @@ namespace XRL.World.Conversations.Parts
             {
                 List<ConversationText> possibleTexts = E.Texts
                     ?.Where(t => t.CheckPredicates())
-                    ?.ToList();
+                    ?.Aggregate(
+                        seed: new List<ConversationText>(),
+                        func: (acc, next) => GetConversationTextsWithTextRetainingMemoryAttributes(next, acc));
 
                 Debug.Log(nameof(possibleTexts), Indent: indent[1]);
                 foreach (ConversationText possibleText in possibleTexts)
                 {
                     string attributesString = "(" + possibleText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
                     Debug.Log(attributesString + possibleText.Text, Indent: indent[2]);
-                    Debug.Log("______________________", Indent: indent[2]);
+                    // possibleText?.Texts?.ForEach(ct => Debug.Log("(" + ct.Attributes?.ToStringForCachedDictionaryExpansion() + "): " + ct.Text, Indent: indent[3]));
+                    Debug.Log(HONLY.ThisManyTimes(25), Indent: indent[2]);
                 }
 
                 if (reanimatedCorpsePart.DeathQuestionsAreRude)
                 {
                     Debug.Log(nameof(reanimatedCorpsePart.DeathQuestionsAreRude), Indent: indent[1]);
                     E.Selected = possibleTexts
-                        ?.Where(t => !t.HasAttributeWithValue("RudeToAsk", "true"))
+                        ?.Where(t => t.HasAttributeWithValue(RUDE_TO_ASK, "true"))
                         ?.ToList()
                         ?.GetRandomElementCosmetic()
-                        ?? new() { Text = "... That's a rude thing to ask..." };
+                        ?? DefaultRudeToAskText;
                 }
                 else
                 {
@@ -127,60 +158,76 @@ namespace XRL.World.Conversations.Parts
 
                     Debug.Log("Looping " + nameof(possibleTexts), Indent: indent[1]);
                     Dictionary<DeathMemoryElements, List<ConversationText>> organizedTexts = new();
-                    foreach (ConversationText conversationText in possibleTexts)
+                    if (!possibleTexts.IsNullOrEmpty())
                     {
-                        if (conversationText.Attributes.IsNullOrEmpty()
-                            || !conversationText.Attributes.ContainsKey("MemoryElement"))
-                            continue;
-
-                        bool elementIsUnknown = conversationText.HasAttributeWithValue("Known", "true");
-
-                        string memoryElementString = conversationText.Attributes["MemoryElement"];
-
-                        DeathMemoryElements key = GetDeathMemoryElementsFromString(conversationText.Attributes["MemoryElement"]);
-
-                        Debug.Log(memoryElementString + " (" + (int)key + ")", Indent: indent[2]);
-                        if (key != DeathMemoryElements.None
-                            && (corpseDeathMemoryFlags.HasFlag(key)
-                            || (conversationText.HasAttribute("Known")
-                                && elementIsUnknown)))
+                        foreach (ConversationText conversationText in possibleTexts.Where(t => t.HasAttribute(MEMORY_ELEMENT)))
                         {
-                            if (!organizedTexts.ContainsKey(key))
-                            {
-                                organizedTexts.Add(key, new());
-                            }
-                            organizedTexts[key] ??= new();
+                            if (!conversationText.HasAttribute(MEMORY_ELEMENT))
+                                continue;
 
-                            if (!conversationText.Texts.IsNullOrEmpty())
+                            bool elementIsUnknown = conversationText.HasAttributeWithValue(KNOWN, "false");
+
+                            string memoryElementString = conversationText.Attributes[MEMORY_ELEMENT];
+
+                            DeathMemoryElements key = GetDeathMemoryElementsFromString(memoryElementString);
+
+                            Debug.Log(memoryElementString + " (" + (int)key + ")", Indent: indent[2]);
+                            if (key != DeathMemoryElements.None
+                                && (corpseDeathMemoryFlags.HasFlag(key)
+                                    || (elementIsUnknown)))
                             {
-                                Debug.Log(nameof(conversationText) + " has " + conversationText.Texts.Count + " Texts", Indent: indent[2]);
-                                foreach (ConversationText subText in conversationText.Texts)
-                                    organizedTexts[key].Add(subText);
-                            }
-                            if (!conversationText.Text.IsNullOrEmpty())
-                            {
-                                Debug.Log(nameof(conversationText) + " has single Text", Indent: indent[2]);
-                                organizedTexts[key].Add(conversationText);
+                                if (!organizedTexts.ContainsKey(key))
+                                {
+                                    organizedTexts.Add(key, new());
+                                }
+                                organizedTexts[key] ??= new();
+
+                                if (!conversationText.Texts.IsNullOrEmpty())
+                                {
+                                    Debug.Log(nameof(conversationText) + " has " + conversationText.Texts.Count + " Texts", Indent: indent[2]);
+                                    foreach (ConversationText subText in conversationText.Texts)
+                                        organizedTexts[key].Add(subText);
+                                }
+                                if (!conversationText.Text.IsNullOrEmpty())
+                                {
+                                    Debug.Log(nameof(conversationText) + " has single Text", Indent: indent[2]);
+                                    organizedTexts[key].Add(conversationText);
+                                }
                             }
                         }
                     }
+                    else
+                    {
+                        Debug.Log(nameof(possibleTexts), "empty", Indent: indent[2]);
+                    }
                     List<ConversationText> killerTexts = organizedTexts
-                        ?.Where(kvp => kvp.Key.HasFlag(DeathMemoryElements.Killer))
+                        ?.Where(kvp => DeathMemoryElements.Killer.HasFlag(kvp.Key))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
-                        ?? new() { new() { Text = "I don't know, if anyone, who killed me..." }, };
+                        ?? new();
 
                     List<ConversationText> methodTexts = organizedTexts
-                        ?.Where(kvp => kvp.Key.HasFlag(DeathMemoryElements.Method))
+                        ?.Where(kvp => DeathMemoryElements.Method.HasFlag(kvp.Key))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
-                        ?? new() { new() { Text = "... I don't know how I was killed..." }, };
+                        ?? new();
+
+                    if (killerTexts.IsNullOrEmpty())
+                    {
+                        killerTexts ??= new();
+                        killerTexts.Add(DefaultKillerText);
+                    }
+                    if (methodTexts.IsNullOrEmpty())
+                    {
+                        methodTexts ??= new();
+                        methodTexts.Add(DefaultMethodText);
+                    }
 
                     List<ConversationText> completeTexts = organizedTexts
-                        ?.Where(kvp => kvp.Key.HasFlag(DeathMemoryElements.Complete))
+                        ?.Where(kvp => DeathMemoryElements.Complete.HasFlag(kvp.Key))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
-                        ?? new() { new() { Text = "I don't know, if anyone, who killed me...\n\n... I don't know even how I was killed..." }, };
+                        ?? new();
 
                     foreach (string killerText in killerTexts.Select(ct => ct.Text))
                     {
@@ -193,28 +240,45 @@ namespace XRL.World.Conversations.Parts
                             completeTexts.Add(newText);
                         }
                     }
+                    if (completeTexts.IsNullOrEmpty())
+                    {
+                        completeTexts ??= new();
+                        completeTexts.Add(DefaultCompleteText);
+                    }
 
                     Debug.Log(nameof(completeTexts), Indent: indent[1]);
                     foreach (ConversationText completeText in completeTexts)
-                        Debug.Log(completeText.Text + "\n______________________", Indent: indent[2]);
+                    {
+                        Debug.Log(completeText.Text, Indent: indent[2]);
+                        Debug.Log(HONLY.ThisManyTimes(25), Indent: indent[2]);
+                    }
 
                     E.Selected = completeTexts
                         ?.GetRandomElementCosmetic()
-                        ?? new() { Text = "... I actually can't remember at all...\n\nStrange!" };
+                        ?? DefaultNoText;
                 }
-                List<ConversationText> playerKilledTexts = null;
                 if (KnowsPlayerKilledThem)
                 {
                     Debug.Log(nameof(KnowsPlayerKilledThem), Indent: indent[1]);
-                    playerKilledTexts = possibleTexts
+                    List<ConversationText> playerKilledTexts = possibleTexts
                         ?.Where(t => t.HasAttributeWithValue("KilledByPlayer", "true"))
                         ?.ToList();
 
-                    int roughlyHalfSelectedText = (E.Selected.Text.Length / 2) + Stat.RandomCosmetic(-5, 5);
+                    if (playerKilledTexts.IsNullOrEmpty())
+                    {
+                        playerKilledTexts ??= new();
+                        playerKilledTexts.Add(DefaultPlayerKilledText);
+                    }
+
+                    E.Selected ??= DefaultNoText;
+
+                    int selectedTextFinalIndex = E.Selected.Text.Length - 1;
+                    int roughlyHalfSelectedText = Math.Min(Math.Max(1, (selectedTextFinalIndex / 2) + Stat.RandomCosmetic(-5, 5)), selectedTextFinalIndex);
+
                     E.Selected.Text =
                         E.Selected.Text[..roughlyHalfSelectedText] +
                         "\n\n...\n\n" +
-                        playerKilledTexts.GetRandomElementCosmetic().Text;
+                        playerKilledTexts?.GetRandomElementCosmetic()?.Text;
                 }
             }
             return base.HandleEvent(E);

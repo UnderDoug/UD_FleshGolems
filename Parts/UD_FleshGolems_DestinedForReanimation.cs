@@ -189,7 +189,8 @@ namespace XRL.World.Parts
             bool DoFakeMessage = true,
             bool DoJournal = true,
             bool DoAchievement = false,
-            IRenderable RelentlessIcon = null)
+            IRenderable RelentlessIcon = null,
+            string RelentlessTitle = null)
         {
             if (Dying == null)
             {
@@ -220,7 +221,7 @@ namespace XRL.World.Parts
                 ThirdPersonReason: ThirdPersonReason);
 
             string deathMessageTitle = "You died.";
-            string deathMessage = /*"=subject.Subjective= " + */(Reason ?? The.Game.DeathReason) + ".";
+            string deathMessage = "=subject.Subjective= " + (Reason ?? The.Game.DeathReason) + ".";
             string deathCategory = Category ?? The.Game.DeathCategory;
             Renderable deathIcon = null;
             Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
@@ -267,6 +268,7 @@ namespace XRL.World.Parts
                 
                 Popup.ShowSpace(
                     Message: fullMsg,
+                    Title: RelentlessTitle,
                     AfterRender: new(RelentlessIcon),
                     LogMessage: true,
                     ShowContextFrame: deathIcon != null,
@@ -337,7 +339,8 @@ namespace XRL.World.Parts
             bool DoFakeMessage = true,
             bool DoJournal = true,
             bool DoAchievement = false,
-            IRenderable RelentlessIcon = null)
+            IRenderable RelentlessIcon = null,
+            string RelentlessTitle = null)
         {
             return FakeDeath(
                 Dying: Dying,
@@ -352,7 +355,8 @@ namespace XRL.World.Parts
                 DoFakeMessage: DoFakeMessage,
                 DoJournal: DoJournal,
                 DoAchievement: DoAchievement,
-                RelentlessIcon: RelentlessIcon);
+                RelentlessIcon: RelentlessIcon,
+                RelentlessTitle: RelentlessTitle);
         }
         public bool FakeDeath(IDeathEvent E)
         {
@@ -378,7 +382,7 @@ namespace XRL.World.Parts
                     ?? new();
             possibleReasons.Add(Category);
 
-            Reason = "=subject.Subjective= " + possibleReasons?.GetRandomElementCosmetic();
+            Reason = possibleReasons?.GetRandomElementCosmetic();
 
             Accidental = Stat.RollCached("1d3") == 1;
         }
@@ -476,7 +480,8 @@ namespace XRL.World.Parts
             int ChanceRandomKiller = 50,
             bool DoAchievement = false,
             bool RequireKillerDetails = false,
-            IRenderable RelentlessIcon = null)
+            IRenderable RelentlessIcon = null,
+            string RelentlessTitle = null)
         {
             GameObject killer = null;
             GameObject weapon = null;
@@ -505,7 +510,8 @@ namespace XRL.World.Parts
                     Reason: reason,
                     ThirdPersonReason: reason,
                     DoAchievement: DoAchievement,
-                    RelentlessIcon: RelentlessIcon);
+                    RelentlessIcon: RelentlessIcon,
+                    RelentlessTitle: RelentlessTitle);
 
                 if (!deathFaked)
                 {

@@ -114,7 +114,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     && Blueprint.IsNullOrEmpty()
                     && DisplayName.IsNullOrEmpty()
                     && CreatureType.IsNullOrEmpty()
-                    && NotableFeature.IsNullOrEmpty()
                     && WeaponName.IsNullOrEmpty();
             }
             this.KillerIsDeceased = KillerIsDeceased;
@@ -147,7 +146,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             : this(
                   Killer: E?.Killer,
                   Weapon: E?.Weapon,
-                  DeathDescription: E?.ThirdPersonReason,
+                  DeathDescription: E?.Reason,
                   WasAccident: E == null || E.Accidental,
                   WasEnvironment: E != null && (E?.Killer == null || !E.Killer.IsCreature) && E.Accidental)
         { }

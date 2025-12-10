@@ -597,7 +597,12 @@ namespace XRL.World.Parts.Mutation
                 {
                     int corpseChanceBefore = targetCreatureCorpse.CorpseChance;
                     targetCreatureCorpse.CorpseChance = 100;
-                    string reason = "=object.T= commanded that =subject.subjective= die, and =subject.subjective= simply did."
+                    string reason = "=subject.verb:were:afterpronoun= commanded to die, and simply did."
+                        .StartReplace()
+                        .AddObject(TargetCreature)
+                        .AddObject(ParentObject)
+                        .ToString();
+                    string thirdPersonReason = "=object.T= commanded that =subject.subjective= die, and =subject.subjective= simply did."
                         .StartReplace()
                         .AddObject(TargetCreature)
                         .AddObject(ParentObject)
@@ -608,11 +613,13 @@ namespace XRL.World.Parts.Mutation
                         out reason,
                         out bool accidental);
 
+                    thirdPersonReason = "=subject.Subjective= " + reason;
+
                     if (TargetCreature.Die(
                         Killer: ParentObject,
                         KillerText: reason,
                         Reason: reason,
-                        ThirdPersonReason: reason,
+                        ThirdPersonReason: thirdPersonReason,
                         Accidental: accidental,
                         Force: true,
                         DeathVerb: "cease",

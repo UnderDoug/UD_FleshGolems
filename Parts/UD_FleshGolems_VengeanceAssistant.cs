@@ -71,38 +71,17 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
                 });
 
-            if (E.Dying.GetDropInventory() is IInventory dropInventory)
+            if (E.Dying.GetDropInventory() is IInventory dropInventory
+                && dropInventory.GetInventoryZone() is Zone deathZone
+                && deathZone.Built
+                && dropInventory.GetInventoryCell() is Cell dropCell
+                && dropCell.FindObject(GO => IsCorpseOfThisEntityOrDying(GO, E)) is GameObject corpse
+                && corpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper corpseReanimationHelper))
             {
-                Debug.CheckYeh(nameof(E.Dying.GetDropInventory), Indent: indent[1]);
-                if (dropInventory.GetInventoryZone() is Zone deathZone)
-                {
-                    Debug.CheckYeh(nameof(dropInventory.GetInventoryZone), Indent: indent[1]);
-                    if (deathZone.Built)
-                    {
-                        Debug.CheckYeh(nameof(deathZone.Built), Indent: indent[1]);
-                        if (dropInventory.GetInventoryCell() is Cell dropCell)
-                        {
-                            Debug.CheckYeh(nameof(dropInventory.GetInventoryCell), Indent: indent[1]);
-                            if (dropCell.FindObject(GO => IsCorpseOfThisEntityOrDying(GO, E)) is GameObject corpse)
-                            {
-                                Debug.CheckYeh(nameof(dropCell.FindObject), Indent: indent[1]);
-                                if (corpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper corpseReanimationHelper))
-                                {
-                                    corpseReanimationHelper.KillerDetails = new(E);
-                                    Debug.CheckYeh(nameof(KillerDetails), "Got!", Indent: indent[1]);
-                                    corpseReanimationHelper.KillerDetails.Log();
-                                }
-                                else Debug.CheckNah(nameof(UD_FleshGolems_CorpseReanimationHelper), Indent: indent[1]);
-                            }
-                            else Debug.CheckNah(nameof(dropCell.FindObject), Indent: indent[1]);
-                        }
-                        else Debug.CheckNah(nameof(dropInventory.GetInventoryCell), Indent: indent[1]);
-                    }
-                    else Debug.CheckNah(nameof(deathZone.Built), Indent: indent[1]);
-                }
-                else Debug.CheckNah(nameof(dropInventory.GetInventoryZone), Indent: indent[1]);
+                corpseReanimationHelper.KillerDetails = new(E);
+                Debug.CheckYeh(nameof(KillerDetails), "Got!", Indent: indent[1]);
+                corpseReanimationHelper.KillerDetails.Log();
             }
-            else Debug.CheckNah(nameof(E.Dying.GetDropInventory), Indent: indent[1]);
 
             return base.HandleEvent(E);
         }

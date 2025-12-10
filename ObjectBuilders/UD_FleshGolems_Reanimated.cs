@@ -616,7 +616,8 @@ namespace XRL.World.ObjectBuilders
                             Dying: Entity,
                             KillerDetails: out reanimationHelper.KillerDetails,
                             RequireKillerDetails: true,
-                            RelentlessIcon: Corpse.RenderForUI());
+                            RelentlessIcon: Corpse.RenderForUI(),
+                            RelentlessTitle: Corpse.GetReferenceDisplayName(Short: true));
                     }
                     else
                     {
@@ -624,7 +625,8 @@ namespace XRL.World.ObjectBuilders
                             Dying: Entity,
                             E: DeathEvent,
                             DoAchievement: true,
-                            RelentlessIcon: Corpse.RenderForUI());
+                            RelentlessIcon: Corpse.RenderForUI(),
+                            RelentlessTitle: Corpse.GetReferenceDisplayName(Short: true));
                         reanimationHelper.KillerDetails = new(DeathEvent);
                     }
                     reanimationHelper.KillerDetails.Log();

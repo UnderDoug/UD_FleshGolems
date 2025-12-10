@@ -80,9 +80,9 @@
       </text>
 
       <text MemoryElement="Description" Known="true">
-        <text>...I was =descritption=, which I do not recommend...</text>
-        <text>...Let me tell you, being =description= is not fun...</text>
-        <text>...=Description= is not how I imagined it would happen... And yet, here we are...</text>
+        <text>...I =descritption=, which I do not recommend...</text>
+        <text>...Let me tell you, I =description=, which is not fun...</text>
+        <text>...I =description=, which is not how I imagined it would happen... And yet, here we are...</text>
       </text>
       <text MemoryElement="Description" Known="false">
         <text>...Best I can recall is that I was =descritption=, but that's probably self-evident...~</text>
@@ -91,9 +91,9 @@
       </text>
 
       <text MemoryElement="KillerName,KillerCreature,Description">
-        <text>...=KillerName=, =aKillerCreature= got me... I was =description=, which wasn't fun...</text>
+        <text>...=KillerName=, =aKillerCreature= got me... I =description=, which wasn't fun...</text>
         <text>...=AKillerCreature= called =KillerName= made saw me =description=... Look out if you see =killer.subjective=..</text>
-        <text>...I was =description= by =aKillerCreature= called =KillerName=... If I ever see =killer.objective= again...\n\n...Well, I'm not sure what I'd do, actually... =killer.Subject= did kill me the first time, and I'm not keen on a second...</text>
+        <text>...I =description= by =aKillerCreature= called =KillerName=... If I ever see =killer.objective= again...\n\n...Well, I'm not sure what I'd do, actually... =killer.Subject= did kill me the first time, and I'm not keen on a second...</text>
       </text>
 
       <text RudeToAsk="true">

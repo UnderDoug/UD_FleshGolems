@@ -573,7 +573,7 @@ namespace UD_FleshGolems
             {
                 yield break;
             }
-            foreach(BodyPart bodyPart in Body.LoopParts())
+            foreach (BodyPart bodyPart in Body.LoopParts())
             {
                 if (Filter == null || Filter(bodyPart))
                 {
@@ -819,13 +819,26 @@ namespace UD_FleshGolems
 
         public static List<T> ForEach<T>(this List<T> List, Action<T> Action)
         {
-            List.ForEach(Action);
+            List?.ForEach(Action);
             return List;
+        }
+
+        public static IEnumerable<T> ForEach<T>(this IEnumerable<T> Enumerable, Action<T> Action)
+        {
+            Enumerable?.ToList()?.ForEach(Action);
+            return Enumerable;
         }
 
         public static TOut ForEach<T, TOut>(this List<T> List, Action<T> Action, TOut Return)
         {
-            List.ForEach(Action);
+            List?.ForEach(Action);
+            return Return;
+        }
+
+        public static TOut ForEach<T, TOut>(this IEnumerable<T> Enumerable, Action<T> Action, TOut Return)
+        {
+            if (!Enumerable.IsNullOrEmpty())
+                return Enumerable.ToList().ForEach(Action, Return);
             return Return;
         }
 
@@ -1117,5 +1130,35 @@ namespace UD_FleshGolems
         public static bool HasAttributeWithValue(this IConversationElement ConversationText, string Attribute, string Value)
             => ConversationText.HasAttribute(Attribute)
             && ConversationText.Attributes[Attribute].EqualsNoCase(Value);
+
+        public static List<ConversationText> GetConversationTextsWithText(
+            this ConversationText ConversationText,
+            List<ConversationText> ConversationTextList,
+            Predicate<ConversationText> Filter = null,
+            Action<ConversationText> Proc = null,
+            bool OnlyPredicateChecked = false)
+        {
+            if (ConversationText == null)
+                return ConversationTextList ?? new();
+
+            ConversationTextList ??= new();
+            if (!ConversationText.Text.IsNullOrEmpty()
+                && (!OnlyPredicateChecked || ConversationText.CheckPredicates())
+                && (Filter == null || Filter(ConversationText))
+                && !ConversationTextList.Any(ct => ct.ID == ConversationText.ID))
+            {
+                Proc?.Invoke(ConversationText);
+                ConversationTextList.Add(ConversationText);
+            }
+            if (!ConversationText.Texts.IsNullOrEmpty())
+                foreach (ConversationText conversationSubText in ConversationText.Texts)
+                    conversationSubText.GetConversationTextsWithText(
+                        ConversationTextList: ConversationTextList,
+                        Filter: Filter,
+                        Proc: Proc,
+                        OnlyPredicateChecked: OnlyPredicateChecked);
+
+            return ConversationTextList ?? new();
+        }
     }
 }

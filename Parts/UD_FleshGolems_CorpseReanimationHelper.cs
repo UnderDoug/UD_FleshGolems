@@ -1911,12 +1911,12 @@ namespace XRL.World.Parts
                     { nameof(KillerDetails.Weapon), KillerDetails.Weapon?.DebugName?.Strip() ?? NULL },
                     { nameof(KillerDetails.WeaponName), KillerDetails.WeaponName.Strip() },
                     { nameof(KillerDetails.NotableFeature), KillerDetails.NotableFeature.Strip() },
-                    { 
+                    {
                         nameof(KillerDetails.DeathDescription),
-                        KillerDetails.DeathDescription
+                        ("=subject.Subjective= " + KillerDetails.DeathDescription)
                             .StartReplace()
                             .AddObject(ParentObject)
-                            .ToString() 
+                            .ToString()
                     },
                     { nameof(KillerDetails.WasAccident), KillerDetails.WasAccident.ToString() },
                     { nameof(KillerDetails.WasEnvironment), KillerDetails.WasEnvironment.ToString() },
