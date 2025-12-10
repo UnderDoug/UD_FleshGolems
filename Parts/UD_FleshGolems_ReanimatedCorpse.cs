@@ -33,6 +33,7 @@ namespace XRL.World.Parts
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
         {
             Registry.Register(AccessTools.Method(typeof(UD_FleshGolems_ReanimatedCorpse), nameof(HandleEvent), new Type[] { typeof(DecorateDefaultEquipmentEvent) }), false);
+            Registry.Register(AccessTools.Method(typeof(UD_FleshGolems_ReanimatedCorpse), nameof(HandleEvent), new Type[] { typeof(EnteredCellEvent) }), false);
             return Registry;
         }
 

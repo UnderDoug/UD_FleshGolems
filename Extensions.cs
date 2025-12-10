@@ -1139,7 +1139,7 @@ namespace UD_FleshGolems
             bool OnlyPredicateChecked = false)
         {
             if (ConversationText == null)
-                return ConversationTextList ?? new();
+                return ConversationTextList ??= new();
 
             ConversationTextList ??= new();
             if (!ConversationText.Text.IsNullOrEmpty()
@@ -1158,7 +1158,7 @@ namespace UD_FleshGolems
                         Proc: Proc,
                         OnlyPredicateChecked: OnlyPredicateChecked);
 
-            return ConversationTextList ?? new();
+            return ConversationTextList ??= new();
         }
     }
 }

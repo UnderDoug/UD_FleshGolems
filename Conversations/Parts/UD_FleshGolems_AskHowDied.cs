@@ -29,8 +29,8 @@ namespace XRL.World.Conversations.Parts
 
         public static ConversationText DefaultRudeToAskText => new() { Text = "... That's a rude thing to ask..." };
         public static ConversationText DefaultKillerText => new() { Text = "I don't know, if anyone, who killed me..." };
-        public static ConversationText DefaultMethodText => new() { Text = "... I don't know how I was killed..." };
-        public static ConversationText DefaultCompleteText => new() { Text = "I don't know, if anyone, who killed me...\n\n... I don't know even how I was killed..." };
+        public static ConversationText DefaultMethodText => new() { Text = "... I just don't remember exactly how I was killed..." };
+        public static ConversationText DefaultCompleteText => new() { Text = "I don't know, if anyone, who killed me...\n\n... and I don't know even how I was killed..." };
         public static ConversationText DefaultNoText => new() { Text = "... I actually can't remember at all...\n\nStrange!" };
         public static ConversationText DefaultPlayerKilledText => new() { Text = "IT WAS YOU!!" };
 
@@ -65,7 +65,7 @@ namespace XRL.World.Conversations.Parts
 
         public static List<ConversationText> GetConversationTextsWithTextRetainingMemoryAttributes(
             ConversationText ConversationText,
-            List<ConversationText> ConversationTextList)
+            ref List<ConversationText> ConversationTextList)
             => ConversationText?.GetConversationTextsWithText(
                 ConversationTextList: ConversationTextList,
                 Proc: delegate (ConversationText subText)
@@ -128,11 +128,20 @@ namespace XRL.World.Conversations.Parts
                 && reanimatedCorpsePart.KillerDetails is KillerDetails killerDetails
                 && reanimatedCorpsePart.DeathMemory != UndefinedDeathMemoryElement)
             {
+                Debug.Log(nameof(E.Texts), Indent: indent[1]);
+                foreach (ConversationText cText in E.Texts)
+                {
+                    string attributesString = "[" + cText.ID + "](" + cText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
+                    Debug.Log(attributesString + cText.Text, Indent: indent[2]);
+                    cText?.Texts?.ForEach(ct => Debug.Log("[" + ct.ID + "](" + ct.Attributes?.ToStringForCachedDictionaryExpansion() + "): " + ct.Text, Indent: indent[3]));
+                    Debug.Log(HONLY.ThisManyTimes(25), Indent: indent[2]);
+                }
+
                 List<ConversationText> possibleTexts = E.Texts
-                    ?.Where(t => t.CheckPredicates())
+                    // ?.Where(t => t.CheckPredicates())
                     ?.Aggregate(
                         seed: new List<ConversationText>(),
-                        func: (acc, next) => GetConversationTextsWithTextRetainingMemoryAttributes(next, acc));
+                        func: (acc, next) => GetConversationTextsWithTextRetainingMemoryAttributes(next, ref acc));
 
                 Debug.Log(nameof(possibleTexts), Indent: indent[1]);
                 foreach (ConversationText possibleText in possibleTexts)
@@ -173,8 +182,7 @@ namespace XRL.World.Conversations.Parts
 
                             Debug.Log(memoryElementString + " (" + (int)key + ")", Indent: indent[2]);
                             if (key != DeathMemoryElements.None
-                                && (corpseDeathMemoryFlags.HasFlag(key)
-                                    || (elementIsUnknown)))
+                                && (corpseDeathMemoryFlags.HasFlag(key) || elementIsUnknown))
                             {
                                 if (!organizedTexts.ContainsKey(key))
                                 {
@@ -203,13 +211,17 @@ namespace XRL.World.Conversations.Parts
                     List<ConversationText> killerTexts = organizedTexts
                         ?.Where(kvp => DeathMemoryElements.Killer.HasFlag(kvp.Key))
                         ?.Select(kvp => kvp.Value)
-                        ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
+                        ?.Aggregate(
+                            seed: new List<ConversationText>(),
+                            func: (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated))
                         ?? new();
 
                     List<ConversationText> methodTexts = organizedTexts
                         ?.Where(kvp => DeathMemoryElements.Method.HasFlag(kvp.Key))
                         ?.Select(kvp => kvp.Value)
-                        ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
+                        ?.Aggregate(
+                            seed: new List<ConversationText>(),
+                            func: (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated))
                         ?? new();
 
                     if (killerTexts.IsNullOrEmpty())
@@ -226,16 +238,39 @@ namespace XRL.World.Conversations.Parts
                     List<ConversationText> completeTexts = organizedTexts
                         ?.Where(kvp => DeathMemoryElements.Complete.HasFlag(kvp.Key))
                         ?.Select(kvp => kvp.Value)
-                        ?.Aggregate(new List<ConversationText>(), (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated), s => s)
+                        ?.Aggregate(
+                            seed: new List<ConversationText>(),
+                            func: (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated))
                         ?? new();
 
-                    foreach (string killerText in killerTexts.Select(ct => ct.Text))
+                    List<string> killerTextStrings = killerTexts
+                        ?.Select(ct => ct.Text)
+                        ?.ToList();
+
+                    List<string> methodTextStrings = methodTexts
+                        ?.Select(ct => ct.Text)
+                        ?.ToList();
+
+                    List<string> constructedCompleteTextStrings = new();
+
+                    if (!killerTextStrings.IsNullOrEmpty()
+                        && !methodTextStrings.IsNullOrEmpty())
                     {
-                        foreach (string methodText in methodTexts.Select(ct => ct.Text))
+                        foreach (string killerText in killerTextStrings)
+                        {
+                            foreach (string methodText in methodTextStrings)
+                            {
+                                constructedCompleteTextStrings.Add(killerText + "\n\n" + methodText);
+                            }
+                        }
+                    }
+                    if (!constructedCompleteTextStrings.IsNullOrEmpty())
+                    {
+                        foreach (string constructedCompleteTextstring in constructedCompleteTextStrings)
                         {
                             ConversationText newText = new()
                             {
-                                Text = killerText + "\n\n" + methodText,
+                                Text = constructedCompleteTextstring,
                             };
                             completeTexts.Add(newText);
                         }
@@ -354,7 +389,7 @@ namespace XRL.World.Conversations.Parts
                 }
             }
 
-            static string lowerize(string String) => String[0].ToString().ToLower() + String[..1];
+            static string lowerize(string String) => String[0].ToString().ToLower() + String[1..];
 
             E.Text
                 .Replace("=Killer=", killerString.Capitalize())
@@ -410,14 +445,14 @@ namespace XRL.World.Conversations.Parts
 
                 if (KnowsPlayerKilledThem)
                 {
-                    E.Element.Attributes ??= new();
-                    if (E.Element.HasAttribute("AllowEscape"))
+                    ParentElement.Attributes ??= new();
+                    if (ParentElement.HasAttribute("AllowEscape"))
                     {
-                        E.Element.Attributes["AllowEscape"] = "false";
+                        ParentElement.Attributes["AllowEscape"] = "false";
                     }
                     else
                     {
-                        E.Element.Attributes.Add("AllowEscape", "false");
+                        ParentElement.Attributes.Add("AllowEscape", "false");
                     }
                     ParentElement.Elements?.RemoveAll(e => e is Choice && !e.HasPart<StartFight>());
                     if (ParentElement.Elements?.Where(e => e is Choice) is not List<IConversationElement> choices

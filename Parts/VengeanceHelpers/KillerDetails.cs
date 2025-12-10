@@ -252,9 +252,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public string KilledByA(DeathMemory DeathMemory, bool Capitalize = false)
         {
             string output = "a mysterious entity";
-            if (DeathMemory.HasFlag(DeathMemory.KillerCreature))
+            if (DeathMemory.HasFlag(DeathMemory.KillerCreature)
+                && KilledBy(DeathMemory.KillerCreature) is string killedBy
+                && !killedBy.IsNullOrEmpty())
             {
-                output = Grammar.A(KilledBy(DeathMemory.KillerCreature));
+                output = Grammar.A(killedBy);
             }
             return Capitalize ? output.Capitalize() : output;
         }
