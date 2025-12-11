@@ -97,5 +97,16 @@
   <object Name="UD_FleshGolems_PostLoad_CountsAs" Inherits="DataBucket">
     <!--tag Name="Overglutted Dreamslynth" Value="OtherCorpse:Sated Dreamcrungle:0" /-->
   </object>
+
+  <object Name="UD_FleshGolems KillerDetails Dummy Killer" Inherits="DataBucket">
+    <part Name="Render" DisplayName="mysterious entity" />
+    <tag Name="Gender" Value="nonspecific" />
+    <tag Name="CreatureType" Value="mysterious entity" />
+  </object>
+  <object Name="UD_FleshGolems KillerDetails Dummy Weapon" Inherits="DataBucket">
+    <part Name="Render" DisplayName="deadly force" />
+    <tag Name="Gender" Value="neuter" />
+  </object>
+  
   
 </objects>

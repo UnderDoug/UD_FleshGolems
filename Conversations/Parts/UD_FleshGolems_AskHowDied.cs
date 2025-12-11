@@ -26,6 +26,8 @@ namespace XRL.World.Conversations.Parts
         public const string KNOWN = "Known";
 
         public const string ASK_HOW_DIED_PROP = "UD_FleshGolems AskedHowDied";
+        public const string DUMMY_KILLER_BLUEPRINT = "UD_FleshGolems KillerDetails Dummy Killer";
+        public const string DUMMY_WEAPON_BLUEPRINT = "UD_FleshGolems KillerDetails Dummy Weapon";
 
         public static ConversationText DefaultRudeToAskText => new() { Text = "... That's a rude thing to ask..." };
         public static ConversationText DefaultKillerText => new() { Text = "I don't know, if anyone, who killed me..." };
@@ -37,10 +39,13 @@ namespace XRL.World.Conversations.Parts
         public static Dictionary<string, DeathMemoryElements> DeathMemoryElementsValues
             => UD_FleshGolems_ReanimatedCorpse.DeathMemoryElementsValues;
 
+        public List<ConversationText> CompleteTexts;
+
         public bool KnowsPlayerKilledThem;
 
         public UD_FleshGolems_AskHowDied()
         {
+            CompleteTexts = new();
             KnowsPlayerKilledThem = false;
         }
 
@@ -131,9 +136,9 @@ namespace XRL.World.Conversations.Parts
                 Debug.Log(nameof(E.Texts), Indent: indent[1]);
                 foreach (ConversationText cText in E.Texts)
                 {
-                    string attributesString = "[" + cText.ID + "](" + cText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
+                    string attributesString = "[" + cText.PathID + "](" + cText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
                     Debug.Log(attributesString + cText.Text, Indent: indent[2]);
-                    cText?.Texts?.ForEach(ct => Debug.Log("[" + ct.ID + "](" + ct.Attributes?.ToStringForCachedDictionaryExpansion() + "): " + ct.Text, Indent: indent[3]));
+                    cText?.Texts?.ForEach(ct => Debug.Log("[" + ct.PathID + "](" + ct.Attributes?.ToStringForCachedDictionaryExpansion() + "): " + ct.Text, Indent: indent[3]));
                     Debug.Log(HONLY.ThisManyTimes(25), Indent: indent[2]);
                 }
 
@@ -209,7 +214,7 @@ namespace XRL.World.Conversations.Parts
                         Debug.Log(nameof(possibleTexts), "empty", Indent: indent[2]);
                     }
                     List<ConversationText> killerTexts = organizedTexts
-                        ?.Where(kvp => DeathMemoryElements.Killer.HasFlag(kvp.Key))
+                        ?.Where(kvp => kvp.Key.HasFlag(DeathMemoryElements.Killer))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(
                             seed: new List<ConversationText>(),
@@ -217,7 +222,7 @@ namespace XRL.World.Conversations.Parts
                         ?? new();
 
                     List<ConversationText> methodTexts = organizedTexts
-                        ?.Where(kvp => DeathMemoryElements.Method.HasFlag(kvp.Key))
+                        ?.Where(kvp => kvp.Key.HasFlag(DeathMemoryElements.Method))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(
                             seed: new List<ConversationText>(),
@@ -235,8 +240,8 @@ namespace XRL.World.Conversations.Parts
                         methodTexts.Add(DefaultMethodText);
                     }
 
-                    List<ConversationText> completeTexts = organizedTexts
-                        ?.Where(kvp => DeathMemoryElements.Complete.HasFlag(kvp.Key))
+                    CompleteTexts ??= organizedTexts
+                        ?.Where(kvp => kvp.Key.HasFlag(DeathMemoryElements.Complete))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(
                             seed: new List<ConversationText>(),
@@ -272,23 +277,23 @@ namespace XRL.World.Conversations.Parts
                             {
                                 Text = constructedCompleteTextstring,
                             };
-                            completeTexts.Add(newText);
+                            CompleteTexts.Add(newText);
                         }
                     }
-                    if (completeTexts.IsNullOrEmpty())
+                    if (CompleteTexts.IsNullOrEmpty())
                     {
-                        completeTexts ??= new();
-                        completeTexts.Add(DefaultCompleteText);
+                        CompleteTexts ??= new();
+                        CompleteTexts.Add(DefaultCompleteText);
                     }
 
-                    Debug.Log(nameof(completeTexts), Indent: indent[1]);
-                    foreach (ConversationText completeText in completeTexts)
+                    Debug.Log(nameof(CompleteTexts), Indent: indent[1]);
+                    foreach (ConversationText completeText in CompleteTexts)
                     {
                         Debug.Log(completeText.Text, Indent: indent[2]);
                         Debug.Log(HONLY.ThisManyTimes(25), Indent: indent[2]);
                     }
 
-                    E.Selected = completeTexts
+                    E.Selected = CompleteTexts
                         ?.GetRandomElementCosmetic()
                         ?? DefaultNoText;
                 }
@@ -312,7 +317,7 @@ namespace XRL.World.Conversations.Parts
 
                     E.Selected.Text =
                         E.Selected.Text[..roughlyHalfSelectedText] +
-                        "\n\n...\n\n" +
+                        "...\n\n=ud_nbsp:8=...\n\n=ud_nbsp:16=" +
                         playerKilledTexts?.GetRandomElementCosmetic()?.Text;
                 }
             }
@@ -320,12 +325,11 @@ namespace XRL.World.Conversations.Parts
         }
         public override bool HandleEvent(PrepareTextEvent E)
         {
-            GameObject killer = null;
-            GameObject weapon = null;
+            GameObject killer = GameObject.CreateSample(DUMMY_KILLER_BLUEPRINT);
+            GameObject weapon = GameObject.CreateSample(DUMMY_WEAPON_BLUEPRINT);
 
             string killerName = "mysterious entity";
             string killerCreatureType = killerName;
-            string aKillerCreature = Grammar.A(killerName);
             string killerString = killerName;
 
             string weaponString = "deadly force";
@@ -341,8 +345,7 @@ namespace XRL.World.Conversations.Parts
             {
                 DeathMemoryElements deathMemory = reanimatedCorpsePart.DeathMemory;
 
-                if (!killerDetails.DisplayName.IsNullOrEmpty()
-                    && deathMemory.HasFlag(DeathMemoryElements.Killer))
+                if (deathMemory.HasFlag(DeathMemoryElements.Killer))
                     killerString = killerDetails.KilledBy(deathMemory);
 
                 if (!killerDetails.DisplayName.IsNullOrEmpty()
@@ -351,7 +354,9 @@ namespace XRL.World.Conversations.Parts
 
                 if (!killerDetails.CreatureType.IsNullOrEmpty()
                     && deathMemory.HasFlag(DeathMemoryElements.KillerCreature))
+                {
                     killerCreatureType = killerDetails.CreatureType;
+                }
 
                 killerDetails.KilledHow(
                     DeathMemory: deathMemory,
@@ -366,7 +371,7 @@ namespace XRL.World.Conversations.Parts
                     weaponString = deathWeapon;
 
                 if (!deathFeature.IsNullOrEmpty()
-                    && deathMemory.HasFlag(DeathMemoryElements.Feature))
+                    && deathMemory.HasFlag(DeathMemoryElements.NotableFeature))
                     feature = deathFeature;
 
                 if (!deathDescription.IsNullOrEmpty()
@@ -383,50 +388,46 @@ namespace XRL.World.Conversations.Parts
                 {
                     killer = killerDetails.Killer;
                 }
+                else
+                {
+                    killer.DisplayName = killerName;
+                    killer.SetCreatureType(killerCreatureType);
+                    killer.SetNotableFeature(feature);
+                }
                 if (GameObject.Validate(killerDetails.Weapon))
                 {
                     weapon = killerDetails.Weapon;
+                }
+                else
+                {
+                    weapon.DisplayName = weaponString;
                 }
             }
 
             static string lowerize(string String) => String[0].ToString().ToLower() + String[1..];
 
-            E.Text
-                .Replace("=Killer=", killerString.Capitalize())
-                .Replace("=killer=", lowerize(killerString))
-                .Replace("=KillerName=", killerName.Capitalize())
-                .Replace("=killerName=", lowerize(killerName))
-                .Replace("=KillerCreature=", killerCreatureType.Capitalize())
-                .Replace("=killerCreature=", lowerize(killerCreatureType))
-                .Replace("=AKillerCreature=", aKillerCreature.Capitalize())
-                .Replace("=aKillerCreature=", lowerize(aKillerCreature))
-                .Replace("=Method=", deathMethod.Capitalize())
-                .Replace("=method=", lowerize(deathMethod))
-                .Replace("=Weapon=", weaponString.Capitalize())
-                .Replace("=weapon=", lowerize(weaponString))
-                .Replace("=Feature=", feature.Capitalize())
-                .Replace("=feature=", lowerize(feature))
-                .Replace("=Description=", description.Capitalize())
-                .Replace("=description=", lowerize(description));
+            ReplaceBuilder RB = E.Text.StartReplace()
+                // .AddReplacer("=Killer=", killerString.Capitalize())
+                // .AddReplacer("killer", lowerize(killerString))
+                // .AddReplacer("=KillerName=", killerName.Capitalize())
+                // .AddReplacer("killerName", lowerize(killerName))
+                // .AddReplacer("=KillerCreature=", killerCreatureType.Capitalize())
+                // .AddReplacer("killerCreature", lowerize(killerCreatureType))
+                // .AddReplacer("=AKillerCreature=", aKillerCreature.Capitalize())
+                // .AddReplacer("aKillerCreature", lowerize(aKillerCreature))
+                // .AddReplacer("=Method=", deathMethod.Capitalize())
+                // .AddReplacer("method", lowerize(deathMethod))
+                // .AddReplacer("=Weapon=", weaponString.Capitalize())
+                // .AddReplacer("weapon", lowerize(weaponString))
+                // .AddReplacer("=Feature=", feature.Capitalize())
+                // .AddReplacer("feature", lowerize(feature))
+                // .AddReplacer("=Description=", description.Capitalize())
+                // .AddReplacer("description", lowerize(description))
+                ;
 
-            ReplaceBuilder RB = E.Text.StartReplace();
+            RB.AddObject(killer, "killer");
+            RB.AddObject(weapon, "weapon");
 
-            if (GameObject.Validate(killer))
-            {
-                RB.AddObject(killer, "killer");
-            }
-            else
-            {
-                RB.AddExplicit(killerName, "killer", new Gender("nonspecific"));
-            }
-            if (GameObject.Validate(weapon))
-            {
-                RB.AddObject(weapon, "weapon");
-            }
-            else
-            {
-                RB.AddExplicit(weaponString, "weapon", new Gender("neuter"));
-            }
             RB.Execute();
             return base.HandleEvent(E);
         }
@@ -446,14 +447,10 @@ namespace XRL.World.Conversations.Parts
                 if (KnowsPlayerKilledThem)
                 {
                     ParentElement.Attributes ??= new();
-                    if (ParentElement.HasAttribute("AllowEscape"))
-                    {
-                        ParentElement.Attributes["AllowEscape"] = "false";
-                    }
-                    else
-                    {
-                        ParentElement.Attributes.Add("AllowEscape", "false");
-                    }
+                    ParentElement.Attributes["AllowEscape"] = "false";
+                    if (ParentElement is Node parentNode)
+                        parentNode.AllowEscape = false;
+
                     ParentElement.Elements?.RemoveAll(e => e is Choice && !e.HasPart<StartFight>());
                     if (ParentElement.Elements?.Where(e => e is Choice) is not List<IConversationElement> choices
                         || choices.IsNullOrEmpty())

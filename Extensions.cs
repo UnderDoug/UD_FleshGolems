@@ -80,9 +80,17 @@ namespace UD_FleshGolems
             => !args.IsNullOrEmpty()
             && !args.Where(t => (Utils.EitherNull(Value, t, out bool areEqual) && areEqual) || (Value != null && Value.Equals(t))).IsNullOrEmpty();
 
+        public static bool EqualsAnyNoCase(this string Value, params string[] args)
+            => !args.IsNullOrEmpty()
+            && !args.Where(t => (Utils.EitherNull(Value, t, out bool areEqual) && areEqual) || (Value != null && Value.EqualsNoCase(t))).IsNullOrEmpty();
+
         public static bool EqualsAll<T>(this T Value, params T[] args)
             => !args.IsNullOrEmpty()
             && args.Where(t => t.Equals(Value)).Count() == args.Length;
+
+        public static bool EqualsAllNoCase(this string Value, params string[] args)
+            => !args.IsNullOrEmpty()
+            && args.Where(t => t.EqualsNoCase(Value)).Count() == args.Length;
 
         public static bool InheritsFrom(this Type T, Type Type, bool IncludeSelf = true)
             => (IncludeSelf && T == Type) 
@@ -1145,7 +1153,7 @@ namespace UD_FleshGolems
             if (!ConversationText.Text.IsNullOrEmpty()
                 && (!OnlyPredicateChecked || ConversationText.CheckPredicates())
                 && (Filter == null || Filter(ConversationText))
-                && !ConversationTextList.Any(ct => ct.ID == ConversationText.ID))
+                && !ConversationTextList.Any(ct => ct.PathID == ConversationText.PathID))
             {
                 Proc?.Invoke(ConversationText);
                 ConversationTextList.Add(ConversationText);
@@ -1159,6 +1167,23 @@ namespace UD_FleshGolems
                         OnlyPredicateChecked: OnlyPredicateChecked);
 
             return ConversationTextList ??= new();
+        }
+
+        public static KillerDetails GetKillerDetails(this GameObject Corpse)
+            => Corpse?.GetPart<UD_FleshGolems_CorpseReanimationHelper>()?.KillerDetails;
+
+        public static bool TryGetKillerDetails(this GameObject Corpse, out KillerDetails KillerDetails)
+            => (KillerDetails = Corpse?.GetKillerDetails()) != null;
+
+        public static string SetCreatureType(this GameObject GameObject, string CreatureType)
+        {
+            GameObject.SetStringProperty(nameof(CreatureType), CreatureType);
+            return CreatureType;
+        }
+        public static string SetNotableFeature(this GameObject GameObject, string NotableFeature)
+        {
+            GameObject.SetStringProperty(KillerDetails.NOTABLE_FEATURE_PROPTAG, NotableFeature);
+            return NotableFeature;
         }
     }
 }

@@ -45,6 +45,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
     [Serializable]
     public class KillerDetails : IComposite
     {
+        public const string NOTABLE_FEATURE_PROPTAG = "UD_FleshGolems KillerDetails NotableFeature";
+
         public GameObject Killer;
         public string ID;
         public string Blueprint;
@@ -162,46 +164,51 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             if (Killer == null || Killer.Body is not Body killerBody)
                 return "striking absence";
 
-            Dictionary<string, int> notableFeatures = new();
+            if (Killer.GetPropertyOrTag(NOTABLE_FEATURE_PROPTAG) is not string notableFeature)
+            {
+                Dictionary<string, int> notableFeatures = new();
 
-            int mutationCount = 1;
-            int highestMutationLevel = 1;
-            if (Killer.TryGetPart(out Mutations mutations)
-                && !mutations.ActiveMutationList.IsNullOrEmpty())
-            {
-                mutationCount = mutations.ActiveMutationList.Count;
-                foreach (BaseMutation mutation in mutations.ActiveMutationList)
+                int mutationCount = 1;
+                int highestMutationLevel = 1;
+                if (Killer.TryGetPart(out Mutations mutations)
+                    && !mutations.ActiveMutationList.IsNullOrEmpty())
                 {
-                    highestMutationLevel = Math.Max(highestMutationLevel, mutation.Level);
-                    notableFeatures.TryAdd(mutation.GetDisplayName(false), mutation.Level);
-                }
+                    mutationCount = mutations.ActiveMutationList.Count;
+                    foreach (BaseMutation mutation in mutations.ActiveMutationList)
+                    {
+                        highestMutationLevel = Math.Max(highestMutationLevel, mutation.Level);
+                        notableFeatures.TryAdd(mutation.GetDisplayName(false), mutation.Level);
+                    }
 
-            }
-            int cyberneticsWeight = Math.Max(mutationCount, highestMutationLevel);
-            int cyberneticsCount = 1;
-            if (Killer.HasInstalledCybernetics())
-            {
-                foreach (GameObject implant in Killer.GetInstalledCyberneticsReadonly())
-                {
-                    cyberneticsCount++;
-                    notableFeatures.TryAdd(implant.GetReferenceDisplayName(Short: true), cyberneticsWeight);
                 }
+                int cyberneticsWeight = Math.Max(mutationCount, highestMutationLevel);
+                int cyberneticsCount = 1;
+                if (Killer.HasInstalledCybernetics())
+                {
+                    foreach (GameObject implant in Killer.GetInstalledCyberneticsReadonly())
+                    {
+                        cyberneticsCount++;
+                        notableFeatures.TryAdd(implant.GetReferenceDisplayName(Short: true), cyberneticsWeight);
+                    }
+                }
+                int naturalWeaponWeight = cyberneticsWeight / cyberneticsCount;
+                foreach (BodyPart bodyPart in killerBody.LoopParts(HasDefaultBehaviorOrNaturalWeaponEquipped))
+                {
+                    if (bodyPart.Equipped is GameObject equipped
+                        && equipped.IsNatural()
+                        && equipped.TryGetPart(out MeleeWeapon equippedMeleeWeapon)
+                        && !equippedMeleeWeapon.IsImprovisedWeapon())
+                        notableFeatures.TryAdd(equipped.GetReferenceDisplayName(Short: true), naturalWeaponWeight);
+                    else
+                    if (bodyPart.DefaultBehavior is GameObject defaultBehavior
+                        && defaultBehavior.TryGetPart(out MeleeWeapon defaultMeleeWeapon)
+                        && !defaultMeleeWeapon.IsImprovisedWeapon())
+                        notableFeatures.TryAdd(defaultBehavior.GetReferenceDisplayName(Short: true), naturalWeaponWeight);
+                }
+                notableFeature = notableFeatures.GetWeightedSeededRandom(nameof(GetNotableFeature) + "::" + Killer.ID);
+                Killer.SetNotableFeature(notableFeature);
             }
-            int naturalWeaponWeight = cyberneticsWeight / cyberneticsCount;
-            foreach (BodyPart bodyPart in killerBody.LoopParts(HasDefaultBehaviorOrNaturalWeaponEquipped))
-            {
-                if (bodyPart.Equipped is GameObject equipped
-                    && equipped.IsNatural()
-                    && equipped.TryGetPart(out MeleeWeapon equippedMeleeWeapon)
-                    && !equippedMeleeWeapon.IsImprovisedWeapon())
-                    notableFeatures.TryAdd(equipped.GetReferenceDisplayName(Short: true), naturalWeaponWeight);
-                else
-                if (bodyPart.DefaultBehavior is GameObject defaultBehavior
-                    && defaultBehavior.TryGetPart(out MeleeWeapon defaultMeleeWeapon)
-                    && !defaultMeleeWeapon.IsImprovisedWeapon())
-                    notableFeatures.TryAdd(defaultBehavior.GetReferenceDisplayName(Short: true), naturalWeaponWeight);
-            }
-            return notableFeatures.GetWeightedSeededRandom(nameof(GetNotableFeature) + "::" + Killer.ID);
+            return notableFeature;
         }
 
         public bool IsMystery()
@@ -274,7 +281,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             {
                 Weapon = WeaponName;
             }
-            if (DeathMemory.HasFlag(DeathMemory.Feature)
+            if (DeathMemory.HasFlag(DeathMemory.NotableFeature)
                 && !NotableFeature.IsNullOrEmpty())
             {
                 Feature = NotableFeature;
@@ -285,6 +292,9 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Description = DeathDescription;
             }
         }
+
+        public string GetDeathDescription()
+            => DeathDescription ?? "=subject.verb:were:afterpronoun= killed to death";
 
         public bool IsKiller(GameObject Entity)
             => Entity != null

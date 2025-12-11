@@ -28,17 +28,14 @@ namespace UD_FleshGolems
             if (Conversation.Speaker is GameObject speaker
                 && The.Player is GameObject player)
             {
-                GameObject sufferer = null;
+                GameObject sufferer = speaker;
                 if (Context.Target == speaker)
                 {
                     sufferer = player;
                 }
-                else
-                {
-                    sufferer = speaker;
-                }
                 return sufferer.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering)
-                    && unendingSuffering.SourceObject == Context.Target;
+                    && unendingSuffering.SourceObject == Context.Target
+                    && Context.Value.EqualsNoCase("true");
             }
             return false;
         }

@@ -46,20 +46,20 @@
       </text>
 
       <text MemoryElement="KillerCreature" Known="true">
-        <text>The type of creature that killed me was =aKillerCreature=...</text>
-        <text>=KillerCreature=... That's what got me... =AKillerCreature...</text>
-        <text>Would you believe it? =KillerCreature=... {{K|=aKillerCreature=}}...</text>
-        <text>Look out the next time there's =aKillerCreature= nearby... =KillerCreature='s what got me!</text>
+        <text>The type of creature that killed me was =killer.uD_CreatureType:a=...</text>
+        <text>=killer.UD_CreatureType:a=... That's what got me... =killer.UD_CreatureType:a=...</text>
+        <text>Would you believe it? =killer.UD_CreatureType:a=, of all things... {{K|=killer.UD_CreatureType:a=}}...</text>
+        <text>Look out the next time there's =killer.UD_CreatureType:a= nearby... Some =killer.uD_CreatureType='s what got me!</text>
       </text>
       <text MemoryElement="KillerCreature" Known="False">
-        <text>I couldn't tell you what =killer.subjective= was... =aKillerCreature=, certainly...</text>
+        <text>I couldn't tell you what =killer.subjective= was... =killer.UD_CreatureType:a=, certainly...</text>
         <text>Really struggling to recall... The name of who killed me is one of those things...</text>
         <text>Maybe it was my poor memory... Although, I suppose it might not have been bad before... Before, well... {{emote|*gestures at =subject.reflexive=*}}</text>
       </text>
 
       <text MemoryElement="Weapon" Known="true">
-        <text>...=killer.Subjective= killed me with =killer.possessive= =weapon=...</text>
-        <text>...=killer.Subjective= used =killer.possessive= to kill me...</text>
+        <text>...=killer.Subjective= killed me with =killer.possessive= =weapon.name=...</text>
+        <text>...=killer.Subjective= used =killer.possessive= =weapon.name= to kill me...</text>
         <text>...=weapon.An= was used to kill me...</text>
       </text>
       <text MemoryElement="Weapon" Known="false">
@@ -68,32 +68,32 @@
         <text>...It seems I can't recall what was used to kill me...</text>
       </text>
 
-      <text MemoryElement="Feature" Known="true">
-        <text>...=killer.Subjective= had =feature=, which took me out handily...</text>
-        <text>...=killer.Possessive= =feature= made short work of me...</text>
-        <text>...=Feature= is what =killer.subjective= used to end my life... I'll leave exactly {{Y|how}} to your imagination...</text>
+      <text MemoryElement="NotableFeature" Known="true">
+        <text>...=killer.Subjective= had =killer.uD_NotableFeature=, which took me out handily...</text>
+        <text>...=killer.Possessive= =killer.uD_NotableFeature= made short work of me...</text>
+        <text>...=killer.UD_NotableFeature= is what =killer.subjective= used to end my life... I'll leave exactly {{Y|how}} to your imagination...</text>
       </text>
-      <text MemoryElement="Feature" Known="false">
+      <text MemoryElement="NotableFeature" Known="false">
         <text>...I can't even remember any notable features...</text>
         <text>...Not so much as a notable feature comes to mind...</text>
         <text>...=killer.Subjective= must have been truly forgettable, I can't recall anything notable... Except that =killer.subjective= killed me, of course...</text>
       </text>
 
       <text MemoryElement="Description" Known="true">
-        <text>...I =descritption=, which I do not recommend...</text>
-        <text>...Let me tell you, I =description=, which is not fun...</text>
-        <text>...I =description=, which is not how I imagined it would happen... And yet, here we are...</text>
+        <text>...I =subject.uD_DeathDescription=, which I do not recommend...</text>
+        <text>...Let me tell you, I =subject.uD_DeathDescription=, which is not fun...</text>
+        <text>...I =subject.uD_DeathDescription=, which is not how I imagined it would happen... And yet, here we are...</text>
       </text>
       <text MemoryElement="Description" Known="false">
-        <text>...Best I can recall is that I was =descritption=, but that's probably self-evident...~</text>
-        <text>...Any more detailed than =descritption= is more than I can recall, sorry...</text>
+        <text>...Best I can recall is that I was =subject.uD_DeathDescription=, but that's probably self-evident...~</text>
+        <text>...Any more detailed than that I =subject.uD_DeathDescription= is more than I can recall, sorry...</text>
         <text>...You'd think I'd remember something like dyin', but I don't...</text>
       </text>
 
       <text MemoryElement="KillerName,KillerCreature,Description">
-        <text>...=KillerName=, =aKillerCreature= got me... I =description=, which wasn't fun...</text>
-        <text>...=AKillerCreature= called =KillerName= made saw me =description=... Look out if you see =killer.subjective=..</text>
-        <text>...I =description= by =aKillerCreature= called =KillerName=... If I ever see =killer.objective= again...\n\n...Well, I'm not sure what I'd do, actually... =killer.Subject= did kill me the first time, and I'm not keen on a second...</text>
+        <text>...=killer.Name=, =killer.uD_CreatureType:a= got me... I =subject.uD_DeathDescription=, which wasn't fun...</text>
+        <text>...=killer.UD_CreatureType:a= called =killer.name= made saw me =subject.uD_DeathDescription=... Look out if you see =killer.subjective=..</text>
+        <text>...I =subject.uD_DeathDescription= by =killer.uD_CreatureType:a= called =killer.name=... If I ever see =killer.objective= again...\n\n...Well, I'm not sure what I'd do, actually... =killer.Subject= did kill me the first time, and I'm not keen on a second...</text>
       </text>
 
       <text RudeToAsk="true">
@@ -136,7 +136,7 @@
   <conversation ID="UD_FleshGolems NewlyReanimatedBeings">
     
     <node ID="choices">
-      <choice ID="JoinPartyChoice" IfSourceOfSuffering="true">
+      <choice ID="JoinPartyChoice" IfSourceOfSuffering="true" IfAlreadyAskedHowDied="true">
         <text>Come along now... {{r|friend}}.</text>
         <part Name="WaterRitualJoinParty" />
       </choice>

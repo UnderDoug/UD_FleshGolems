@@ -36,6 +36,7 @@ namespace XRL.World.Parts
             {
                 "cooked", new()
                 {
+                    "=subject.verb:were:afterpronoun= cooked",
                     "=subject.verb:were:afterpronoun= hard-boiled",
                     "=subject.verb:were:afterpronoun= soft-boiled",
                     "broiled for our sins... Ramen",
@@ -49,6 +50,7 @@ namespace XRL.World.Parts
             {
                 "immolated", new()
                 {
+                    "=subject.verb:were:afterpronoun= immolated",
                     "=subject.verb:were:afterpronoun= scorched to death",
                     "couldn't find a way to put =subject.reflexive= out",
                     "=subject.verb:were:afterpronoun= barbequed",
@@ -62,6 +64,7 @@ namespace XRL.World.Parts
             {
                 "plasma-burned to death", new()
                 {
+                    "=subject.verb:were:afterpronoun= plasma-burned to death",
                     "=subject.verb:were:afterpronoun= deepfried",
                     "=subject.verb:were:afterpronoun= fried",
                     "looked in the wrong end of a spacer rifle",
@@ -72,6 +75,7 @@ namespace XRL.World.Parts
             {
                 "frozen to death", new()
                 {
+                    "=subject.verb:were:afterpronoun= frozen to death",
                     "=subject.verb:were:afterpronoun= snap frozen",
                     "=subject.verb:were:afterpronoun= flash frozen",
                     "=subject.verb:were:afterpronoun= chilled to death",
@@ -81,6 +85,7 @@ namespace XRL.World.Parts
             {
                 "electrocuted", new()
                 {
+                    "=subject.verb:were:afterpronoun= electrocuted",
                     "=subject.verb:were:afterpronoun= zapped to death",
                 }
             },
@@ -88,63 +93,66 @@ namespace XRL.World.Parts
             {
                 "thirst", new()
                 {
-                    "",
+                    "thirst to death",
+                    "=subject.verb:were:afterpronoun= dessicated",
                 }
             },
             // Poison damage
             {
                 "died of poison", new()
                 {
-                    "",
+                    "died of poison",
                 }
             },
             // Bleeding damage
             {
                 "bled to death", new()
                 {
-                    "",
+                    "bled to death",
+                    "=subject.verb:were:afterpronoun= exsanguinated",
                 }
             },
             // Metabolic damage (hulk honey)
             {
                 "failed", new()
                 {
-                    "",
+                    "hulked out way too hard",
                 }
             },
             // Asphyxiation damage (osseous ash)
             {
                 "died of asphyxiation", new()
                 {
-                    "",
+                    "died of asphyxiation",
+                    "=subject.verb:were:afterpronoun= asphyxiated",
                 }
             },
             // Psionic damage
             {
                 "psychically extinguished", new()
                 {
-                    "",
+                    "=subject.verb:were:afterpronoun= psychically extinguished",
                 }
             },
             // Drain damage (syphon vim)
             {
                 "drained to extinction", new()
                 {
-                    "",
+                    "=subject.verb:were:afterpronoun= drained to extinction",
                 }
             },
             // Thorns damage
             {
                 "pricked to death", new()
                 {
-                    "",
+                    "=subject.verb:were:afterpronoun= pricked to death",
                 }
             },
             // Bite damage (any bite)
             {
                 "bitten to death", new()
                 {
-                    "",
+                    "=subject.verb:were:afterpronoun= bitten to death",
                 }
             },
         };
@@ -376,13 +384,10 @@ namespace XRL.World.Parts
                     ?.Keys
                     ?.GetRandomElement();
 
-            List<string> possibleReasons = DeathCategoryDeathMessages[Category]
-                    ?.Where(s => !s.IsNullOrEmpty())
-                    ?.ToList()
-                    ?? new();
-            possibleReasons.Add(Category);
-
-            Reason = possibleReasons?.GetRandomElementCosmetic();
+            Reason = DeathCategoryDeathMessages[Category]
+                ?.Where(s => !s.IsNullOrEmpty())
+                ?.ToList()
+                ?.GetRandomElementCosmetic();
 
             Accidental = Stat.RollCached("1d3") == 1;
         }

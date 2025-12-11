@@ -14,6 +14,8 @@ using UD_FleshGolems.Logging;
 using Debug = UD_FleshGolems.Logging.Debug;
 
 using static UD_FleshGolems.Const;
+using UD_FleshGolems.Parts.VengeanceHelpers;
+using XRL;
 
 namespace UD_FleshGolems
 {
@@ -32,12 +34,18 @@ namespace UD_FleshGolems
             return Registry;
         }
 
+        /* 
+         * 
+         * Variable (no object)
+         * 
+         */
         [VariableReplacer]
         public static string ud_nbsp(DelegateContext Context)
         {
             string nbsp = "\xFF";
             string output = nbsp;
-            if (!Context.Parameters.IsNullOrEmpty() && int.TryParse(Context.Parameters[0], out int count))
+            if (!Context.Parameters.IsNullOrEmpty()
+                && int.TryParse(Context.Parameters[0], out int count))
             {
                 for (int i = 1; i < count; i++)
                 {
@@ -72,6 +80,70 @@ namespace UD_FleshGolems
                 }
             }
             return output;
+        }
+
+        /* 
+         * 
+         * Variable Object
+         * 
+         */
+        [VariableObjectReplacer]
+        public static string UD_NotableFeature(DelegateContext Context)
+        {
+            string output = KillerDetails.GetNotableFeature(Context.Target);
+            return Context.Capitalize
+                ? output?.Capitalize()
+                : output;
+        }
+
+        [VariableObjectReplacer]
+        public static string UD_CreatureType(DelegateContext Context)
+        {
+            string article = null;
+            string afterArticleAdjectives = null;
+            if (Context.Parameters is List<string> parameters
+                && !parameters.IsNullOrEmpty())
+            {
+                if (parameters[0].EqualsAnyNoCase("a", "an"))
+                    article = (Context.Target?.a ?? "a") + " ";
+                else
+                if (parameters[0].EqualsNoCase("the"))
+                    article = (Context.Target?.the ?? "the") + " ";
+                else
+                if (parameters[0].EqualsAnyNoCase("this", "these"))
+                    article = (Context.Target?.indicativeProximal ?? "this") + " ";
+                else
+                if (parameters[0].EqualsAnyNoCase("that", "those"))
+                    article = (Context.Target?.indicativeDistal ?? "that") + " ";
+                else
+                    article = parameters[0] + " ";
+
+                if (parameters.Count > 1
+                    && !parameters[1].IsNullOrEmpty())
+                    afterArticleAdjectives = parameters[1] + " ";
+            }
+            string creatureType = Context.Target?.GetCreatureType() ?? "hideous specimen";
+            string output = article + afterArticleAdjectives + creatureType;
+            return Context.Capitalize
+                ? output.Capitalize()
+                : output;
+        }
+
+        [VariableObjectReplacer]
+        public static string UD_DeathDescription(DelegateContext Context)
+        {
+            string deathDescription = "=subject.verb:were:afterpronoun= killed to death";
+            if (Context.Target?.GetKillerDetails() is KillerDetails killerDetails)
+                deathDescription = killerDetails.DeathDescription;
+
+            string output = deathDescription
+                ?.StartReplace()
+                ?.AddObject(Context.Target)
+                ?.ToString();
+
+            return Context.Capitalize
+                ? output.Capitalize()
+                : output;
         }
 
         [VariableObjectReplacer]

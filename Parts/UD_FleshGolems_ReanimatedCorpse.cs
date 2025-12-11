@@ -66,10 +66,10 @@ namespace XRL.World.Parts
             KillerName = 1,
             KillerCreature = 2,
             Killer = KillerName | KillerCreature,
-            Feature = 4,
+            NotableFeature = 4,
             Weapon = 8,
             Description = 16,
-            Method = Feature | Weapon | Description,
+            Method = NotableFeature | Weapon | Description,
             Complete = Killer ^ Method,
         }
         public static DeathMemoryElements UndefinedDeathMemoryElement => (DeathMemoryElements)(-1);
@@ -218,6 +218,11 @@ namespace XRL.World.Parts
 
         public override void Attach()
         {
+            base.Attach();
+        }
+
+        public override void Initialize()
+        {
             using Indent indent = new(1);
             Debug.LogCaller(indent,
                 ArgPairs: new Debug.ArgPair[]
@@ -245,8 +250,8 @@ namespace XRL.World.Parts
             if (BleedLiquid.IsNullOrEmpty())
             {
                 Debug.Log(
-                    nameof(GetBleedLiquidEvent) + "." + 
-                    nameof(GetBleedLiquidEvent.GetFor), 
+                    nameof(GetBleedLiquidEvent) + "." +
+                    nameof(GetBleedLiquidEvent.GetFor),
                     GetBleedLiquidEvent.GetFor(ParentObject),
                     indent[2]);
             }
@@ -257,7 +262,7 @@ namespace XRL.World.Parts
             DeathQuestionsAreRude = ParentObject.BaseID % 4 == 0;
 
             AttemptToSuffer();
-            base.Attach();
+            base.Initialize();
         }
 
         public override bool SameAs(IPart p)
@@ -429,7 +434,7 @@ namespace XRL.World.Parts
             {
                 E.ReplacePrimaryBase(E.Object.GetBlueprint().DisplayName().RemoveAll("[", "]"));
 
-                if (IdentityType < IdentityType.ParticipantVillager)
+                if (IdentityType < IdentityType.ParticipantVillager && IdentityType > IdentityType.Player)
                 {
                     E.AddAdjective("corpse of", CorpseAdjective);
                 }
