@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 
+using XRL;
 using XRL.World;
 using XRL.World.Text.Attributes;
 using XRL.World.Text.Delegates;
@@ -11,11 +12,10 @@ using XRL.Language;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
+using UD_FleshGolems.Parts.VengeanceHelpers;
 using Debug = UD_FleshGolems.Logging.Debug;
 
 using static UD_FleshGolems.Const;
-using UD_FleshGolems.Parts.VengeanceHelpers;
-using XRL;
 
 namespace UD_FleshGolems
 {

@@ -110,22 +110,6 @@ namespace UD_FleshGolems
             return default;
         }
 
-        public static void Set<T>(ref T flags, T flag) where T : struct
-        {
-            if (flags is int flagsValue
-                && flag is int flagValue
-                && (flagsValue | flagValue) is T newFlags)
-                flags = newFlags;
-        }
-
-        public static void Unset<T>(ref T flags, T flag) where T : struct
-        {
-            if (flags is int flagsValue
-                && flag is int flagValue
-                && (flagsValue & (~flagValue)) is T newFlags)
-                flags = newFlags;
-        }
-
         public static string GetPlayerBlueprint()
         {
             if (!EmbarkBuilderConfiguration.activeModules.IsNullOrEmpty())

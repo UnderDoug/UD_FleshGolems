@@ -68,18 +68,22 @@ namespace XRL.World.Parts
             Killer = KillerName | KillerCreature,
             NotableFeature = 4,
             Weapon = 8,
+            Method = NotableFeature | Weapon,
             Description = 16,
-            Method = NotableFeature | Weapon | Description,
-            Complete = Killer ^ Method,
+            All = Killer | Method | Description,
         }
         public static DeathMemoryElements UndefinedDeathMemoryElement => (DeathMemoryElements)(-1);
 
-        private static Dictionary<string, DeathMemoryElements> _DeathMemoryElementsValues;
         public static Dictionary<string, DeathMemoryElements> DeathMemoryElementsValues
-            => _DeathMemoryElementsValues ??= Startup.RequireCachedEnumValueDictionary<DeathMemoryElements>();
+            => Startup.RequireCachedEnumValueDictionary<DeathMemoryElements>();
 
-        public static DeathMemoryElements AllDeathMemoryElements
-            => DeathMemoryElementsValues.Aggregate(DeathMemoryElements.None, (accumulated, next) => accumulated | next.Value, s => s);
+        public static DeathMemoryElements[] KillerFlags => DeathMemoryElementsValues?.Values
+            ?.Where(e => e > DeathMemoryElements.None && e < DeathMemoryElements.Killer)
+            ?.ToArray();
+
+        public static DeathMemoryElements[] MethodFlags => DeathMemoryElementsValues?.Values
+            ?.Where(e => e > DeathMemoryElements.Killer && e < DeathMemoryElements.Method)
+            ?.ToArray();
 
         private const string LIBRARIAN_FRAGMENT = "In the narthex of the Stilt, cloistered beneath a marble arch and close to";
 
@@ -146,9 +150,14 @@ namespace XRL.World.Parts
             {
                 if (_DeathMemory != UndefinedDeathMemoryElement || ParentObject == null)
                 {
+                    if (ParentObject != null)
+                    {
+                        KillerDetails?.SyncDeathMemory(ref _DeathMemory);
+                    }
                     return _DeathMemory;
                 }
-                DeathMemoryElements value = (DeathMemoryElements)ParentObject.GetSeededRange(nameof(DeathMemory), 1, (int)AllDeathMemoryElements);
+                DeathMemoryElements value = (DeathMemoryElements)ParentObject.GetSeededRange(nameof(DeathMemory), 1, (int)DeathMemoryElements.All);
+                KillerDetails?.SyncDeathMemory(ref value);
                 if (ParentObject.BaseID % 6 == 0)
                 {
                     value = DeathMemoryElements.None;
@@ -726,18 +735,44 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
             E.AddEntry(this, nameof(IdentityType), IdentityType.ToStringWithNum());
             E.AddEntry(this, nameof(DeathQuestionsAreRude), DeathQuestionsAreRude);
+
+            static bool hasFlagOrIsNoneAndHasNone(DeathMemoryElements flags, DeathMemoryElements flag)
+                => flag == DeathMemoryElements.None
+                ? flags == DeathMemoryElements.None
+                : flags.HasFlag(flag);
+
             if (DeathMemory != UndefinedDeathMemoryElement)
             {
-                string deathMemoryHasFlags = DeathMemoryElementsValues
-                    ?.ConvertToStringList(kvp => kvp.Key + " (" + (int)kvp.Value + "): " + DeathMemory.HasFlag(kvp.Value).YehNah())
+                List<string> deathMemoryHasFlagsStrings = DeathMemoryElementsValues
+                    ?.ConvertToStringList(kvp => hasFlagOrIsNoneAndHasNone(DeathMemory, kvp.Value).YehNah() + " " + kvp.Key + " (" + (int)kvp.Value + ")");
+
+                bool hasKiller = DeathMemory.HasKillerElement();
+                bool hasMethod = DeathMemory.HasMethodElement();
+                bool hasDescription = DeathMemory.HasDescriptionElement();
+
+                bool hasCompleteText = hasKiller && hasMethod && hasDescription;
+
+                deathMemoryHasFlagsStrings.Add(hasKiller.YehNah() + " Remembers Killer");
+                deathMemoryHasFlagsStrings.Add(hasMethod.YehNah() + " Remembers Method");
+                deathMemoryHasFlagsStrings.Add(hasDescription.YehNah() + " Remembers Description");
+
+                deathMemoryHasFlagsStrings.Add(hasDescription.YehNah() + " Rembers Complete Death");
+
+                string deathMemoryHasFlags = deathMemoryHasFlagsStrings
                     ?.GenerateBulletList(Bullet: null, BulletColor: null);
-                E.AddEntry(this, nameof(DeathMemory) + " (" + (int)DeathMemory + ")", deathMemoryHasFlags);
-                E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(DeathMemory) + " (" + (int)DeathMemory + ")", deathMemoryHasFlags);
+                E.AddEntry(this, nameof(DeathMemory) + " (" + (int)DeathMemory + "/" + (int)DeathMemoryElements.All + ")", deathMemoryHasFlags);
+                E.AddEntry(
+                    nameof(UD_FleshGolems_VengeanceAssistant),
+                    nameof(DeathMemory) + " (" + (int)DeathMemory + "/" + (int)DeathMemoryElements.All + ")",
+                    deathMemoryHasFlags);
             }
             else
             {
-                E.AddEntry(this, nameof(DeathMemory), nameof(UndefinedDeathMemoryElement));
-                E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(DeathMemory), nameof(UndefinedDeathMemoryElement));
+                E.AddEntry(this, nameof(DeathMemory) + " (" + (int)DeathMemory + "/" + (int)DeathMemoryElements.All + ")", nameof(UndefinedDeathMemoryElement));
+                E.AddEntry(
+                    nameof(UD_FleshGolems_VengeanceAssistant),
+                    nameof(DeathMemory) + " (" + (int)DeathMemory + "/" + (int)DeathMemoryElements.All + ")",
+                    nameof(UndefinedDeathMemoryElement));
             }
             E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(DeathQuestionsAreRude), DeathQuestionsAreRude);
             E.AddEntry(this, nameof(IsRenderDisplayNameUpdated), IsRenderDisplayNameUpdated);

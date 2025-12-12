@@ -19,6 +19,7 @@ using static UD_FleshGolems.Options;
 using XRL.World.Tinkering;
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
 using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
+using XRL.Language;
 
 namespace UD_FleshGolems
 {
@@ -126,19 +127,34 @@ namespace UD_FleshGolems
         }
 
         public static Dictionary<string, T> RequireCachedEnumValueDictionary<T>()
-            where T : Enum
+            where T : struct, Enum
         {
-            if (The.Game?.GetObjectGameState(typeof(T).Name + "Values") is not Dictionary<string, T> cachedEnumValues)
+            string objectGameStateKey = typeof(T).Name + "Values";
+            if (The.Game?.GetObjectGameState(objectGameStateKey) is not Dictionary<string, T> cachedEnumValues)
             {
                 cachedEnumValues = Utils.EnumNamedValues<T>();
-                The.Game?.SetObjectGameState(typeof(T).Name + "Values", cachedEnumValues);
+                The.Game?.SetObjectGameState(objectGameStateKey, cachedEnumValues);
+                CachedEnumTypes.AddIf(typeof(T), t => !CachedEnumTypes.Contains(t));
             }
             return cachedEnumValues;
         }
+        private static List<Type> CachedEnumTypes = new();
         public static void CacheSomeEnumValueDictionaries()
         {
             RequireCachedEnumValueDictionary<TileMappingKeyword>();
             RequireCachedEnumValueDictionary<DeathMemoryElements>();
+        }
+        public static void ClearSomeCachedEnumValueDictionaries()
+        {
+            foreach (Type enumBeingCached in CachedEnumTypes)
+            {
+                if (!enumBeingCached.IsEnum)
+                    continue;
+
+                string objectGameStateKey = enumBeingCached.Name + "Values";
+                if ((The.Game?.HasObjectGameState(objectGameStateKey)).GetValueOrDefault())
+                    The.Game?.SetObjectGameState(objectGameStateKey, (object)null);
+            }
         }
     }
 

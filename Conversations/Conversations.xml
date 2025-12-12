@@ -24,9 +24,9 @@
     <node ID="HowIDied">
       
       <text MemoryElement="Killer" Known="true">
-        <text>I was killed by =killer=...</text>
-        <text>=Killer= killed me...</text>
-        <text>I barely remember, but I'm pretty sure I was killed by =killer=...</text>
+        <text>I was killed by =killer.name=...</text>
+        <text>=killer.Name= killed me...</text>
+        <text>I barely remember, but I'm pretty sure I was killed by =killer.name=...</text>
       </text>
       <text MemoryElement="Killer" Known="False">
         <text>I can't recall who it was...</text>
@@ -35,9 +35,9 @@
       </text>
 
       <text MemoryElement="KillerName" Known="true">
-        <text>I was killed by someone called =KilleName=...</text>
-        <text>=KillerName= is the name of who killed me...</text>
-        <text>I barely remember, but I'm pretty sure I was killed by someone who went by =KillerName=...</text>
+        <text>I was killed by someone called =killer.name=...</text>
+        <text>=killer.Name= is the name of who killed me...</text>
+        <text>I barely remember, but I'm pretty sure I was killed by someone who went by =killer.name=...</text>
       </text>
       <text MemoryElement="KillerName" Known="False">
         <text>I can't recall the name of who it was...</text>
@@ -86,7 +86,7 @@
       </text>
       <text MemoryElement="Description" Known="false">
         <text>...Best I can recall is that I was =subject.uD_DeathDescription=, but that's probably self-evident...~</text>
-        <text>...Any more detailed than that I =subject.uD_DeathDescription= is more than I can recall, sorry...</text>
+        <text>...Any more details than that I =subject.uD_DeathDescription= is more than I can recall, sorry...</text>
         <text>...You'd think I'd remember something like dyin', but I don't...</text>
       </text>
 
@@ -96,16 +96,28 @@
         <text>...I =subject.uD_DeathDescription= by =killer.uD_CreatureType:a= called =killer.name=... If I ever see =killer.objective= again...\n\n...Well, I'm not sure what I'd do, actually... =killer.Subject= did kill me the first time, and I'm not keen on a second...</text>
       </text>
 
+      <text Environment="true">
+        <text>I wasn't really killed by someone...</text>
+        <text>It was more of a self-inflicted accident, I think...</text>
+        <text>No one killed me exactly...</text>
+      </text>
+
       <text RudeToAsk="true">
         <text>That's a rather personal thing to ask, don't you think??</text>
         <text>How presumptuous... Good for you that it's not a big deal, but maybe I'd rather not think about it.</text>
         <text>When did you last expell waste?\n\nNot a fan of inappropriately personal questions, then?</text>
       </text>
 
-      <text KilledByPlayer="true">
-        <text>It... it was YOU!</text>
-        <text>I think... I think {{Y|you}} killed me...\n\n{{R|I'LL RETURN THE FAVOUR!}}</text>
-        <text>{{R|YOU!}}\n\n{{R|RARGH!!}}</text>
+      <text KilledByPlayer="true" PlayerLed="false">
+        <text>It... it was {{R|=killer.name|upper=}}!</text>
+        <text>I think... I think {{Y|=killer.name=}} killed me...\n\n{{R|I'LL RETURN THE FAVOUR!}}</text>
+        <text>{{R|=killer.name|upper=}}\n\n{{R|RARGH!!}}</text>
+      </text>
+
+      <text KilledByPlayer="true" PlayerLed="true">
+        <text>{{Y|=killer.Name=}} killed me? I.. I trust you had your reasons...</text>
+        <text>I think... I think {{Y|=killer.name=}} killed me...\n\n... But that was another time, another life...</text>
+        <text>{{Y|=killer.Name=}} already know who killed me... It's strange that {{Y|=killer.name=}} would ask...</text>
       </text>
 
       <text Priority="1">
@@ -126,8 +138,8 @@
       </choice>
       
       <choice ID="GoEnd" Target="End">
-        <text IfSourceOfSuffering="true">Unlive and drink... {{r|friend}}...</text>
-        <text IfSourceOfSuffering="false">Unlive and drink...</text>
+        <text IfSourceOfSuffering="true" Priority="1">Unlive and drink... {{r|friend}}...</text>
+        <text>Unlive and drink...</text>
       </choice>
       
     </node>

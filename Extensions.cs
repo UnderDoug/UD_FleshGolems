@@ -26,6 +26,7 @@ using HarmonyLib;
 using UD_FleshGolems.Parts.VengeanceHelpers;
 using XRL.World.Effects;
 using XRL.World.Conversations;
+using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
 
 namespace UD_FleshGolems
 {
@@ -1078,6 +1079,9 @@ namespace UD_FleshGolems
             return Enumerable.ConvertToStringList(t => t?.ToString() ?? "").Join(delimiter: Delimiter);
         }
 
+        static string Lowerize(this string String)
+            => String[0].ToString().ToLower() + String[1..];
+
         public static bool WasKilledByEntity(
             this GameObject Corpse,
             GameObject Entity,
@@ -1095,7 +1099,7 @@ namespace UD_FleshGolems
         public static bool KnowsEntityKilledThem(this GameObject Corpse, GameObject Entity, out UD_FleshGolems_ReanimatedCorpse ReanimatedCorpsePart)
         {
             if (WasKilledByEntity(Corpse, Entity, out ReanimatedCorpsePart)
-                && ReanimatedCorpsePart.DeathMemory.HasFlag(UD_FleshGolems_ReanimatedCorpse.DeathMemoryElements.Killer)
+                && ReanimatedCorpsePart.DeathMemory.HasFlag(DeathMemoryElements.Killer)
                 && ReanimatedCorpsePart.KillerDetails is KillerDetails killerDetails
                 && killerDetails?.ID == Entity.ID)
             {
@@ -1105,8 +1109,8 @@ namespace UD_FleshGolems
                     && Stat.RollCached("1d6") >= (speakerIntMod - 1))
                     return false;
 
-                if (ReanimatedCorpsePart.DeathMemory.HasFlag(UD_FleshGolems_ReanimatedCorpse.DeathMemoryElements.KillerName)
-                    && ReanimatedCorpsePart.DeathMemory.HasFlag(UD_FleshGolems_ReanimatedCorpse.DeathMemoryElements.KillerCreature)
+                if (ReanimatedCorpsePart.DeathMemory.HasFlag(DeathMemoryElements.KillerName)
+                    && ReanimatedCorpsePart.DeathMemory.HasFlag(DeathMemoryElements.KillerCreature)
                     && Entity.GetReferenceDisplayName(Short: true) != killerDetails.DisplayName
                     && Stat.RollCached("1d6") >= (speakerIntMod - 1))
                     return false;
@@ -1118,22 +1122,85 @@ namespace UD_FleshGolems
         public static bool KnowsEntityKilledThem(this GameObject Corpse, GameObject Entity)
             => Corpse.KnowsEntityKilledThem(Entity, out _);
 
-        public static bool IsSet<T>(this T flags, T flag) where T : Enum
-            => flags is int flagsValue
-            && flag is int flagValue
-            && (flagsValue & flagValue) != 0;
+        /// <summary>  
+        /// Sets or unsets a flag on an enum.  
+        /// </summary>  
+        /// <typeparam name="T">The enum type.</typeparam>  
+        /// <param name="current">The current enum value.</param>  
+        /// <param name="flag">The flag to set/unset (supports combined flags).</param>  
+        /// <param name="set">True to set the flag; false to unset.</param>  
+        /// <returns>The original enum with the flag set/unset.</returns>  
+        public static T SetFlag<T>(ref this T current, T flag, bool set = true)
+            where T : struct, Enum
+        {
+            // Get the underlying type (e.g., int, long, byte)  
+            Type underlyingType = Enum.GetUnderlyingType(typeof(T));
 
-        public static bool IsSet<T>(this int flags, T flag) where T : Enum
-            => flag is int flagValue
-            && (flags & flagValue) != 0;
+            // Convert current and flag to their underlying type values  
+            object currentObj = Convert.ChangeType(current, underlyingType);
+            object flagObj = Convert.ChangeType(flag, underlyingType);
+
+            // Perform bitwise operation  
+            object resultObj;
+            if (set)
+            {
+                // Set flag: current | flag  
+                resultObj = underlyingType.GetMethod("Or", new[] { underlyingType, underlyingType })
+                                          .Invoke(null, new[] { currentObj, flagObj });
+            }
+            else
+            {
+                // Unset flag: current & ~flag  
+                object notFlagObj = underlyingType.GetMethod("OnesComplement", Type.EmptyTypes)
+                                                  .Invoke(null, new[] { flagObj });
+                resultObj = underlyingType.GetMethod("And", new[] { underlyingType, underlyingType })
+                                          .Invoke(null, new[] { currentObj, notFlagObj });
+            }
+
+            // Convert back to enum type  
+            return current = (T)Enum.ToObject(typeof(T), resultObj);
+        }
+
+        public static bool HasAnyFlag<T>(this T flags, params T[] flagList)
+            where T : struct, Enum
+            => !flagList.IsNullOrEmpty()
+            && flagList.Any(f => flags.HasFlag(f));
+
+        public static bool HasEachFlag<T>(this T flags, params T[] flagList)
+            where T : struct, Enum
+            => !flagList.IsNullOrEmpty()
+            && flagList.All(f => flags.HasFlag(f));
 
         public static bool IsNameOfGameObjectBlueprint(this string BlueprintName)
             => !BlueprintName.IsNullOrEmpty()
             && GameObjectFactory.Factory.HasBlueprint(BlueprintName);
 
+        public static bool HasMatchingPath(this ConversationText ConversationText, ConversationText OtherConversationText)
+            => ConversationText?.PathID != null
+            && ConversationText?.PathID == OtherConversationText?.PathID;
+
+        public static bool HasAnyMatchingPath(this IEnumerable<ConversationText> ConversationTextList, ConversationText ConversationText)
+            => !ConversationTextList.IsNullOrEmpty()
+            && ConversationTextList.Any(ct => ct.HasMatchingPath(ConversationText));
+
+        public static bool HasAnyMatchingPath(this IEnumerable<IEnumerable<ConversationText>> ConversationTextList, ConversationText ConversationText)
+            => !ConversationTextList.IsNullOrEmpty()
+            && ConversationTextList.Any(ctl => ctl.Any(ct => ct.HasMatchingPath(ConversationText)));
+
+        public static bool HasAnyMatchingPath<TKey>(
+            this Dictionary<TKey, List<ConversationText>>.ValueCollection ConversationTextValueCollection,
+            ConversationText ConversationText)
+            => !ConversationTextValueCollection.IsNullOrEmpty()
+            && ConversationTextValueCollection.AsEnumerable().HasAnyMatchingPath(ConversationText);
+
         public static bool HasAttribute(this IConversationElement ConversationText, string Attribute)
             => !ConversationText.Attributes.IsNullOrEmpty()
             && ConversationText.Attributes.ContainsKey(Attribute);
+
+        public static bool HasAttributes(this IConversationElement ConversationText, params string[] Attributes)
+            => !ConversationText.Attributes.IsNullOrEmpty()
+            && !Attributes.IsNullOrEmpty()
+            && Attributes.All(a => ConversationText.HasAttribute(a));
 
         public static bool HasAttributeWithValue(this IConversationElement ConversationText, string Attribute, string Value)
             => ConversationText.HasAttribute(Attribute)
@@ -1147,13 +1214,13 @@ namespace UD_FleshGolems
             bool OnlyPredicateChecked = false)
         {
             if (ConversationText == null)
-                return ConversationTextList ??= new();
+                return ConversationTextList ?? new();
 
             ConversationTextList ??= new();
             if (!ConversationText.Text.IsNullOrEmpty()
                 && (!OnlyPredicateChecked || ConversationText.CheckPredicates())
                 && (Filter == null || Filter(ConversationText))
-                && !ConversationTextList.Any(ct => ct.PathID == ConversationText.PathID))
+                && !ConversationTextList.HasAnyMatchingPath(ConversationText))
             {
                 Proc?.Invoke(ConversationText);
                 ConversationTextList.Add(ConversationText);
@@ -1166,7 +1233,7 @@ namespace UD_FleshGolems
                         Proc: Proc,
                         OnlyPredicateChecked: OnlyPredicateChecked);
 
-            return ConversationTextList ??= new();
+            return ConversationTextList ?? new();
         }
 
         public static KillerDetails GetKillerDetails(this GameObject Corpse)
@@ -1185,5 +1252,17 @@ namespace UD_FleshGolems
             GameObject.SetStringProperty(KillerDetails.NOTABLE_FEATURE_PROPTAG, NotableFeature);
             return NotableFeature;
         }
+
+        public static bool HasKillerElement(this DeathMemoryElements DeathMemory, bool Only = false)
+            => DeathMemory.HasAnyFlag(KillerFlags)
+            && (!Only || (DeathMemory > DeathMemoryElements.None && DeathMemory < DeathMemoryElements.Killer));
+
+        public static bool HasMethodElement(this DeathMemoryElements DeathMemory, bool Only = false)
+            => DeathMemory.HasAnyFlag(MethodFlags)
+            && (!Only || (DeathMemory > DeathMemoryElements.Killer && DeathMemory < DeathMemoryElements.Method));
+
+        public static bool HasDescriptionElement(this DeathMemoryElements DeathMemory, bool Only = false)
+            => DeathMemory.HasAnyFlag(DeathMemoryElements.Description)
+            && (!Only || DeathMemory == DeathMemoryElements.Description);
     }
 }

@@ -953,7 +953,7 @@ namespace XRL.World.Parts
             if (frankenCorpse.GetIntProperty("UD_FleshGolems Alignment Adjusted") > 0
                 && FrankenBrain.Allegiance.Any(a => a.Key == PREVIOUSLY_SENTIENT_BEINGS && a.Value > 0))
             {
-                Debug.CheckNah(Debug.GetCallingMethod(true) + "skipped", indent[1]);
+                // Debug.CheckNah(Debug.GetCallingMethod(true) + "skipped", indent[1]);
                 return false;
             }
 

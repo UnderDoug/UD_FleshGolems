@@ -112,10 +112,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             }
             else
             {
-                this.WasEnvironment = ID.IsNullOrEmpty()
-                    && Blueprint.IsNullOrEmpty()
-                    && DisplayName.IsNullOrEmpty()
-                    && CreatureType.IsNullOrEmpty()
+                this.WasEnvironment = HasNoKiller()
                     && WeaponName.IsNullOrEmpty();
             }
             this.KillerIsDeceased = KillerIsDeceased;
@@ -151,7 +148,13 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                   DeathDescription: E?.Reason,
                   WasAccident: E == null || E.Accidental,
                   WasEnvironment: E != null && (E?.Killer == null || !E.Killer.IsCreature) && E.Accidental)
-        { }
+        {
+            using Indent indent = new(1);
+            Debug.LogCaller(indent);
+            Debug.Log(nameof(E.KillerText), E.KillerText ?? NULL, Indent: indent[1]);
+            Debug.Log(nameof(E.Reason), E.Reason ?? NULL, Indent: indent[1]);
+            Debug.Log(nameof(E.ThirdPersonReason), E.ThirdPersonReason ?? NULL, Indent: indent[1]);
+        }
 
         public static bool HasDefaultBehaviorOrNaturalWeaponEquipped(BodyPart BodyPart)
             => BodyPart != null
@@ -162,7 +165,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public static string GetNotableFeature(GameObject Killer)
         {
             if (Killer == null || Killer.Body is not Body killerBody)
-                return "striking absence";
+                return null;
 
             if (Killer.GetPropertyOrTag(NOTABLE_FEATURE_PROPTAG) is not string notableFeature)
             {
@@ -211,11 +214,19 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             return notableFeature;
         }
 
+        public bool HasNoKiller()
+            => !GameObject.Validate(Killer)
+            && ID.IsNullOrEmpty()
+            && Blueprint.IsNullOrEmpty()
+            && DisplayName.IsNullOrEmpty()
+            && CreatureType.IsNullOrEmpty();
+
         public bool IsMystery()
             => ID.IsNullOrEmpty()
             && Blueprint.IsNullOrEmpty()
             && DisplayName.IsNullOrEmpty()
             && CreatureType.IsNullOrEmpty()
+            && NotableFeature.IsNullOrEmpty()
             && WeaponName.IsNullOrEmpty()
             && DeathDescription.IsNullOrEmpty();
 
@@ -225,9 +236,38 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     && Blueprint.IsNullOrEmpty()
                     && DisplayName.IsNullOrEmpty()
                     && CreatureType.IsNullOrEmpty())
-                || WeaponName.IsNullOrEmpty()
-                || DeathDescription.IsNullOrEmpty()
+                || (NotableFeature.IsNullOrEmpty()
+                    && WeaponName.IsNullOrEmpty()
+                    && DeathDescription.IsNullOrEmpty())
                 );
+
+        public DeathMemory SyncDeathMemory(ref DeathMemory DeathMemory)
+        {
+            if (IsMystery())
+                return DeathMemory = DeathMemory.None;
+
+            if (DisplayName.IsNullOrEmpty()
+                && DeathMemory.HasFlag(DeathMemory.KillerName))
+                DeathMemory.SetFlag(DeathMemory.KillerName, false);
+
+            if (CreatureType.IsNullOrEmpty()
+                && DeathMemory.HasFlag(DeathMemory.KillerCreature))
+                DeathMemory.SetFlag(DeathMemory.KillerCreature, false);
+
+            if (NotableFeature.IsNullOrEmpty()
+                && DeathMemory.HasFlag(DeathMemory.NotableFeature))
+                DeathMemory.SetFlag(DeathMemory.NotableFeature, false);
+
+            if (WeaponName.IsNullOrEmpty()
+                && DeathMemory.HasFlag(DeathMemory.Weapon))
+                DeathMemory.SetFlag(DeathMemory.Weapon, false);
+
+            if (DeathDescription.IsNullOrEmpty()
+                && DeathMemory.HasFlag(DeathMemory.Description))
+                DeathMemory.SetFlag(DeathMemory.Description, false);
+
+            return DeathMemory;
+        }
 
         public string KilledBy(DeathMemory DeathMemory, bool Capitalize = false)
         {
