@@ -109,16 +109,6 @@ namespace UD_FleshGolems
          * 
          */
 
-        [VariableObjectReplacer]
-        public static string UD_3PP_Name(DelegateContext Context)
-        {
-            bool grammarAllowSecondPerson = Grammar.AllowSecondPerson;
-            Grammar.AllowSecondPerson = false;
-            string output = XRL.World.Text.Delegates.VariableReplacers.TargetName(Context);
-            Grammar.AllowSecondPerson = grammarAllowSecondPerson;
-            return output;
-        }
-
         public static void ParseDeathMemoryContextParameters(
             DelegateContext Context,
             out string Article,

@@ -358,6 +358,9 @@ namespace UD_FleshGolems
                     typeof(bool),
                 });
 
+        public static string IndefiniteArticle(string Word)
+            => Grammar.IndefiniteArticle(Word, false)?.Uncapitalize()?.Trim();
+
         /* 
          * 
          * Wishes!

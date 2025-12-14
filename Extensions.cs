@@ -1304,6 +1304,12 @@ namespace UD_FleshGolems
         public static bool TryGetKillerDetails(this GameObject Corpse, out KillerDetails KillerDetails)
             => (KillerDetails = Corpse?.GetKillerDetails()) != null;
 
+        public static DeathDescription GetDeathDescription(this GameObject Corpse)
+            => Corpse?.GetKillerDetails()?.DeathDescription;
+
+        public static bool TryGetDeathDescription(this GameObject Corpse, out DeathDescription DeathDescription)
+            => (DeathDescription = Corpse?.GetDeathDescription()) != null;
+
         public static string SetCreatureType(this GameObject GameObject, string CreatureType)
         {
             GameObject.SetStringProperty(nameof(CreatureType), CreatureType);

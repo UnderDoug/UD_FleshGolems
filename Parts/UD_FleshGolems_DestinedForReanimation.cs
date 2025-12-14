@@ -456,7 +456,7 @@ namespace XRL.World.Parts
 
             RandomDeathCategoryAndReasonAndAccidental(out Category, out Reason, out Accidental);
 
-            return new(Killer, Weapon, Reason, Accidental);
+            return new(Killer, Weapon, new() /*Reason*/, Accidental);
         }
         public static KillerDetails ProduceKillerDetails()
         {
