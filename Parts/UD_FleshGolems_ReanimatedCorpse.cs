@@ -756,7 +756,7 @@ namespace XRL.World.Parts
                 deathMemoryHasFlagsStrings.Add(hasMethod.YehNah() + " Remembers Method");
                 deathMemoryHasFlagsStrings.Add(hasDescription.YehNah() + " Remembers Description");
 
-                deathMemoryHasFlagsStrings.Add(hasDescription.YehNah() + " Rembers Complete Death");
+                deathMemoryHasFlagsStrings.Add(hasCompleteText.YehNah() + " Rembers Complete Death");
 
                 string deathMemoryHasFlags = deathMemoryHasFlagsStrings
                     ?.GenerateBulletList(Bullet: null, BulletColor: null);

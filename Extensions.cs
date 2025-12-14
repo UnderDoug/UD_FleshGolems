@@ -324,6 +324,30 @@ namespace UD_FleshGolems
             return Collection.ContainsAll((ICollection<T>)Items);
         }
 
+        public static bool ContainsAll(this string String, params string[] Strings)
+        {
+            if (Strings == null || String == null)
+                return (Strings == null) == (String == null);
+
+            foreach (string item in Strings)
+                if (!String.Contains(item))
+                    return false;
+
+            return true;
+        }
+
+        public static bool ContainsAny(this string String, params string[] Strings)
+        {
+            if (Strings == null || String == null)
+                return (Strings == null) == (String == null);
+
+            foreach (string item in Strings)
+                if (String.Contains(item))
+                    return true;
+
+            return false;
+        }
+
         public static GameObject SetWontSell(this GameObject Item, bool WontSell)
         {
             Item.SetIntProperty(nameof(WontSell), WontSell ? 1 : 0, RemoveIfZero: true);
@@ -1079,8 +1103,22 @@ namespace UD_FleshGolems
             return Enumerable.ConvertToStringList(t => t?.ToString() ?? "").Join(delimiter: Delimiter);
         }
 
-        static string Lowerize(this string String)
+        public static string Uncapitalize(this string String)
             => String[0].ToString().ToLower() + String[1..];
+
+        public static bool TryGetIndexOf(this string Text, string Search, out int Index, bool StartOfSearch = false)
+            => !((Index = Text.IndexOf(Search) - (StartOfSearch ? Search?.Length ?? 0 : 0)) < 0);
+
+        public static string ReplaceFirst(this string text, string search, string replace)
+        {
+            int pos = text.IndexOf(search);
+            int postPos = pos + search.Length;
+            if (pos < 0)
+            {
+                return text;
+            }
+            return text[..pos] + replace + text[postPos..];
+        }
 
         public static bool WasKilledByEntity(
             this GameObject Corpse,
@@ -1099,38 +1137,56 @@ namespace UD_FleshGolems
         public static bool KnowsEntityKilledThem(this GameObject Corpse, GameObject Entity, out UD_FleshGolems_ReanimatedCorpse ReanimatedCorpsePart)
         {
             if (WasKilledByEntity(Corpse, Entity, out ReanimatedCorpsePart)
-                && ReanimatedCorpsePart.DeathMemory.HasFlag(DeathMemoryElements.Killer)
+                && ReanimatedCorpsePart.DeathMemory is DeathMemoryElements deathMemory
                 && ReanimatedCorpsePart.KillerDetails is KillerDetails killerDetails
                 && killerDetails?.ID == Entity.ID)
             {
                 int speakerIntMod = Corpse.StatMod("Intelligence");
 
-                if (Entity.HasEffect<Disguised>()
-                    && Stat.RollCached("1d6") >= (speakerIntMod - 1))
-                    return false;
+                if (deathMemory.HasKillerElement())
+                {
+                    if (Entity.HasEffect<Disguised>()
+                        && !Corpse.MakeSave(Stat: "Intelligence", Difficulty: 15, Vs: nameof(DeathMemoryElements) + "." + nameof(Disguised)))
+                        return false;
 
-                if (ReanimatedCorpsePart.DeathMemory.HasFlag(DeathMemoryElements.KillerName)
-                    && ReanimatedCorpsePart.DeathMemory.HasFlag(DeathMemoryElements.KillerCreature)
-                    && Entity.GetReferenceDisplayName(Short: true) != killerDetails.DisplayName
-                    && Stat.RollCached("1d6") >= (speakerIntMod - 1))
-                    return false;
+                    if (deathMemory.HasFlag(DeathMemoryElements.Killer)
+                        && Entity.GetReferenceDisplayName(Short: true) != killerDetails.DisplayName
+                        && !Corpse.MakeSave(Stat: "Intelligence", Difficulty: 15, Vs: nameof(DeathMemoryElements) + "." + nameof(Disguised)))
+                        return false;
 
-                return true;
+                    if (deathMemory.HasFlag(DeathMemoryElements.KillerCreature)
+                        && !deathMemory.HasFlag(DeathMemoryElements.KillerName)
+                        && deathMemory.HasMethodElement()
+                        && !Corpse.MakeSave(Stat: "Intelligence", Difficulty: 20, Vs: nameof(DeathMemoryElements) + ".Deduction"))
+                        return false;
+
+                    return true;
+                }
+                else
+                if (deathMemory.HasFlag(DeathMemoryElements.Method | DeathMemoryElements.Description)
+                    && Corpse.MakeSave(Stat: "Intelligence", Difficulty: 25, Vs: nameof(DeathMemoryElements) + ".Deduction", IgnoreNaturals: true))
+                {
+                    if (Entity.HasEffect<Disguised>()
+                        && !Corpse.MakeSave(Stat: "Intelligence", Difficulty: 15, Vs: nameof(DeathMemoryElements) + "." + nameof(Disguised)))
+                        return false;
+
+                    return true;
+                }
             }
             return false;
         }
         public static bool KnowsEntityKilledThem(this GameObject Corpse, GameObject Entity)
             => Corpse.KnowsEntityKilledThem(Entity, out _);
 
-        /// <summary>  
-        /// Sets or unsets a flag on an enum.  
-        /// </summary>  
-        /// <typeparam name="T">The enum type.</typeparam>  
-        /// <param name="current">The current enum value.</param>  
-        /// <param name="flag">The flag to set/unset (supports combined flags).</param>  
-        /// <param name="set">True to set the flag; false to unset.</param>  
-        /// <returns>The original enum with the flag set/unset.</returns>  
-        public static T SetFlag<T>(ref this T current, T flag, bool set = true)
+        /// <summary>
+        /// Sets or unsets aa flag on an enum.
+        /// </summary>
+        /// <typeparam name="T">The enum type.</typeparam>
+        /// <param name="current">The current enum value.</param>
+        /// <param name="flag">The flag to set/unset (supports combined flags).</param>
+        /// <param name="set">True to set the flag; false to unset.</param>
+        /// <returns>The original enum with the flag set/unset.</returns>
+        public static T SetFlag<T>(this T current, T flag, bool set)
             where T : struct, Enum
         {
             // Get the underlying type (e.g., int, long, byte)  
@@ -1158,8 +1214,14 @@ namespace UD_FleshGolems
             }
 
             // Convert back to enum type  
-            return current = (T)Enum.ToObject(typeof(T), resultObj);
+            return (T)Enum.ToObject(typeof(T), resultObj);
         }
+        public static T SetFlag<T>(ref this T current, T flag)
+            where T : struct, Enum
+            => current = current.SetFlag(flag, true);
+        public static T UnsetFlag<T>(ref this T current, T flag)
+            where T : struct, Enum
+            => current = current.SetFlag(flag, false);
 
         public static bool HasAnyFlag<T>(this T flags, params T[] flagList)
             where T : struct, Enum
@@ -1264,5 +1326,8 @@ namespace UD_FleshGolems
         public static bool HasDescriptionElement(this DeathMemoryElements DeathMemory, bool Only = false)
             => DeathMemory.HasAnyFlag(DeathMemoryElements.Description)
             && (!Only || DeathMemory == DeathMemoryElements.Description);
+
+        public static string AsString(this List<char> CharList)
+            => CharList.Aggregate("", (a, n) => a += n);
     }
 }

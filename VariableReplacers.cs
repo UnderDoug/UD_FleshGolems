@@ -16,6 +16,7 @@ using UD_FleshGolems.Parts.VengeanceHelpers;
 using Debug = UD_FleshGolems.Logging.Debug;
 
 using static UD_FleshGolems.Const;
+using System.Globalization;
 
 namespace UD_FleshGolems
 {
@@ -82,59 +83,180 @@ namespace UD_FleshGolems
             return output;
         }
 
+        private static bool? StoredAllowSecondPerson = null;
+        [VariableReplacer( "no2nd" )]
+        public static string UD_no2nd(DelegateContext Context)
+        {
+            StoredAllowSecondPerson ??= Grammar.AllowSecondPerson;
+            Grammar.AllowSecondPerson = false;
+            return null;
+        }
+
+        [VariableReplacer( "no2nd.restore" )]
+        public static string UD_no2nd_restore(DelegateContext Context)
+        {
+            if (StoredAllowSecondPerson is bool storedAllowSecondPerson)
+            {
+                Grammar.AllowSecondPerson = storedAllowSecondPerson;
+            }
+            StoredAllowSecondPerson = null;
+            return null;
+        }
+
         /* 
          * 
          * Variable Object
          * 
          */
+
         [VariableObjectReplacer]
-        public static string UD_NotableFeature(DelegateContext Context)
+        public static string UD_3PP_Name(DelegateContext Context)
         {
-            string output = KillerDetails.GetNotableFeature(Context.Target);
+            bool grammarAllowSecondPerson = Grammar.AllowSecondPerson;
+            Grammar.AllowSecondPerson = false;
+            string output = XRL.World.Text.Delegates.VariableReplacers.TargetName(Context);
+            Grammar.AllowSecondPerson = grammarAllowSecondPerson;
+            return output;
+        }
+
+        public static void ParseDeathMemoryContextParameters(
+            DelegateContext Context,
+            out string Article,
+            out string AfterArticleAdjectives)
+        {
+            Article = null;
+            AfterArticleAdjectives = null;
+            if (Context.Parameters is List<string> parameters
+                && !parameters.IsNullOrEmpty())
+            {
+                if (parameters[0].EqualsAnyNoCase("a", "an"))
+                    Article = (Context.Target?.a ?? "a") + " ";
+                else
+                if (parameters[0].EqualsNoCase("the"))
+                    Article = (Context.Target?.the ?? "the") + " ";
+                else
+                if (parameters[0].EqualsAnyNoCase("this", "these"))
+                    Article = (Context.Target?.indicativeProximal ?? "this") + " ";
+                else
+                if (parameters[0].EqualsAnyNoCase("that", "those"))
+                    Article = (Context.Target?.indicativeDistal ?? "that") + " ";
+                else
+                    Article = parameters[0] + " ";
+
+                if (parameters.Count > 1
+                    && !parameters[1].IsNullOrEmpty())
+                    AfterArticleAdjectives = parameters[1] + " ";
+            }
+        }
+        public static string ProcessDeathMemoryReplacerResult(string Result, DelegateContext Context)
+        {
+            ParseDeathMemoryContextParameters(Context, out string article, out string afterArticleAdjectives);
+            string output = article + afterArticleAdjectives + Result;
             return Context.Capitalize
                 ? output?.Capitalize()
                 : output;
         }
 
         [VariableObjectReplacer]
-        public static string UD_CreatureType(DelegateContext Context)
-        {
-            string article = null;
-            string afterArticleAdjectives = null;
-            if (Context.Parameters is List<string> parameters
-                && !parameters.IsNullOrEmpty())
-            {
-                if (parameters[0].EqualsAnyNoCase("a", "an"))
-                    article = (Context.Target?.a ?? "a") + " ";
-                else
-                if (parameters[0].EqualsNoCase("the"))
-                    article = (Context.Target?.the ?? "the") + " ";
-                else
-                if (parameters[0].EqualsAnyNoCase("this", "these"))
-                    article = (Context.Target?.indicativeProximal ?? "this") + " ";
-                else
-                if (parameters[0].EqualsAnyNoCase("that", "those"))
-                    article = (Context.Target?.indicativeDistal ?? "that") + " ";
-                else
-                    article = parameters[0] + " ";
+        public static string UD_NotableFeature(DelegateContext Context)
+            => ProcessDeathMemoryReplacerResult(KillerDetails.GetNotableFeature(Context.Target) ?? "a lethal absence", Context);
 
-                if (parameters.Count > 1
-                    && !parameters[1].IsNullOrEmpty())
-                    afterArticleAdjectives = parameters[1] + " ";
+        [VariableObjectReplacer]
+        public static string UD_CreatureType(DelegateContext Context)
+            => ProcessDeathMemoryReplacerResult(Context.Target?.GetCreatureType() ?? "hideous specimen", Context);
+
+        public static void ProcessVerbReplacement(ref string deathDescription, List<string> parameters)
+        {
+            if (parameters.Count > 1
+                && parameters[0].EqualsNoCase("verb")
+                && !parameters[1].IsNullOrEmpty()
+                && parameters[1].Uncapitalize() is string newVerb)
+            {
+                if (deathDescription.StartsWith("=")
+                    && deathDescription.TryGetIndexOf("verb:", out int verbStart)
+                    && deathDescription[..verbStart].TryGetIndexOf("=", out int replacerEnd)
+                    && deathDescription[..verbStart][..(replacerEnd - 1)] is string oldVerb)
+                {
+                    if (!oldVerb.TryGetIndexOf(":", out int verbEnd))
+                    {
+                        verbEnd = verbStart + replacerEnd;
+                    }
+                    deathDescription = deathDescription[..verbStart] + newVerb + deathDescription[(verbEnd - 1)..];
+                    verbEnd = verbStart + newVerb.Length;
+                    replacerEnd = deathDescription[verbEnd..].IndexOf("=") - 1;
+                    if (parameters.Count > 2
+                        && !parameters[2].IsNullOrEmpty()
+                        && parameters[2].Contains("afterpronoun"))
+                    {
+                        if (parameters[2].Contains("remove"))
+                        {
+                            if (deathDescription[(verbEnd + 1)].ToString() == ":")
+                                deathDescription = deathDescription[..verbEnd] + deathDescription[replacerEnd..];
+                        }
+                        else
+                        {
+                            deathDescription = deathDescription[..verbEnd] + ":afterpronoun" + deathDescription[replacerEnd..];
+                        }
+                    }
+                }
             }
-            string creatureType = Context.Target?.GetCreatureType() ?? "hideous specimen";
-            string output = article + afterArticleAdjectives + creatureType;
-            return Context.Capitalize
-                ? output.Capitalize()
-                : output;
         }
 
         [VariableObjectReplacer]
         public static string UD_DeathDescription(DelegateContext Context)
         {
-            string deathDescription = "=subject.verb:were:afterpronoun= killed to death";
-            if (Context.Target?.GetKillerDetails() is KillerDetails killerDetails)
-                deathDescription = killerDetails.DeathDescription;
+            string deathDescription = Context.Target?.GetKillerDetails()?.DeathDescription.ToString()
+                ?? "=subject.verb:were:afterpronoun= killed to death";
+
+            if (Context.Parameters is List<string> parameters
+                && !parameters.IsNullOrEmpty())
+            {
+                if (parameters.Count > 1)
+                {
+                    if (parameters.Count > 2
+                        && parameters[0].EqualsNoCase("add")
+                        && parameters[1].EqualsNoCase("verb"))
+                    {
+                        if (!deathDescription.StartsWith("=")
+                            || !deathDescription[1..].TryGetIndexOf("=", out int replacerEnd)
+                            || deathDescription[..replacerEnd].Contains("verb"))
+                        {
+                            string verbAddition = "=subject.verb:were";
+                            if (parameters.Count > 3
+                                && !parameters[3].IsNullOrEmpty()
+                                && parameters[3].EqualsNoCase("afterpronoun"))
+                            {
+                                verbAddition += ":afterpronoun";
+                            }
+                            verbAddition += "= ";
+                            deathDescription = verbAddition + deathDescription;
+                        }
+                        parameters.RemoveAt(0);
+                    }
+                    ProcessVerbReplacement(ref deathDescription, parameters);
+                }
+                if (parameters[0].EqualsAnyNoCase("RemoveVerb", "RemoveBakedVerb"))
+                {
+                    if (deathDescription.StartsWith("=")
+                        && deathDescription[1..].TryGetIndexOf("=", out int replacerEnd)
+                        && deathDescription[..replacerEnd].Contains("verb"))
+                    {
+                        deathDescription = deathDescription[replacerEnd..];
+                    }
+                    List<string> bakedVerbs = new()
+                    {
+                        "was",
+                        "were",
+                    };
+                    if (parameters[0].EqualsNoCase("RemoveBakedVerb"))
+                    {
+                        foreach (string bakedVerb in bakedVerbs)
+                            if (!bakedVerb.IsNullOrEmpty()
+                                && deathDescription[..bakedVerb.Length].EqualsNoCase(bakedVerb))
+                                deathDescription = deathDescription[(bakedVerb.Length + 1)..];
+                    }
+                }
+            }
 
             string output = deathDescription
                 ?.StartReplace()
@@ -299,6 +421,22 @@ namespace UD_FleshGolems
                 }
             }
             return output;
+        }
+
+        /* 
+         * 
+         * Variable Post Processors
+         * 
+         */
+
+        [VariablePostProcessor("no2nd.restore")]
+        public static void UD_post_no2nd_restore(DelegateContext Context)
+        {
+            if (StoredAllowSecondPerson is bool storedAllowSecondPerson)
+            {
+                Grammar.AllowSecondPerson = storedAllowSecondPerson;
+            }
+            StoredAllowSecondPerson = null;
         }
     }
 }

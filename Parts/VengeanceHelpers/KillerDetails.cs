@@ -58,7 +58,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public GameObject Weapon;
         public string WeaponName;
 
-        public string DeathDescription;
+        public DeathDescription DeathDescription;
 
         public bool WasAccident;
         public bool WasEnvironment;
@@ -92,7 +92,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string CreatureType,
             string NotableFeature,
             string WeaponName,
-            string DeathDescription,
+            DeathDescription DeathDescription,
             bool WasAccident,
             bool? WasEnvironment = null,
             bool? KillerIsDeceased = null)
@@ -120,7 +120,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public KillerDetails(
             GameObject Killer,
             GameObject Weapon,
-            string DeathDescription,
+            DeathDescription DeathDescription,
             bool WasAccident,
             bool? WasEnvironment = null)
             : this(
@@ -145,16 +145,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             : this(
                   Killer: E?.Killer,
                   Weapon: E?.Weapon,
-                  DeathDescription: E?.Reason,
+                  DeathDescription: new(E),
                   WasAccident: E == null || E.Accidental,
                   WasEnvironment: E != null && (E?.Killer == null || !E.Killer.IsCreature) && E.Accidental)
-        {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent);
-            Debug.Log(nameof(E.KillerText), E.KillerText ?? NULL, Indent: indent[1]);
-            Debug.Log(nameof(E.Reason), E.Reason ?? NULL, Indent: indent[1]);
-            Debug.Log(nameof(E.ThirdPersonReason), E.ThirdPersonReason ?? NULL, Indent: indent[1]);
-        }
+        { }
 
         public static bool HasDefaultBehaviorOrNaturalWeaponEquipped(BodyPart BodyPart)
             => BodyPart != null
@@ -215,11 +209,12 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         }
 
         public bool HasNoKiller()
-            => !GameObject.Validate(Killer)
-            && ID.IsNullOrEmpty()
-            && Blueprint.IsNullOrEmpty()
-            && DisplayName.IsNullOrEmpty()
-            && CreatureType.IsNullOrEmpty();
+            => WasEnvironment
+            || (!GameObject.Validate(Killer)
+                && ID.IsNullOrEmpty()
+                && Blueprint.IsNullOrEmpty()
+                && DisplayName.IsNullOrEmpty()
+                && CreatureType.IsNullOrEmpty());
 
         public bool IsMystery()
             => ID.IsNullOrEmpty()
@@ -228,7 +223,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             && CreatureType.IsNullOrEmpty()
             && NotableFeature.IsNullOrEmpty()
             && WeaponName.IsNullOrEmpty()
-            && DeathDescription.IsNullOrEmpty();
+            && DeathDescription == null;
 
         public bool IsPartialMystery()
             => !IsMystery()
@@ -238,7 +233,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     && CreatureType.IsNullOrEmpty())
                 || (NotableFeature.IsNullOrEmpty()
                     && WeaponName.IsNullOrEmpty()
-                    && DeathDescription.IsNullOrEmpty())
+                    && DeathDescription == null)
                 );
 
         public DeathMemory SyncDeathMemory(ref DeathMemory DeathMemory)
@@ -248,23 +243,23 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
             if (DisplayName.IsNullOrEmpty()
                 && DeathMemory.HasFlag(DeathMemory.KillerName))
-                DeathMemory.SetFlag(DeathMemory.KillerName, false);
+                DeathMemory.UnsetFlag(DeathMemory.KillerName);
 
             if (CreatureType.IsNullOrEmpty()
                 && DeathMemory.HasFlag(DeathMemory.KillerCreature))
-                DeathMemory.SetFlag(DeathMemory.KillerCreature, false);
+                DeathMemory.UnsetFlag(DeathMemory.KillerCreature);
 
             if (NotableFeature.IsNullOrEmpty()
                 && DeathMemory.HasFlag(DeathMemory.NotableFeature))
-                DeathMemory.SetFlag(DeathMemory.NotableFeature, false);
+                DeathMemory.UnsetFlag(DeathMemory.NotableFeature);
 
             if (WeaponName.IsNullOrEmpty()
                 && DeathMemory.HasFlag(DeathMemory.Weapon))
-                DeathMemory.SetFlag(DeathMemory.Weapon, false);
+                DeathMemory.UnsetFlag(DeathMemory.Weapon);
 
-            if (DeathDescription.IsNullOrEmpty()
+            if (DeathDescription == null
                 && DeathMemory.HasFlag(DeathMemory.Description))
-                DeathMemory.SetFlag(DeathMemory.Description, false);
+                DeathMemory.UnsetFlag(DeathMemory.Description);
 
             return DeathMemory;
         }
@@ -308,7 +303,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             return Capitalize ? output.Capitalize() : output;
         }
 
-        public void KilledHow(DeathMemory DeathMemory, out string Weapon, out string Feature, out string Description, out bool Accidentally, out bool Environment)
+        public void KilledHow(DeathMemory DeathMemory, out string Weapon, out string Feature, out DeathDescription Description, out bool Accidentally, out bool Environment)
         {
             Weapon = null;
             Feature = null;
@@ -327,14 +322,15 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Feature = NotableFeature;
             }
             if (DeathMemory.HasFlag(DeathMemory.Description)
-                && !Description.IsNullOrEmpty())
+                && Description != null)
             {
                 Description = DeathDescription;
             }
         }
 
-        public string GetDeathDescription()
-            => DeathDescription ?? "=subject.verb:were:afterpronoun= killed to death";
+        public DeathDescription GetDeathDescription()
+            => DeathDescription
+            ?? new("killed", true, "killed", false, null, false, null);
 
         public bool IsKiller(GameObject Entity)
             => Entity != null
@@ -352,7 +348,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             Debug.Log(nameof(NotableFeature), NotableFeature ?? NULL, indent[1]);
             Debug.Log(nameof(Weapon), Weapon?.DebugName ?? NULL, indent[1]);
             Debug.Log(nameof(WeaponName), WeaponName ?? NULL, indent[1]);
-            Debug.Log(nameof(DeathDescription), DeathDescription ?? NULL, indent[1]);
+            Debug.Log(nameof(DeathDescription), DeathDescription?.ToString() ?? NULL, indent[1]);
             Debug.Log(nameof(WasAccident), WasAccident, indent[1]);
             Debug.Log(nameof(WasEnvironment), WasEnvironment, indent[1]);
             Debug.Log(nameof(KillerIsDeceased), KillerIsDeceased?.ToString() ?? NULL, indent[1]);

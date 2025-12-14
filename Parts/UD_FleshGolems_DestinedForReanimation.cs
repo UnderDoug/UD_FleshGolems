@@ -39,7 +39,7 @@ namespace XRL.World.Parts
                     "=subject.verb:were:afterpronoun= cooked",
                     "=subject.verb:were:afterpronoun= hard-boiled",
                     "=subject.verb:were:afterpronoun= soft-boiled",
-                    "broiled for our sins... Ramen",
+                    "broiled for our sins... ({{W|Ramen}})",
                     "=subject.verb:were:afterpronoun= flash boiled in steam",
                     "fell in a pot of broth",
                     "fell in a pot of stew",

@@ -24,6 +24,7 @@ namespace XRL.World.Conversations.Parts
         public const string RUDE_TO_ASK = "RudeToAsk";
         public const string MEMORY_ELEMENT = "MemoryElement";
         public const string KNOWN = "Known";
+        public const string ENVIRONMENT = "Environment";
         public const string KILLED_BY_PLAYER = "KilledByPlayer";
         public const string PLAYER_LED = "PlayerLed";
 
@@ -33,8 +34,10 @@ namespace XRL.World.Conversations.Parts
 
         public static ConversationText DefaultRudeToAskText => new() { Text = "... That's a rude thing to ask..." };
         public static ConversationText DefaultKillerText => new() { Text = "I don't know, if anyone, who killed me..." };
+        public static ConversationText DefaultEnvironmentText => new() { Text = "No one is singularly responsible for my death..." };
         public static ConversationText DefaultMethodText => new() { Text = "... I just don't remember exactly how I was killed..." };
-        public static ConversationText DefaultCompleteText => new() { Text = "I don't know, if anyone, who killed me...\n\n... and I don't know even how I was killed..." };
+        public static ConversationText DefaultDescriptionText => new() { Text = "... I definitely died, though." };
+        public static ConversationText DefaultCompleteText => new() { Text = "I don't know, if anyone, who killed me...\n\n... and I don't know even how I was killed...\n\n... though, certainly, I did die." };
         public static ConversationText DefaultNoText => new() { Text = "... I actually can't remember at all...\n\nStrange!" };
         public static ConversationText DefaultPlayerKilledText 
             => The.Speaker is GameObject speaker && !speaker.IsPlayerLed() 
@@ -93,6 +96,20 @@ namespace XRL.World.Conversations.Parts
                 })
             ?? new();
 
+        public static List<ConversationText> GetConversationTextsWithTextRetainingRudeToAskAttributes(
+            ConversationText ConversationText,
+            ref List<ConversationText> ConversationTextList)
+            => GetConversationTextsWithTextRetainingAttributes(
+                ConversationText: ConversationText,
+                ConversationTextList: ref ConversationTextList,
+                Filter: null, // ct => ct.CheckPredicates(),
+                Attributes: new string[]
+                {
+                    RUDE_TO_ASK,
+                })
+            ?.Where(ct => ct.HasAttribute(RUDE_TO_ASK))
+            ?.ToList();
+
         public static List<ConversationText> GetConversationTextsWithTextRetainingMemoryAttributes(
             ConversationText ConversationText,
             ref List<ConversationText> ConversationTextList)
@@ -106,6 +123,20 @@ namespace XRL.World.Conversations.Parts
                     KNOWN,
                 })
             ?.Where(ct => ct.HasAttributes(MEMORY_ELEMENT, KNOWN))
+            ?.ToList();
+
+        public static List<ConversationText> GetConversationTextsWithTextRetainingEnvironmentAttributes(
+            ConversationText ConversationText,
+            ref List<ConversationText> ConversationTextList)
+            => GetConversationTextsWithTextRetainingAttributes(
+                ConversationText: ConversationText,
+                ConversationTextList: ref ConversationTextList,
+                Filter: null, // ct => ct.CheckPredicates(),
+                Attributes: new string[]
+                {
+                    ENVIRONMENT
+                })
+            ?.Where(ct => ct.HasAttributes(ENVIRONMENT))
             ?.ToList();
 
         public static List<ConversationText> GetConversationTextsWithTextRetainingKilledByPlayerAttributes(
@@ -123,26 +154,19 @@ namespace XRL.World.Conversations.Parts
             ?.Where(ct => ct.HasAttributes(MEMORY_ELEMENT, PLAYER_LED))
             ?.ToList();
 
-        public static List<ConversationText> GetConversationTextsWithTextRetainingRudeToAskAttributes(
-            ConversationText ConversationText,
-            ref List<ConversationText> ConversationTextList)
-            => GetConversationTextsWithTextRetainingAttributes(
-                ConversationText: ConversationText,
-                ConversationTextList: ref ConversationTextList,
-                Filter: null, // ct => ct.CheckPredicates(),
-                Attributes: new string[]
-                {
-                    RUDE_TO_ASK,
-                })
-            ?.Where(ct => ct.HasAttribute(RUDE_TO_ASK))
-            ?.ToList();
-
         public override void Awake()
         {
             base.Awake();
             KnowsPlayerKilledThem = The.Speaker is GameObject speaker
                 && The.Player is GameObject player
                 && speaker.KnowsEntityKilledThem(player);
+
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(KnowsPlayerKilledThem), KnowsPlayerKilledThem),
+                });
         }
 
         public override bool WantEvent(int ID, int Propagation)
@@ -281,29 +305,11 @@ namespace XRL.World.Conversations.Parts
                     {
                         Debug.Log(nameof(possibleTexts), "empty", Indent: indent[2]);
                     }
+
+                    List<List<ConversationText>> conversationTextsList = new();
+
                     List<ConversationText> killerTexts = organizedTexts
                         ?.Where(kvp => kvp.Key.HasKillerElement(Only: true))
-                        ?.Select(kvp => kvp.Value)
-                        ?.Aggregate(
-                            seed: new List<ConversationText>(),
-                            func: (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated))
-                        ?? new();
-
-                    if (killerDetails.HasNoKiller())
-                    {
-                        killerTexts = 
-                    }
-
-                    List<ConversationText> methodTexts = organizedTexts
-                        ?.Where(kvp => kvp.Key.HasMethodElement(Only: true))
-                        ?.Select(kvp => kvp.Value)
-                        ?.Aggregate(
-                            seed: new List<ConversationText>(),
-                            func: (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated))
-                        ?? new();
-
-                    List<ConversationText> descriptionTexts = organizedTexts
-                        ?.Where(kvp => kvp.Key.HasDescriptionElement(Only: true))
                         ?.Select(kvp => kvp.Value)
                         ?.Aggregate(
                             seed: new List<ConversationText>(),
@@ -315,11 +321,52 @@ namespace XRL.World.Conversations.Parts
                         killerTexts ??= new();
                         killerTexts.Add(DefaultKillerText);
                     }
+
+                    if (killerDetails.HasNoKiller() || killerDetails.WasEnvironment)
+                    {
+                        killerTexts = E.Texts
+                            ?.Aggregate(
+                                seed: new List<ConversationText>(),
+                                func: (acc, next) => GetConversationTextsWithTextRetainingEnvironmentAttributes(next, ref acc))
+                            ?? new();
+
+                        if (killerTexts.IsNullOrEmpty())
+                        {
+                            killerTexts ??= new();
+                            killerTexts.Add(DefaultEnvironmentText);
+                        }
+                    }
+                    conversationTextsList.AddIf(killerTexts, e => !e.IsNullOrEmpty() && !conversationTextsList.Contains(e));
+
+                    List<ConversationText> methodTexts = organizedTexts
+                        ?.Where(kvp => kvp.Key.HasMethodElement(Only: true))
+                        ?.Select(kvp => kvp.Value)
+                        ?.Aggregate(
+                            seed: new List<ConversationText>(),
+                            func: (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated))
+                        ?? new();
+
                     if (methodTexts.IsNullOrEmpty())
                     {
                         methodTexts ??= new();
                         methodTexts.Add(DefaultMethodText);
                     }
+                    conversationTextsList.AddIf(methodTexts, e => !e.IsNullOrEmpty() && !conversationTextsList.Contains(e));
+
+                    List<ConversationText> descriptionTexts = organizedTexts
+                        ?.Where(kvp => kvp.Key.HasDescriptionElement(Only: true))
+                        ?.Select(kvp => kvp.Value)
+                        ?.Aggregate(
+                            seed: new List<ConversationText>(),
+                            func: (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated))
+                        ?? new();
+
+                    if (descriptionTexts.IsNullOrEmpty())
+                    {
+                        descriptionTexts ??= new();
+                        descriptionTexts.Add(DefaultDescriptionText);
+                    }
+                    conversationTextsList.AddIf(descriptionTexts, e => !e.IsNullOrEmpty() && !conversationTextsList.Contains(e));
 
                     if (CompleteTexts.IsNullOrEmpty())
                     {
@@ -331,6 +378,7 @@ namespace XRL.World.Conversations.Parts
                                 func: (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated))
                             ?? new();
 
+                        /*
                         Dictionary<string, string> constructedCompleteTextStringsWithID = new();
 
                         static string constructID(params ConversationText[] ConversationTexts)
@@ -351,7 +399,59 @@ namespace XRL.World.Conversations.Parts
                                             killerText.Text + "\n\n" + 
                                             methodText.Text + "\n\n" + 
                                             descriptionText.Text;
+                        */
 
+                        if (!conversationTextsList.IsNullOrEmpty()
+                            && conversationTextsList.Count > 1)
+                        {
+                            List<List<ConversationText>> conversationTextsListForProcessing = conversationTextsList
+                                ?.Where(l => !l.IsNullOrEmpty())
+                                ?.Select(l => l?.Where(ct => ct?.Text != null)?.ToList())
+                                ?.ToList();
+
+                            List<ConversationText> firstList = null;
+                            List<ConversationText> secondList = null;
+                            int maxLoops = (conversationTextsList.Count * 3) + 50;
+                            int counter = 0;
+                            bool firstSuccessfulLoop = true;
+                            while (!conversationTextsListForProcessing.IsNullOrEmpty()
+                                && conversationTextsListForProcessing.Count > 1
+                                && ++counter < maxLoops)
+                            {
+                                firstList = conversationTextsListForProcessing[^2];
+                                secondList = conversationTextsListForProcessing[^1];
+
+                                conversationTextsListForProcessing.Remove(firstList);
+                                conversationTextsListForProcessing.Remove(secondList);
+
+                                conversationTextsListForProcessing.Add(new());
+                                bool any = false;
+                                foreach (ConversationText firstText in firstList)
+                                {
+                                    foreach (ConversationText secondText in secondList)
+                                    {
+                                        string firstID = firstText?.Parent?.ID + "." + firstText?.ID;
+                                        string secondID = (firstSuccessfulLoop ? secondText?.Parent?.ID + "." : null) + secondText?.ID;
+                                        conversationTextsListForProcessing[^1].Add(new()
+                                        {
+                                            ID = firstID + ":" + secondID,
+                                            Parent = ParentElement,
+                                            Text = firstText.Text + "\n\n" + secondText.Text,
+                                        });
+                                        any = true;
+                                    }
+                                }
+                                firstSuccessfulLoop = !any && firstSuccessfulLoop;
+                            }
+                            if (!conversationTextsListForProcessing.IsNullOrEmpty()
+                                && !conversationTextsListForProcessing[0].IsNullOrEmpty())
+                            {
+                                conversationTextsListForProcessing[0].ForEach(ct => ct.ID = "[" + ct.ID + "]");
+                                CompleteTexts.AddRange(conversationTextsListForProcessing[0]);
+                            }
+                        }
+
+                        /*
                         if (!constructedCompleteTextStringsWithID.IsNullOrEmpty())
                             foreach ((string iD, string constructedCompleteTextstring) in constructedCompleteTextStringsWithID)
                                 CompleteTexts.Add(new()
@@ -360,6 +460,7 @@ namespace XRL.World.Conversations.Parts
                                     Parent = ParentElement,
                                     Text = constructedCompleteTextstring,
                                 });
+                        */
                     }
 
                     if (CompleteTexts.IsNullOrEmpty())
@@ -420,7 +521,7 @@ namespace XRL.World.Conversations.Parts
             }
             return base.HandleEvent(E);
         }
-        public override bool HandleEvent(PrepareTextEvent E)
+        public override bool HandleEvent(PrepareTextLateEvent E)
         {
             bool killerIsSample = true;
             bool weaponIsSample = true;
@@ -461,7 +562,7 @@ namespace XRL.World.Conversations.Parts
                     DeathMemory: deathMemory,
                     Weapon: out string deathWeapon,
                     Feature: out string deathFeature,
-                    Description: out string deathDescription,
+                    Description: out DeathDescription deathDescription,
                     Accidentally: out bool _,
                     Environment: out bool _);
 
@@ -473,15 +574,15 @@ namespace XRL.World.Conversations.Parts
                     && deathMemory.HasFlag(DeathMemoryElements.NotableFeature))
                     feature = deathFeature;
 
-                if (!deathDescription.IsNullOrEmpty()
+                if (deathDescription != null
                     && deathMemory.HasFlag(DeathMemoryElements.Description))
-                    description = deathDescription;
+                    description = deathDescription.ToString();
 
                 if ((!deathWeapon.IsNullOrEmpty()
                         || !deathFeature.IsNullOrEmpty()
-                        || !deathDescription.IsNullOrEmpty())
+                        || deathDescription != null)
                     && deathMemory.HasFlag(DeathMemoryElements.Method))
-                    deathMethod = deathWeapon ?? deathFeature ?? deathDescription;
+                    deathMethod = weaponString ?? feature ?? description;
 
                 if (GameObject.Validate(killerDetails.Killer))
                 {
@@ -507,6 +608,8 @@ namespace XRL.World.Conversations.Parts
             }
 
             E.Text.StartReplace()
+                .AddObject(E.Subject)
+                .AddObject(E.Object)
                 .AddObject(killer, "killer")
                 .AddObject(weapon, "weapon")
                 .Execute();
@@ -543,7 +646,7 @@ namespace XRL.World.Conversations.Parts
                     if (ParentElement.Elements?.Where(e => e is Choice) is not List<IConversationElement> choices
                         || choices.IsNullOrEmpty())
                     {
-                        Choice fightChoice = ParentElement.AddChoice(Text: "Oh! shi-", Target: "End");
+                        Choice fightChoice = ParentElement.AddChoice(Text: "Oh! Shi-", Target: "End");
                         fightChoice.AddPart(new StartFight());
                     }
                 }

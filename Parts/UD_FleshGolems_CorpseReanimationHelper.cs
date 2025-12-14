@@ -1913,10 +1913,11 @@ namespace XRL.World.Parts
                     { nameof(KillerDetails.NotableFeature), KillerDetails.NotableFeature.Strip() },
                     {
                         nameof(KillerDetails.DeathDescription),
-                        ("=subject.Subjective= " + KillerDetails.DeathDescription)
-                            .StartReplace()
-                            .AddObject(ParentObject)
-                            .ToString()
+                        KillerDetails?.DeathDescription
+                            ?.TheyWereKilledByKillerWithMethod(Adverb: KillerDetails.WasAccident ? "accidentally" : null, Killer: KillerDetails.WasEnvironment ? "" : null)
+                            ?.StartReplace()
+                            ?.AddObject(ParentObject)
+                            ?.ToString()
                     },
                     { nameof(KillerDetails.WasAccident), KillerDetails.WasAccident.ToString() },
                     { nameof(KillerDetails.WasEnvironment), KillerDetails.WasEnvironment.ToString() },
