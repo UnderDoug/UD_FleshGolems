@@ -41,6 +41,7 @@ using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair.PairRelationship;
 using ArgPair = UD_FleshGolems.Logging.Debug.ArgPair;
 using Debug = UD_FleshGolems.Logging.Debug;
+using XRL.World.WorldBuilders;
 
 namespace UD_FleshGolems.Capabilities
 {
@@ -114,6 +115,8 @@ namespace UD_FleshGolems.Capabilities
         [SerializeField]
         private bool InheritedCorspesInitialized;
 
+        public GameObject TheMadMonder;
+
         public UD_FleshGolems_NecromancySystem()
         {
             Necronomicon = new();
@@ -124,6 +127,7 @@ namespace UD_FleshGolems.Capabilities
             CorpseProductsInitialized = false;
             CountsAsCorspesInitialized = false;
             InheritedCorspesInitialized = false;
+            TheMadMonder = null;
         }
 
         [ModSensitiveCacheInit]
@@ -201,6 +205,11 @@ namespace UD_FleshGolems.Capabilities
                 {
                     UnityEngine.Debug.Log(cacheDebugMessage);
                 }
+
+                TheMadMonder = GameObjectFactory.Factory.CreateObject(
+                    ObjectBlueprint: "UD_FleshGolems Mad Monger",
+                    Context: nameof(UD_FleshGolems_MadMonger_WorldBuilder));
+
                 Initialized = true;
                 indent.Dispose();
                 Debug.ResetIndent();

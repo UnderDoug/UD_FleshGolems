@@ -22,6 +22,7 @@ using ArgPair =  UD_FleshGolems.Logging.Debug.ArgPair;
 
 using UD_FleshGolems.Capabilities.Necromancy;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
+using UD_FleshGolems.Parts.VengeanceHelpers;
 
 namespace XRL.World.Parts.Mutation
 {
@@ -608,22 +609,22 @@ namespace XRL.World.Parts.Mutation
                         .AddObject(ParentObject)
                         .ToString();
 
-                    UD_FleshGolems_DestinedForReanimation.RandomDeathCategoryAndReasonAndAccidental(
-                        out string category,
-                        out reason,
-                        out bool accidental);
+                    UD_FleshGolems_DestinedForReanimation.RandomDeathDescriptionAndAccidental(
+                        out DeathDescription deathDescription,
+                        out bool accidental,
+                        dd => dd.Killer != "");
 
                     thirdPersonReason = "=subject.Subjective= " + reason;
 
                     if (TargetCreature.Die(
                         Killer: ParentObject,
-                        KillerText: reason,
-                        Reason: reason,
-                        ThirdPersonReason: thirdPersonReason,
+                        KillerText: null,
+                        Reason: deathDescription.Reason(accidental),
+                        ThirdPersonReason: deathDescription.ThirdPersonReason(accidental),
                         Accidental: accidental,
                         Force: true,
                         DeathVerb: "cease",
-                        DeathCategory: category))
+                        DeathCategory: deathDescription.Category))
                     {
                         targetCell?.PsychicPulse();
                         ParentObject?.PlayWorldSound("Sounds/Abilities/sfx_ability_sunderMind_dig_success");

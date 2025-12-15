@@ -4,13 +4,19 @@ using System.Linq;
 using System.Text;
 
 using XRL;
+using XRL.Collections;
 using XRL.Language;
 using XRL.World;
+using XRL.World.Parts;
 using XRL.World.Text.Attributes;
 using XRL.World.Text.Delegates;
 
+using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
+
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
+    [HasModSensitiveStaticCache]
+    [HasGameBasedStaticCache]
     [HasVariableReplacer]
     [Serializable]
     public class DeathDescription : IComposite
@@ -18,54 +24,29 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public const string CATEGORY_MARKER = "@@";
         public const string REASON_MARKER = "##";
 
-        /*
-        [Serializable]
-        public struct DeathVerb : IComposite
+        [ModSensitiveStaticCache]
+        [GameBasedStaticCache(ClearInstance = true)]
+        public static StringMap<string> VerbFormConversions;
+
+        protected static Dictionary<string, string> VerbFormConversionExceptions => new()
         {
-            [Serializable]
-            public enum Tense : int
-            {
-                FutureSimple,
-                PresentSimple,
-                PastSimple,
-                FuturePerfect,
-                PresentPerfect,
-                PastPerfect,
-                FutureContinuous,
-                PresentContinuous,
-                PastContinuous,
-                FuturePerfectContinuous,
-                PresentPerfectContinuous,
-                PastPerfectContinuous,
-            }
-
-            public string Verb;
-            public string Verbed;
-            public string Verbing;
-
-            public DeathVerb(string Verb, string Verbed, string Verbing)
-            {
-                this.Verb = Verb;
-                this.Verbed = Verbed ?? (Verb + "ed");
-                this.Verbing = Verbing ?? (Verb + "ing");
-            }
-
-            public readonly string GetVerb(Tense Tense)
-            {
-                if (Tense < Tense.PastSimple)
-                    return Verb;
-
-                if (Tense < Tense.FutureContinuous)
-                    return Verbed;
-
-                return Verbing;
-            }
-        }
-        */
+            { "ate", "eating" },
+            { "bought", "buying" },
+            { "brought", "bringing" },
+            { "caught", "catching" },
+            { "drank", "drinking" },
+            { "forgot", "forgetting" },
+            { "had", "having" },
+            { "left", "leaving" },
+            { "ran", "running" },
+            { "spoke", "speaking" },
+            { "took", "taking" },
+        };
 
         public string Category;
         public bool Were;
         public string Killed;
+        public string Killing;
         public bool By;
         public string Killer;
         public bool With;
@@ -78,6 +59,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             Category = null;
             Were = true;
             Killed = null;
+            Killing = null;
             By = true;
             Killer = null;
             With = true;
@@ -87,47 +69,176 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         }
         public DeathDescription(
             string Category,
-            bool Were,
-            string Killed,
-            bool By,
-            string Killer,
-            bool With,
-            string Method,
-            bool ForceNoArticle,
-            bool PluralMethod)
+            bool Were = true,
+            string Killed = null,
+            string Killing = null,
+            bool By = true,
+            string Killer = null,
+            bool With = true,
+            string Method = null,
+            bool ForceNoMethodArticle = false,
+            bool PluralMethod = false)
             : this()
         {
             this.Category = Category;
             this.Were = Were;
-            this.Killed = Killed;
+            this.Killed = Killed ?? Category;
+            this.Killing = Killing;
             this.By = By;
             this.Killer = Killer;
             this.With = With;
             this.Method = Method;
-            this.ForceNoMethodArticle = ForceNoArticle;
+            this.ForceNoMethodArticle = ForceNoMethodArticle;
             this.PluralMethod = PluralMethod;
         }
-        public DeathDescription(IDeathEvent E)
+        public DeathDescription(DeathDescription Source)
             : this(
-                  Category: null,
-                  Were: true,
-                  Killed: null,
-                  By: true,
-                  Killer: E.Killer?.GetReferenceDisplayName(Short: true),
-                  With: true,
-                  Method: E.Weapon?.GetReferenceDisplayName(Short: true),
-                  ForceNoArticle: false,
-                  PluralMethod: false)
+                  Category: Source.Category,
+                  Were: Source.Were,
+                  Killed: Source.Killed,
+                  Killing: Source.Killing,
+                  By: Source.By,
+                  Killer: Source.Killer,
+                  With: Source.With,
+                  Method: Source.Method,
+                  ForceNoMethodArticle: Source.ForceNoMethodArticle,
+                  PluralMethod: Source.PluralMethod)
+        { }
+        public DeathDescription(IDeathEvent E, string NotableFeature = null)
+            : this()
         {
-            Were = true;
-            Category = GetDeathCategoryFromEvent(E.ThirdPersonReason, out By);
-            Killed = Category;
-            Method ??= GetKilledFromEvent(E.ThirdPersonReason);
-            if (E.Weapon != null)
-            {
-                PluralMethod = E.Weapon.IsPlural;
-            }
+            ProcessDeathEvent(E, NotableFeature);
         }
+
+        [ModSensitiveCacheInit]
+        [GameBasedCacheInit]
+        public static bool InitializeVerbFormConversions()
+        {
+            VerbFormConversions = new();
+            bool any = false;
+            foreach ((string verbed, string verbing) in VerbFormConversionExceptions)
+            {
+                VerbFormConversions[verbed] = verbing;
+                VerbFormConversions[verbing] = verbed;
+                any = true;
+            }
+            if (!DeathCategoryDeathDescriptions.IsNullOrEmpty())
+            {
+                foreach ((string _, List<DeathDescription> deathDescriptions) in DeathCategoryDeathDescriptions)
+                    deathDescriptions.ForEach(delegate (DeathDescription deathDescription)
+                    {
+                        deathDescription.BeingKilled();
+                    });
+                any = true;
+            }
+            return any;
+        }
+        public static string ConvertPastSimpleToContinuous(string Verbed)
+        {
+            string verbing;
+            if (VerbFormConversions.TryGetValue(Verbed, out verbing)
+                && !verbing.IsNullOrEmpty())
+            {
+                VerbFormConversions[verbing] = Verbed;
+            }
+            else
+            if (VerbFormConversionExceptions.TryGetValue(Verbed, out verbing)
+                && !verbing.IsNullOrEmpty())
+            {
+                VerbFormConversions[Verbed] = verbing;
+                VerbFormConversions[verbing] = Verbed;
+            }
+            else
+            if (Verbed.EndsWith("ied"))
+            {
+                verbing = Verbed[..^3] + "ying";
+                VerbFormConversions[Verbed] = verbing;
+                VerbFormConversions[verbing] = Verbed;
+            }
+            else
+            if (Verbed.EndsWith("ed"))
+            {
+                verbing = Verbed[..^2] + "ing";
+                VerbFormConversions[Verbed] = verbing;
+                VerbFormConversions[verbing] = Verbed;
+            }
+            else
+            if (Verbed.EndsWith("e"))
+            {
+                verbing = Verbed[..^1] + "ing";
+                VerbFormConversions[Verbed] = verbing;
+                VerbFormConversions[verbing] = Verbed;
+            }
+            else
+            {
+                verbing = Verbed + "ing";
+                VerbFormConversions[Verbed] = verbing;
+                VerbFormConversions[verbing] = Verbed;
+            }
+            return VerbFormConversions[Verbed];
+        }
+        public static bool ConvertContractedNegativeAuxiliaryAndVerb(string Text, out string Verbed, out string Verbing)
+        {
+            Verbed = null;
+            Verbing = null;
+            if (Text.IsNullOrEmpty())
+                return false;
+
+            Text = Text.Trim();
+
+            if (!Text.ContainsAll(" ", "n't"))
+                return false;
+
+            if (Text.Split(' ')?.ToList() is not List<string> words
+                || words.Count < 2
+                || !words[0].Contains("n't"))
+                return false;
+
+            Verbed = words[0] + " " + words[1];
+            if (!VerbFormConversions.TryGetValue(Verbed, out Verbing))
+            {
+                Verbing = "not" + " " + ConvertPastSimpleToContinuous(words[1]);
+                VerbFormConversions[Verbed] = Verbing;
+            }
+            VerbFormConversions[Verbing] = Verbed;
+            return true;
+        }
+
+        public static string GetKilling(string Killed)
+        {
+            if (Killed.IsNullOrEmpty())
+                return null;
+
+            Killed = Killed.Trim();
+            List<string> words = new() { Killed };
+            if (Killed.Contains(" "))
+            {
+                words = Killed.Split(' ').ToList();
+            }
+            if (words[0].Contains("n't"))
+            {
+                words.RemoveAt(0);
+                words[0] = "not " + words[0];
+            }
+            words[0] = ConvertPastSimpleToContinuous(words[0]);
+            return words.SafeJoin(" ");
+        }
+
+        public static DeathDescription Copy(DeathDescription Source)
+            => new(Source);
+
+        public DeathDescription Copy()
+            => Copy(this);
+
+        public static DeathDescription MakeLooselyAccidentalCopy(DeathDescription Source)
+        {
+            var copy = Copy(Source);
+            copy.By = false;
+            copy.With = false;
+            return copy;
+        }
+        public DeathDescription MakeLooselyAccidentalCopy()
+            => MakeLooselyAccidentalCopy(this);
 
         public static string GetDeathCategoryFromEvent(string DeathEventReason, out bool From)
         {
@@ -153,7 +264,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             return DeathEventReason;
         }
 
-        public static string GetKilledFromEvent(string DeathEventReason)
+        public static string GetMethodFromEvent(string DeathEventReason)
         {
             if (DeathEventReason.TryGetIndexOf(REASON_MARKER, out int categoryEnd))
             {
@@ -173,6 +284,30 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 }
             }
             return DeathEventReason;
+        }
+
+        public static DeathDescription GetFromDeathEvent(IDeathEvent E, string NotableFeature = null)
+            => new(E, NotableFeature);
+
+        protected DeathDescription ProcessDeathEvent(IDeathEvent E, string NotableFeature = null)
+        {
+            Category = GetDeathCategoryFromEvent(E.ThirdPersonReason, out By);
+            Killed = DeathCategoryDeathDescriptions[Category]
+                ?.GetRandomElementCosmetic(delegate (DeathDescription deathDescription)
+                {
+                    return (deathDescription.Killer != "") == (E.Killer != null)
+                        && (deathDescription.Method != "") == (E.Weapon != null);
+                }).Killed ?? Category;
+
+            Killer = E.Killer?.GetReferenceDisplayName(Short: true);
+            Method = E.Weapon?.GetReferenceDisplayName(Short: true)
+                ?? NotableFeature
+                ?? GetMethodFromEvent(E.ThirdPersonReason);
+            if (E.Weapon != null)
+            {
+                PluralMethod = E.Weapon.IsPlural;
+            }
+            return this;
         }
 
         public override string ToString()
@@ -213,6 +348,25 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public string GetMethod(string Method = null)
             => Method ?? this.Method;
+
+        public string Reason(bool Accidental = false)
+            => KilledByKiller(Accidental ? "accidentally" : null) + WithMethod();
+
+        public string ThirdPersonReason(bool Accidental = false)
+            => TheyWereKilledByKillerWithMethod(Adverb: Accidental ? "accidentally" : null);
+
+        public string BeingKilled(string Adverb = null)
+        {
+            string adverb = !Adverb.IsNullOrEmpty() ? Adverb + " " : null;
+            string killed = Killed ?? "killed to death";
+            if (!Killing.IsNullOrEmpty())
+                return adverb + Killing;
+
+            if (Were)
+                return "being " + adverb + killed;
+
+            return adverb + GetKilling(killed);
+        }
 
         public string KilledBy(string Adverb = null, string Killer = null)
             => GetKilled(Adverb) + GetBy(Killer); // pass "" as Killer to override/mask killer.
@@ -575,5 +729,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         // death.was.killed.byKiller.withMethod, death.was.verbed.byKiller.withMethod
 
         // death.fullDescription
+
+        // death.beingKilled
     }
 }

@@ -17,6 +17,8 @@ using Debug = UD_FleshGolems.Logging.Debug;
 
 using static UD_FleshGolems.Const;
 using System.Globalization;
+using Qud.API;
+using XRL.World.Parts;
 
 namespace UD_FleshGolems
 {
@@ -84,7 +86,7 @@ namespace UD_FleshGolems
         }
 
         private static bool? StoredAllowSecondPerson = null;
-        [VariableReplacer( "no2nd" )]
+        [VariableReplacer("no2nd")]
         public static string UD_no2nd(DelegateContext Context)
         {
             StoredAllowSecondPerson ??= Grammar.AllowSecondPerson;
@@ -92,7 +94,7 @@ namespace UD_FleshGolems
             return null;
         }
 
-        [VariableReplacer( "no2nd.restore" )]
+        [VariableReplacer("no2nd.restore")]
         public static string UD_no2nd_restore(DelegateContext Context)
         {
             if (StoredAllowSecondPerson is bool storedAllowSecondPerson)
@@ -101,6 +103,50 @@ namespace UD_FleshGolems
             }
             StoredAllowSecondPerson = null;
             return null;
+        }
+
+        [VariableReplacer]
+        public static string UD_RandomItem(DelegateContext Context)
+        {
+            string inherits = null;
+            string hasTags = null;
+            if (Context.Parameters is List<string> parameters
+                && parameters.Count > 1)
+            {
+                switch (parameters[0])
+                {
+                    case "inherits":
+                        inherits = parameters[1];
+                        break;
+                    case "hasTags":
+                        hasTags = parameters[1];
+                        break;
+                }
+            }
+            bool matchesParameters(GameObjectBlueprint Model)
+            {
+                if (!inherits.IsNullOrEmpty() && !Model.InheritsFrom(inherits))
+                    return false;
+                if (!hasTags.IsNullOrEmpty())
+                    foreach (string tag in hasTags.CachedCommaExpansion())
+                        if (!Model.HasTagOrProperty(tag))
+                            return false;
+                return true;
+            }
+            GameObject itemSample = EncountersAPI.GetAnItem(matchesParameters);
+            string itemName = itemSample?.GetReferenceDisplayName(Short: true);
+            itemSample?.Obliterate();
+            return itemName.ContextCapitalize(Context);
+        }
+        [VariableReplacer]
+        public static string UD_RandomItems(DelegateContext Context)
+        {
+            GameObject itemSample = EncountersAPI.GetAnItem();
+            string itemName = itemSample?.GetReferenceDisplayName(Short: true);
+            if (!itemSample.IsPlural)
+                itemName = itemName.Pluralize();
+            itemSample?.Obliterate();
+            return itemName.ContextCapitalize(Context);
         }
 
         /* 
@@ -145,6 +191,19 @@ namespace UD_FleshGolems
             return Context.Capitalize
                 ? output?.Capitalize()
                 : output;
+        }
+
+        [VariableObjectReplacer("pastLife.byFaction.forHateReason")]
+        public static string UD_ByFaction_ForHateReason(DelegateContext Context)
+        {
+            string faction = Factions.GetRandomFaction().Name;
+            if (Context.Target is GameObject frankenCorpse
+                && frankenCorpse.TryGetPart(out UD_FleshGolems_PastLife pastLife)
+                && pastLife.BrainInAJar is GameObject brainInAJar)
+            {
+                faction = GenerateFriendOrFoe.getRandomFaction(brainInAJar);
+            }
+            return ("by " + faction + " for " + GenerateFriendOrFoe.getHateReason()).ContextCapitalize(Context);
         }
 
         [VariableObjectReplacer]
@@ -253,9 +312,24 @@ namespace UD_FleshGolems
                 ?.AddObject(Context.Target)
                 ?.ToString();
 
-            return Context.Capitalize
-                ? output.Capitalize()
-                : output;
+            return output.ContextCapitalize(Context);
+        }
+
+        [VariableObjectReplacer("bodyPart", Default = "body")]
+        public static string BodyPart(DelegateContext Context)
+        {
+            string requiredType = null;
+            if (Context.Parameters is List<string> parameters
+                && !parameters.IsNullOrEmpty())
+            {
+                requiredType = parameters[0];
+            }
+            return Context.Target
+                ?.Body
+                ?.LoopPart(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null)
+                ?.GetRandomElementCosmetic()
+                ?.Description
+                ?.ContextCapitalize(Context);
         }
 
         [VariableObjectReplacer]
@@ -270,11 +344,7 @@ namespace UD_FleshGolems
                 && target.GetxTag(Context.Parameters[0], Context.Parameters[1]) is string xtag
                 && xtag.CachedCommaExpansion().GetRandomElementCosmetic() is string tagValue)
             {
-                output = tagValue;
-                if (Context.Capitalize)
-                {
-                    output = output.Capitalize();
-                }
+                output = tagValue.ContextCapitalize(Context);
             }
             return output;
         }
@@ -309,12 +379,8 @@ namespace UD_FleshGolems
                 {
                     output = output.Replace(" and ", ", and ");
                 }
-                if (Context.Capitalize)
-                {
-                    output = output.Capitalize();
-                }
             }
-            return output;
+            return output.ContextCapitalize(Context);
         }
 
         [VariableObjectReplacer]
@@ -351,12 +417,8 @@ namespace UD_FleshGolems
                 {
                     output = output.Replace(" and ", ", and ");
                 }
-                if (Context.Capitalize)
-                {
-                    output = output.Capitalize();
-                }
             }
-            return output;
+            return output.ContextCapitalize(Context);
         }
 
         [VariableObjectReplacer]
@@ -407,7 +469,7 @@ namespace UD_FleshGolems
                 if (Context.Capitalize)
                 {
                     Debug.Log(nameof(Context.Capitalize), Indent: indent[3]);
-                    output = output.Capitalize();
+                    output = output.ContextCapitalize(Context);
                 }
             }
             return output;

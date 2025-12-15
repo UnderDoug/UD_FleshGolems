@@ -145,7 +145,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             : this(
                   Killer: E?.Killer,
                   Weapon: E?.Weapon,
-                  DeathDescription: new(E),
+                  DeathDescription: new(E, GetNotableFeature(E.Killer)),
                   WasAccident: E == null || E.Accidental,
                   WasEnvironment: E != null && (E?.Killer == null || !E.Killer.IsCreature) && E.Accidental)
         { }
@@ -330,7 +330,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public DeathDescription GetDeathDescription()
             => DeathDescription
-            ?? new("killed", true, "killed", false, null, false, null);
+            ?? new("killed", true, "killed", false, null, false, null, false, false);
 
         public bool IsKiller(GameObject Entity)
             => Entity != null

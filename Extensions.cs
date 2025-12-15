@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
+using HarmonyLib;
+
 using XRL;
 using XRL.CharacterBuilds.Qud;
 using XRL.Collections;
@@ -12,7 +14,12 @@ using XRL.Rules;
 using XRL.World;
 using XRL.World.Anatomy;
 using XRL.World.Parts;
+using XRL.World.Effects;
+using XRL.World.Conversations;
 
+using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
+
+using UD_FleshGolems.Parts.VengeanceHelpers;
 using UD_FleshGolems.Capabilities.Necromancy;
 using UD_FleshGolems.Logging;
 
@@ -22,11 +29,9 @@ using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 using Options = UD_FleshGolems.Options;
-using HarmonyLib;
-using UD_FleshGolems.Parts.VengeanceHelpers;
-using XRL.World.Effects;
-using XRL.World.Conversations;
-using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
+
+using ConvoDelegateContext = XRL.World.Conversations.DelegateContext;
+using TextDelegateContext = XRL.World.Text.Delegates.DelegateContext;
 
 namespace UD_FleshGolems
 {
@@ -1335,5 +1340,8 @@ namespace UD_FleshGolems
 
         public static string AsString(this List<char> CharList)
             => CharList.Aggregate("", (a, n) => a += n);
+
+        public static string ContextCapitalize(this string Output, TextDelegateContext Context)
+            => Context.Capitalize ? Output?.Capitalize() : Output;
     }
 }

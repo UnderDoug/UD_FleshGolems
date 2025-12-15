@@ -28,6 +28,162 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_DestinedForReanimation : IScribedPart, IReanimateEventHandler
     {
+        public static Dictionary<string, List<DeathDescription>> DeathCategoryDeathDescriptions => new()
+        {
+            {   // Heat damage w/ NoBurn (only steam)
+                "cooked", new()
+                {
+                    new("cooked"),
+                    new("cooked", Killed: "hard-boiled"),
+                    new("cooked", Killed: "soft-boiled"),
+                    new("cooked", Were: false, Killed: "broiled for our sins... ({{W|Ramen}})", Killer: "", Method: ""),
+                    new("cooked", Killed: "cooked in a pot of broth", Method: ""),
+                    new("cooked", Killed: "cooked in a pot of stew", Method: ""),
+                    new("cooked", Were: false, Killed: "fell in a pot of broth", Killer: "", Method: ""),
+                    new("cooked", Were: false, Killed: "fell in a pot of stew", Killer: "", Method: ""),
+                    new("cooked", Were: false, Killed: "didn't realize the pot had come to a boil", Killer: "", Method: ""),
+                }
+            },
+            {   // Heat damage w/o NoBurn
+                "immolated", new()
+                {
+                    new("immolated"),
+                    new("immolated", Killed: "scorched to death"),
+                    new("immolated", Killed: "burned at the stake =subject.pastLife.byFaction.forHateReason=", Killer: "", Method: ""),
+                    new("immolated", Were: false, Killed: "couldn't find a way to put out the fire", By: false, With: false),
+                    new("immolated", Killed: "barbequed"),
+                    new("immolated", Killed: "grilled"),
+                    new("immolated", Killed: "more \"well-done\" than \"medium-rare\"", By: false, With: false),
+                    new("immolated", Were: false, Killed: "had to leave the kitchen", By: false),
+                    new("immolated", Were: false, Killed: "jumped out of the frying pan", Killer: "", Method: ""),
+                    new("immolated", Were: false, Killed: "tried to befriend an elder flamebeard", Killer: "", Method: ""),
+                }
+            },
+            {   // Plasma damage
+                "plasma-burned to death", new()
+                {
+                    new("plasma-burned to death"),
+                    new("plasma-burned to death", Killed: "deep fried"),
+                    new("plasma-burned to death", Killed: "fried"),
+                    new("plasma-burned to death", Were: false, Killed: "looked in the wrong end of a spacer rifle", Killer: "", Method: ""),
+                    new("plasma-burned to death", Were: false, Killed: "fell into an astral forge", Killer: "", Method: ""),
+                    new("plasma-burned to death", Killed: "knocked into an astral forge"),
+                    new("plasma-burned to death", Were: false, Killed: "stared at the sun too long", Killer: "", Method: ""),
+                    new("plasma-burned to death", Were: false, Killed: "caught a plasma grenade mkIII", By: false, Method: ""),
+                    new("plasma-burned to death", Were: false, Killed: "mishandled a plasma grenade mkIII", Killer: "", Method: ""),
+                }
+            },
+            {   // Cold damage
+                "frozen to death", new()
+                {
+                    new("frozen to death"),
+                    new("frozen to death", Killed: "snap-frozen"),
+                    new("frozen to death", Killed: "flash frozen"),
+                    new("frozen to death", Killed: "chilled to death"),
+                    new("frozen to death", Killed: "locked inside a faulty cryo-tube", Method: ""),
+                    new("frozen to death", Were: false, Killed: "fell through the ice", Killer: "", Method: ""),
+                    new("frozen to death", Killed: "knocked through the ice"),
+                    new("frozen to death", Were: false, Killed: "didn't hear the ice cracking", Killer: "", Method: ""),
+                    new("immolated", Were: false, Killed: "tried to befriend an elder sleetbeard", Killer: "", Method: ""),
+                }
+            },
+            {   // Electric damage
+                "electrocuted", new()
+                {
+                    new("electrocuted"),
+                    new("electrocuted", Killed: "zapped to death"),
+                    new("electrocuted", Were: false, Killed: "tried to dig through a wired wall", Killer: "", Method: ""),
+                    new("electrocuted", Were: false, Killed: "took a stun-rod to the =subject.bodyPart:face=", Killer: "", Method: ""),
+                    new("electrocuted", Killed: "struck by lightning", Killer: "", Method: ""),
+                    new("electrocuted", Killed: "overloaded", With: false, Method: "electrical discharge"),
+                    new("electrocuted", Were: false, Killed: "licked a nuclear cell", Killer: "", Method: ""),
+                    new("electrocuted", Were: false, Killed: "took too many volts"),
+                }
+            },
+            {   // Thirst
+                "thirst", new()
+                {
+                    new("thirst", Killed: "dessicated"),
+                    new("thirst", Were: false, Killed: "ran out of fresh water", Killer: "", Method: ""),
+                    new("thirst", Were: false, Killed: "forgot to drink", Killer: "", Method: ""),
+                    new("thirst", Were: false, Killed: "tried to cross the Moghra'yi", Killer: "", Method: ""),
+                    new("thirst", Were: false, Killed: "bought too many =uD_RandomItems=", By: false, Method: ""),
+                    new("thirst", Were: false, Killed: "drank salt water", Killer: "", Method: ""),
+                    new("thirst", Were: false, Killed: "performed the water-ritual one too many times", Killer: "", Method: ""),
+                    new("thirst", Killed: "dried out"),
+                }
+            },
+            {   // Poison damage
+                "died of poison", new()
+                {
+                    new("died of poison", Killed: "poisoned"),
+                    new("died of poison", Killed: "envenomed"),
+                    new("died of poison", Killed: "tricked into consuming poison", Method: ""),
+                    new("died of poison", Killed: "fed poison", Method: ""),
+                    new("died of poison", Were: false, Killed: "tried to befriend an elder gallbeard"),
+                    new("died of poison", Were: false, Killed: "drank green goo", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "left a wound to fester", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "ate the wrong kind of mushroom", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "didn't read the warning label", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "caught a poison gas grenade mkIII", By: false, Method: ""),
+                    new("died of poison", Were: false, Killed: "mishandled a poison gas grenade mkIII", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "forgot to wear a gas mask", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "had my gas mask tampered with"),
+                }
+            },
+            {   // Bleeding damage
+                "bled to death", new()
+                {
+                    new("bled to death"),
+                    new("bled to death", Killed: "exsanguinated"),
+                    new("bled to death", Killed: "butchered"),
+                    new("bled to death", Killed: "slashed to death"),
+                    new("bled to death", Killed: "eviscerated"),
+                    new("bled to death", Killed: "vivsected"),
+                    new("bled to death", Were: false, Killed: "got too many paper-cuts", Killer: "", Method: ""),
+                    new("bled to death", Were: false, Killed: "tried to remove a hangnail and went a little too far", Killer: "", Method: ""),
+                    new("bled to death", Were: false, Killed: "had a nosebleed that just wouldn't stop", Killer: "", Method: ""),
+                    new("bled to death", Were: false, Killed: "tried to befriend a leech", Killer: "", Method: ""),
+                    new("bled to death", Were: false, Killed: "caught a falling =uD_RandomItem:inherits:BaseDagger=", Killer: "", Method: ""),
+                    new("bled to death", Killed: "to slow to dodge a thrown =uD_RandomItem:inherits:BaseDagger=", By: false, Method: ""),
+                    new("bled to death", Were: false, Killed: "swallowed a =uD_RandomItem:inherits:BaseDagger=", Killer: "", Method: ""),
+                }
+            },
+            {   // Metabolic damage (hulk honey)
+                "failed", new()
+                {
+                    new("failed", Were: false, Killed: "failed to metabolise a hulk honey fast enough", Killer: "", Method: ""),
+                    new("failed", Were: false, Killed: "hulked out too hard", Killer: "", Method: ""),
+                    new("failed", Were: false, Killed: "stayed mad too long", Killer: "", Method: ""),
+                    new("failed", Were: false, Killed: "coped, seethed, and malded", Killing: "coping, seething, and malding", By: false, With: false),
+                    new("failed", Were: false, Killed: "raged to death", Killer: "", Method: ""),
+                    new("failed", Were: false, Killed: "used one too many hulk honey", Killer: "", Method: ""),
+                    new("failed", Killed: "goaded into an uncontainable rage"),
+                    new("failed", Killed: "too juiced up", By: false, With: false),
+                }
+            },
+            {   // Asphyxiation damage (osseous ash)
+                "died of asphyxiation", new()
+                {
+                    new("died of asphyxiation", Killed: "choked to death"),
+                    new("died of asphyxiation", Killed: "suffocated"),
+                    new("died of asphyxiation", Were: false, Killed: "inhaled too much osseous ash", Killer: "", Method: ""),
+                    new("died of asphyxiation", Were: false, Killed: "tried to breathe underwater", Killer: "", Method: ""),
+                    new("died of asphyxiation", Were: false, Killed: "held underwater"),
+                }
+            },
+            {   // Killed
+                "killed", new()
+                {
+                    new("killed"),
+                    new("killed", Killed: "killed in a duel"),
+                    new("killed", Killed: "thoroughly ended"),
+                    new("killed", Killed: "wasted"),
+                    new("killed", Killed: "merced"),
+                    new("killed", Killed: "taken out"),
+                }
+            },
+        };
         // Keys list lifted from books' https://codeberg.org/librarianmage/EloquentDeath
         // which you should check out for being awesome.
         public static Dictionary<string, List<string>> DeathCategoryDeathMessages => new()
@@ -198,12 +354,21 @@ namespace XRL.World.Parts
             bool DoJournal = true,
             bool DoAchievement = false,
             IRenderable RelentlessIcon = null,
-            string RelentlessTitle = null)
+            string RelentlessTitle = null,
+            DeathDescription DeathDescription = null)
         {
             if (Dying == null)
             {
                 return false;
             }
+
+            if (DeathDescription != null)
+            {
+                Category = DeathDescription.Category;
+                Reason = DeathDescription.Reason(Accidental);
+                ThirdPersonReason = DeathDescription.ThirdPersonReason(Accidental);
+            }
+
             AfterDieEvent.Send(
                 Dying: Dying,
                 Killer: Killer,
@@ -230,6 +395,10 @@ namespace XRL.World.Parts
 
             string deathMessageTitle = "You died.";
             string deathMessage = "=subject.Subjective= " + (Reason ?? The.Game.DeathReason) + ".";
+            if (DeathDescription != null)
+            {
+                deathMessage = ThirdPersonReason;
+            }
             string deathCategory = Category ?? The.Game.DeathCategory;
             Renderable deathIcon = null;
             Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
@@ -392,6 +561,24 @@ namespace XRL.World.Parts
             Accidental = Stat.RollCached("1d3") == 1;
         }
 
+        public static void RandomDeathDescriptionAndAccidental(out DeathDescription DeathDescription, out bool Accidental, Predicate<DeathDescription> Filter = null)
+        {
+            DeathDescription = DeathCategoryDeathDescriptions
+                ?.Aggregate(
+                    seed: new List<DeathDescription>(),
+                    func: delegate (List<DeathDescription> acc, KeyValuePair<string, List<DeathDescription>> next)
+                    {
+                        foreach (DeathDescription deathDescription in next.Value)
+                            if (Filter == null || Filter(deathDescription))
+                                acc.AddIf(deathDescription, item => !acc.Contains(item));
+
+                        return acc;
+                    })
+                ?.GetRandomElementCosmetic();
+
+            Accidental = Stat.RollCached("1d3") == 1;
+        }
+
         public static KillerDetails ProduceKillerDetails(
             out GameObject Killer,
             out GameObject Weapon,
@@ -453,10 +640,26 @@ namespace XRL.World.Parts
                     Projectile = GameObject.CreateSample(projectileBlueprint);
                 }
             }
+            bool haveKiller = Killer != null;
+            bool haveWeapon = Weapon != null;
+            bool haveProjectile = Projectile != null;
+            bool haveMethod = haveWeapon || haveProjectile;
+            bool MatchesSpec(DeathDescription DeathDescription)
+            {
+                if (haveKiller && DeathDescription.Killer == "")
+                    return false;
 
-            RandomDeathCategoryAndReasonAndAccidental(out Category, out Reason, out Accidental);
+                if (haveMethod && DeathDescription.Method == "")
+                    return false;
 
-            return new(Killer, Weapon, new() /*Reason*/, Accidental);
+                return true;
+            }
+            RandomDeathDescriptionAndAccidental(out DeathDescription deathDescription, out Accidental, MatchesSpec);
+
+            Category = deathDescription.Category;
+            Reason = deathDescription.Reason(Accidental);
+
+            return new(Killer, Weapon, deathDescription, Accidental);
         }
         public static KillerDetails ProduceKillerDetails()
         {
