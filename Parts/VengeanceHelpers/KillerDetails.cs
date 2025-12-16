@@ -140,6 +140,16 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             {
                 KillerIsDeceased = Killer.IsDying;
             }
+            if (this.DeathDescription != null)
+            {
+                this.DeathDescription.Killer ??= DisplayName ?? CreatureType ?? "";
+                this.DeathDescription.Method ??= WeaponName ?? NotableFeature ?? "";
+                if (this.WasEnvironment)
+                {
+                    this.DeathDescription.Killer = "";
+                    this.DeathDescription.Method = "";
+                }
+            }
         }
         public KillerDetails(IDeathEvent E)
             : this(
@@ -148,7 +158,13 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                   DeathDescription: new(E, GetNotableFeature(E.Killer)),
                   WasAccident: E == null || E.Accidental,
                   WasEnvironment: E != null && (E?.Killer == null || !E.Killer.IsCreature) && E.Accidental)
-        { }
+        {
+            if (DeathDescription != null)
+            {
+                DeathDescription.Killer = DisplayName ?? CreatureType ?? "";
+                DeathDescription.Method = WeaponName ?? NotableFeature ?? "";
+            }
+        }
 
         public static bool HasDefaultBehaviorOrNaturalWeaponEquipped(BodyPart BodyPart)
             => BodyPart != null
@@ -236,30 +252,30 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     && DeathDescription == null)
                 );
 
-        public DeathMemory SyncDeathMemory(ref DeathMemory DeathMemory)
+        public DeathMemory SyncDeathMemory(DeathMemory DeathMemory)
         {
             if (IsMystery())
-                return DeathMemory = DeathMemory.None;
+                return DeathMemory.None;
 
             if (DisplayName.IsNullOrEmpty()
                 && DeathMemory.HasFlag(DeathMemory.KillerName))
-                DeathMemory.UnsetFlag(DeathMemory.KillerName);
+                DeathMemory = DeathMemory.SetFlag(DeathMemory.KillerName, Set: false);
 
             if (CreatureType.IsNullOrEmpty()
                 && DeathMemory.HasFlag(DeathMemory.KillerCreature))
-                DeathMemory.UnsetFlag(DeathMemory.KillerCreature);
+                DeathMemory = DeathMemory.SetFlag(DeathMemory.KillerCreature, Set: false);
 
             if (NotableFeature.IsNullOrEmpty()
                 && DeathMemory.HasFlag(DeathMemory.NotableFeature))
-                DeathMemory.UnsetFlag(DeathMemory.NotableFeature);
+                DeathMemory = DeathMemory.SetFlag(DeathMemory.NotableFeature, Set: false);
 
             if (WeaponName.IsNullOrEmpty()
                 && DeathMemory.HasFlag(DeathMemory.Weapon))
-                DeathMemory.UnsetFlag(DeathMemory.Weapon);
+                DeathMemory = DeathMemory.SetFlag(DeathMemory.Weapon, Set: false);
 
             if (DeathDescription == null
                 && DeathMemory.HasFlag(DeathMemory.Description))
-                DeathMemory.UnsetFlag(DeathMemory.Description);
+                DeathMemory = DeathMemory.SetFlag(DeathMemory.Description, Set: false);
 
             return DeathMemory;
         }
@@ -330,7 +346,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public DeathDescription GetDeathDescription()
             => DeathDescription
-            ?? new("killed", true, "killed", false, null, false, null, false, false);
+            ?? new("killed", true, "killed", null, false, null, false, null, false, false);
 
         public bool IsKiller(GameObject Entity)
             => Entity != null

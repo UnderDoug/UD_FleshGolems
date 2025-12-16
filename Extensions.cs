@@ -32,6 +32,7 @@ using Options = UD_FleshGolems.Options;
 
 using ConvoDelegateContext = XRL.World.Conversations.DelegateContext;
 using TextDelegateContext = XRL.World.Text.Delegates.DelegateContext;
+using XRL.World.Conversations.Parts;
 
 namespace UD_FleshGolems
 {
@@ -1111,8 +1112,8 @@ namespace UD_FleshGolems
         public static string Uncapitalize(this string String)
             => String[0].ToString().ToLower() + String[1..];
 
-        public static bool TryGetIndexOf(this string Text, string Search, out int Index, bool StartOfSearch = false)
-            => !((Index = Text.IndexOf(Search) - (StartOfSearch ? Search?.Length ?? 0 : 0)) < 0);
+        public static bool TryGetIndexOf(this string Text, string Search, out int Index, bool EndOfSearch = true)
+            => !((Index = Text.IndexOf(Search) + (EndOfSearch ? Search?.Length ?? 0 : 0)) < 0);
 
         public static string ReplaceFirst(this string text, string search, string replace)
         {
@@ -1184,49 +1185,44 @@ namespace UD_FleshGolems
             => Corpse.KnowsEntityKilledThem(Entity, out _);
 
         /// <summary>
-        /// Sets or unsets aa flag on an enum.
+        /// Sets or unsets an int compatible flag on an enum.
         /// </summary>
         /// <typeparam name="T">The enum type.</typeparam>
-        /// <param name="current">The current enum value.</param>
-        /// <param name="flag">The flag to set/unset (supports combined flags).</param>
-        /// <param name="set">True to set the flag; false to unset.</param>
+        /// <param name="Current">The current enum value.</param>
+        /// <param name="Flag">The flag to set/unset (supports combined flags).</param>
+        /// <param name="Set">True to set the flag; false to unset.</param>
         /// <returns>The original enum with the flag set/unset.</returns>
-        public static T SetFlag<T>(this T current, T flag, bool set)
+        public static T SetFlag<T>(this T Current, T Flag, bool Set)
             where T : struct, Enum
         {
-            // Get the underlying type (e.g., int, long, byte)  
-            Type underlyingType = Enum.GetUnderlyingType(typeof(T));
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg("T", typeof(T)),
+                    Debug.Arg(nameof(Current), Current.ToString()),
+                });
 
             // Convert current and flag to their underlying type values  
-            object currentObj = Convert.ChangeType(current, underlyingType);
-            object flagObj = Convert.ChangeType(flag, underlyingType);
+            int currentInt = (int)Convert.ChangeType(Current, typeof(int));
+            int flagInt = (int)Convert.ChangeType(Flag, typeof(int));
 
             // Perform bitwise operation  
-            object resultObj;
-            if (set)
+            object resultInt;
+            if (Set)
             {
                 // Set flag: current | flag  
-                resultObj = underlyingType.GetMethod("Or", new[] { underlyingType, underlyingType })
-                                          .Invoke(null, new[] { currentObj, flagObj });
+                resultInt = currentInt | flagInt;
             }
             else
             {
-                // Unset flag: current & ~flag  
-                object notFlagObj = underlyingType.GetMethod("OnesComplement", Type.EmptyTypes)
-                                                  .Invoke(null, new[] { flagObj });
-                resultObj = underlyingType.GetMethod("And", new[] { underlyingType, underlyingType })
-                                          .Invoke(null, new[] { currentObj, notFlagObj });
+                // Unset flag: current & ~flag
+                resultInt = currentInt & ~flagInt;
             }
 
             // Convert back to enum type  
-            return (T)Enum.ToObject(typeof(T), resultObj);
+            return (T)Enum.ToObject(typeof(T), resultInt);
         }
-        public static T SetFlag<T>(ref this T current, T flag)
-            where T : struct, Enum
-            => current = current.SetFlag(flag, true);
-        public static T UnsetFlag<T>(ref this T current, T flag)
-            where T : struct, Enum
-            => current = current.SetFlag(flag, false);
 
         public static bool HasAnyFlag<T>(this T flags, params T[] flagList)
             where T : struct, Enum
@@ -1337,6 +1333,24 @@ namespace UD_FleshGolems
         public static bool HasDescriptionElement(this DeathMemoryElements DeathMemory, bool Only = false)
             => DeathMemory.HasAnyFlag(DeathMemoryElements.Description)
             && (!Only || DeathMemory == DeathMemoryElements.Description);
+
+        public static ConversationText Append(this ConversationText ConversationText, ConversationText OtherConversationText, string Joiner = null)
+        {
+            if (ConversationText == null
+                || OtherConversationText == null)
+                return ConversationText ?? OtherConversationText;
+
+            return new()
+            {
+                Parent = ConversationText.Parent ?? OtherConversationText.Parent,
+                ID = ConversationText.ID + ":" + OtherConversationText.Parent?.ID + "." + OtherConversationText.ID,
+                Text = ConversationText.Text + Joiner + OtherConversationText.Text,
+            };
+        }
+
+        public static bool HasDeathMemoryFlag(this ConversationText ConversationText, DeathMemoryElements DeathMemoryElement)
+            => ConversationText.HasAttribute(UD_FleshGolems_AskHowDied.MEMORY_ELEMENT)
+            && UD_FleshGolems_AskHowDied.GetDeathMemoryElementsFromString(ConversationText.Attributes[UD_FleshGolems_AskHowDied.MEMORY_ELEMENT]).HasFlag(DeathMemoryElement);
 
         public static string AsString(this List<char> CharList)
             => CharList.Aggregate("", (a, n) => a += n);

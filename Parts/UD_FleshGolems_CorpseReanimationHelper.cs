@@ -1109,7 +1109,7 @@ namespace XRL.World.Parts
                 IdentityType identityType = PastLife.GetIdentityType();
 
                 string creatureType = frankenCorpse.GetBlueprint().DisplayName();
-                if (identityType < IdentityType.ParticipantVillager)
+                if (identityType < IdentityType.ParticipantVillager && identityType > IdentityType.Player)
                 {
                     creatureType = "corpse of " + PastLife.GetBlueprint().DisplayName();
                 }
@@ -1901,23 +1901,25 @@ namespace XRL.World.Parts
             }
             if (KillerDetails != null)
             {
+                DeathDescription deathDescription = KillerDetails.DeathDescription;
                 Dictionary<string, string> killerDetails = new()
                 {
                     { nameof(KillerDetails.Killer), KillerDetails.Killer?.DebugName?.Strip() ?? NULL },
-                    { nameof(KillerDetails.ID), KillerDetails.ID },
-                    { nameof(KillerDetails.Blueprint), KillerDetails.Blueprint },
-                    { nameof(KillerDetails.DisplayName), KillerDetails.DisplayName.Strip() },
-                    { nameof(KillerDetails.CreatureType), KillerDetails.CreatureType.Strip() },
+                    { nameof(KillerDetails.ID), KillerDetails.ID ?? NULL },
+                    { nameof(KillerDetails.Blueprint), KillerDetails.Blueprint ?? NULL },
+                    { nameof(KillerDetails.DisplayName), KillerDetails.DisplayName.Strip() ?? NULL },
+                    { nameof(KillerDetails.CreatureType), KillerDetails.CreatureType.Strip() ?? NULL },
                     { nameof(KillerDetails.Weapon), KillerDetails.Weapon?.DebugName?.Strip() ?? NULL },
-                    { nameof(KillerDetails.WeaponName), KillerDetails.WeaponName.Strip() },
-                    { nameof(KillerDetails.NotableFeature), KillerDetails.NotableFeature.Strip() },
+                    { nameof(KillerDetails.WeaponName), KillerDetails.WeaponName.Strip() ?? NULL },
+                    { nameof(KillerDetails.NotableFeature), KillerDetails.NotableFeature.Strip() ?? NULL },
                     {
                         nameof(KillerDetails.DeathDescription),
-                        KillerDetails?.DeathDescription
+                        deathDescription
                             ?.TheyWereKilledByKillerWithMethod(Adverb: KillerDetails.WasAccident ? "accidentally" : null, Killer: KillerDetails.WasEnvironment ? "" : null)
                             ?.StartReplace()
                             ?.AddObject(ParentObject)
                             ?.ToString()
+                            ?.Strip()
                     },
                     { nameof(KillerDetails.WasAccident), KillerDetails.WasAccident.ToString() },
                     { nameof(KillerDetails.WasEnvironment), KillerDetails.WasEnvironment.ToString() },
@@ -1928,6 +1930,33 @@ namespace XRL.World.Parts
                     ?.GenerateBulletList(Bullet: null, BulletColor: null);
                 E.AddEntry(this, nameof(KillerDetails), killerDetailsString);
                 E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(KillerDetails), killerDetailsString);
+
+                if (deathDescription != null)
+                {
+                    Dictionary<string, string> deathDescriptionDetails = new()
+                    {
+                        { nameof(deathDescription.Category), deathDescription.Category ?? NULL },
+                        { nameof(deathDescription.Were), deathDescription.Were.ToString() },
+                        { nameof(deathDescription.Killed), deathDescription.Killed ?? NULL },
+                        { nameof(deathDescription.Killing), (deathDescription.Killing ?? NULL) + "/" + (deathDescription.BeingKilled() ?? NULL) },
+                        { nameof(deathDescription.By), deathDescription.By.ToString() },
+                        { nameof(deathDescription.Killer), deathDescription.Killer ?? NULL },
+                        { nameof(deathDescription.With), deathDescription.With.ToString() },
+                        { nameof(deathDescription.Method), deathDescription.Method ?? NULL },
+                        { nameof(deathDescription.ForceNoMethodArticle), deathDescription.ForceNoMethodArticle.ToString() },
+                        { nameof(deathDescription.PluralMethod), deathDescription.PluralMethod.ToString() },
+                    };
+                    string deathDescriptionDetailsString = deathDescriptionDetails
+                        ?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value)
+                        ?.GenerateBulletList(Bullet: null, BulletColor: null);
+                    E.AddEntry(this, nameof(KillerDetails.DeathDescription), deathDescriptionDetailsString);
+                    E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(KillerDetails.DeathDescription), deathDescriptionDetailsString);
+                }
+                else
+                {
+                    E.AddEntry(this, nameof(KillerDetails.DeathDescription), "empty");
+                    E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(KillerDetails.DeathDescription), "empty");
+                }
             }
             else
             {

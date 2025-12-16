@@ -150,14 +150,18 @@ namespace XRL.World.Parts
             {
                 if (_DeathMemory != UndefinedDeathMemoryElement || ParentObject == null)
                 {
-                    if (ParentObject != null)
+                    if (ParentObject != null
+                        && KillerDetails != null)
                     {
-                        KillerDetails?.SyncDeathMemory(ref _DeathMemory);
+                        _DeathMemory = KillerDetails.SyncDeathMemory(_DeathMemory);
                     }
                     return _DeathMemory;
                 }
                 DeathMemoryElements value = (DeathMemoryElements)ParentObject.GetSeededRange(nameof(DeathMemory), 1, (int)DeathMemoryElements.All);
-                KillerDetails?.SyncDeathMemory(ref value);
+                if (KillerDetails != null)
+                {
+                    value = KillerDetails.SyncDeathMemory(value);
+                }
                 if (ParentObject.BaseID % 6 == 0)
                 {
                     value = DeathMemoryElements.None;

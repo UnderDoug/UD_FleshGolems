@@ -208,47 +208,51 @@ namespace UD_FleshGolems
 
         [VariableObjectReplacer]
         public static string UD_NotableFeature(DelegateContext Context)
-            => ProcessDeathMemoryReplacerResult(KillerDetails.GetNotableFeature(Context.Target) ?? "a lethal absence", Context);
+            => ProcessDeathMemoryReplacerResult(KillerDetails.GetNotableFeature(Context.Target), Context);
 
         [VariableObjectReplacer]
         public static string UD_CreatureType(DelegateContext Context)
             => ProcessDeathMemoryReplacerResult(Context.Target?.GetCreatureType() ?? "hideous specimen", Context);
 
-        public static void ProcessVerbReplacement(ref string deathDescription, List<string> parameters)
+        public static string ProcessVerbReplacement(string DeathDescription, List<string> Parameters)
         {
-            if (parameters.Count > 1
-                && parameters[0].EqualsNoCase("verb")
-                && !parameters[1].IsNullOrEmpty()
-                && parameters[1].Uncapitalize() is string newVerb)
+            if (DeathDescription.IsNullOrEmpty())
+                return DeathDescription;
+
+            if (Parameters.Count > 1
+                && Parameters[0].EqualsNoCase("verb")
+                && !Parameters[1].IsNullOrEmpty()
+                && Parameters[1].Uncapitalize() is string newVerb)
             {
-                if (deathDescription.StartsWith("=")
-                    && deathDescription.TryGetIndexOf("verb:", out int verbStart)
-                    && deathDescription[..verbStart].TryGetIndexOf("=", out int replacerEnd)
-                    && deathDescription[..verbStart][..(replacerEnd - 1)] is string oldVerb)
+                if (DeathDescription.StartsWith("=")
+                    && DeathDescription.TryGetIndexOf("verb:", out int verbStart)
+                    && DeathDescription[..verbStart].TryGetIndexOf("=", out int replacerEnd)
+                    && DeathDescription[..verbStart][..(replacerEnd - 1)] is string oldVerb)
                 {
                     if (!oldVerb.TryGetIndexOf(":", out int verbEnd))
                     {
                         verbEnd = verbStart + replacerEnd;
                     }
-                    deathDescription = deathDescription[..verbStart] + newVerb + deathDescription[(verbEnd - 1)..];
+                    DeathDescription = DeathDescription[..verbStart] + newVerb + DeathDescription[(verbEnd - 1)..];
                     verbEnd = verbStart + newVerb.Length;
-                    replacerEnd = deathDescription[verbEnd..].IndexOf("=") - 1;
-                    if (parameters.Count > 2
-                        && !parameters[2].IsNullOrEmpty()
-                        && parameters[2].Contains("afterpronoun"))
+                    replacerEnd = DeathDescription[verbEnd..].IndexOf("=") - 1;
+                    if (Parameters.Count > 2
+                        && !Parameters[2].IsNullOrEmpty()
+                        && Parameters[2].Contains("afterpronoun"))
                     {
-                        if (parameters[2].Contains("remove"))
+                        if (Parameters[2].Contains("remove"))
                         {
-                            if (deathDescription[(verbEnd + 1)].ToString() == ":")
-                                deathDescription = deathDescription[..verbEnd] + deathDescription[replacerEnd..];
+                            if (DeathDescription[(verbEnd + 1)].ToString() == ":")
+                                DeathDescription = DeathDescription[..verbEnd] + DeathDescription[replacerEnd..];
                         }
                         else
                         {
-                            deathDescription = deathDescription[..verbEnd] + ":afterpronoun" + deathDescription[replacerEnd..];
+                            DeathDescription = DeathDescription[..verbEnd] + ":afterpronoun" + DeathDescription[replacerEnd..];
                         }
                     }
                 }
             }
+            return DeathDescription;
         }
 
         [VariableObjectReplacer]
@@ -282,7 +286,7 @@ namespace UD_FleshGolems
                         }
                         parameters.RemoveAt(0);
                     }
-                    ProcessVerbReplacement(ref deathDescription, parameters);
+                    deathDescription = ProcessVerbReplacement(deathDescription, parameters);
                 }
                 if (parameters[0].EqualsAnyNoCase("RemoveVerb", "RemoveBakedVerb"))
                 {

@@ -41,8 +41,8 @@ namespace XRL.World.Conversations.Parts
         public static ConversationText DefaultNoText => new() { Text = "... I actually can't remember at all...\n\nStrange!" };
         public static ConversationText DefaultPlayerKilledText 
             => The.Speaker is GameObject speaker && !speaker.IsPlayerLed() 
-            ? new() { Text = "IT WAS {{R|=killer.name|upper=}}!!" }
-            : new() { Text = "{{Y|=killer.name=}} killed me... but =killer.subjective= already knew that... didn't =killer.subjective=?" };
+            ? new() { Text = "IT WAS {{R|=killer.refname|upper=}}!!" }
+            : new() { Text = "{{Y|=killer.Refname=}} killed me... but {{Y|=killer.subjective=}} already knew that... didn't {{Y|=killer.subjective=}}?" };
 
         public static Dictionary<string, DeathMemoryElements> DeathMemoryElementsValues
             => UD_FleshGolems_ReanimatedCorpse.DeathMemoryElementsValues;
@@ -51,10 +51,13 @@ namespace XRL.World.Conversations.Parts
 
         public bool KnowsPlayerKilledThem;
 
+        public List<ConversationText> KilledByPlayerTexts;
+
         public UD_FleshGolems_AskHowDied()
         {
             CompleteTexts = new();
             KnowsPlayerKilledThem = false;
+            KilledByPlayerTexts = new();
         }
 
         public static DeathMemoryElements GetDeathMemoryElementsFromStringList(List<string> StringElements)
@@ -116,7 +119,7 @@ namespace XRL.World.Conversations.Parts
             => GetConversationTextsWithTextRetainingAttributes(
                 ConversationText: ConversationText,
                 ConversationTextList: ref ConversationTextList,
-                Filter: null, // ct => ct.CheckPredicates(),
+                Filter: null,
                 Attributes: new string[]
                 {
                     MEMORY_ELEMENT,
@@ -131,7 +134,7 @@ namespace XRL.World.Conversations.Parts
             => GetConversationTextsWithTextRetainingAttributes(
                 ConversationText: ConversationText,
                 ConversationTextList: ref ConversationTextList,
-                Filter: null, // ct => ct.CheckPredicates(),
+                Filter: null,
                 Attributes: new string[]
                 {
                     ENVIRONMENT
@@ -145,7 +148,7 @@ namespace XRL.World.Conversations.Parts
             => GetConversationTextsWithTextRetainingAttributes(
                 ConversationText: ConversationText,
                 ConversationTextList: ref ConversationTextList,
-                Filter: null, // ct => ct.CheckPredicates(),
+                Filter: null,
                 Attributes: new string[]
                 {
                     KILLED_BY_PLAYER,
@@ -283,17 +286,6 @@ namespace XRL.World.Conversations.Parts
                                         Indent: indent[2]);
                                     organizedTexts[key].Add(conversationText);
                                 }
-                                /*
-                                if (!conversationText.Texts.IsNullOrEmpty())
-                                {
-                                    Debug.Log(nameof(conversationText) + " has " + conversationText.Texts.Count + " Texts", Indent: indent[2]);
-                                    List<ConversationText> subTexts = conversationText.Texts
-                                        .Where(st => !organizedTexts.Values.HasAnyMatchingPath(st))
-                                        ?.ToList();
-                                    foreach (ConversationText subText in subTexts)
-                                        organizedTexts[key].Add(subText);
-                                }
-                                */
                             }
                             else
                             {
@@ -368,6 +360,8 @@ namespace XRL.World.Conversations.Parts
                     }
                     conversationTextsList.AddIf(descriptionTexts, e => !e.IsNullOrEmpty() && !conversationTextsList.Contains(e));
 
+
+
                     if (CompleteTexts.IsNullOrEmpty())
                     {
                         CompleteTexts = organizedTexts
@@ -377,29 +371,6 @@ namespace XRL.World.Conversations.Parts
                                 seed: new List<ConversationText>(),
                                 func: (current, accumulated) => current.ForEach(item => accumulated.Add(item), accumulated))
                             ?? new();
-
-                        /*
-                        Dictionary<string, string> constructedCompleteTextStringsWithID = new();
-
-                        static string constructID(params ConversationText[] ConversationTexts)
-                            => "[" + 
-                            ConversationTexts
-                                ?.Aggregate(
-                                    seed: "",
-                                    func: (a, n) => a + ":" + n?.Parent?.ID + "." + n?.ID)
-                            + "]";
-
-                        if (!killerTexts.IsNullOrEmpty()
-                            && !methodTexts.IsNullOrEmpty()
-                            && !descriptionTexts.IsNullOrEmpty())
-                            foreach (ConversationText killerText in killerTexts)
-                                foreach (ConversationText methodText in methodTexts)
-                                    foreach (ConversationText descriptionText in descriptionTexts)
-                                        constructedCompleteTextStringsWithID[constructID(killerText, methodText, descriptionText)] = 
-                                            killerText.Text + "\n\n" + 
-                                            methodText.Text + "\n\n" + 
-                                            descriptionText.Text;
-                        */
 
                         if (!conversationTextsList.IsNullOrEmpty()
                             && conversationTextsList.Count > 1)
@@ -436,7 +407,7 @@ namespace XRL.World.Conversations.Parts
                                         {
                                             ID = firstID + ":" + secondID,
                                             Parent = ParentElement,
-                                            Text = firstText.Text + "\n\n" + secondText.Text,
+                                            Text = firstText.Text + /*"\n\n... "*/ " " + secondText.Text,
                                         });
                                         any = true;
                                     }
@@ -450,17 +421,6 @@ namespace XRL.World.Conversations.Parts
                                 CompleteTexts.AddRange(conversationTextsListForProcessing[0]);
                             }
                         }
-
-                        /*
-                        if (!constructedCompleteTextStringsWithID.IsNullOrEmpty())
-                            foreach ((string iD, string constructedCompleteTextstring) in constructedCompleteTextStringsWithID)
-                                CompleteTexts.Add(new()
-                                {
-                                    ID = iD,
-                                    Parent = ParentElement,
-                                    Text = constructedCompleteTextstring,
-                                });
-                        */
                     }
 
                     if (CompleteTexts.IsNullOrEmpty())
@@ -482,144 +442,161 @@ namespace XRL.World.Conversations.Parts
                 }
                 if (KnowsPlayerKilledThem)
                 {
+                    string playerLedString = speaker.IsPlayerLed() ? "true" : "false";
                     Debug.Log(nameof(KnowsPlayerKilledThem), Indent: indent[1]);
-                    List<ConversationText> playerKilledTexts = E.Texts
+                    KilledByPlayerTexts = E.Texts
                         ?.Aggregate(
                             seed: new List<ConversationText>(),
-                            func: (acc, next) => GetConversationTextsWithTextRetainingMemoryAttributes(next, ref acc))
-                        ?.Where(t => t.HasAttributeWithValue(PLAYER_LED, speaker.IsPlayerLed().ToString()))
+                            func: (acc, next) => GetConversationTextsWithTextRetainingKilledByPlayerAttributes(next, ref acc))
+                        ?.Where(t => t.HasAttributeWithValue(PLAYER_LED, playerLedString))
                         ?.ToList();
 
-                    if (playerKilledTexts.IsNullOrEmpty())
+                    if (KilledByPlayerTexts.IsNullOrEmpty())
                     {
-                        playerKilledTexts ??= new();
-                        playerKilledTexts.Add(DefaultPlayerKilledText);
+                        KilledByPlayerTexts ??= new();
+                        KilledByPlayerTexts.Add(DefaultPlayerKilledText);
                     }
 
-                    Debug.Log(nameof(playerKilledTexts), Indent: indent[1]);
-                    foreach (ConversationText playerKilledText in playerKilledTexts)
+                    Debug.Log(nameof(KilledByPlayerTexts), Indent: indent[1]);
+                    foreach (ConversationText playerKilledText in KilledByPlayerTexts)
                     {
                         Debug.Log(playerKilledText.Text, Indent: indent[2]);
-                    }
-
-                    E.Selected ??= DefaultNoText;
-
-                    if (!speaker.IsPlayerLed())
-                    {
-                        int selectedTextFinalIndex = E.Selected.Text.Length - 1;
-                        int roughlyHalfSelectedText = Math.Min(Math.Max(1, (selectedTextFinalIndex / 2) + Stat.RandomCosmetic(-5, 5)), selectedTextFinalIndex);
-                        E.Selected.Text =
-                            E.Selected.Text[..roughlyHalfSelectedText] +
-                            "...\n\n...\n\n=ud_nbsp:4=..." +
-                            playerKilledTexts?.GetRandomElementCosmetic()?.Text;
-                    }
-                    else
-                    {
-                        E.Selected.Text = playerKilledTexts?.GetRandomElementCosmetic()?.Text;
                     }
                 }
             }
             return base.HandleEvent(E);
         }
-        public override bool HandleEvent(PrepareTextLateEvent E)
+        public override bool HandleEvent(PrepareTextEvent E)
         {
-            bool killerIsSample = true;
-            bool weaponIsSample = true;
-            GameObject killer = GameObject.CreateSample(DUMMY_KILLER_BLUEPRINT);
-            GameObject weapon = GameObject.CreateSample(DUMMY_WEAPON_BLUEPRINT);
-
-            string killerName = "mysterious entity";
-            string killerCreatureType = killerName;
-            string killerString = killerName;
-
-            string weaponString = "deadly force";
-            string feature = weaponString;
-            string deathMethod = weaponString;
-
-            string description = "killed to death";
-
-            if (The.Speaker is GameObject speaker
-                && speaker.TryGetPart(out UD_FleshGolems_ReanimatedCorpse reanimatedCorpsePart)
-                && reanimatedCorpsePart.KillerDetails is KillerDetails killerDetails
-                && reanimatedCorpsePart.DeathMemory != UndefinedDeathMemoryElement)
-            {
-                DeathMemoryElements deathMemory = reanimatedCorpsePart.DeathMemory;
-
-                if (deathMemory.HasFlag(DeathMemoryElements.Killer))
-                    killerString = killerDetails.KilledBy(deathMemory);
-
-                if (!killerDetails.DisplayName.IsNullOrEmpty()
-                    && deathMemory.HasFlag(DeathMemoryElements.KillerName))
-                    killerName = killerDetails.DisplayName;
-
-                if (!killerDetails.CreatureType.IsNullOrEmpty()
-                    && deathMemory.HasFlag(DeathMemoryElements.KillerCreature))
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
                 {
-                    killerCreatureType = killerDetails.CreatureType;
+                    Debug.Arg(nameof(PrepareTextEvent)),
+                    Debug.Arg(nameof(The.Speaker), The.Speaker?.DebugName),
+                });
+
+            if (The.Speaker is GameObject speaker)
+            {
+                bool killerIsSample = true;
+                bool weaponIsSample = true;
+                GameObject killer = GameObject.CreateSample(DUMMY_KILLER_BLUEPRINT);
+                GameObject weapon = GameObject.CreateSample(DUMMY_WEAPON_BLUEPRINT);
+
+                string killerName = "mysterious entity";
+                string killerCreatureType = killerName;
+                string killerString = killerName;
+
+                string weaponString = "deadly force";
+                string feature = weaponString;
+                string deathMethod = weaponString;
+
+                string description = "killed to death";
+
+                if (speaker.TryGetPart(out UD_FleshGolems_ReanimatedCorpse reanimatedCorpsePart)
+                    && reanimatedCorpsePart.KillerDetails is KillerDetails killerDetails
+                    && reanimatedCorpsePart.DeathMemory != UndefinedDeathMemoryElement)
+                {
+                    DeathMemoryElements deathMemory = reanimatedCorpsePart.DeathMemory;
+
+                    if (deathMemory.HasFlag(DeathMemoryElements.Killer))
+                        killerString = killerDetails.KilledBy(deathMemory);
+
+                    if (!killerDetails.DisplayName.IsNullOrEmpty()
+                        && deathMemory.HasFlag(DeathMemoryElements.KillerName))
+                        killerName = killerDetails.DisplayName;
+
+                    if (!killerDetails.CreatureType.IsNullOrEmpty()
+                        && deathMemory.HasFlag(DeathMemoryElements.KillerCreature))
+                    {
+                        killerCreatureType = killerDetails.CreatureType;
+                    }
+
+                    killerDetails.KilledHow(
+                        DeathMemory: deathMemory,
+                        Weapon: out string deathWeapon,
+                        Feature: out string deathFeature,
+                        Description: out DeathDescription deathDescription,
+                        Accidentally: out bool _,
+                        Environment: out bool _);
+
+                    if (!deathWeapon.IsNullOrEmpty()
+                        && deathMemory.HasFlag(DeathMemoryElements.Weapon))
+                        weaponString = deathWeapon;
+
+                    if (!deathFeature.IsNullOrEmpty()
+                        && deathMemory.HasFlag(DeathMemoryElements.NotableFeature))
+                        feature = deathFeature;
+
+                    if (deathDescription != null
+                        && deathMemory.HasFlag(DeathMemoryElements.Description))
+                        description = deathDescription.ToString();
+
+                    if ((!deathWeapon.IsNullOrEmpty()
+                            || !deathFeature.IsNullOrEmpty()
+                            || deathDescription != null)
+                        && deathMemory.HasFlag(DeathMemoryElements.Method))
+                        deathMethod = weaponString ?? feature ?? description;
+
+                    if (GameObject.Validate(killerDetails.Killer))
+                    {
+                        killer = killerDetails.Killer;
+                        killerIsSample = false;
+                    }
+                    if (GameObject.Validate(killerDetails.Weapon))
+                    {
+                        weapon = killerDetails.Weapon;
+                        weaponIsSample = false;
+                    }
                 }
 
-                killerDetails.KilledHow(
-                    DeathMemory: deathMemory,
-                    Weapon: out string deathWeapon,
-                    Feature: out string deathFeature,
-                    Description: out DeathDescription deathDescription,
-                    Accidentally: out bool _,
-                    Environment: out bool _);
-
-                if (!deathWeapon.IsNullOrEmpty()
-                    && deathMemory.HasFlag(DeathMemoryElements.Weapon))
-                    weaponString = deathWeapon;
-
-                if (!deathFeature.IsNullOrEmpty()
-                    && deathMemory.HasFlag(DeathMemoryElements.NotableFeature))
-                    feature = deathFeature;
-
-                if (deathDescription != null
-                    && deathMemory.HasFlag(DeathMemoryElements.Description))
-                    description = deathDescription.ToString();
-
-                if ((!deathWeapon.IsNullOrEmpty()
-                        || !deathFeature.IsNullOrEmpty()
-                        || deathDescription != null)
-                    && deathMemory.HasFlag(DeathMemoryElements.Method))
-                    deathMethod = weaponString ?? feature ?? description;
-
-                if (GameObject.Validate(killerDetails.Killer))
+                if (killerIsSample)
                 {
-                    killer = killerDetails.Killer;
-                    killerIsSample = false;
+                    killer.DisplayName = killerName;
+                    killer.SetCreatureType(killerCreatureType);
+                    killer.SetNotableFeature(feature);
                 }
-                if (GameObject.Validate(killerDetails.Weapon))
+                if (weaponIsSample)
                 {
-                    weapon = killerDetails.Weapon;
-                    weaponIsSample = false;
+                    weapon.DisplayName = weaponString;
+                }
+
+                E.Text.StartReplace()
+                    .AddObject(E.Subject)
+                    .AddObject(E.Object)
+                    .AddObject(killer, "killer")
+                    .AddObject(weapon, "weapon")
+                    .Execute();
+
+                if (killerIsSample)
+                    killer?.Obliterate();
+
+                if (weaponIsSample)
+                    weapon?.Obliterate();
+
+
+                if (KnowsPlayerKilledThem
+                    && KilledByPlayerTexts?.GetRandomElementCosmetic()?.Text is string killedByPlayerString)
+                {
+                    if (!speaker.IsPlayerLed())
+                    {
+                        int selectedTextFinalIndex = E.Text.Length - 1;
+                        int roughlyHalfSelectedText = Math.Min(Math.Max(1, (selectedTextFinalIndex / 2) + Stat.RandomCosmetic(-5, 5)), selectedTextFinalIndex);
+                        E.Text.Remove(roughlyHalfSelectedText, selectedTextFinalIndex);
+                    }
+                    else
+                    {
+                        E.Text.Clear();
+                    }
+                    E.Text.Append(killedByPlayerString)
+                        .StartReplace()
+                        .AddObject(E.Subject)
+                        .AddObject(E.Object)
+                        .AddObject(killer, "killer")
+                        .AddObject(weapon, "weapon")
+                        .Execute();
                 }
             }
-
-            if (killerIsSample)
-            {
-                killer.DisplayName = killerName;
-                killer.SetCreatureType(killerCreatureType);
-                killer.SetNotableFeature(feature);
-            }
-            if (weaponIsSample)
-            {
-                weapon.DisplayName = weaponString;
-            }
-
-            E.Text.StartReplace()
-                .AddObject(E.Subject)
-                .AddObject(E.Object)
-                .AddObject(killer, "killer")
-                .AddObject(weapon, "weapon")
-                .Execute();
-
-            if (killerIsSample)
-                killer?.Obliterate();
-
-            if (weaponIsSample)
-                weapon?.Obliterate();
-
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(EnteredElementEvent E)

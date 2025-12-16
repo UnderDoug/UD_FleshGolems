@@ -54,7 +54,7 @@ namespace XRL.World.Parts
                     new("immolated", Killed: "barbequed"),
                     new("immolated", Killed: "grilled"),
                     new("immolated", Killed: "more \"well-done\" than \"medium-rare\"", By: false, With: false),
-                    new("immolated", Were: false, Killed: "had to leave the kitchen", By: false),
+                    new("immolated", Were: false, Killed: "had to leave the kitchen", Killer: "", Method: ""),
                     new("immolated", Were: false, Killed: "jumped out of the frying pan", Killer: "", Method: ""),
                     new("immolated", Were: false, Killed: "tried to befriend an elder flamebeard", Killer: "", Method: ""),
                 }
@@ -145,7 +145,7 @@ namespace XRL.World.Parts
                     new("bled to death", Were: false, Killed: "had a nosebleed that just wouldn't stop", Killer: "", Method: ""),
                     new("bled to death", Were: false, Killed: "tried to befriend a leech", Killer: "", Method: ""),
                     new("bled to death", Were: false, Killed: "caught a falling =uD_RandomItem:inherits:BaseDagger=", Killer: "", Method: ""),
-                    new("bled to death", Killed: "to slow to dodge a thrown =uD_RandomItem:inherits:BaseDagger=", By: false, Method: ""),
+                    new("bled to death", Killed: "too slow to dodge a thrown =uD_RandomItem:inherits:BaseDagger=", By: false, Method: ""),
                     new("bled to death", Were: false, Killed: "swallowed a =uD_RandomItem:inherits:BaseDagger=", Killer: "", Method: ""),
                 }
             },
@@ -366,7 +366,7 @@ namespace XRL.World.Parts
             {
                 Category = DeathDescription.Category;
                 Reason = DeathDescription.Reason(Accidental);
-                ThirdPersonReason = DeathDescription.ThirdPersonReason(Accidental);
+                ThirdPersonReason = DeathDescription.ThirdPersonReason(Accidental: Accidental);
             }
 
             AfterDieEvent.Send(
@@ -397,7 +397,7 @@ namespace XRL.World.Parts
             string deathMessage = "=subject.Subjective= " + (Reason ?? The.Game.DeathReason) + ".";
             if (DeathDescription != null)
             {
-                deathMessage = ThirdPersonReason;
+                deathMessage = ThirdPersonReason + ".";
             }
             string deathCategory = Category ?? The.Game.DeathCategory;
             Renderable deathIcon = null;
@@ -416,10 +416,11 @@ namespace XRL.World.Parts
             if (DoFakeMessage && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
             {
                 deathMessage = deathMessage
-                    .StartReplace()
-                    .AddObject(Dying)
-                    .AddObject(Killer)
-                    .ToString();
+                    ?.StartReplace()
+                    ?.AddObject(Dying)
+                    ?.AddObject(Killer)
+                    ?.ToString()
+                    ?.Capitalize();
 
                 Popup.ShowSpace(
                     Message: deathMessage,
@@ -464,7 +465,7 @@ namespace XRL.World.Parts
             string deathReason = deathMessage;
             if (!deathReason.IsNullOrEmpty())
             {
-                deathReason = deathReason[0].ToString().ToLower() + deathReason[1..];
+                deathReason = deathReason.Uncapitalize();
             }
             if (DoJournal
                 && !deathReason.IsNullOrEmpty()
@@ -544,23 +545,6 @@ namespace XRL.World.Parts
             return FakeDeath(null);
         }
 
-        public static void RandomDeathCategoryAndReasonAndAccidental(out string Category, out string Reason, out bool Accidental)
-        {
-            Category = DeathCategoryDeathMessages
-                    ?.Where(kvp => !kvp.Value.All(entry => entry.IsNullOrEmpty()))
-                    ?.GetRandomElementCosmetic().Key
-                ?? CheckpointingSystem.deathIcons
-                    ?.Keys
-                    ?.GetRandomElement();
-
-            Reason = DeathCategoryDeathMessages[Category]
-                ?.Where(s => !s.IsNullOrEmpty())
-                ?.ToList()
-                ?.GetRandomElementCosmetic();
-
-            Accidental = Stat.RollCached("1d3") == 1;
-        }
-
         public static void RandomDeathDescriptionAndAccidental(out DeathDescription DeathDescription, out bool Accidental, Predicate<DeathDescription> Filter = null)
         {
             DeathDescription = DeathCategoryDeathDescriptions
@@ -574,7 +558,17 @@ namespace XRL.World.Parts
 
                         return acc;
                     })
-                ?.GetRandomElementCosmetic();
+                ?.GetRandomElementCosmetic()
+                ?.Copy();
+
+
+
+            if (DeathDescription != null)
+            {
+                DeathDescription.Killed = DeathDescription?.Killed
+                    ?.StartReplace()
+                    ?.ToString();
+            }
 
             Accidental = Stat.RollCached("1d3") == 1;
         }
@@ -595,6 +589,7 @@ namespace XRL.World.Parts
             Category = null;
             Reason = null;
             KillerIsCached = false;
+
             if (ChanceRandomKiller.in100())
             {
                 if (50.in100())
@@ -640,6 +635,14 @@ namespace XRL.World.Parts
                     Projectile = GameObject.CreateSample(projectileBlueprint);
                 }
             }
+
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ChanceRandomKiller), ChanceRandomKiller),
+                });
+
             bool haveKiller = Killer != null;
             bool haveWeapon = Weapon != null;
             bool haveProjectile = Projectile != null;
@@ -658,6 +661,12 @@ namespace XRL.World.Parts
 
             Category = deathDescription.Category;
             Reason = deathDescription.Reason(Accidental);
+
+            Debug.Log(nameof(KillerIsCached), KillerIsCached, indent[1]);
+            Debug.Log(nameof(Killer), Killer?.DebugName ?? "null", indent[1]);
+            Debug.Log(nameof(Weapon), Weapon?.DebugName ?? "null", indent[1]);
+            Debug.Log(nameof(Projectile), Projectile?.DebugName ?? "null", indent[1]);
+            Debug.Log(nameof(Accidental), Accidental, indent[1]);
 
             return new(Killer, Weapon, deathDescription, Accidental);
         }
@@ -719,7 +728,8 @@ namespace XRL.World.Parts
                     ThirdPersonReason: reason,
                     DoAchievement: DoAchievement,
                     RelentlessIcon: RelentlessIcon,
-                    RelentlessTitle: RelentlessTitle);
+                    RelentlessTitle: RelentlessTitle,
+                    DeathDescription: KillerDetails?.DeathDescription);
 
                 if (!deathFaked)
                 {

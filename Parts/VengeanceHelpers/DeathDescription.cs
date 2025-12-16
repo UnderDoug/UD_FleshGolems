@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using UD_FleshGolems.Logging;
+
 using XRL;
 using XRL.Collections;
 using XRL.Language;
@@ -240,49 +242,73 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public DeathDescription MakeLooselyAccidentalCopy()
             => MakeLooselyAccidentalCopy(this);
 
-        public static string GetDeathCategoryFromEvent(string DeathEventReason, out bool From)
+        public static string GetDeathCategoryFromEvent(string DeathEventReason, out bool By)
         {
-            From = false;
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(DeathEventReason),
+                });
+
+            By = true;
             if (DeathEventReason.TryGetIndexOf(CATEGORY_MARKER, out int categoryStart))
             {
                 DeathEventReason = DeathEventReason[categoryStart..];
+                Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
             }
-            if (DeathEventReason.TryGetIndexOf(REASON_MARKER, out int categoryEnd, true))
+            if (DeathEventReason.TryGetIndexOf(REASON_MARKER, out int categoryEnd, false))
             {
                 DeathEventReason = DeathEventReason[..categoryEnd];
-                if (DeathEventReason.TryGetIndexOf(" by ", out int byStart))
+                Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
+                if (DeathEventReason.TryGetIndexOf(" by ", out int byStart, false))
                 {
                     DeathEventReason = DeathEventReason[..byStart];
+                    Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
                 }
                 else
-                if (DeathEventReason.TryGetIndexOf(" from ", out int fromStart))
+                if (DeathEventReason.TryGetIndexOf(" from ", out int fromStart, false))
                 {
                     DeathEventReason = DeathEventReason[..fromStart];
-                    From = true;
+                    Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
+                    By = false;
                 }
             }
+            Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
+            Debug.Log(nameof(By), By, indent[1]);
             return DeathEventReason;
         }
 
         public static string GetMethodFromEvent(string DeathEventReason)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(DeathEventReason), DeathEventReason),
+                });
             if (DeathEventReason.TryGetIndexOf(REASON_MARKER, out int categoryEnd))
             {
                 DeathEventReason = DeathEventReason[categoryEnd..].Remove("##").TrimStart();
+                Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
             }
             if (DeathEventReason.StartsWith("with ")
                 && DeathEventReason.TryGetIndexOf("with ", out int withEnd))
             {
                 DeathEventReason = DeathEventReason[withEnd..];
+                Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
             }
+            Debug.Log("Remove articles", Indent: indent[1]);
             foreach (string article in new List<string>() { "some", "an", "a", })
             {
                 if (DeathEventReason.StartsWith(article + " ")
                     && DeathEventReason.TryGetIndexOf(article + " ", out int articleEnd))
                 {
                     DeathEventReason = DeathEventReason[articleEnd..];
+                    Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[2]);
                 }
             }
+            Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
             return DeathEventReason;
         }
 
@@ -292,14 +318,29 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         protected DeathDescription ProcessDeathEvent(IDeathEvent E, string NotableFeature = null)
         {
             Category = GetDeathCategoryFromEvent(E.ThirdPersonReason, out By);
-            Killed = DeathCategoryDeathDescriptions[Category]
+            if (!DeathCategoryDeathDescriptions.TryGetValue(Category, out List<DeathDescription> killedCategoryDescriptionsList))
+            {
+                killedCategoryDescriptionsList = DeathCategoryDeathDescriptions
+                    ?.Aggregate(
+                        seed: new List<DeathDescription>(),
+                        func: delegate (List<DeathDescription> acc, KeyValuePair<string, List<DeathDescription>> next)
+                        {
+                            if (next.Value.IsNullOrEmpty())
+                                return acc;
+
+                            acc.AddRange(next.Value);
+                            return acc;
+                        });
+            }
+            Killed = killedCategoryDescriptionsList
                 ?.GetRandomElementCosmetic(delegate (DeathDescription deathDescription)
                 {
                     return (deathDescription.Killer != "") == (E.Killer != null)
                         && (deathDescription.Method != "") == (E.Weapon != null);
                 }).Killed ?? Category;
 
-            Killer = E.Killer?.GetReferenceDisplayName(Short: true);
+            bool killerProperlyNamed = E.Killer != null && E.Killer.HasProperName;
+            Killer = E.Killer?.GetReferenceDisplayName(Short: true, WithIndefiniteArticle: !killerProperlyNamed);
             Method = E.Weapon?.GetReferenceDisplayName(Short: true)
                 ?? NotableFeature
                 ?? GetMethodFromEvent(E.ThirdPersonReason);
@@ -320,7 +361,9 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             => "=" + Alias + "." + (Capitalize ? "O" : "o") + "bjective= ";
 
         public string GetWere(string Alias = "subject")
-            => Were ? ("=" + Alias + ".verb:were:afterpronoun= ") : "";
+            => Were
+            ? ("=" + Alias + ".verb:were:afterpronoun= ")
+            : "";
 
         public string TheyWere(string Alias = "subject", bool Capitalize = false)
             => GetThey(Alias, Capitalize) + GetWere(Alias);
@@ -328,18 +371,30 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public string GetKilled(string Adverb = null)
             => (!Adverb.IsNullOrEmpty() ? Adverb + " " : null) + Killed;
 
-        public string GetBy(string Killer = null)
-            => (Killer ?? this.Killer) != null && By
-            ? " by "
-            : " from ";
+        public string GetBy(string Killer = null, string Method = null)
+        {
+            if (GetKiller(Killer) == "" && GetMethod(Method).IsNullOrEmpty())
+                return null;
+
+            return GetKiller(Killer) != null && By
+                ? " by "
+                : " from ";
+        }
+
 
         public string GetKiller(string Killer = null)
             => Killer ?? this.Killer;
 
-        public string GetWith(string Killer = null, bool ForceNoMethodArticle = false)
-            => With
-            ? " with " + (GetArticle(ForceNoMethodArticle) is string article && !article.IsNullOrEmpty() ? article + " ": null)
-            : (!GetKiller(Killer).IsNullOrEmpty() ? "'s " : null); // pass "" as Killer to override result when With is false.
+        public string GetWith(string Killer = null, string Method = null, bool ForceNoMethodArticle = false)
+        {
+            if (GetKiller(Killer).IsNullOrEmpty()
+                && GetMethod(Method).IsNullOrEmpty())
+                return null;
+
+            return With && !GetMethod().IsNullOrEmpty()
+                ? " with " + (GetArticle(ForceNoMethodArticle) is string article && !article.IsNullOrEmpty() ? article + " " : null)
+                : (!GetKiller(Killer).IsNullOrEmpty() ? "'s " : null); // pass "" as Killer to override result when With is false.
+        }
 
         private string GetArticle(bool ForceNoMethodArticle = false)
             => !ForceNoMethodArticle
@@ -352,8 +407,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public string Reason(bool Accidental = false)
             => KilledByKiller(Accidental ? "accidentally" : null) + WithMethod();
 
-        public string ThirdPersonReason(bool Accidental = false)
-            => TheyWereKilledByKillerWithMethod(Adverb: Accidental ? "accidentally" : null);
+        public string ThirdPersonReason(bool Capitalize = false, bool Accidental = false)
+            => TheyWereKilledByKillerWithMethod(Capitalize: Capitalize, Adverb: Accidental ? "accidentally" : null);
 
         public string BeingKilled(string Adverb = null)
         {
@@ -368,41 +423,78 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             return adverb + GetKilling(killed);
         }
 
-        public string KilledBy(string Adverb = null, string Killer = null)
-            => GetKilled(Adverb) + GetBy(Killer); // pass "" as Killer to override/mask killer.
+        public string KilledBy(string Adverb = null, string Killer = null, string Method = null)
+            => GetKilled(Adverb) + GetBy(Killer, Method); // pass "" as Killer to override/mask killer.
 
         public string ByKiller(string Killer = null)
-            => GetBy(Killer) + GetKiller(Killer); // pass "" as Killer to override/mask killer.
+            => GetBy(Killer, Method) + GetKiller(Killer); // pass "" as Killer to override/mask killer.
 
         public string KilledByKiller(string Adverb = null, string Killer = null)
-            => GetKilled(Adverb) + GetBy(Killer) + GetKiller(Killer); // pass "" as Killer to override/mask killer.
+            => KilledBy(Adverb, Killer, Method) + GetKiller(Killer); // pass "" as Killer to override/mask killer.
 
-        public string ByKillerWith(string Killer = null)
-            => ByKiller(Killer) + GetWith(Killer);
+        public string ByKillerWith(
+            string Killer = null,
+            string Method = null,
+            bool ForceNoMethodArticle = false)
+            => ByKiller(Killer) + GetWith(Killer, Method, ForceNoMethodArticle);
 
-        public string KilledWith(string Adverb = null)
-            => GetKilled(Adverb) + GetWith("");
+        public string KilledWith(
+            string Adverb = null,
+            string Method = null,
+            bool ForceNoMethodArticle = false)
+            => GetKilled(Adverb) + GetWith(Killer, Method, ForceNoMethodArticle);
 
-        public string WithMethod(string Method = null)
-            => GetWith("") + GetMethod(Method);
+        public string WithMethod(string Method = null, bool ForceNoMethodArticle = false)
+            => GetWith(Killer, Method, ForceNoMethodArticle) + GetMethod(Method);
 
-        public string KilledWithMethod(string Adverb = null, string Method = null)
-            => KilledWith(Adverb) + GetMethod(Method);
+        public string KilledWithMethod(
+            string Adverb = null,
+            string Method = null,
+            bool ForceNoMethodArticle = false)
+            => KilledWith(Adverb, Method, ForceNoMethodArticle) + GetMethod(Method);
 
-        public string WasKilledBy(string Alias = "subject", string Adverb = null, string Killer = null)
-            => GetWere(Alias) + GetKilled(Adverb) + ByKiller(Killer);
+        public string WasKilled(
+            string Alias = "subject",
+            string Adverb = null)
+            => GetWere(Alias) + GetKilled(Adverb);
 
-        public string WasKilledByKillerWithMethod(string Alias = "subject", string Adverb = null, string Killer = null, string Method = null)
-            => GetWere(Alias) + GetKilled(Adverb) + ByKiller(Killer) + WithMethod(Method);
+        public string WasKilledBy(
+            string Alias = "subject",
+            string Adverb = null,
+            string Killer = null)
+            => GetWere(Alias) + KilledBy(Adverb, Killer, Method);
 
-        public string TheyWereKilledByKiller(string Alias = "subject", bool Capitalize = false, string Adverb = null, string Killer = null)
-            => TheyWere(Alias, Capitalize) + GetKilled(Adverb) + ByKiller(Killer);
+        public string WasKilledByKillerWithMethod(
+            string Alias = "subject", 
+            string Adverb = null,
+            string Killer = null,
+            string Method = null,
+            bool ForceNoMethodArticle = false)
+            => GetWere(Alias) + KilledByKiller(Adverb, Killer) + WithMethod(Method, ForceNoMethodArticle);
 
-        public string TheyWereKilledWithMethod(string Alias = "subject", bool Capitalize = false, string Adverb = null, string Method = null)
-            => TheyWere(Alias, Capitalize) + KilledWithMethod(Adverb, Method);
+        public string TheyWereKilledByKiller(
+            string Alias = "subject",
+            bool Capitalize = false,
+            string Adverb = null,
+            string Killer = null)
+            => TheyWere(Alias, Capitalize) + KilledByKiller(Adverb, Killer);
 
-        public string TheyWereKilledByKillerWithMethod(string Alias = "subject", bool Capitalize = false, string Adverb = null, string Killer = null, string Method = null)
-            => TheyWereKilledByKiller(Alias, Capitalize, Adverb, Killer) + KilledWithMethod(Adverb, Method);
+        public string TheyWereKilledWithMethod(
+            string Alias = "subject",
+            bool Capitalize = false,
+            string Adverb = null,
+            string Method = null,
+            bool ForceNoMethodArticle = false)
+            => TheyWere(Alias, Capitalize) + KilledWithMethod(Adverb, Method, ForceNoMethodArticle);
+
+        public string TheyWereKilledByKillerWithMethod(
+            string Alias = "subject",
+            bool Capitalize = false,
+            string Adverb = null,
+            string Killer = null,
+            string Method = null,
+            bool ForceNoMethodArticle = false)
+            => TheyWereKilledByKiller(Alias, Capitalize, Adverb, Killer) + WithMethod(Method, ForceNoMethodArticle);
 
         public string KilledThem(string Adverb = null, string Alias = "subject")
             => GetKilled(Adverb) + GetThem(Alias);
@@ -410,14 +502,26 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public string KillerKilled(string Killer = null, string Adverb = null)
             => GetKiller(Killer) + GetKilled(Adverb);
 
-        public string KillerKilledThem(string Killer = null, string Adverb = null, string Alias = "subject")
+        public string KillerKilledThem(
+            string Killer = null,
+            string Adverb = null,
+            string Alias = "subject")
             => KillerKilled(Killer, Adverb) + GetThem(Alias);
 
-        public string KilledThemWithMethod(string Adverb = null, string Alias = "subject", string Method = null)
-            => GetKilled(Adverb) + GetThem(Alias) + WithMethod(Method);
+        public string KilledThemWithMethod(
+            string Adverb = null,
+            string Alias = "subject",
+            string Method = null,
+            bool ForceNoMethodArticle = false)
+            => GetKilled(Adverb) + GetThem(Alias) + WithMethod(Method, ForceNoMethodArticle);
 
-        public string KillerKilledThemWithMethod(string Killer = null, string Adverb = null, string Alias = "subject", string Method = null)
-            => KillerKilledThem(Killer, Adverb, Alias) + WithMethod(Method);
+        public string KillerKilledThemWithMethod(
+            string Killer = null,
+            string Adverb = null,
+            string Alias = "subject",
+            string Method = null,
+            bool ForceNoMethodArticle = false)
+            => KillerKilledThem(Killer, Adverb, Alias) + WithMethod(Method, ForceNoMethodArticle);
 
         /*
          * 
@@ -446,7 +550,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 });
         }
         private static string ProcessWere(DelegateContext Context)
-            => Context.Target.GetDeathDescription()?.GetWere()?.StartReplace()?.AddObject(Context.Target)?.ToString();
+            => Context.Target?.GetDeathDescription()
+                ?.GetWere()
+                ?.StartReplace()
+                ?.AddObject(Context.Target)
+                ?.ToString();
 
         private static bool TryProcessWere(DelegateContext Context, out string Were)
             => !(Were = ProcessWere(Context)).IsNullOrEmpty();
@@ -458,7 +566,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Context: Context,
                 Output: Context.Target
                     ?.GetDeathDescription()
-                    ?.GetKiller(Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+                    ?.GetKiller(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
 
         // parameter0: killer override.
         [VariableObjectReplacer("death.byKiller")]
@@ -467,7 +575,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Context: Context,
                 Output: Context.Target
                     ?.GetDeathDescription()
-                    ?.ByKiller(Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+                    ?.ByKiller(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
 
         // parameter0: adverb.
         [VariableObjectReplacer("death.killed", "death.verbed")]
@@ -476,20 +584,43 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Context: Context,
                 Output: Context.Target
                     ?.GetDeathDescription()
-                    ?.GetKilled(Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+                    ?.GetKilled(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
 
         // parameter0: adverb.
         [VariableObjectReplacer("death.was.killed", "death.was.verbed")]
         public static string TargetDeath_Was_Killed(DelegateContext Context)
         {
+            using Indent indent = new(1);
+
             string output = null;
+            string were = null;
+
             if (Context.Target?.GetDeathDescription() is DeathDescription deathDescription)
             {
-                if (TryProcessWere(Context, out string were))
+                if (TryProcessWere(Context, out were))
                 {
                     output += were;
+                    
                 }
-                output += deathDescription.GetKilled(Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null);
+                string adverb = !Context.Parameters.IsNullOrEmpty() 
+                    ? Context.Parameters[0]
+                        ?.CachedCommaExpansion()
+                        ?.GetRandomElementCosmetic()
+                    : null;
+                output += deathDescription.GetKilled(adverb);
+
+                output = deathDescription.WasKilled(Adverb: adverb)
+                    ?.StartReplace()
+                    ?.AddObject(Context.Target)
+                    ?.ToString();
+
+                Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(were), were),
+                    Debug.Arg(nameof(deathDescription.Killed), deathDescription.GetKilled(adverb)),
+                    Debug.Arg(nameof(output), output),
+                });
             }
             return ContextCapitalize(
                 Context: Context,
@@ -526,11 +657,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Context: Context,
                 Output: Context.Target
                     ?.GetDeathDescription()
-                    ?.KilledByKiller(Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+                    ?.KilledByKiller(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
 
         // parameter0: killer override.
         // parameter1: adverb.
-        [VariableObjectReplacer("death.killerKilled", "death.killerVerbed")]
+        [VariableObjectReplacer("death.killer.killed", "death.killer.verbed")]
         public static string TargetDeath_KillerKilled(DelegateContext Context)
         {
             string killerOverride;
@@ -587,19 +718,37 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         }
 
         // parameter0: adverb.
-        [VariableObjectReplacer("death.killedWith.method", "death.killedWith.method")]
+        [VariableObjectReplacer("death.killedWith.method", "death.verbedWith.method")]
         public static string TargetDeath_KilledWith_Method(DelegateContext Context)
             => ContextCapitalize(
                 Context: Context,
                 Output: Context.Target
                     ?.GetDeathDescription()
-                    ?.KilledWithMethod(Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+                    ?.KilledWithMethod(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+
+        // parameter0: method override.
+        [VariableObjectReplacer("death.method")]
+        public static string TargetDeath_Method(DelegateContext Context)
+            => ContextCapitalize(
+                Context: Context,
+                Output: Context.Target
+                    ?.GetDeathDescription()
+                    ?.GetMethod(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+
+        // parameter0: method override.
+        [VariableObjectReplacer("death.withMethod")]
+        public static string TargetDeath_WithMethod(DelegateContext Context)
+            => ContextCapitalize(
+                Context: Context,
+                Output: Context.Target
+                    ?.GetDeathDescription()
+                    ?.WithMethod(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
 
         // parameter0: adverb.
         // parameter1: killer override.
         // parameter2: method override.
         // parameter3: ForceNoMethodArticle override.
-        [VariableObjectReplacer("death.killed.byWith", "death.killed.byWith")]
+        [VariableObjectReplacer("death.killed.byWith", "death.verbed.byWith")]
         public static string TargetDeath_Killed_ByWith(DelegateContext Context)
         {
             string output = null;
@@ -635,7 +784,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         }
 
         // parameter0: adverb.
-        [VariableObjectReplacer("death.killed.byKiller.withMethod", "death.killed.byKiller.withMethod")]
+        [VariableObjectReplacer("death.killed.byKiller.withMethod", "death.verbed.byKiller.withMethod")]
         public static string TargetDeath_Killed_ByKiller_WithMethod(DelegateContext Context)
         {
             string output = null;
@@ -687,6 +836,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     output += were;
                 }
                 output += deathDescription.KilledWithMethod(adverb, methodOverride);
+                deathDescription.ForceNoMethodArticle = forceNoMethodArticle;
             }
             return ContextCapitalize(
                 Context: Context,
@@ -694,7 +844,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         }
 
         // parameter0: adverb.
-        [VariableObjectReplacer("death.was.killedWith", "death.was.verbedWith")]
+        [VariableObjectReplacer("death.was.killedWith.method", "death.was.verbedWith.method")]
         public static string TargetDeath_Was_KilledWith_Method(DelegateContext Context)
         {
             string output = null;
@@ -708,11 +858,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                         nameof(adverb),
                     });
                 adverb = contextParams[nameof(adverb)];
-                if (contextParams[nameof(deathDescription.ForceNoMethodArticle)] is string forceNoMethodArticleParam
-                    && forceNoMethodArticleParam.IsNullOrEmpty())
-                {
-                    deathDescription.ForceNoMethodArticle = forceNoMethodArticleParam.EqualsNoCase("true");
-                }
                 if (TryProcessWere(Context, out string were))
                 {
                     output += were;
@@ -724,12 +869,36 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Output: output);
         }
 
+        // parameter0: adverb.
+        [VariableObjectReplacer("death.beingKilled", "death.beingVerbed")]
+        public static string TargetDeath_BeingVerbed(DelegateContext Context)
+        {
+            string output = null;
+            if (Context.Target?.GetDeathDescription() is DeathDescription deathDescription)
+            {
+                string adverb;
+                Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                    Context: Context,
+                    ParameterLabels: new string[]
+                    {
+                        nameof(adverb),
+                    });
+                adverb = contextParams[nameof(adverb)];
+                if (TryProcessWere(Context, out string were))
+                {
+                    output += were;
+                }
+                output += deathDescription.BeingKilled(adverb);
+            }
+            return ContextCapitalize(
+                Context: Context,
+                Output: output);
+        }
+
         // death.was.killed.byWith, death.was.verbed.byWith
 
         // death.was.killed.byKiller.withMethod, death.was.verbed.byKiller.withMethod
 
         // death.fullDescription
-
-        // death.beingKilled
     }
 }

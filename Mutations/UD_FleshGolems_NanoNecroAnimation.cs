@@ -620,7 +620,7 @@ namespace XRL.World.Parts.Mutation
                         Killer: ParentObject,
                         KillerText: null,
                         Reason: deathDescription.Reason(accidental),
-                        ThirdPersonReason: deathDescription.ThirdPersonReason(accidental),
+                        ThirdPersonReason: deathDescription.ThirdPersonReason(false, accidental),
                         Accidental: accidental,
                         Force: true,
                         DeathVerb: "cease",

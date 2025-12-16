@@ -621,13 +621,13 @@ namespace XRL.World.ObjectBuilders
                     }
                     else
                     {
+                        reanimationHelper.KillerDetails = new(DeathEvent);
                         FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(
                             Dying: Entity,
                             E: DeathEvent,
                             DoAchievement: true,
                             RelentlessIcon: Corpse.RenderForUI(),
                             RelentlessTitle: Corpse.GetReferenceDisplayName(Short: true));
-                        reanimationHelper.KillerDetails = new(DeathEvent);
                     }
                     reanimationHelper.KillerDetails.Log();
                 }
