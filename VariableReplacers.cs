@@ -42,6 +42,11 @@ namespace UD_FleshGolems
          * Variable (no object)
          * 
          */
+        [VariableReplacer("test.parameter.separators.with.debug.replacer")]
+        public static string Test_Parameter_Separators(DelegateContext Context)
+            => Context.Parameters
+                ?.Aggregate("", (a, n) => a + ":" + n);
+
         [VariableReplacer]
         public static string ud_nbsp(DelegateContext Context)
         {
@@ -154,6 +159,10 @@ namespace UD_FleshGolems
          * Variable Object
          * 
          */
+        [VariableObjectReplacer("target.test.parameter.separators.with.debug.replacer")]
+        public static string TargetTest_Parameter_Separators(DelegateContext Context)
+            => Context.Parameters
+                ?.Aggregate("", (a, n) => a + ":" + n);
 
         public static void ParseDeathMemoryContextParameters(
             DelegateContext Context,

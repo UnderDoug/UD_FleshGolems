@@ -365,6 +365,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             ? ("=" + Alias + ".verb:were:afterpronoun= ")
             : "";
 
+        public string GetWas()
+            => Were
+            ? "was "
+            : "";
+
         public string TheyWere(string Alias = "subject", bool Capitalize = false)
             => GetThey(Alias, Capitalize) + GetWere(Alias);
 
@@ -453,24 +458,40 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             bool ForceNoMethodArticle = false)
             => KilledWith(Adverb, Method, ForceNoMethodArticle) + GetMethod(Method);
 
-        public string WasKilled(
+        public string WereKilled(
             string Alias = "subject",
             string Adverb = null)
             => GetWere(Alias) + GetKilled(Adverb);
 
-        public string WasKilledBy(
+        public string WasKilled(
+            string Adverb = null)
+            => GetWas() + GetKilled(Adverb);
+
+        public string WereKilledBy(
             string Alias = "subject",
             string Adverb = null,
             string Killer = null)
             => GetWere(Alias) + KilledBy(Adverb, Killer, Method);
 
-        public string WasKilledByKillerWithMethod(
+        public string WasKilledBy(
+            string Adverb = null,
+            string Killer = null)
+            => GetWas() + KilledBy(Adverb, Killer, Method);
+
+        public string WereKilledByKillerWithMethod(
             string Alias = "subject", 
             string Adverb = null,
             string Killer = null,
             string Method = null,
             bool ForceNoMethodArticle = false)
             => GetWere(Alias) + KilledByKiller(Adverb, Killer) + WithMethod(Method, ForceNoMethodArticle);
+
+        public string WasKilledByKillerWithMethod(
+            string Adverb = null,
+            string Killer = null,
+            string Method = null,
+            bool ForceNoMethodArticle = false)
+            => GetWas() + KilledByKiller(Adverb, Killer) + WithMethod(Method, ForceNoMethodArticle);
 
         public string TheyWereKilledByKiller(
             string Alias = "subject",
@@ -531,11 +552,19 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         private static string ContextCapitalize(DelegateContext Context, string Output)
             => Context.Capitalize ? Output?.Capitalize() : Output;
 
-        private static Dictionary<string, string> GetOrderedLabelledContextParameters(DelegateContext Context, params string[] ParameterLabels)
+        private static Dictionary<string, string> GetOrderedLabelledContextParameters(
+            int Offset,
+            DelegateContext Context,
+            params string[] ParameterLabels)
         {
             if (ParameterLabels.IsNullOrEmpty())
                 return null;
+
             List<string> contextParams = Context.Parameters ?? new();
+            contextParams = contextParams
+                ?.Where(p => contextParams.IndexOf(p) >= Offset)
+                ?.ToList();
+
             return ParameterLabels.ToDictionary(
                 keySelector: s => s,
                 elementSelector: delegate (string e)
@@ -549,6 +578,15 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     return e;
                 });
         }
+        private static Dictionary<string, string> GetOrderedLabelledContextParameters(
+            string Key,
+            DelegateContext Context,
+            params string[] ParameterLabels)
+            => GetOrderedLabelledContextParameters(
+                Offset: Math.Abs((Key?.Length ?? 0) - (Key?.Remove(".")?.Length ?? 0)),
+                Context: Context,
+                ParameterLabels: ParameterLabels);
+
         private static string ProcessWere(DelegateContext Context)
             => Context.Target?.GetDeathDescription()
                 ?.GetWere()
@@ -586,55 +624,65 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     ?.GetDeathDescription()
                     ?.GetKilled(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
 
-        // parameter0: adverb.
+        // parameter2: adverb.
         [VariableObjectReplacer("death.was.killed", "death.was.verbed")]
         public static string TargetDeath_Was_Killed(DelegateContext Context)
         {
             using Indent indent = new(1);
 
             string output = null;
-            string were = null;
-
             if (Context.Target?.GetDeathDescription() is DeathDescription deathDescription)
             {
-                if (TryProcessWere(Context, out were))
-                {
-                    output += were;
-                    
-                }
-                string adverb = !Context.Parameters.IsNullOrEmpty() 
-                    ? Context.Parameters[0]
+                string adverb = !Context.Parameters.IsNullOrEmpty()
+                    ? Context.Parameters[2]
                         ?.CachedCommaExpansion()
                         ?.GetRandomElementCosmetic()
                     : null;
-                output += deathDescription.GetKilled(adverb);
 
                 output = deathDescription.WasKilled(Adverb: adverb)
                     ?.StartReplace()
                     ?.AddObject(Context.Target)
                     ?.ToString();
-
-                Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(were), were),
-                    Debug.Arg(nameof(deathDescription.Killed), deathDescription.GetKilled(adverb)),
-                    Debug.Arg(nameof(output), output),
-                });
             }
             return ContextCapitalize(
                 Context: Context,
                 Output: output);
         }
 
-        // parameter0: adverb.
-        // parameter1: killer override
+        // parameter2: adverb.
+        [VariableObjectReplacer("death.were.killed", "death.were.verbed")]
+        public static string TargetDeath_Were_Killed(DelegateContext Context)
+        {
+            using Indent indent = new(1);
+
+            string output = null;
+            if (Context.Target?.GetDeathDescription() is DeathDescription deathDescription)
+            {
+                string adverb = !Context.Parameters.IsNullOrEmpty() 
+                    ? Context.Parameters[2]
+                        ?.CachedCommaExpansion()
+                        ?.GetRandomElementCosmetic()
+                    : null;
+
+                output = deathDescription.WereKilled(Adverb: adverb)
+                    ?.StartReplace()
+                    ?.AddObject(Context.Target)
+                    ?.ToString();
+            }
+            return ContextCapitalize(
+                Context: Context,
+                Output: output);
+        }
+
+        // parameter1: adverb.
+        // parameter2: killer override
         [VariableObjectReplacer("death.killedBy", "death.verbedBy")]
         public static string TargetDeath_KilledBy(DelegateContext Context)
         {
             string adverb;
             string killerOverride;
             Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                    Offset: 1,
                     Context: Context,
                     ParameterLabels: new string[]
                     {
@@ -667,6 +715,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string killerOverride;
             string adverb;
             Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                    Offset: 2,
                     Context: Context,
                     ParameterLabels: new string[]
                     {
@@ -695,6 +744,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 string methodOverride;
                 bool forceNoMethodArticle = deathDescription.ForceNoMethodArticle;
                 Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                    Offset: 1,
                     Context: Context,
                     ParameterLabels: new string[]
                     {
@@ -759,6 +809,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 string methodOverride;
                 bool forceNoMethodArticle = deathDescription.ForceNoMethodArticle;
                 Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                    Offset: 2,
                     Context: Context,
                     ParameterLabels: new string[]
                     {
@@ -792,6 +843,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             {
                 string adverb;
                 Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                    Offset: 3,
                     Context: Context,
                     ParameterLabels: new string[]
                     {
@@ -818,6 +870,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 string methodOverride;
                 bool forceNoMethodArticle = deathDescription.ForceNoMethodArticle;
                 Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                    Offset: 2,
                     Context: Context,
                     ParameterLabels: new string[]
                     {
@@ -852,6 +905,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             {
                 string adverb;
                 Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                    Offset: 3,
                     Context: Context,
                     ParameterLabels: new string[]
                     {
@@ -878,17 +932,14 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             {
                 string adverb;
                 Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                    Offset: 1,
                     Context: Context,
                     ParameterLabels: new string[]
                     {
                         nameof(adverb),
                     });
                 adverb = contextParams[nameof(adverb)];
-                if (TryProcessWere(Context, out string were))
-                {
-                    output += were;
-                }
-                output += deathDescription.BeingKilled(adverb);
+                output = deathDescription.BeingKilled(adverb);
             }
             return ContextCapitalize(
                 Context: Context,

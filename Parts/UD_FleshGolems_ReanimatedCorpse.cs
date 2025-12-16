@@ -445,11 +445,12 @@ namespace XRL.World.Parts
         {
             if (E.Context == "CreatureType" && E.Reference)
             {
-                E.ReplacePrimaryBase(E.Object.GetBlueprint().DisplayName().RemoveAll("[", "]"));
+                string replacementName = E.Object.GetBlueprint().DisplayName().RemoveAll("[", "]");
 
                 if (IdentityType < IdentityType.ParticipantVillager && IdentityType > IdentityType.Player)
                 {
                     E.AddAdjective("corpse of", CorpseAdjective);
+                    replacementName = replacementName.ToLower();
                 }
                 else
                 if (IdentityType < IdentityType.Corpse)
@@ -458,6 +459,8 @@ namespace XRL.World.Parts
                 }
 
                 E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
+
+                E.ReplacePrimaryBase(replacementName);
             }
             else
             if (PastLife != null

@@ -178,7 +178,7 @@ namespace XRL.World.Parts
                     new("killed"),
                     new("killed", Killed: "killed in a duel"),
                     new("killed", Killed: "thoroughly ended"),
-                    new("killed", Killed: "wasted"),
+                    new("killed", Killed: "{{R|wasted}}"),
                     new("killed", Killed: "merced"),
                     new("killed", Killed: "taken out"),
                 }
@@ -560,8 +560,6 @@ namespace XRL.World.Parts
                     })
                 ?.GetRandomElementCosmetic()
                 ?.Copy();
-
-
 
             if (DeathDescription != null)
             {

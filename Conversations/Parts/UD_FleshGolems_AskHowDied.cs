@@ -154,7 +154,7 @@ namespace XRL.World.Conversations.Parts
                     KILLED_BY_PLAYER,
                     PLAYER_LED,
                 })
-            ?.Where(ct => ct.HasAttributes(MEMORY_ELEMENT, PLAYER_LED))
+            ?.Where(ct => ct.HasAttributes(KILLED_BY_PLAYER, PLAYER_LED))
             ?.ToList();
 
         public override void Awake()
@@ -174,28 +174,10 @@ namespace XRL.World.Conversations.Parts
 
         public override bool WantEvent(int ID, int Propagation)
             => base.WantEvent(ID, Propagation)
-            // || ID == IsElementVisibleEvent.ID
             || ID == GetTextElementEvent.ID
             || ID == PrepareTextEvent.ID
             || ID == EnteredElementEvent.ID
             ;
-        public override bool HandleEvent(IsElementVisibleEvent E)
-        {
-            GameObject speaker = The.Speaker;
-            if (!ConversationUI.StartNode.AllowEscape)
-            {
-                return false;
-            }
-            if (!speaker.IsCorpse())
-            {
-                return false;
-            }
-            if (!speaker.HasPart<UD_FleshGolems_ReanimatedCorpse>())
-            {
-                return false;
-            }
-            return base.HandleEvent(E);
-        }
         public override bool HandleEvent(GetTextElementEvent E)
         {
             using Indent indent = new(1);
@@ -262,15 +244,18 @@ namespace XRL.World.Conversations.Parts
                             if (!conversationText.HasAttribute(MEMORY_ELEMENT))
                                 continue;
 
-                            bool elementIsUnknown = conversationText.HasAttributeWithValue(KNOWN, "false");
-
                             string memoryElementString = conversationText.Attributes[MEMORY_ELEMENT];
 
                             DeathMemoryElements key = GetDeathMemoryElementsFromString(memoryElementString);
 
+                            bool elementIsKnown = conversationText.HasAttributeWithValue(KNOWN, "true");
+                            bool memoryHasKey = corpseDeathMemoryFlags.HasFlag(key);
+
+                            bool textIsAppropriate = (memoryHasKey && elementIsKnown)
+                                || (!memoryHasKey && !elementIsKnown);
+
                             if (key != DeathMemoryElements.None
-                                && ((corpseDeathMemoryFlags.HasFlag(key) && !elementIsUnknown)
-                                || elementIsUnknown))
+                                && textIsAppropriate)
                             {
                                 if (!organizedTexts.ContainsKey(key))
                                 {
@@ -580,9 +565,14 @@ namespace XRL.World.Conversations.Parts
                 {
                     if (!speaker.IsPlayerLed())
                     {
-                        int selectedTextFinalIndex = E.Text.Length - 1;
-                        int roughlyHalfSelectedText = Math.Min(Math.Max(1, (selectedTextFinalIndex / 2) + Stat.RandomCosmetic(-5, 5)), selectedTextFinalIndex);
-                        E.Text.Remove(roughlyHalfSelectedText, selectedTextFinalIndex);
+                        int selectedTextFinalIndex = E.Text.ToString().Length;
+                        int roughlyHalfSelectedText = Math.Min(Math.Max(0, (selectedTextFinalIndex / 2) + Stat.RandomCosmetic(-5, 5)), selectedTextFinalIndex);
+                        int latterRoughlyHalfSelectedText = selectedTextFinalIndex - roughlyHalfSelectedText;
+                        Debug.Log(nameof(selectedTextFinalIndex), selectedTextFinalIndex, indent[1]);
+                        Debug.Log(nameof(roughlyHalfSelectedText), roughlyHalfSelectedText, indent[1]);
+                        Debug.Log(nameof(latterRoughlyHalfSelectedText), latterRoughlyHalfSelectedText, indent[1]);
+                        E.Text.Remove(roughlyHalfSelectedText, latterRoughlyHalfSelectedText);
+                        killedByPlayerString = "... \n\n=ud_nbsp:6=... " + killedByPlayerString;
                     }
                     else
                     {

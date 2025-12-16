@@ -1111,7 +1111,7 @@ namespace XRL.World.Parts
                 string creatureType = frankenCorpse.GetBlueprint().DisplayName();
                 if (identityType < IdentityType.ParticipantVillager && identityType > IdentityType.Player)
                 {
-                    creatureType = "corpse of " + PastLife.GetBlueprint().DisplayName();
+                    creatureType = "corpse of " + PastLife.GetBlueprint().DisplayName().ToLower();
                 }
                 else
                 if (identityType < IdentityType.Corpse)
