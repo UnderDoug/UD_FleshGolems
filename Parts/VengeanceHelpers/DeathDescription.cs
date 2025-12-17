@@ -332,24 +332,74 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                             return acc;
                         });
             }
-            Killed = killedCategoryDescriptionsList
+            bool killerProperlyNamed = E.Killer != null && E.Killer.HasProperName;
+            string killed = killedCategoryDescriptionsList
                 ?.GetRandomElementCosmetic(delegate (DeathDescription deathDescription)
                 {
                     return (deathDescription.Killer != "") == (E.Killer != null)
                         && (deathDescription.Method != "") == (E.Weapon != null);
-                }).Killed ?? Category;
+                }).Killed
+                ?? Category;
 
-            bool killerProperlyNamed = E.Killer != null && E.Killer.HasProperName;
-            Killer = E.Killer?.GetReferenceDisplayName(Short: true, WithIndefiniteArticle: !killerProperlyNamed);
-            Method = E.Weapon?.GetReferenceDisplayName(Short: true)
-                ?? NotableFeature
-                ?? GetMethodFromEvent(E.ThirdPersonReason);
+            this.SetKilled(killed)
+                .SetKiller(E.Killer, !killerProperlyNamed)
+                .SetMethod(E.Weapon);
+
+            if (Method == null)
+                SetMethod(GetMethodFromEvent(E.ThirdPersonReason));
+
             if (E.Weapon != null)
             {
                 PluralMethod = E.Weapon.IsPlural;
             }
             return this;
         }
+
+        public DeathDescription SetKilled(string Killed, bool Override = false)
+        {
+            if (this.Killed != "" || Override)
+                this.Killed = Killed;
+            return this;
+        }
+        public DeathDescription SetKilledFallback(string Killed, bool Override = false)
+        {
+            if (this.Killed == null
+                || (this.Killed == "" && Override))
+                this.Killed = Killed;
+            return this;
+        }
+
+        public DeathDescription SetKiller(GameObject Killer, bool WithIndefiniteArticle = false, bool Override = false)
+        {
+            if (this.Killer != "" || Override)
+                this.Killer = Killer.GetReferenceDisplayName(Short: true, WithIndefiniteArticle: WithIndefiniteArticle);
+            return this;
+        }
+        public DeathDescription SetKillerFallback(GameObject Killer, bool WithIndefiniteArticle = false, bool Override = false)
+        {
+            if (this.Killer == null
+                || (this.Killer == "" && Override))
+                this.Killer = Killer.GetReferenceDisplayName(Short: true, WithIndefiniteArticle: WithIndefiniteArticle);
+            return this;
+        }
+
+        public DeathDescription SetMethod(string Method, bool Override = false)
+        {
+            if (this.Method != "" || Override)
+                this.Method = Method;
+            return this;
+        }
+        public DeathDescription SetMethodFallback(string Method, bool Override = false)
+        {
+            if (this.Method == null
+                || (this.Method == "" && Override))
+                this.Method = Method;
+            return this;
+        }
+        public DeathDescription SetMethod(GameObject Weapon, bool Override = false)
+            => SetMethod(Weapon.GetReferenceDisplayName(Short: true), Override);
+        public DeathDescription SetMethodFallback(GameObject Weapon, bool Override = false)
+            => SetMethodFallback(Weapon.GetReferenceDisplayName(Short: true), Override);
 
         public override string ToString()
             => TheyWereKilledByKillerWithMethod();
@@ -557,5 +607,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { nameof(ForceNoMethodArticle), ForceNoMethodArticle.ToString() },
             { nameof(PluralMethod), PluralMethod.ToString() },
         };
+
+        public string DebugInternalsString()
+            => DebugInternals()
+                ?.Aggregate(
+                    seed: "",
+                    func: (a, n) => a + "\n" + n.Key + ": " + n.Value);
     }
 }

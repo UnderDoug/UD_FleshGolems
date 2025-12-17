@@ -46,9 +46,20 @@ using SerializeField = UnityEngine.SerializeField;
 namespace XRL.World.Parts
 {
     [Serializable]
-    public class UD_FleshGolems_DeathMemory : IScribedPart
+    public class UD_FleshGolems_DeathDetails : IScribedPart
     {
-        public GameObject Killer;
+        [SerializeField]
+        private GameObject _Killer;
+        public GameObject Killer
+        {
+            get => _Killer;
+            protected set
+            {
+                _Killer?.UnregisterEvent(this, ReplaceInContextEvent.ID);
+                _Killer = value;
+                _Killer?.RegisterEvent(this, ReplaceInContextEvent.ID);
+            }
+        }
 
         public GameObject Weapon;
 
@@ -62,7 +73,7 @@ namespace XRL.World.Parts
 
         public bool Environmental => DeathDescription?.Method == "";
 
-        public UD_FleshGolems_DeathMemory()
+        public UD_FleshGolems_DeathDetails()
         {
             Killer = null;
             Weapon = null;
@@ -86,10 +97,16 @@ namespace XRL.World.Parts
             DeathMemory = DeathMemory.Make(corpse, DeathEvent, out KillerDetails, out DeathDescription);
 
             Accidental = DeathEvent.Accidental;
+
             return true;
         }
 
-        public bool Initialize(GameObject Killer, GameObject Weapon, GameObject Projectile, DeathDescription DeathDescription, bool Accidental)
+        public bool Initialize(
+            GameObject Killer,
+            GameObject Weapon,
+            GameObject Projectile,
+            DeathDescription DeathDescription,
+            bool Accidental)
         {
             if (DeathDescription == null)
                 return false; 
@@ -114,16 +131,28 @@ namespace XRL.World.Parts
 
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
+            || ID == ReplaceInContextEvent.ID
             || ID == GetDebugInternalsEvent.ID
             ;
 
+        public override bool HandleEvent(ReplaceInContextEvent E)
+        {
+            DeathMemory = DeathMemory.CopyMemories(E.Replacement, DeathMemory);
+            KillerDetails?.Update(E.Replacement);
+            if (DeathDescription != null
+                && DeathDescription.Killer != "")
+            {
+                DeathDescription.SetKiller(E.Replacement);
+            }
+            return base.HandleEvent(E);
+        }
         public override bool HandleEvent(GetDebugInternalsEvent E)
         {
             E.AddEntry(this, nameof(Killer), Killer?.DebugName ?? NULL);
             E.AddEntry(this, nameof(Weapon), Weapon?.DebugName ?? NULL);
-            E.AddEntry(this, nameof(DeathMemory), DeathMemory.DebugInternals()?.Aggregate("", (a, n) => a + "\n" + n.Value + " " + n.Key));
-            E.AddEntry(this, nameof(KillerDetails), KillerDetails?.DebugInternals()?.Aggregate("", (a, n) => a + "\n" + n.Key + ": " + n.Value) ?? NULL);
-            E.AddEntry(this, nameof(DeathDescription), DeathDescription?.DebugInternals()?.Aggregate("", (a, n) => a + "\n" + n.Key + ": " + n.Value) ?? NULL);
+            E.AddEntry(this, nameof(DeathMemory), DeathMemory.DebugInternalsString());
+            E.AddEntry(this, nameof(KillerDetails), KillerDetails?.DebugInternalsString() ?? NULL);
+            E.AddEntry(this, nameof(DeathDescription), DeathDescription?.DebugInternalsString() ?? NULL);
             E.AddEntry(this, Accidental.YehNah(), nameof(Accidental));
             E.AddEntry(this, Environmental.YehNah(), nameof(Environmental));
             return base.HandleEvent(E);

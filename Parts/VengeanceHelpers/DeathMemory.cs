@@ -11,6 +11,7 @@ using static UD_FleshGolems.Const;
 
 using SerializeField = UnityEngine.SerializeField;
 using XRL.World.Parts;
+using System.Linq;
 
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
@@ -29,7 +30,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             Creature,
             Name,
         }
-
+        /*
         [SerializeField]
         private GameObject _Corpse;
         public GameObject Corpse
@@ -42,6 +43,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             }
         }
         public UD_FleshGolems_DeathMemory DeathMemoryPart => Corpse?.GetPart<UD_FleshGolems_DeathMemory>();
+        */
 
         [SerializeField]
         private string CorpseID;
@@ -59,13 +61,26 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         [SerializeField]
         private bool? Method;
 
-        private DeathMemory(GameObject Corpse)
+        private DeathMemory(string CorpseID, bool? Killed = null, KillerMemory? Killer = null, bool? Method = null)
         {
-            _Corpse = Corpse;
-            CorpseID = Corpse.ID;
-            Killed = null;
-            Killer = null;
-            Method = null;
+            this.CorpseID = CorpseID;
+            this.Killed = Killed;
+            this.Killer = Killer;
+            this.Method = Method;
+        }
+        private DeathMemory(GameObject Corpse)
+            : this(Corpse.ID)
+        {
+            // _Corpse = Corpse;
+            // CorpseID = Corpse.ID;
+        }
+        private DeathMemory(DeathMemory Source)
+            : this(Source.CorpseID, Source.Killed, Source.Killer, Source.Method)
+        { }
+        private DeathMemory(string CorpseID, DeathMemory Source)
+            : this(Source)
+        {
+            this.CorpseID = CorpseID;
         }
 
         private readonly string ConstructRandomChannel(string Seed)
@@ -101,7 +116,12 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             return this;
         }
 
-        public static DeathMemory Make(GameObject Corpse, GameObject Killer, GameObject Weapon, KillerDetails? KillerDetails, DeathDescription DeathDescription)
+        public static DeathMemory Make(
+            GameObject Corpse,
+            GameObject Killer,
+            GameObject Weapon,
+            KillerDetails? KillerDetails,
+            DeathDescription DeathDescription)
         {
             if (Corpse == null)
                 throw new ArgumentNullException(nameof(Corpse));
@@ -135,7 +155,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             return deathMemory;
         }
 
-        public static DeathMemory Make(GameObject Corpse, IDeathEvent DeathEvent, out KillerDetails? KillerDetails, out DeathDescription DeathDescription)
+        public static DeathMemory Make(
+            GameObject Corpse,
+            IDeathEvent DeathEvent,
+            out KillerDetails? KillerDetails,
+            out DeathDescription DeathDescription)
         {
             KillerDetails = null;
             DeathDescription = null;
@@ -151,6 +175,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
             return Make(Corpse, DeathEvent.Killer, DeathEvent.Weapon, KillerDetails, DeathDescription);
         }
+
+        public static DeathMemory CopyMemories(GameObject Corpse, DeathMemory DeathMemory)
+            => Corpse != null
+            ? new(Corpse.ID, DeathMemory)
+            : default;
 
         public readonly bool? RemebersKilled()
             => Killed;
@@ -185,5 +214,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { nameof(Killer), "[" + (Killer != null ? (int)Killer : "-") + "]" },
             { nameof(Method), Method?.YehNah() },
         };
+        public readonly string DebugInternalsString()
+            => DebugInternals()
+                ?.Aggregate(
+                    seed: "",
+                    func: (a, n) => a + "\n" + n.Value + " " + n.Key);
     }
 }

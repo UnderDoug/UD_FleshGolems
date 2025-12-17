@@ -211,7 +211,7 @@ namespace XRL.World.ObjectBuilders
                 corpse.SetStringProperty("SourceBlueprint", Entity.Blueprint);
 
                 var corpseReanimationHelper = corpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>();
-                corpseReanimationHelper.KillerDetails = UD_FleshGolems_DestinedForReanimation.ProduceKillerDetails(
+                corpseReanimationHelper.KillerDetails = UD_FleshGolems_DestinedForReanimation.ProduceRandomDeathDescriptionWithComponents(
                     out GameObject killer,
                     out GameObject weapon,
                     out GameObject projectile,

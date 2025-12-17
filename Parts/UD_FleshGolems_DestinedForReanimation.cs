@@ -571,7 +571,7 @@ namespace XRL.World.Parts
             Accidental = Stat.RollCached("1d3") == 1;
         }
 
-        public static KillerDetails ProduceKillerDetails(
+        public static DeathDescription ProduceRandomDeathDescriptionWithComponents(
             out GameObject Killer,
             out GameObject Weapon,
             out GameObject Projectile,
@@ -660,52 +660,72 @@ namespace XRL.World.Parts
             Category = deathDescription.Category;
             Reason = deathDescription.Reason(Accidental);
 
+            deathDescription.SetKiller(Killer)
+                .SetMethod(Weapon)
+                .SetMethodFallback(Projectile);
+
             Debug.Log(nameof(KillerIsCached), KillerIsCached, indent[1]);
             Debug.Log(nameof(Killer), Killer?.DebugName ?? "null", indent[1]);
             Debug.Log(nameof(Weapon), Weapon?.DebugName ?? "null", indent[1]);
             Debug.Log(nameof(Projectile), Projectile?.DebugName ?? "null", indent[1]);
             Debug.Log(nameof(Accidental), Accidental, indent[1]);
 
-            return new(Killer, Weapon, deathDescription, Accidental);
+            return deathDescription;
         }
-        public static KillerDetails ProduceKillerDetails()
+        public UD_FleshGolems_DeathDetails ProduceRandomDeathDetails()
         {
-            KillerDetails output = ProduceKillerDetails(
+            UD_FleshGolems_DeathDetails deathDetails = null;
+
+            DeathDescription deathDescription = ProduceRandomDeathDescriptionWithComponents(
                 Killer: out GameObject killer,
                 Weapon: out GameObject weapon,
                 Projectile: out GameObject projectile,
                 Category: out _,
                 Reason: out _,
-                Accidental: out _,
+                Accidental: out bool accidental,
                 KillerIsCached: out bool killerIsCached);
-
-            if (!killerIsCached)
+            try
             {
-                killer?.Obliterate();
-                weapon?.Obliterate();
-            }
-            projectile?.Obliterate();
+                if (ParentObject is GameObject corpse)
+                {
+                    deathDetails = corpse.RequirePart<UD_FleshGolems_DeathDetails>();
 
-            return output;
+                    if (!deathDetails.Initialize(killer, weapon, projectile, deathDescription, accidental))
+                    {
+                        corpse.RemovePart(deathDetails);
+                        return null;
+                    }
+                }
+                return deathDetails;
+            }
+            finally
+            {
+                if (!killerIsCached)
+                {
+                    killer?.Obliterate();
+                    weapon?.Obliterate();
+                }
+                projectile?.Obliterate();
+            }
         }
 
         public static bool FakeRandomDeath(
             GameObject Dying,
-            out KillerDetails KillerDetails,
+            out UD_FleshGolems_DeathDetails DeathDetails,
             int ChanceRandomKiller = 50,
             bool DoAchievement = false,
-            bool RequireKillerDetails = false,
+            bool RequireDeathDetails = false,
             IRenderable RelentlessIcon = null,
             string RelentlessTitle = null)
         {
             GameObject killer = null;
             GameObject weapon = null;
             GameObject projectile = null;
-            KillerDetails = null;
+            DeathDetails = null;
             bool killerIsCached = false;
             try
             {
-                KillerDetails = ProduceKillerDetails(
+                DeathDescription deathDescription = ProduceRandomDeathDescriptionWithComponents(
                     Killer: out killer,
                     Weapon: out weapon,
                     Projectile: out projectile,
@@ -727,11 +747,11 @@ namespace XRL.World.Parts
                     DoAchievement: DoAchievement,
                     RelentlessIcon: RelentlessIcon,
                     RelentlessTitle: RelentlessTitle,
-                    DeathDescription: KillerDetails?.DeathDescription);
+                    DeathDescription: deathDescription);
 
                 if (!deathFaked)
                 {
-                    KillerDetails = null;
+                    DeathDetails = null;
                 }
 
                 if (!killerIsCached)
@@ -741,11 +761,14 @@ namespace XRL.World.Parts
                 }
                 projectile?.Obliterate();
 
-                if (RequireKillerDetails
-                    && Dying.IsCorpse()
-                    && Dying.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
+                if (RequireDeathDetails
+                    && Dying.IsCorpse())
                 {
-                    reanimationHelper.KillerDetails ??= KillerDetails;
+                    if (Dying.TryGetPart(out UD_FleshGolems_DeathDetails deathDetails))
+                    {
+                        Dying.RemovePart(deathDetails);
+                    }
+                    Dying.AddPart(DeathDetails);
                 }
 
                 return deathFaked;
@@ -764,11 +787,11 @@ namespace XRL.World.Parts
                     projectile.Obliterate();
             }
         }
-        public bool FakeRandomDeath(out KillerDetails KillerDetails, int ChanceRandomKiller = 50, bool DoAchievement = false)
+        public bool FakeRandomDeath(out UD_FleshGolems_DeathDetails DeathDetails, int ChanceRandomKiller = 50, bool DoAchievement = false)
         {
             return FakeRandomDeath(
                 Dying: ParentObject,
-                out KillerDetails,
+                out DeathDetails,
                 ChanceRandomKiller: ChanceRandomKiller,
                 DoAchievement: DoAchievement);
         }

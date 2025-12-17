@@ -1060,7 +1060,7 @@ namespace XRL.World.Parts
 
                 bool builtToBeReanimated = (frankenCorpse.GetPart<UD_FleshGolems_DestinedForReanimation>()?.BuiltToBeReanimated).GetValueOrDefault();
 
-                reanimationHelper.KillerDetails ??= UD_FleshGolems_DestinedForReanimation.ProduceKillerDetails();
+                reanimationHelper.KillerDetails ??= UD_FleshGolems_DestinedForReanimation.ProduceRandomDeathDetails();
 
                 Dictionary<TileMappingKeyword, List<string>> prospectiveTiles = null;
 

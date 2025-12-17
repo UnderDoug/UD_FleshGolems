@@ -58,41 +58,61 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public bool? KillerIsDeceased;
 
-        public KillerDetails(GameObject Killer)
+        private KillerDetails(
+            string ID = null,
+            string Blueprint = null,
+            string NotableFeature = null,
+            string CreatureType = null,
+            string DisplayName = null,
+            bool? KillerIsDeceased = null)
         {
-            ID = Killer?.ID;
-            Blueprint = Killer?.Blueprint;
-
-            NotableFeature = GetNotableFeature(Killer);
-
-            CreatureType = GetCreatureType(Killer);
-
-            DisplayName = Killer?.GetReferenceDisplayName(Short: true);
-
-            KillerIsDeceased = Killer?.IsDying ?? Killer?.IsInGraveyard();
+            this.ID = ID;
+            this.Blueprint = Blueprint;
+            this.NotableFeature = NotableFeature;
+            this.CreatureType = CreatureType;
+            this.DisplayName = DisplayName;
+            this.KillerIsDeceased = KillerIsDeceased;
+        }
+        public KillerDetails(GameObject Killer)
+            : this()
+        {
+            Update(Killer);
         }
         public KillerDetails(IDeathEvent E)
             : this(E?.Killer)
         { }
 
-        public readonly string this[DeathMemory DeathMemory]
+        public readonly string this[KillerMemory? KillerMemory]
         {
             get
             {
-                if (DeathMemory.RemebersKiller() == null)
+                if (KillerMemory == null)
                     return null;
 
-                if (DeathMemory.RemebersKillerName())
+                if (KillerMemory >= DeathMemory.KillerMemory.Name)
                     return DisplayName;
 
-                if (DeathMemory.RemebersKillerCreature())
+                if (KillerMemory >= DeathMemory.KillerMemory.Creature)
                     return CreatureType;
 
-                if (DeathMemory.RemebersKillerFeature())
+                if (KillerMemory >= DeathMemory.KillerMemory.Feature)
                     return NotableFeature;
 
                 return null;
             }
+        }
+        public readonly string this[DeathMemory DeathMemory]
+            => this[DeathMemory.RemebersKiller()];
+
+        public KillerDetails? Update(GameObject Killer)
+        {
+            ID = Killer?.ID;
+            Blueprint = Killer?.Blueprint;
+            NotableFeature = GetNotableFeature(Killer);
+            CreatureType = GetCreatureType(Killer);
+            DisplayName = Killer?.GetReferenceDisplayName(Short: true);
+            KillerIsDeceased = Killer?.IsDying ?? Killer?.IsInGraveyard();
+            return this;
         }
 
         public static bool HasDefaultBehaviorOrNaturalWeaponEquipped(BodyPart BodyPart)
@@ -196,5 +216,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { nameof(NotableFeature), NotableFeature ?? NULL },
             { nameof(KillerIsDeceased), KillerIsDeceased?.ToString() ?? NULL },
         };
+
+        public readonly string DebugInternalsString()
+            => DebugInternals()
+            ?.Aggregate(
+                seed: "", 
+                func: (a, n) => a + "\n" + n.Key + ": " + n.Value);
     }
 }
