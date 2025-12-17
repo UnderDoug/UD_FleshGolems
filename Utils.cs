@@ -361,11 +361,21 @@ namespace UD_FleshGolems
         public static string IndefiniteArticle(string Word)
             => Grammar.IndefiniteArticle(Word, false)?.Uncapitalize()?.Trim();
 
-        /* 
-         * 
-         * Wishes!
-         * 
-         */
-        
+        public static string IndefiniteArticle(GameObject Object)
+        {
+            if (Object == null)
+                return null;
+
+            return Object.IsPlural 
+                ? "some" : 
+                Grammar.IndefiniteArticle(Object.GetReferenceDisplayName(Short: true), false).Uncapitalize().Trim();
+        }
+
+            /* 
+             * 
+             * Wishes!
+             * 
+             */
+
+        }
     }
-}

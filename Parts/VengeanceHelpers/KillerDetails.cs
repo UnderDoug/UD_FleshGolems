@@ -27,6 +27,7 @@ using XRL.World.Effects;
 using XRL.World.Capabilities;
 
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
+using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
 using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
 
 using UD_FleshGolems;
@@ -36,133 +37,61 @@ using UD_FleshGolems.Capabilities.Necromancy;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
-using SerializeField = UnityEngine.SerializeField;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
-using DeathMemory = XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse.DeathMemoryElements;
+
+using SerializeField = UnityEngine.SerializeField;
+using static UD_FleshGolems.Parts.VengeanceHelpers.DeathMemory;
 
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
     [Serializable]
-    public class KillerDetails : IComposite
+    public struct KillerDetails : IComposite
     {
         public const string NOTABLE_FEATURE_PROPTAG = "UD_FleshGolems KillerDetails NotableFeature";
 
-        public GameObject Killer;
         public string ID;
         public string Blueprint;
-        public string DisplayName;
-        public string CreatureType;
 
         public string NotableFeature;
-
-        public GameObject Weapon;
-        public string WeaponName;
-
-        public DeathDescription DeathDescription;
-
-        public bool WasAccident;
-        public bool WasEnvironment;
+        public string CreatureType;
+        public string DisplayName;
 
         public bool? KillerIsDeceased;
 
-        public KillerDetails()
+        public KillerDetails(GameObject Killer)
         {
-            Killer = null;
-            ID = null;
-            Blueprint = null;
-            DisplayName = null;
-            CreatureType = null;
+            ID = Killer?.ID;
+            Blueprint = Killer?.Blueprint;
 
-            NotableFeature = null;
+            NotableFeature = GetNotableFeature(Killer);
 
-            Weapon = null;
-            WeaponName = null;
+            CreatureType = GetCreatureType(Killer);
 
-            DeathDescription = null;
+            DisplayName = Killer?.GetReferenceDisplayName(Short: true);
 
-            WasAccident = false;
-            WasEnvironment = false;
-
-            KillerIsDeceased = false;
-        }
-        public KillerDetails(
-            string ID,
-            string Blueprint,
-            string DisplayName,
-            string CreatureType,
-            string NotableFeature,
-            string WeaponName,
-            DeathDescription DeathDescription,
-            bool WasAccident,
-            bool? WasEnvironment = null,
-            bool? KillerIsDeceased = null)
-            : this()
-        {
-            this.ID = ID;
-            this.Blueprint = Blueprint;
-            this.DisplayName = DisplayName;
-            this.CreatureType = CreatureType;
-            this.NotableFeature = NotableFeature;
-            this.WeaponName = WeaponName;
-            this.DeathDescription = DeathDescription;
-            this.WasAccident = WasAccident;
-            if (WasEnvironment.HasValue)
-            {
-                this.WasEnvironment = WasEnvironment.GetValueOrDefault();
-            }
-            else
-            {
-                this.WasEnvironment = HasNoKiller()
-                    && WeaponName.IsNullOrEmpty();
-            }
-            this.KillerIsDeceased = KillerIsDeceased;
-        }
-        public KillerDetails(
-            GameObject Killer,
-            GameObject Weapon,
-            DeathDescription DeathDescription,
-            bool WasAccident,
-            bool? WasEnvironment = null)
-            : this(
-                  ID: Killer?.ID,
-                  Blueprint: Killer?.Blueprint,
-                  DisplayName: Killer?.GetReferenceDisplayName(Short: true),
-                  CreatureType: Killer?.GetCreatureType(),
-                  NotableFeature: GetNotableFeature(Killer),
-                  WeaponName: Weapon?.GetReferenceDisplayName(Short: true),
-                  DeathDescription: DeathDescription,
-                  WasAccident: WasAccident,
-                  WasEnvironment: WasEnvironment)
-        {
-            this.Killer = Killer;
-            this.Weapon = Weapon;
-            if (Killer != null && !Killer.IsNowhere())
-            {
-                KillerIsDeceased = Killer.IsDying;
-            }
-            if (this.DeathDescription != null)
-            {
-                this.DeathDescription.Killer ??= DisplayName ?? CreatureType ?? "";
-                this.DeathDescription.Method ??= WeaponName ?? NotableFeature ?? "";
-                if (this.WasEnvironment)
-                {
-                    this.DeathDescription.Killer = "";
-                    this.DeathDescription.Method = "";
-                }
-            }
+            KillerIsDeceased = Killer?.IsDying ?? Killer?.IsInGraveyard();
         }
         public KillerDetails(IDeathEvent E)
-            : this(
-                  Killer: E?.Killer,
-                  Weapon: E?.Weapon,
-                  DeathDescription: new(E, GetNotableFeature(E.Killer)),
-                  WasAccident: E == null || E.Accidental,
-                  WasEnvironment: E != null && (E?.Killer == null || !E.Killer.IsCreature) && E.Accidental)
+            : this(E?.Killer)
+        { }
+
+        public readonly string this[DeathMemory DeathMemory]
         {
-            if (DeathDescription != null)
+            get
             {
-                DeathDescription.Killer = DisplayName ?? CreatureType ?? "";
-                DeathDescription.Method = WeaponName ?? NotableFeature ?? "";
+                if (DeathMemory.RemebersKiller() == null)
+                    return null;
+
+                if (DeathMemory.RemebersKillerName())
+                    return DisplayName;
+
+                if (DeathMemory.RemebersKillerCreature())
+                    return CreatureType;
+
+                if (DeathMemory.RemebersKillerFeature())
+                    return NotableFeature;
+
+                return null;
             }
         }
 
@@ -174,7 +103,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public static string GetNotableFeature(GameObject Killer)
         {
-            if (Killer == null || Killer.Body is not Body killerBody)
+            if (Killer == null)
                 return null;
 
             if (Killer.GetPropertyOrTag(NOTABLE_FEATURE_PROPTAG) is not string notableFeature)
@@ -201,174 +130,71 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     foreach (GameObject implant in Killer.GetInstalledCyberneticsReadonly())
                     {
                         cyberneticsCount++;
-                        notableFeatures.TryAdd(implant.GetReferenceDisplayName(Short: true), cyberneticsWeight);
+                        notableFeatures.TryAdd(IndefiniteArticle(implant.GetReferenceDisplayName(Short: true)), cyberneticsWeight);
                     }
                 }
                 int naturalWeaponWeight = cyberneticsWeight / cyberneticsCount;
-                foreach (BodyPart bodyPart in killerBody.LoopParts(HasDefaultBehaviorOrNaturalWeaponEquipped))
+                if (Killer.Body is Body killerBody)
                 {
-                    if (bodyPart.Equipped is GameObject equipped
-                        && equipped.IsNatural()
-                        && equipped.TryGetPart(out MeleeWeapon equippedMeleeWeapon)
-                        && !equippedMeleeWeapon.IsImprovisedWeapon())
-                        notableFeatures.TryAdd(equipped.GetReferenceDisplayName(Short: true), naturalWeaponWeight);
-                    else
-                    if (bodyPart.DefaultBehavior is GameObject defaultBehavior
-                        && defaultBehavior.TryGetPart(out MeleeWeapon defaultMeleeWeapon)
-                        && !defaultMeleeWeapon.IsImprovisedWeapon())
-                        notableFeatures.TryAdd(defaultBehavior.GetReferenceDisplayName(Short: true), naturalWeaponWeight);
+                    foreach (BodyPart bodyPart in killerBody.LoopParts(HasDefaultBehaviorOrNaturalWeaponEquipped))
+                    {
+                        if (bodyPart.Equipped is GameObject equipped
+                            && equipped.IsNatural()
+                            && equipped.TryGetPart(out MeleeWeapon equippedMeleeWeapon)
+                            && !equippedMeleeWeapon.IsImprovisedWeapon())
+                            notableFeatures.TryAdd(IndefiniteArticle(equipped.GetReferenceDisplayName(Short: true)), naturalWeaponWeight);
+                        else
+                        if (bodyPart.DefaultBehavior is GameObject defaultBehavior
+                            && defaultBehavior.TryGetPart(out MeleeWeapon defaultMeleeWeapon)
+                            && !defaultMeleeWeapon.IsImprovisedWeapon())
+                            notableFeatures.TryAdd(IndefiniteArticle(defaultBehavior.GetReferenceDisplayName(Short: true)), naturalWeaponWeight);
+                    }
                 }
                 notableFeature = notableFeatures.GetWeightedSeededRandom(nameof(GetNotableFeature) + "::" + Killer.ID);
                 Killer.SetNotableFeature(notableFeature);
             }
-            return notableFeature;
+            return "someone with " + notableFeature;
         }
 
-        public bool HasNoKiller()
-            => WasEnvironment
-            || (!GameObject.Validate(Killer)
-                && ID.IsNullOrEmpty()
-                && Blueprint.IsNullOrEmpty()
-                && DisplayName.IsNullOrEmpty()
-                && CreatureType.IsNullOrEmpty());
-
-        public bool IsMystery()
-            => ID.IsNullOrEmpty()
-            && Blueprint.IsNullOrEmpty()
-            && DisplayName.IsNullOrEmpty()
-            && CreatureType.IsNullOrEmpty()
-            && NotableFeature.IsNullOrEmpty()
-            && WeaponName.IsNullOrEmpty()
-            && DeathDescription == null;
-
-        public bool IsPartialMystery()
-            => !IsMystery()
-            && ((ID.IsNullOrEmpty()
-                    && Blueprint.IsNullOrEmpty()
-                    && DisplayName.IsNullOrEmpty()
-                    && CreatureType.IsNullOrEmpty())
-                || (NotableFeature.IsNullOrEmpty()
-                    && WeaponName.IsNullOrEmpty()
-                    && DeathDescription == null)
-                );
-
-        public DeathMemory SyncDeathMemory(DeathMemory DeathMemory)
+        public static string GetCreatureType(GameObject Killer)
         {
-            if (IsMystery())
-                return DeathMemory.None;
-
-            if (DisplayName.IsNullOrEmpty()
-                && DeathMemory.HasFlag(DeathMemory.KillerName))
-                DeathMemory = DeathMemory.SetFlag(DeathMemory.KillerName, Set: false);
-
-            if (CreatureType.IsNullOrEmpty()
-                && DeathMemory.HasFlag(DeathMemory.KillerCreature))
-                DeathMemory = DeathMemory.SetFlag(DeathMemory.KillerCreature, Set: false);
-
-            if (NotableFeature.IsNullOrEmpty()
-                && DeathMemory.HasFlag(DeathMemory.NotableFeature))
-                DeathMemory = DeathMemory.SetFlag(DeathMemory.NotableFeature, Set: false);
-
-            if (WeaponName.IsNullOrEmpty()
-                && DeathMemory.HasFlag(DeathMemory.Weapon))
-                DeathMemory = DeathMemory.SetFlag(DeathMemory.Weapon, Set: false);
-
-            if (DeathDescription == null
-                && DeathMemory.HasFlag(DeathMemory.Description))
-                DeathMemory = DeathMemory.SetFlag(DeathMemory.Description, Set: false);
-
-            return DeathMemory;
+            if (Killer?.GetCreatureType() is string creatureType)
+            {
+                return (Killer.IsPlural ? "some " : IndefiniteArticle(creatureType)) + creatureType;
+            }
+            return null;
         }
 
-        public string KilledBy(DeathMemory DeathMemory, bool Capitalize = false)
+        public readonly bool Any()
         {
-            string output = "mysterious entity";
-            if (DeathMemory.HasFlag(DeathMemory.KillerName))
-            {
-                if (!DisplayName.IsNullOrEmpty())
-                    output = DisplayName;
-                else
-                if (Blueprint.GetGameObjectBlueprint() is GameObjectBlueprint killerModel
-                    && killerModel.GetxTag("Grammer", "Proper") is string hasProperName
-                    && hasProperName.EqualsNoCase("true"))
-                    output = killerModel.DisplayName();
-            }
-            else
-            if (DeathMemory.HasFlag(DeathMemory.KillerCreature))
-            {
-                if (!CreatureType.IsNullOrEmpty())
-                    output = CreatureType;
-                else
-                if (Blueprint.GetGameObjectBlueprint() is GameObjectBlueprint killerModel
-                    && (killerModel.GetxTag("Grammer", "Proper") is not string hasProperName
-                        || !hasProperName.EqualsNoCase("true")))
-                    output = killerModel.DisplayName().ToLower();
-            }
-            return Capitalize ? output.Capitalize() : output;
+            return !ID.IsNullOrEmpty()
+                    || !Blueprint.IsNullOrEmpty()
+                    || !NotableFeature.IsNullOrEmpty()
+                    || !CreatureType.IsNullOrEmpty()
+                    || !DisplayName.IsNullOrEmpty();
         }
 
-        public string KilledByA(DeathMemory DeathMemory, bool Capitalize = false)
-        {
-            string output = "a mysterious entity";
-            if (DeathMemory.HasFlag(DeathMemory.KillerCreature)
-                && KilledBy(DeathMemory.KillerCreature) is string killedBy
-                && !killedBy.IsNullOrEmpty())
-            {
-                output = Grammar.A(killedBy);
-            }
-            return Capitalize ? output.Capitalize() : output;
-        }
-
-        public void KilledHow(DeathMemory DeathMemory, out string Weapon, out string Feature, out DeathDescription Description, out bool Accidentally, out bool Environment)
-        {
-            Weapon = null;
-            Feature = null;
-            Description = null;
-            Accidentally = WasAccident;
-            Environment = WasEnvironment;
-
-            if (DeathMemory.HasFlag(DeathMemory.Weapon)
-                && !WeaponName.IsNullOrEmpty())
-            {
-                Weapon = WeaponName;
-            }
-            if (DeathMemory.HasFlag(DeathMemory.NotableFeature)
-                && !NotableFeature.IsNullOrEmpty())
-            {
-                Feature = NotableFeature;
-            }
-            if (DeathMemory.HasFlag(DeathMemory.Description)
-                && Description != null)
-            {
-                Description = DeathDescription;
-            }
-        }
-
-        public DeathDescription GetDeathDescription()
-            => DeathDescription
-            ?? new("killed", true, "killed", null, false, null, false, null, false, false);
-
-        public bool IsKiller(GameObject Entity)
-            => Entity != null
-            && Entity.ID == ID;
-
-        public KillerDetails Log()
+        public readonly KillerDetails Log()
         {
             using Indent indent = new(1);
             Debug.LogCaller(indent);
-            Debug.Log(nameof(Killer), Killer?.DebugName ?? NULL, indent[1]);
             Debug.Log(nameof(ID), ID ?? NULL, indent[1]);
             Debug.Log(nameof(Blueprint), Blueprint ?? NULL, indent[1]);
             Debug.Log(nameof(DisplayName), DisplayName ?? NULL, indent[1]);
             Debug.Log(nameof(CreatureType), CreatureType ?? NULL, indent[1]);
             Debug.Log(nameof(NotableFeature), NotableFeature ?? NULL, indent[1]);
-            Debug.Log(nameof(Weapon), Weapon?.DebugName ?? NULL, indent[1]);
-            Debug.Log(nameof(WeaponName), WeaponName ?? NULL, indent[1]);
-            Debug.Log(nameof(DeathDescription), DeathDescription?.ToString() ?? NULL, indent[1]);
-            Debug.Log(nameof(WasAccident), WasAccident, indent[1]);
-            Debug.Log(nameof(WasEnvironment), WasEnvironment, indent[1]);
             Debug.Log(nameof(KillerIsDeceased), KillerIsDeceased?.ToString() ?? NULL, indent[1]);
             return this;
         }
+
+        public readonly StringMap<string> DebugInternals() => new()
+        {
+            { nameof(ID), ID ?? NULL },
+            { nameof(Blueprint), Blueprint ?? NULL },
+            { nameof(DisplayName), DisplayName ?? NULL },
+            { nameof(CreatureType), CreatureType ?? NULL },
+            { nameof(NotableFeature), NotableFeature ?? NULL },
+            { nameof(KillerIsDeceased), KillerIsDeceased?.ToString() ?? NULL },
+        };
     }
 }
