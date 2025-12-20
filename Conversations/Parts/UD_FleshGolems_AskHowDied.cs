@@ -32,20 +32,47 @@ namespace XRL.World.Conversations.Parts
         public const string DUMMY_KILLER_BLUEPRINT = "UD_FleshGolems KillerDetails Dummy Killer";
         public const string DUMMY_WEAPON_BLUEPRINT = "UD_FleshGolems KillerDetails Dummy Weapon";
 
-        public static ConversationText DefaultRudeToAskText => new() { Text = "... That's a rude thing to ask..." };
-        public static ConversationText DefaultKillerText => new() { Text = "I don't know, if anyone, who killed me..." };
-        public static ConversationText DefaultEnvironmentText => new() { Text = "No one is singularly responsible for my death..." };
-        public static ConversationText DefaultMethodText => new() { Text = "... I just don't remember exactly how I was killed..." };
-        public static ConversationText DefaultDescriptionText => new() { Text = "... I definitely died, though." };
-        public static ConversationText DefaultCompleteText => new() { Text = "I don't know, if anyone, who killed me...\n\n... and I don't know even how I was killed...\n\n... though, certainly, I did die." };
-        public static ConversationText DefaultNoText => new() { Text = "... I actually can't remember at all...\n\nStrange!" };
-        public static ConversationText DefaultPlayerKilledText 
-            => The.Speaker is GameObject speaker && !speaker.IsPlayerLed() 
-            ? new() { Text = "IT WAS {{R|=killer.refname|upper=}}!!" }
-            : new() { Text = "{{Y|=killer.Refname=}} killed me... but {{Y|=killer.subjective=}} already knew that... didn't {{Y|=killer.subjective=}}?" };
+        public static ConversationText DefaultRudeToAskText => NewDefaultText(
+            Text: "... That's a rude thing to ask...",
+            Attributes: new() { { RUDE_TO_ASK, "true" } });
 
-        public static Dictionary<string, DeathMemoryElements> DeathMemoryElementsValues
-            => UD_FleshGolems_ReanimatedCorpse.DeathMemoryElementsValues;
+        public static ConversationText DefaultKilledText => NewDefaultDeathElementText(
+            Text: "I definitely died...",
+            Elements: "Killed",
+            Known: false);
+
+        public static ConversationText DefaultKillerText => NewDefaultDeathElementText(
+            Text: "I don't know, if anyone, who killed me...",
+            Elements: "Killer",
+            Known: false);
+
+        public static ConversationText DefaultEnvironmentText => NewDefaultDeathElementText(
+            Text: "No one is singularly responsible for my death...",
+            Elements: "Environment",
+            Known: true);
+
+        public static ConversationText DefaultMethodText => NewDefaultDeathElementText(
+            Text: "... I just don't remember exactly how I was killed...",
+            Elements: "Method",
+            Known: false);
+
+        public static ConversationText DefaultCompleteText => NewDefaultDeathElementText(
+            Text: "I don't know, if anyone, who killed me...\n\n... and I don't know even how I was killed...\n\n... though, certainly, I did die.",
+            Elements: "Killed,Killer,Method",
+            Known: false);
+
+        public static ConversationText DefaultNoText => NewDefaultText(
+            Text: "... I actually can't remember at all...\n\nStrange!",
+            Attributes: new() { { KNOWN, "false" } });
+
+        public static ConversationText DefaultPlayerKilledText
+            => The.Speaker is GameObject speaker && !speaker.IsPlayerLed()
+            ? NewDefaultText(
+                Text: "IT WAS {{R|=killer.refname|upper=}}!!",
+                Attributes: new() { { KILLED_BY_PLAYER, "true" } })
+            : NewDefaultText(
+                Text: "{{Y|=killer.Refname=}} killed me... but {{Y|=killer.subjective=}} already knew that... didn't {{Y|=killer.subjective=}}?",
+                Attributes: new() { { KILLED_BY_PLAYER, "false" } });
 
         public List<ConversationText> CompleteTexts;
 
@@ -60,24 +87,19 @@ namespace XRL.World.Conversations.Parts
             KilledByPlayerTexts = new();
         }
 
-        public static DeathMemoryElements GetDeathMemoryElementsFromStringList(List<string> StringElements)
-        {
-            List<DeathMemoryElements> convertedList = StringElements
-                ?.ConvertAll(
-                    s => DeathMemoryElementsValues.ContainsKey(s) 
-                    ? DeathMemoryElementsValues[s] 
-                    : DeathMemoryElements.None)
-                ?.Where(e => e != DeathMemoryElements.None)
-                ?.ToList();
-            if (convertedList.IsNullOrEmpty())
+        public static ConversationText NewDefaultText(string Text, Dictionary<string, string> Attributes = null)
+            => new()
             {
-                return DeathMemoryElements.None;
-            }
-            return convertedList?.Aggregate(DeathMemoryElements.None, (accumulated, next) => accumulated | next, s => s)
-                ?? DeathMemoryElements.None;
-        }
-        public static DeathMemoryElements GetDeathMemoryElementsFromString(string String)
-            => GetDeathMemoryElementsFromStringList(String?.CachedCommaExpansion());
+                Text = Text,
+                Attributes = Attributes,
+            };
+
+        public static ConversationText NewDefaultDeathElementText(string Text, string Elements, bool Known)
+            => NewDefaultText(Text, new()
+            {
+                { MEMORY_ELEMENT, Elements },
+                { KNOWN, Known.ToString().Uncapitalize() }
+            });
 
         public static List<ConversationText> GetConversationTextsWithTextRetainingAttributes(
             ConversationText ConversationText,
@@ -191,32 +213,67 @@ namespace XRL.World.Conversations.Parts
         public static ConversationText GetKilledByPlayerText(GetTextElementEvent E)
             => GetKilledByPlayerTexts(E)?.GetRandomElementCosmetic();
 
-        public static List<ConversationText> GetDeathMemoryCompatibleTexts(GetTextElementEvent E)
+        public static List<ConversationText> GetDeathMemoryCompatibleTexts(GetTextElementEvent E, DeathMemory? DeathMemory = null)
         {
             List<ConversationText> possibleTexts = E.Texts
                 ?.Aggregate(
                     seed: new List<ConversationText>(),
-                    func: (acc, next) => GetConversationTextsWithTextRetainingMemoryAttributes(next, ref acc))
-                ?? new();
+                    func: (acc, next) => GetConversationTextsWithTextRetainingMemoryAttributes(next, ref acc));
 
-            possibleTexts.AddRange(E.Texts
-                ?.Aggregate(
-                    seed: new List<ConversationText>(),
-                    func: (acc, next) => GetConversationTextsWithTextRetainingEnvironmentAttributes(next, ref acc))
-                ?? new());
+            if (possibleTexts.IsNullOrEmpty())
+            {
+                possibleTexts ??= new();
+                possibleTexts.Add(DefaultPlayerKilledText);
+                possibleTexts.Add(DefaultKillerText);
+                possibleTexts.Add(DefaultEnvironmentText);
+                possibleTexts.Add(DefaultMethodText);
+            }
+
+            if (DeathMemory is DeathMemory deathMemory
+                && deathMemory.IsValid)
+            {
+                possibleTexts = possibleTexts
+                    ?.Where(ct => IsCompatibleWithDeathMemory(ct, deathMemory))
+                    ?.ToList();
+            }
 
             return possibleTexts;
         }
 
+        public static IEnumerable<string> GetDeathMemoryElements(ConversationText ConversationText)
+            => ConversationText?.Attributes?[MEMORY_ELEMENT]?.CachedCommaExpansion();
+
+        public static bool HasMemoryElement(ConversationText ConversationText, string MemoryElement)
+            => GetDeathMemoryElements(ConversationText) is List<string> memoryElementList
+            && MemoryElement.EqualsAnyNoCase(memoryElementList.ToArray());
+
+        public static bool HasMemoryElementContaining(ConversationText ConversationText, string MemoryElement)
+            => GetDeathMemoryElements(ConversationText) is List<string> memoryElementList
+            && memoryElementList.Any(s => s.Contains(MemoryElement));
+
+        public static bool HasMemoryElementStartsWith(ConversationText ConversationText, string MemoryElement)
+            => GetDeathMemoryElements(ConversationText) is List<string> memoryElementList
+            && memoryElementList.Any(s => s.StartsWith(MemoryElement));
+
+        public static bool HasKilledMemoryElement(ConversationText ConversationText)
+            => HasMemoryElement(ConversationText, "Killed");
+
         public static bool HasKillerMemoryElement(ConversationText ConversationText)
-            => ConversationText.TryGetAttribute(MEMORY_ELEMENT, out string memoryElement)
-            && memoryElement.CachedCommaExpansion() is List<string>
+            => HasMemoryElementStartsWith(ConversationText, "Killer");
+
+        public static bool HasEnvironmentMemoryElement(ConversationText ConversationText)
+            => HasMemoryElementStartsWith(ConversationText, ENVIRONMENT);
+
+        public static bool HasKillerEquivalentMemoryElement(ConversationText ConversationText)
+            => HasKillerMemoryElement(ConversationText)
+            || HasEnvironmentMemoryElement(ConversationText);
+
+        public static bool HasMethodMemoryElement(ConversationText ConversationText)
+            => HasMemoryElement(ConversationText, "Method");
 
         public static bool IsKnownMemoryText(ConversationText ConversationText)
             => ConversationText != null
-            && ((ConversationText.HasAttribute(MEMORY_ELEMENT)
-                    && ConversationText.HasAttributeWithValue(KNOWN, "true"))
-                || ConversationText.HasAttribute(ENVIRONMENT));
+            && ConversationText.HasAttributeWithValue(KNOWN, "true");
 
         public static bool IsUnknownMemoryText(ConversationText ConversationText)
             => ConversationText != null
@@ -224,28 +281,237 @@ namespace XRL.World.Conversations.Parts
             && ConversationText.HasAttributeWithValue(KNOWN, "false");
 
         public static bool IsCompatibleWithDeathMemory(ConversationText ConversationText, DeathMemory DeathMemory)
+            => ConversationText != null
+            && DeathMemory.IsValid
+            && DeathMemory.MemoryIsCompatibleWithElements(GetDeathMemoryElements(ConversationText), IsKnownMemoryText(ConversationText));
+
+        public static DeathMemory.KillerMemory? GetKillerMemoryForElements(params string[] Elements)
         {
-            if (ConversationText == null || DeathMemory.HasAmnesia())
+            if (Elements.IsNullOrEmpty())
+                return null;
+
+            DeathMemory.KillerMemory killerElementValue = DeathMemory.KillerMemory.Amnesia;
+
+            if ("KillerFeature".EqualsAnyNoCase(Elements))
+                killerElementValue = DeathMemory.KillerMemory.Feature;
+
+            if ("KillerCreature".EqualsAnyNoCase(Elements))
+                killerElementValue = DeathMemory.KillerMemory.Creature;
+
+            if ("KillerName".EqualsAnyNoCase(Elements))
+                killerElementValue = DeathMemory.KillerMemory.Name;
+
+            return killerElementValue;
+        }
+        public static DeathMemory.KillerMemory? GetKillerMemoryForElements(ConversationText ConversationText)
+            => GetKillerMemoryForElements(GetDeathMemoryElements(ConversationText)?.ToArray());
+
+        public static bool CheckCompleteConversationText(ConversationText ConversationText, DeathMemory DeathMemory)
+        {
+            if (ConversationText == null
+                || ConversationText.Text.IsNullOrEmpty()
+                || !DeathMemory.IsValid
+                || !ConversationText.HasAttribute(MEMORY_ELEMENT))
                 return false;
 
-            if (DeathMemory.RemembersKiller()
-                && ConversationText.HasAttribute(ENVIRONMENT))
+            List<string> memoryElements = ConversationText.Attributes[MEMORY_ELEMENT]?.CachedCommaExpansion();
+
+            if (DeathMemory.HasAmnesia()
+                && ConversationText.HasAttributeWithValue(KNOWN, "true"))
                 return false;
 
-            if (!ConversationText.HasAttribute(MEMORY_ELEMENT))
+            if (DeathMemory.GetRemembersKilled().HasValue
+                && !HasKilledMemoryElement(ConversationText))
+                return false;
+            
+            if (DeathMemory.GetRemembersKiller().HasValue
+                && !HasKillerMemoryElement(ConversationText))
+                return false;
+            
+            if (!DeathMemory.GetRemembersKiller().HasValue
+                && !HasEnvironmentMemoryElement(ConversationText))
                 return false;
 
-            if (!DeathMemory.MemoryIsCompatibleWithElements(ConversationText.Attributes[MEMORY_ELEMENT], IsKnownMemoryText(ConversationText)))
+            if (DeathMemory.GetRemembersMethod().HasValue
+                && !HasMethodMemoryElement(ConversationText))
+                return false;
+
+            return true;
+        }
+        public static bool CheckCompleteConversationText(List<ConversationText> ConversationTextList, DeathMemory DeathMemory)
+        {
+            if (ConversationTextList.IsNullOrEmpty()
+                || !DeathMemory.IsValid)
+                return false;
+
+            if (DeathMemory.HasAmnesia()
+                && ConversationTextList.Any(ct => IsKnownMemoryText(ct)))
+                return false;
+
+            bool? killed = DeathMemory.GetRemembersKilled();
+            DeathMemory.KillerMemory? killer = DeathMemory.GetRemembersKiller();
+            bool? method = DeathMemory.GetRemembersMethod();
+
+            List<string> combinedTextMemoryElements = ConversationTextList
+                ?.Aggregate(
+                    seed: new List<string>(),
+                    func: delegate (List<string> acc, ConversationText next)
+                    {
+                        foreach (string element in GetDeathMemoryElements(next) ?? new List<string>())
+                            acc.AddIfNot(element, e => acc.Contains(e));
+                        return acc;
+                    })
+                ?? new();
+
+            string[] combinedTextElementsArray = combinedTextMemoryElements.ToArray();
+            bool haveGenericKillerElement = "Killer".EqualsAnyNoCase(combinedTextElementsArray);
+
+            if (killed.HasValue
+                && !ConversationTextList.Any(ct => HasKilledMemoryElement(ct)))
+                return false;
+
+            if (killer.HasValue && !haveGenericKillerElement)
+            {
+                if (ConversationTextList.Any(ct => HasEnvironmentMemoryElement(ct)))
+                {
+                    ConversationTextList.RemoveAll(ct => HasEnvironmentMemoryElement(ct));
+                    return false;
+                }
+
+                if (!ConversationTextList.Any(ct => HasKillerMemoryElement(ct)))
+                    return false;
+
+                DeathMemory.KillerMemory killerValue = (DeathMemory.KillerMemory)killer;
+
+                if (GetKillerMemoryForElements(combinedTextElementsArray) is not DeathMemory.KillerMemory killerElementValue)
+                    return false;
+
+                if (killerElementValue > killerValue)
+                {
+                    ConversationTextList.RemoveAll(ct => GetKillerMemoryForElements(ct) > killerValue);
+                    return false;
+                }
+            }
+
+            if (!killer.HasValue
+                && !ConversationTextList.Any(ct => HasEnvironmentMemoryElement(ct)))
+            {
+                ConversationTextList.RemoveAll(ct => HasKillerMemoryElement(ct));
+                return false;
+            }
+
+            if (method.HasValue
+                && !ConversationTextList.Any(ct => HasMethodMemoryElement(ct)))
                 return false;
 
             return true;
         }
 
-        public static bool IsCompleteConversationText(ConversationText ConversationText)
+        public static bool CheckConversationTextFitsInList(
+            List<ConversationText> ConversationTextList,
+            DeathMemory DeathMemory,
+            ConversationText ProspectiveConversationText)
         {
-            if (!ConversationText.HasAttribute(ENVIRONMENT)
-                && !ConversationText)
-            return true;
+            if (ConversationTextList.IsNullOrEmpty()
+                || !DeathMemory.IsValid
+                || ProspectiveConversationText == null)
+                return false;
+
+            List<ConversationText> testList = new(ConversationTextList)
+            {
+                ProspectiveConversationText
+            };
+
+            List<string> combinedMemoryElementsStrings = ConversationTextList
+                ?.Aggregate(
+                    seed: new List<string>(),
+                    func: delegate (List<string> acc, ConversationText next)
+                    {
+                        foreach (string element in GetDeathMemoryElements(next) ?? new List<string>())
+                            acc.AddIfNot(element, e => acc.Contains(e));
+                        return acc;
+                    })
+                ?? new();
+
+            if (combinedMemoryElementsStrings.Count != combinedMemoryElementsStrings.Distinct().Count())
+                return false;
+
+            return testList.All(ct => IsCompatibleWithDeathMemory(ct, DeathMemory));
+        }
+
+        public static List<ConversationText> AddConversationTextToListIfFits(
+            List<ConversationText> ConversationTextList,
+            DeathMemory DeathMemory,
+            ConversationText ProspectiveConversationText)
+        {
+            ConversationTextList ??= new();
+            if (!ConversationTextList.IsNullOrEmpty()
+                &&DeathMemory.IsValid
+                &ProspectiveConversationText != null
+                && CheckConversationTextFitsInList(ConversationTextList, DeathMemory, ProspectiveConversationText))
+                ConversationTextList.Add(ProspectiveConversationText);
+
+            return ConversationTextList;
+        }
+
+        public static void SortCompleteConversationTexts(ref List<ConversationText> ConversationTextList)
+        {
+            List<ConversationText> sortedConversationTextList = new();
+            int maxAttempts = (ConversationTextList?.Count ?? 1) * 10;
+            int attemptCount = 0; ;
+            while (!ConversationTextList.IsNullOrEmpty() && attemptCount++ < maxAttempts)
+            {
+                ConversationText currentText = ConversationTextList[0];
+                ConversationTextList.Remove(currentText);
+
+                if (HasKilledMemoryElement(currentText))
+                {
+                    sortedConversationTextList.Add(currentText);
+                    continue;
+                }
+                if (sortedConversationTextList.Any(ct => HasKilledMemoryElement(ct)))
+                {
+                    if (HasKillerEquivalentMemoryElement(currentText))
+                    {
+                        sortedConversationTextList.Add(currentText);
+                        continue;
+                    }
+                    if (sortedConversationTextList.Any(ct => HasKillerEquivalentMemoryElement(ct)))
+                    {
+                        if (HasMethodMemoryElement(currentText))
+                        {
+                            sortedConversationTextList.Add(currentText);
+                            continue;
+                        }
+                    }
+                }
+                ConversationTextList.Add(currentText);
+            }
+            if (!ConversationTextList.IsNullOrEmpty())
+            {
+                sortedConversationTextList.AddRange(ConversationTextList);
+            }
+            ConversationTextList = sortedConversationTextList;
+        }
+
+        public static ConversationText CompileConversationTexts(params ConversationText[] ConversationTexts)
+        {
+            if (ConversationTexts.IsNullOrEmpty())
+                return null;
+
+            ConversationText seedConversationText = ConversationTexts[0];
+            return ConversationTexts
+                .Aggregate(
+                    seed: seedConversationText,
+                    func: delegate (ConversationText acc, ConversationText next)
+                    {
+                        ConversationText newConversationText = acc;
+                        if (next != seedConversationText)
+                        {
+                            acc = acc.Append(next, " ", new() { MEMORY_ELEMENT });
+                        }
+                        return newConversationText;
+                    });
         }
 
         public override void Awake()
@@ -295,10 +561,7 @@ namespace XRL.World.Conversations.Parts
                 }
                 else
                 {
-                    List<ConversationText> possibleTexts = E.Texts
-                        ?.Aggregate(
-                            seed: new List<ConversationText>(),
-                            func: (acc, next) => GetConversationTextsWithTextRetainingMemoryAttributes(next, ref acc));
+                    List<ConversationText> possibleTexts = GetDeathMemoryCompatibleTexts(E, deathDetails.DeathMemory);
 
                     Debug.Log(nameof(possibleTexts), Indent: indent[1]);
                     foreach (ConversationText possibleText in possibleTexts)
@@ -308,18 +571,19 @@ namespace XRL.World.Conversations.Parts
                         Debug.Log(HONLY.ThisManyTimes(25), Indent: indent[2]);
                     }
 
-                    DeathMemoryElements corpseDeathMemoryFlags = deathDetails.DeathMemory;
+                    CompleteTexts ??= possibleTexts
+                        ?.Where(ct => CheckCompleteConversationText(ct, deathDetails.DeathMemory))
+                        ?.ToList();
 
                     Debug.Log("Looping " + nameof(possibleTexts), Indent: indent[1]);
-                    Dictionary<DeathMemoryElements, List<ConversationText>> organizedTexts = new();
+                    Dictionary<string, List<ConversationText>> organizedTexts = new();
                     if (!possibleTexts.IsNullOrEmpty())
                     {
                         foreach (ConversationText conversationText in possibleTexts.Where(t => t.HasAttribute(MEMORY_ELEMENT)))
                         {
-                            if (!conversationText.HasAttribute(MEMORY_ELEMENT))
+                            if (!conversationText.HasAttribute(MEMORY_ELEMENT)
+                                || !conversationText.Attributes.TryGetValue(MEMORY_ELEMENT, out string memoryElementString))
                                 continue;
-
-                            string memoryElementString = conversationText.Attributes[MEMORY_ELEMENT];
 
                             DeathMemoryElements key = GetDeathMemoryElementsFromString(memoryElementString);
 

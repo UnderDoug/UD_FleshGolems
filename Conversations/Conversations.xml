@@ -96,7 +96,7 @@
         <text>I =subject.death.was.killed= by =subject.death.killer.creature= called =subject.death.killer.creature=... if I ever see =no2nd==killer.objective|no2nd.restore= again...\n\n... well, I'm not sure what I'd do, actually... =no2nd==killer.subjective|no2nd.restore= did kill me the first time, and I'm not keen on a second...</text>
       </text>
 
-      <text Environment="true">
+      <text MemoryElement="Environment" Known="true">
         <text>I wasn't really killed by someone...</text>
         <text>It was more of a self-inflicted accident, I think...</text>
         <text>No one killed me exactly...</text>

@@ -28,6 +28,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         [Serializable]
         public enum KillerMemory : int
         {
+            Amnesia,
             Feature,
             Creature,
             Name,
@@ -65,6 +66,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         [SerializeField]
         private bool RudeToAsk;
+
+        public readonly bool IsValid => !EmptyDeath();
 
         private DeathMemory(string CorpseID, bool? Killed = null, KillerMemory? Killer = null, bool? Method = null, bool RudeToAsk = false)
         {
@@ -107,21 +110,27 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         private readonly bool SeededRudeToAsk()
             => SeededRandomHigh(nameof(RudeToAsk), RudeToAskChanceOneIn) == 0;
 
-        private DeathMemory SetSeededRememberKilled()
+        private DeathMemory SetSeededRememberKilled(bool Amnesia = false)
         {
-            Killed = SeededRememberKilled();
+            Killed = false;
+            if (!Amnesia)
+                Killed = SeededRememberKilled();
             return this;
         }
 
-        private DeathMemory SetSeededRememberKiller()
+        private DeathMemory SetSeededRememberKiller(bool Amnesia = false)
         {
-            Killer = SeededRememberKiller();
+            Killer = KillerMemory.Amnesia;
+            if (!Amnesia)
+                Killer = SeededRememberKiller();
             return this;
         }
 
-        private DeathMemory SetSeededRememberMethod()
+        private DeathMemory SetSeededRememberMethod(bool Amnesia = false)
         {
-            Method = SeededRememberMethod();
+            Method = false;
+            if (!Amnesia)
+                Method = SeededRememberMethod();
             return this;
         }
 
@@ -177,17 +186,17 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 BaseAmnesiaChance,
                 typeof(DeathMemory).ToString());
 
-            if (amnesiaChance < amnesiaRoll)
-            {
-                if (!DeathDescription.Killed.IsNullOrEmpty())
-                    deathMemory.SetSeededRememberKilled();
+            bool amnesia = amnesiaChance >= amnesiaRoll;
 
-                if (Killer != null)
-                    deathMemory.SetSeededRememberKiller();
+            if (!DeathDescription.Killed.IsNullOrEmpty())
+                deathMemory.SetSeededRememberKilled(amnesia);
 
-                if (Weapon != null || !DeathDescription.Method.IsNullOrEmpty())
-                    deathMemory.SetSeededRememberMethod();
-            }
+            if (Killer != null)
+                deathMemory.SetSeededRememberKiller(amnesia);
+
+            if (Weapon != null || !DeathDescription.Method.IsNullOrEmpty())
+                deathMemory.SetSeededRememberMethod(amnesia);
+
             deathMemory.SetSeededRudeToAsk(Corpse);
 
             return deathMemory;
@@ -255,51 +264,61 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             => RudeToAsk;
 
         public readonly bool HasAmnesia()
+            => Killed == false
+            && Killer == KillerMemory.Amnesia
+            && Method == false;
+
+        public readonly bool EmptyDeath()
             => Killed == null
             && Killer == null
             && Method == null;
 
-        public bool MemoryIsCompatibleWithElements(string Elements, bool Known)
+        public readonly bool MemoryIsCompatibleWithElements(IEnumerable<string> ElementsList, bool Known)
         {
-            if (Elements.IsNullOrEmpty())
+            if (ElementsList.IsNullOrEmpty())
                 return false;
 
-            if (Elements.CachedCommaExpansion() is List<string> elementsList)
+            foreach (string element in ElementsList)
             {
-                foreach (string element in elementsList)
+                switch (element)
                 {
-                    switch (element)
-                    {
-                        case "Killed":
-                            if (RemembersKilled() != Known)
-                                return false;
-                            break;
-                        case "Killer":
-                            if (RemembersKiller() != Known)
-                                return false;
-                            break;
-                        case "KillerName":
-                            if (RemembersKillerName() != Known)
-                                return false;
-                            break;
-                        case "KillerCreature":
-                            if (RemembersKillerCreature() != Known)
-                                return false;
-                            break;
-                        case "KillerFeature":
-                            if (RemembersKillerCreature() != Known)
-                                return false;
-                            break;
-                        case "Method":
-                            if (RemembersMethod() != Known)
-                                return false;
-                            break;
-                    }
+                    case "Killed":
+                        if (RemembersKilled() != Known)
+                            return false;
+                        break;
+
+                    case "Killer":
+                        if (RemembersKiller() != Known)
+                            return false;
+                        break;
+                    case "KillerName":
+                        if (RemembersKillerName() != Known)
+                            return false;
+                        break;
+                    case "KillerCreature":
+                        if (RemembersKillerCreature() != Known)
+                            return false;
+                        break;
+                    case "KillerFeature":
+                        if (RemembersKillerCreature() != Known)
+                            return false;
+                        break;
+
+                    case "Environment":
+                        if (RemembersKiller())
+                            return false;
+                        break;
+
+                    case "Method":
+                        if (RemembersMethod() != Known)
+                            return false;
+                        break;
                 }
             }
-
             return true;
         }
+        public readonly bool MemoryIsCompatibleWithElements(string Elements, bool Known)
+            => MemoryIsCompatibleWithElements(Elements?.CachedCommaExpansion(), Known);
 
         public readonly StringMap<string> DebugInternals() => new()
         {

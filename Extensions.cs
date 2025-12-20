@@ -1316,6 +1316,11 @@ namespace UD_FleshGolems
             => ConversationText.HasAttribute(Attribute)
             && ConversationText.Attributes[Attribute].EqualsNoCase(Value);
 
+        public static bool HasAttributeWithListItemValue(this IConversationElement ConversationText, string Attribute, string Value)
+            => ConversationText.HasAttribute(Attribute)
+            && ConversationText.Attributes[Attribute].CachedCommaExpansion() is List<string> attributeValues
+            && attributeValues.Any(s => s.EqualsNoCase(Value));
+
         public static List<ConversationText> GetConversationTextsWithText(
             this ConversationText ConversationText,
             List<ConversationText> ConversationTextList,
@@ -1375,35 +1380,46 @@ namespace UD_FleshGolems
             return NotableFeature;
         }
 
-        public static bool HasKillerElement(this DeathMemoryElements DeathMemory, bool Only = false)
-            => DeathMemory.HasAnyFlag(KillerFlags)
-            && (!Only || (DeathMemory > DeathMemoryElements.None && DeathMemory < DeathMemoryElements.Killer));
-
-        public static bool HasMethodElement(this DeathMemoryElements DeathMemory, bool Only = false)
-            => DeathMemory.HasAnyFlag(MethodFlags)
-            && (!Only || (DeathMemory > DeathMemoryElements.Killer && DeathMemory < DeathMemoryElements.Method));
-
-        public static bool HasDescriptionElement(this DeathMemoryElements DeathMemory, bool Only = false)
-            => DeathMemory.HasAnyFlag(DeathMemoryElements.Description)
-            && (!Only || DeathMemory == DeathMemoryElements.Description);
-
-        public static ConversationText Append(this ConversationText ConversationText, ConversationText OtherConversationText, string Joiner = null)
+        public static ConversationText Append(
+            this ConversationText ConversationText,
+            ConversationText OtherConversationText,
+            string Joiner = null,
+            List<string> AttributesToConcatenate = null)
         {
             if (ConversationText == null
                 || OtherConversationText == null)
                 return ConversationText ?? OtherConversationText;
+
+            Dictionary<string, string> attributes = new();
+            if (ConversationText.Attributes != null)
+            {
+                attributes = new(ConversationText.Attributes);
+            }
+            Dictionary<string, string> otherAttributes = new();
+            if (OtherConversationText.Attributes != null)
+            {
+                otherAttributes = new(OtherConversationText.Attributes);
+            }
+
+            foreach ((string key, string value) in attributes)
+            {
+                string newValue = value;
+                if (key.EqualsAnyNoCase(AttributesToConcatenate?.ToArray() ?? new string[0])
+                    && otherAttributes.TryGetValue(key, out string otherValue))
+                {
+                    newValue += "," + otherValue;
+                }
+                otherAttributes[key] = newValue;
+            }
 
             return new()
             {
                 Parent = ConversationText.Parent ?? OtherConversationText.Parent,
                 ID = ConversationText.ID + ":" + OtherConversationText.Parent?.ID + "." + OtherConversationText.ID,
                 Text = ConversationText.Text + Joiner + OtherConversationText.Text,
+                Attributes = otherAttributes,
             };
         }
-
-        public static bool HasDeathMemoryFlag(this ConversationText ConversationText, DeathMemoryElements DeathMemoryElement)
-            => ConversationText.HasAttribute(UD_FleshGolems_AskHowDied.MEMORY_ELEMENT)
-            && UD_FleshGolems_AskHowDied.GetDeathMemoryElementsFromString(ConversationText.Attributes[UD_FleshGolems_AskHowDied.MEMORY_ELEMENT]).HasFlag(DeathMemoryElement);
 
         public static string AsString(this List<char> CharList)
             => CharList.Aggregate("", (a, n) => a += n);
