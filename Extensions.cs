@@ -1126,54 +1126,96 @@ namespace UD_FleshGolems
             return text[..pos] + replace + text[postPos..];
         }
 
-        public static bool WasKilledByEntity(
-            this GameObject Corpse,
-            GameObject Entity,
-            out UD_FleshGolems_ReanimatedCorpse ReanimatedCorpsePart)
+        public static bool WasKilledByEntity(this GameObject Corpse, GameObject Entity, out UD_FleshGolems_DeathDetails DeathDetails)
         {
-            ReanimatedCorpsePart = null;
+            DeathDetails = null;
             return Corpse != null
                 && Entity != null
-                && Corpse.TryGetPart(out ReanimatedCorpsePart)
-                && ReanimatedCorpsePart.KillerDetails?.ID == Entity.ID;
+                && Corpse.TryGetDeathDetails(out DeathDetails)
+                && Entity.ID.EqualsAllNoCase(DeathDetails?.Killer?.ID, DeathDetails.KillerDetails?.ID);
         }
         public static bool WasKilledByEntity(this GameObject Corpse, GameObject Entity)
-            => Corpse.WasKilledByEntity(Entity, out _);
+            => Corpse.WasKilledByEntity(Entity);
 
-        public static bool KnowsEntityKilledThem(this GameObject Corpse, GameObject Entity, out UD_FleshGolems_ReanimatedCorpse ReanimatedCorpsePart)
+        public static bool TryRecognizeKiller(
+            this GameObject FrankenCorpse,
+            int Difficulty,
+            string Contest = "Deduction",
+            bool IgnoreNaturals = false)
+            => FrankenCorpse.MakeSave(
+                Stat: "Intelligence",
+                Difficulty: Difficulty,
+                Vs: nameof(DeathMemory) + ":" + Contest,
+                IgnoreNaturals: IgnoreNaturals);
+
+        public static bool TryRecognizeKillerEasy(
+            this GameObject FrankenCorpse,
+            string Contest = "Deduction",
+            int Adjustment = 0,
+            bool IgnoreNaturals = false)
+            => FrankenCorpse.TryRecognizeKiller(
+                Difficulty: 15 + Adjustment,
+                Contest: Contest,
+                IgnoreNaturals: IgnoreNaturals);
+
+        public static bool TryRecognizeKillerMedium(
+            this GameObject FrankenCorpse,
+            string Contest = "Deduction",
+            int Adjustment = 0,
+            bool IgnoreNaturals = false)
+            => FrankenCorpse.TryRecognizeKiller(
+                Difficulty: 20 + Adjustment,
+                Contest: Contest,
+                IgnoreNaturals: IgnoreNaturals);
+
+        public static bool TryRecognizeKillerHard(
+            this GameObject FrankenCorpse,
+            string Contest = "Deduction",
+            int Adjustment = 0,
+            bool IgnoreNaturals = false)
+            => FrankenCorpse.TryRecognizeKiller(
+                Difficulty: 25 + Adjustment,
+                Contest: Contest,
+                IgnoreNaturals: IgnoreNaturals);
+
+        public static bool KnowsEntityKilledThem(
+            this GameObject Corpse,
+            GameObject Entity,
+            out UD_FleshGolems_DeathDetails DeathDetails)
         {
-            if (WasKilledByEntity(Corpse, Entity, out ReanimatedCorpsePart)
-                && ReanimatedCorpsePart.DeathMemory is DeathMemoryElements deathMemory
-                && ReanimatedCorpsePart.KillerDetails is KillerDetails killerDetails
-                && killerDetails?.ID == Entity.ID)
+            if (WasKilledByEntity(Corpse, Entity, out DeathDetails)
+                && DeathDetails.DeathMemory is DeathMemory deathMemory
+                && deathMemory.RemembersKiller()
+                && DeathDetails.KillerDetails is KillerDetails killerDetails
+                && killerDetails.ID == Entity.ID)
             {
                 int speakerIntMod = Corpse.StatMod("Intelligence");
 
-                if (deathMemory.HasKillerElement())
+                if (deathMemory.GetRemembersKiller() > DeathMemory.KillerMemory.Feature)
                 {
                     if (Entity.HasEffect<Disguised>()
-                        && !Corpse.MakeSave(Stat: "Intelligence", Difficulty: 15, Vs: nameof(DeathMemoryElements) + "." + nameof(Disguised)))
+                        && !Corpse.TryRecognizeKillerEasy(nameof(Disguised)))
                         return false;
 
-                    if (deathMemory.HasFlag(DeathMemoryElements.Killer)
+                    if (deathMemory.RemembersKillerName()
                         && Entity.GetReferenceDisplayName(Short: true) != killerDetails.DisplayName
-                        && !Corpse.MakeSave(Stat: "Intelligence", Difficulty: 15, Vs: nameof(DeathMemoryElements) + "." + nameof(Disguised)))
+                        && !Corpse.TryRecognizeKillerEasy(nameof(Disguised)))
                         return false;
 
-                    if (deathMemory.HasFlag(DeathMemoryElements.KillerCreature)
-                        && !deathMemory.HasFlag(DeathMemoryElements.KillerName)
-                        && deathMemory.HasMethodElement()
-                        && !Corpse.MakeSave(Stat: "Intelligence", Difficulty: 20, Vs: nameof(DeathMemoryElements) + ".Deduction"))
+                    if (deathMemory.RemembersKillerCreature()
+                        && !deathMemory.RemembersKillerName()
+                        && deathMemory.RemembersMethod()
+                        && !Corpse.TryRecognizeKillerMedium("Deduction"))
                         return false;
 
                     return true;
                 }
                 else
-                if (deathMemory.HasFlag(DeathMemoryElements.Method | DeathMemoryElements.Description)
-                    && Corpse.MakeSave(Stat: "Intelligence", Difficulty: 25, Vs: nameof(DeathMemoryElements) + ".Deduction", IgnoreNaturals: true))
+                if (deathMemory.RemembersMethod()
+                    && Corpse.TryRecognizeKillerHard("Deduction", IgnoreNaturals: true))
                 {
                     if (Entity.HasEffect<Disguised>()
-                        && !Corpse.MakeSave(Stat: "Intelligence", Difficulty: 15, Vs: nameof(DeathMemoryElements) + "." + nameof(Disguised)))
+                        && !Corpse.TryRecognizeKillerEasy(nameof(Disguised)))
                         return false;
 
                     return true;
@@ -1265,6 +1307,11 @@ namespace UD_FleshGolems
             && !Attributes.IsNullOrEmpty()
             && Attributes.All(a => ConversationText.HasAttribute(a));
 
+        public static bool HasAnyAttributes(this IConversationElement ConversationText, params string[] Attributes)
+            => !ConversationText.Attributes.IsNullOrEmpty()
+            && !Attributes.IsNullOrEmpty()
+            && Attributes.Any(a => ConversationText.HasAttribute(a));
+
         public static bool HasAttributeWithValue(this IConversationElement ConversationText, string Attribute, string Value)
             => ConversationText.HasAttribute(Attribute)
             && ConversationText.Attributes[Attribute].EqualsNoCase(Value);
@@ -1299,14 +1346,20 @@ namespace UD_FleshGolems
             return ConversationTextList ?? new();
         }
 
-        public static KillerDetails GetKillerDetails(this GameObject Corpse)
-            => Corpse?.GetPart<UD_FleshGolems_CorpseReanimationHelper>()?.KillerDetails;
+        public static UD_FleshGolems_DeathDetails GetDeathDetails(this GameObject Corpse)
+            => Corpse?.GetPart<UD_FleshGolems_DeathDetails>();
 
-        public static bool TryGetKillerDetails(this GameObject Corpse, out KillerDetails KillerDetails)
+        public static bool TryGetDeathDetails(this GameObject Corpse, out UD_FleshGolems_DeathDetails DeathDetails)
+            => (DeathDetails = Corpse?.GetDeathDetails()) != null;
+
+        public static KillerDetails? GetKillerDetails(this GameObject Corpse)
+            => Corpse?.GetDeathDetails()?.KillerDetails;
+
+        public static bool TryGetKillerDetails(this GameObject Corpse, out KillerDetails? KillerDetails)
             => (KillerDetails = Corpse?.GetKillerDetails()) != null;
 
         public static DeathDescription GetDeathDescription(this GameObject Corpse)
-            => Corpse?.GetKillerDetails()?.DeathDescription;
+            => Corpse?.GetDeathDetails()?.DeathDescription;
 
         public static bool TryGetDeathDescription(this GameObject Corpse, out DeathDescription DeathDescription)
             => (DeathDescription = Corpse?.GetDeathDescription()) != null;

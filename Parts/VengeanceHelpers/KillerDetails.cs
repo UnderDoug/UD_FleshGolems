@@ -102,7 +102,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             }
         }
         public readonly string this[DeathMemory DeathMemory]
-            => this[DeathMemory.RemebersKiller()];
+            => this[DeathMemory.GetRemembersKiller()];
 
         public KillerDetails? Update(GameObject Killer)
         {

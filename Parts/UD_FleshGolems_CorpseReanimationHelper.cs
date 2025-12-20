@@ -113,7 +113,9 @@ namespace XRL.World.Parts
 
         public bool AlwaysAnimate;
 
-        public KillerDetails KillerDetails;
+        public UD_FleshGolems_DeathDetails DeathDetails => ParentObject?.GetDeathDetails();
+
+        public KillerDetails? KillerDetails => DeathDetails?.KillerDetails;
 
         public GameObject Reanimator;
 
@@ -123,7 +125,6 @@ namespace XRL.World.Parts
         {
             IsALIVE = false;
             AlwaysAnimate = false;
-            KillerDetails = default;
             Reanimator = null;
             FailedToRegisterEvents = new();
         }
@@ -1060,7 +1061,10 @@ namespace XRL.World.Parts
 
                 bool builtToBeReanimated = (frankenCorpse.GetPart<UD_FleshGolems_DestinedForReanimation>()?.BuiltToBeReanimated).GetValueOrDefault();
 
-                reanimationHelper.KillerDetails ??= UD_FleshGolems_DestinedForReanimation.ProduceRandomDeathDetails();
+                if (reanimationHelper.DeathDetails == null)
+                {
+                    frankenCorpse.RequirePart< UD_FleshGolems_DestinedForReanimation>().ProduceRandomDeathDetails();
+                }
 
                 Dictionary<TileMappingKeyword, List<string>> prospectiveTiles = null;
 
@@ -1898,70 +1902,6 @@ namespace XRL.World.Parts
             else
             {
                 E.AddEntry(this, nameof(FailedToRegisterEvents), "Empty");
-            }
-            if (KillerDetails != null)
-            {
-                DeathDescription deathDescription = KillerDetails.DeathDescription;
-                Dictionary<string, string> killerDetails = new()
-                {
-                    { nameof(KillerDetails.Killer), KillerDetails.Killer?.DebugName?.Strip() ?? NULL },
-                    { nameof(KillerDetails.ID), KillerDetails.ID ?? NULL },
-                    { nameof(KillerDetails.Blueprint), KillerDetails.Blueprint ?? NULL },
-                    { nameof(KillerDetails.DisplayName), KillerDetails.DisplayName.Strip() ?? NULL },
-                    { nameof(KillerDetails.CreatureType), KillerDetails.CreatureType.Strip() ?? NULL },
-                    { nameof(KillerDetails.Weapon), KillerDetails.Weapon?.DebugName?.Strip() ?? NULL },
-                    { nameof(KillerDetails.WeaponName), KillerDetails.WeaponName.Strip() ?? NULL },
-                    { nameof(KillerDetails.NotableFeature), KillerDetails.NotableFeature.Strip() ?? NULL },
-                    {
-                        nameof(KillerDetails.DeathDescription),
-                        deathDescription
-                            ?.TheyWereKilledByKillerWithMethod(Adverb: KillerDetails.WasAccident ? "accidentally" : null, Killer: KillerDetails.WasEnvironment ? "" : null)
-                            ?.StartReplace()
-                            ?.AddObject(ParentObject)
-                            ?.ToString()
-                            ?.Strip()
-                    },
-                    { nameof(KillerDetails.WasAccident), KillerDetails.WasAccident.ToString() },
-                    { nameof(KillerDetails.WasEnvironment), KillerDetails.WasEnvironment.ToString() },
-                    { nameof(KillerDetails.KillerIsDeceased), KillerDetails.KillerIsDeceased?.ToString() ?? NULL },
-                };
-                string killerDetailsString = killerDetails
-                    ?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value)
-                    ?.GenerateBulletList(Bullet: null, BulletColor: null);
-                E.AddEntry(this, nameof(KillerDetails), killerDetailsString);
-                E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(KillerDetails), killerDetailsString);
-
-                if (deathDescription != null)
-                {
-                    Dictionary<string, string> deathDescriptionDetails = new()
-                    {
-                        { nameof(deathDescription.Category), deathDescription.Category ?? NULL },
-                        { nameof(deathDescription.Were), deathDescription.Were.ToString() },
-                        { nameof(deathDescription.Killed), deathDescription.Killed ?? NULL },
-                        { nameof(deathDescription.Killing), (deathDescription.Killing ?? NULL) + "/" + (deathDescription.BeingKilled() ?? NULL) },
-                        { nameof(deathDescription.By), deathDescription.By.ToString() },
-                        { nameof(deathDescription.Killer), deathDescription.Killer ?? NULL },
-                        { nameof(deathDescription.With), deathDescription.With.ToString() },
-                        { nameof(deathDescription.Method), deathDescription.Method ?? NULL },
-                        { nameof(deathDescription.ForceNoMethodArticle), deathDescription.ForceNoMethodArticle.ToString() },
-                        { nameof(deathDescription.PluralMethod), deathDescription.PluralMethod.ToString() },
-                    };
-                    string deathDescriptionDetailsString = deathDescriptionDetails
-                        ?.ConvertToStringList(kvp => kvp.Key + ": " + kvp.Value)
-                        ?.GenerateBulletList(Bullet: null, BulletColor: null);
-                    E.AddEntry(this, nameof(KillerDetails.DeathDescription), deathDescriptionDetailsString);
-                    E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(KillerDetails.DeathDescription), deathDescriptionDetailsString);
-                }
-                else
-                {
-                    E.AddEntry(this, nameof(KillerDetails.DeathDescription), "empty");
-                    E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(KillerDetails.DeathDescription), "empty");
-                }
-            }
-            else
-            {
-                E.AddEntry(this, nameof(KillerDetails), "empty");
-                E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(KillerDetails), "empty");
             }
             return base.HandleEvent(E);
         }

@@ -11,10 +11,12 @@ using XRL.World.Parts;
 using XRL.World.Text.Attributes;
 using XRL.World.Text.Delegates;
 
+using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
+
 using UD_FleshGolems.Logging;
 using static UD_FleshGolems.Const;
 
-using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
+using SerializeField = UnityEngine.SerializeField;
 
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
@@ -45,6 +47,29 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { "took", "taking" },
         };
 
+        [SerializeField]
+        private string ParentCorpseID;
+        [SerializeField]
+        private GameObject _ParentCorpse;
+        public GameObject ParentCorpse
+        {
+            get
+            {
+                if (!GameObject.Validate(ref _ParentCorpse)
+                    || _ParentCorpse.ID == ParentCorpseID)
+                {
+                    _ParentCorpse = null;
+                    ParentCorpseID = null;
+                }
+                return _ParentCorpse;
+            }
+            set
+            {
+                ParentCorpseID = value?.ID;
+                _ParentCorpse = value;
+            }
+        }
+
         public string Category;
         public bool Were;
         public string Killed;
@@ -58,6 +83,9 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public DeathDescription()
         {
+            ParentCorpseID = null;
+            _ParentCorpse = null;
+
             Category = null;
             Were = true;
             Killed = null;
@@ -105,11 +133,13 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                   Method: Source.Method,
                   ForceNoMethodArticle: Source.ForceNoMethodArticle,
                   PluralMethod: Source.PluralMethod)
-        { }
-        public DeathDescription(IDeathEvent E, string NotableFeature = null)
+        {
+            ParentCorpse = Source.ParentCorpse;
+        }
+        public DeathDescription(GameObject Corpse, IDeathEvent E)
             : this()
         {
-            ProcessDeathEvent(E, NotableFeature);
+            ProcessDeathEvent(Corpse, E);
         }
 
         [ModSensitiveCacheInit]
@@ -312,11 +342,16 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             return DeathEventReason;
         }
 
-        public static DeathDescription GetFromDeathEvent(IDeathEvent E, string NotableFeature = null)
-            => new(E, NotableFeature);
+        public static DeathDescription GetFromDeathEvent(GameObject Corpse, IDeathEvent E)
+            => new(Corpse, E);
 
-        protected DeathDescription ProcessDeathEvent(IDeathEvent E, string NotableFeature = null)
+        public static DeathDescription GetFromDeathEvent(IDeathEvent E)
+            => GetFromDeathEvent(null, E);
+
+        protected DeathDescription ProcessDeathEvent(GameObject Corpse, IDeathEvent E)
         {
+            ParentCorpse = Corpse;
+
             Category = GetDeathCategoryFromEvent(E.ThirdPersonReason, out By);
             if (!DeathCategoryDeathDescriptions.TryGetValue(Category, out List<DeathDescription> killedCategoryDescriptionsList))
             {

@@ -73,6 +73,8 @@ namespace XRL.World.Parts
 
         public bool Environmental => DeathDescription?.Method == "";
 
+        public bool DeathQuestionsAreRude => DeathMemory.GetIsRudeToAsk();
+
         public UD_FleshGolems_DeathDetails()
         {
             Killer = null;
@@ -126,15 +128,28 @@ namespace XRL.World.Parts
             return true;
         }
 
+        public string GetKnownKiller()
+        {
+            if (KillerDetails == null)
+            {
+                MetricsManager.LogModWarning(ThisMod, Name + " attempted to output generic killer for non-existant " + nameof(KillerDetails));
+                return null;
+            }
+            if (!DeathMemory.RemembersKiller())
+            {
+                MetricsManager.LogModWarning(ThisMod, Name + " attempted to output generic killer when " + nameof(DeathMemory) + " doesn't recall one");
+                return null;
+            }
+            return KillerDetails?[DeathMemory];
+        }
+
         public override bool AllowStaticRegistration()
             => true;
-
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
             || ID == ReplaceInContextEvent.ID
             || ID == GetDebugInternalsEvent.ID
             ;
-
         public override bool HandleEvent(ReplaceInContextEvent E)
         {
             DeathMemory = DeathMemory.CopyMemories(E.Replacement, DeathMemory);

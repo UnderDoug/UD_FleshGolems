@@ -22,78 +22,78 @@
     </choice>
 
     <node ID="HowIDied">
+
+      <text MemoryElement="Killed" Known="true">
+        <text>I =subject.death.was.killed=, which I do not recommend...</text>
+        <text>let me tell you, =subject.death.beingKilled= is not fun...</text>
+        <text>I =subject.death.was.killed=, which is not how I imagined it would happen... and yet, here we are....</text>
+      </text>
+      <text MemoryElement="Killed" Known="false">
+        <text>best I can recall is that I was killed, but that's probably self-evident.</text>
+        <text>any more details about how I was killed than that it happened at all are more than I can recall, sorry.</text>
+        <text>you'd think I'd remember something like dyin', but I don't.</text>
+      </text>
       
       <text MemoryElement="Killer" Known="true">
-        <text>=no2nd=I was killed by =killer.Refname=...=no2nd.restore=</text>
-        <text>=no2nd==killer.Refname= killed me...=no2nd.restore=</text>
-        <text>=no2nd=I barely remember, but I'm pretty sure I was killed by =killer.refname=...=no2nd.restore=</text>
+        <text>I was killed by =subject.death.killer=...</text>
+        <text>=subject.death.killer= killed me...</text>
+        <text>I barely remember, but I'm pretty sure I was killed by =subject.death.killer=...</text>
       </text>
       <text MemoryElement="Killer" Known="false">
-        <text>=no2nd=I can't recall who it was...=no2nd.restore=</text>
-        <text>=no2nd=I was killed by... by.. you know, I can't remember...=no2nd.restore=</text>
-        <text>=no2nd=I don't remember everything from before my current state... who killed me is unfortunatley one of those things...=no2nd.restore=</text>
+        <text>I can't recall who it was...</text>
+        <text>I was killed by... by.. you know, I can't remember...</text>
+        <text>I don't remember everything from before my current state... who killed me is unfortunatley one of those things...</text>
       </text>
 
       <text MemoryElement="KillerName" Known="true">
-        <text>=no2nd=I was killed by someone called &quot;=killer.refname=&quot;...=no2nd.restore=</text>
-        <text>=no2nd==killer.Refname= is the name of who killed me...=no2nd.restore=</text>
-        <text>=no2nd=I barely remember, but I'm pretty sure I was killed by someone who went by &quot;=killer.refname=&quot;...=no2nd.restore=</text>
+        <text>I was killed by someone called &quot;=subject.death.killer.name=&quot;...</text>
+        <text>=subject.death.killer.name= is the name of who killed me...</text>
+        <text>I barely remember, but I'm pretty sure I was killed by someone who went by &quot;=subject.death.killer.name=&quot;...</text>
       </text>
       <text MemoryElement="KillerName" Known="false">
-        <text>=no2nd=I can't recall the name of who it was...=no2nd.restore=</text>
-        <text>=no2nd=I was killed by... by.. you know, I can't remember their name...=no2nd.restore=</text>
-        <text>=no2nd=I don't remember everything from before my current state... The name of who killed me is one of those things...=no2nd.restore=</text>
+        <text>I can't recall the name of who it was...</text>
+        <text>I was killed by... by.. you know, I can't remember their name...</text>
+        <text>I don't remember everything from before my current state... unfortunately, the name of who killed me is one of the things that remains a mystery to me...</text>
       </text>
 
       <text MemoryElement="KillerCreature" Known="true">
-        <text>=no2nd=The type of creature that killed me was =killer.uD_CreatureType:a=...=no2nd.restore=</text>
-        <text>=no2nd==killer.UD_CreatureType:a=... That's what got me... =killer.uD_CreatureType:a=...=no2nd.restore=</text>
-        <text>=no2nd=Would you believe it? =killer.UD_CreatureType:a=, of all things... {{K|=killer.uD_CreatureType:a=}}...=no2nd.restore=</text>
-        <text>=no2nd=Look out the next time there's =killer.uD_CreatureType:a= nearby... =killer.uD_CreatureType:a='s what got me!=no2nd.restore=</text>
+        <text>the type of creature that killed me was =subject.death.killer.creature=...</text>
+        <text>=subject.death.killer.creature=... That's what got me... {{emote|*slowly shakes =subject.bodypart:head=*}} ... =subject.death.killer.creature=...</text>
+        <text>would you believe it? =subject.death.killer.creature=, of all things... {{K|=subject.death.killer.creature=}}...</text>
+        <text>Look out the next time there's =subject.death.killer.creature= nearby... =subject.death.killer.creature='s what got me!</text>
       </text>
       <text MemoryElement="KillerCreature" Known="false">
-        <text>=no2nd=I couldn't tell you what =killer.subjective= =killer.verb:were:afterpronoun=... =killer.uD_CreatureType:a=, certainly...=no2nd.restore=</text>
-        <text>=no2nd=Really struggling to recall... the name of who killed me is one of those things...=no2nd.restore=</text>
-        <text>=no2nd=Maybe it's my poor memory... although, I suppose it might not have been bad before... before, well... {{emote|*gestures at =subject.reflexive=*}} ... but I can't remember the name of who killed me...=no2nd.restore=</text>
+        <text>I couldn't tell you so much as {{Y|what}} they were, let alone who... some mysterious entity, certainly...</text>
+        <text>really struggling to recall... I don't even know what kind of creature they were, or if they were a creature at all...</text>
+        <text>maybe it's my poor memory... although, I suppose it might not have been bad before... before, well... {{emote|*gestures at =subject.reflexive=*}} ... but I can't even remember what they were...</text>
       </text>
 
-      <text MemoryElement="Weapon" Known="true">
-        <text>=no2nd==killer.subjective= =subject.death.killed= me =subject.death.withMethod=...=no2nd.restore=</text>
-        <text>=no2nd==killer.subjective= used =killer.possessive= =subject.death.method= to kill me...=no2nd.restore=</text>
-        <text>=no2nd==weapon.an= was used to kill me...=no2nd.restore=</text>
+      <text MemoryElement="KillerFeature" Known="true">
+        <text>=subject.death.killer.feature=... that I know for sure...</text>
+        <text>=subject.death.killer.feature= is who killed me...</text>
+        <text>it was =subject.death.killer.feature= that is who ended me...</text>
       </text>
-      <text MemoryElement="Weapon" Known="false">
-        <text>=no2nd=I can't remember what I was actually killed with...=no2nd.restore=</text>
-        <text>=no2nd=what I was killed with is a mystery to me...=no2nd.restore=</text>
-        <text>=no2nd=it seems I can't recall what was used to kill me...=no2nd.restore=</text>
-      </text>
-
-      <text MemoryElement="NotableFeature" Known="true">
-        <text>=no2nd==killer.subjective= had =killer.uD_NotableFeature=, which took me out handily...=no2nd.restore=</text>
-        <text>=no2nd==killer.uD_NotableFeature= made short work of me...=no2nd.restore=</text>
-        <text>=no2nd==killer.uD_NotableFeature= is what ended my life... I'll leave exactly {{Y|how}} to your imagination...=no2nd.restore=</text>
-      </text>
-      <text MemoryElement="NotableFeature" Known="false">
-        <text>=no2nd=I can't even remember any notable features...=no2nd.restore=</text>
-        <text>=no2nd=not so much as a notable feature comes to mind...=no2nd.restore=</text>
-        <text>=no2nd==killer.subjective= must have been truly forgettable, I can't recall anything notable... except that =killer.subjective= killed me, of course...=no2nd.restore=</text>
+      <text MemoryElement="KillerFeature" Known="false">
+        <text>I can't even remember any notable features...</text>
+        <text>Not so much as a notable feature comes to mind...</text>
+        <text>they must have been truly forgettable, I can't recall anything notable... except that they killed me, of course...</text>
       </text>
 
-      <text MemoryElement="Description" Known="true">
-        <text>=no2nd=I =subject.death.was.killed=, which I do not recommend.=no2nd.restore=</text>
-        <text>=no2nd=let me tell you, =subject.death.beingKilled= is not fun.=no2nd.restore=</text>
-        <text>=no2nd=I =subject.death.was.killed=, which is not how I imagined it would happen... and yet, here we are.=no2nd.restore=</text>
+      <text MemoryElement="Method" Known="true">
+        <text>=subject.death.killer.method= is what I succumbed to...</text>
+        <text>=subject.death.killer.method= was used to kill me...</text>
+        <text>it was =subject.death.killer.method:a= that took me out...</text>
       </text>
-      <text MemoryElement="Description" Known="false">
-        <text>=no2nd=best I can recall is that I =subject.death.was.killed=, but that's probably self-evident.=no2nd.restore=</text>
-        <text>=no2nd=any more details than that I =subject.death.was.killed= are more than I can recall, sorry.=no2nd.restore=</text>
-        <text>=no2nd=you'd think I'd remember something like dyin', but I don't.=no2nd.restore=</text>
+      <text MemoryElement="Method" Known="false">
+        <text>I can't remember what I was actually killed with...</text>
+        <text>what I was killed with is a mystery to me...</text>
+        <text>it seems I can't recall what was used to kill me...</text>
       </text>
 
-      <text MemoryElement="KillerName,KillerCreature,Description">
-        <text>=no2nd==killer.Refname=, =killer.uD_CreatureType:a= got me... I =subject.death.was.killed=, which wasn't fun...=no2nd.restore=</text>
-        <text>=no2nd==killer.UD_CreatureType:a= called =killer.refname= saw me =subject.death.killed=...\n\nLook out if you see =killer.subjective=..=no2nd.restore=</text>
-        <text>=no2nd=I =subject.death.was.killed= by =killer.uD_CreatureType:a= called =killer.refname=... if I ever see =killer.objective= again...\n\n... well, I'm not sure what I'd do, actually... =killer.subject= did kill me the first time, and I'm not keen on a second...=no2nd.restore=</text>
+      <text MemoryElement="KillerName,KillerCreature,Killed" Known="true">
+        <text>=subject.death.killer.name=, =subject.death.killer.creature= got me... I =subject.death.was.killed=, which wasn't fun...</text>
+        <text>=subject.death.killer.creature= called =subject.death.killer.name= saw me =subject.death.killed=...\n\nLook out if you see =no2nd==killer.objective|no2nd.restore=...</text>
+        <text>I =subject.death.was.killed= by =subject.death.killer.creature= called =subject.death.killer.creature=... if I ever see =no2nd==killer.objective|no2nd.restore= again...\n\n... well, I'm not sure what I'd do, actually... =no2nd==killer.subjective|no2nd.restore= did kill me the first time, and I'm not keen on a second...</text>
       </text>
 
       <text Environment="true">
@@ -104,7 +104,7 @@
 
       <text RudeToAsk="true">
         <text>That's a rather personal thing to ask, don't you think??</text>
-        <text>How presumptuous...\n\nGood for you that it's not a big deal, but maybe I'd rather not think about it.</text>
+        <text>How presumptuous...\n\nGood for you that it's not a big deal, but maybe I'd rather not think about it...</text>
         <text>When did you last expell waste?\n\nNot a fan of inappropriately personal questions, then?</text>
       </text>
 
@@ -121,9 +121,9 @@
       </text>
 
       <text Priority="1">
-        <text>=no2nd=I don't actually remember at all...</text>
-        <text>=no2nd=I'm struggling to recall...</text>
-        <text>=no2nd=Wait, I {{W|DIED}}??\n\n=ud_nbsp:12=...I'm just joking around! I don't remember, though...</text>
+        <text>I don't actually remember at all...</text>
+        <text>I'm struggling to recall...</text>
+        <text>Wait, I {{W|DIED}}??\n\n=ud_nbsp:12=...I'm just joking around! I don't remember, though...</text>
       </text>
 
       <part Name="UD_FleshGolems_AskHowDied" />

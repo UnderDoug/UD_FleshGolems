@@ -59,32 +59,6 @@ namespace XRL.World.Parts
         public const string REANIMATED_NO_ADJECTIVE_PROPTAG = "UD_FleshGolems ReanimatedCorpse NoPrefix";
         public const string REANIMATED_USE_ICONCOLOR_PART_PROPTAG = "UD_FleshGolems ReanimatedCorpse UseIconColorPart";
 
-        [Flags]
-        public enum DeathMemoryElements : int
-        {
-            None = 0,
-            KillerName = 1,
-            KillerCreature = 2,
-            Killer = KillerName | KillerCreature,
-            NotableFeature = 4,
-            Weapon = 8,
-            Method = NotableFeature | Weapon,
-            Description = 16,
-            All = Killer | Method | Description,
-        }
-        public static DeathMemoryElements UndefinedDeathMemoryElement => (DeathMemoryElements)(-1);
-
-        public static Dictionary<string, DeathMemoryElements> DeathMemoryElementsValues
-            => Startup.RequireCachedEnumValueDictionary<DeathMemoryElements>();
-
-        public static DeathMemoryElements[] KillerFlags => DeathMemoryElementsValues?.Values
-            ?.Where(e => e > DeathMemoryElements.None && e < DeathMemoryElements.Killer)
-            ?.ToArray();
-
-        public static DeathMemoryElements[] MethodFlags => DeathMemoryElementsValues?.Values
-            ?.Where(e => e > DeathMemoryElements.Killer && e < DeathMemoryElements.Method)
-            ?.ToArray();
-
         private const string LIBRARIAN_FRAGMENT = "In the narthex of the Stilt, cloistered beneath a marble arch and close to";
 
         public static List<string> PartsInNeedOfRemovalWhenAnimated => new()

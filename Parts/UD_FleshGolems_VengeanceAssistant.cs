@@ -78,9 +78,13 @@ namespace XRL.World.Parts
                 && dropCell.FindObject(GO => IsCorpseOfThisEntityOrDying(GO, E)) is GameObject corpse
                 && corpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper corpseReanimationHelper))
             {
-                corpseReanimationHelper.KillerDetails = new(E);
+                if (!corpse.TryGetDeathDetails(out UD_FleshGolems_DeathDetails deathDetails))
+                {
+                    deathDetails = corpse.RequirePart<UD_FleshGolems_DeathDetails>();
+                }
+                deathDetails.Initialize(E);
                 Debug.CheckYeh(nameof(KillerDetails), "Got!", Indent: indent[1]);
-                corpseReanimationHelper.KillerDetails.Log();
+                corpseReanimationHelper.KillerDetails?.Log();
             }
 
             return base.HandleEvent(E);
