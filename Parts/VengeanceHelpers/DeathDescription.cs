@@ -465,8 +465,11 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public string GetBy(string Killer = null, string Method = null)
         {
-            if (GetKiller(Killer).IsNullOrEmpty()
+            if (GetKiller(Killer) == ""
                 && GetMethod(Method).IsNullOrEmpty())
+                return null;
+
+            if (GetKiller(Killer).IsNullOrEmpty())
                 return null;
 
             return GetKiller(Killer) != null && By
@@ -505,6 +508,21 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public string GetMethod(string Method = null)
             => Method ?? this.Method;
+
+        public string GetAMethod(string Method = null, bool ForceNoMethodArticle = false)
+        {
+            if (GetMethod(Method) is string method
+                && !method.IsNullOrEmpty())
+            {
+                if (GetArticle(ForceNoMethodArticle) is string article
+                    && !article.IsNullOrEmpty())
+                {
+                    return article + " " + method;
+                }
+                return method;
+            }
+            return null;
+        }
 
         public string Reason(bool Accidental = false)
             => KilledByKiller(Accidental ? "accidentally" : null) + WithMethod();
@@ -556,8 +574,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             bool ForceNoMethodArticle = false)
             => GetKilled(Adverb) + GetWith(Killer, Method, ForceNoMethodArticle);
 
-        public string WithMethod(string Method = null, bool ForceNoMethodArticle = false)
-            => GetWith(Killer, Method, ForceNoMethodArticle) + GetMethod(Method);
+        public string WithMethod(string Killer = null, string Method = null, bool ForceNoMethodArticle = false)
+            => GetWith(Killer ?? this.Killer, Method, ForceNoMethodArticle) + GetMethod(Method);
 
         public string KilledWithMethod(
             string Adverb = null,
@@ -591,14 +609,14 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string Killer = null,
             string Method = null,
             bool ForceNoMethodArticle = false)
-            => GetWere(Alias) + KilledByKiller(Adverb, Killer) + WithMethod(Method, ForceNoMethodArticle);
+            => GetWere(Alias) + KilledByKiller(Adverb, Killer) + WithMethod(Killer, Method, ForceNoMethodArticle);
 
         public string WasKilledByKillerWithMethod(
             string Adverb = null,
             string Killer = null,
             string Method = null,
             bool ForceNoMethodArticle = false)
-            => GetWas() + KilledByKiller(Adverb, Killer) + WithMethod(Method, ForceNoMethodArticle);
+            => GetWas() + KilledByKiller(Adverb, Killer) + WithMethod(Killer, Method, ForceNoMethodArticle);
 
         public string TheyWereKilledByKiller(
             string Alias = "subject",
@@ -622,7 +640,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string Killer = null,
             string Method = null,
             bool ForceNoMethodArticle = false)
-            => TheyWereKilledByKiller(Alias, Capitalize, Adverb, Killer) + WithMethod(Method, ForceNoMethodArticle);
+            => TheyWereKilledByKiller(Alias, Capitalize, Adverb, Killer) + WithMethod(Killer, Method, ForceNoMethodArticle);
 
         public string KilledThem(string Adverb = null, string Alias = "subject")
             => GetKilled(Adverb) + GetThem(Alias);
@@ -641,7 +659,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string Alias = "subject",
             string Method = null,
             bool ForceNoMethodArticle = false)
-            => GetKilled(Adverb) + GetThem(Alias) + WithMethod(Method, ForceNoMethodArticle);
+            => GetKilled(Adverb) + GetThem(Alias) + WithMethod("", Method, ForceNoMethodArticle);
 
         public string KillerKilledThemWithMethod(
             string Killer = null,
@@ -649,7 +667,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string Alias = "subject",
             string Method = null,
             bool ForceNoMethodArticle = false)
-            => KillerKilledThem(Killer, Adverb, Alias) + WithMethod(Method, ForceNoMethodArticle);
+            => KillerKilledThem(Killer, Adverb, Alias) + WithMethod(Killer, Method, ForceNoMethodArticle);
 
         public StringMap<string> DebugInternals() => new()
         {

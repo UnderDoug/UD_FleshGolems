@@ -35,6 +35,7 @@ using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
+using UD_FleshGolems.Capabilities;
 
 namespace XRL.World.Parts
 {
@@ -1061,10 +1062,12 @@ namespace XRL.World.Parts
 
                 bool builtToBeReanimated = (frankenCorpse.GetPart<UD_FleshGolems_DestinedForReanimation>()?.BuiltToBeReanimated).GetValueOrDefault();
 
+                /*
                 if (reanimationHelper.DeathDetails == null)
                 {
-                    frankenCorpse.RequirePart< UD_FleshGolems_DestinedForReanimation>().ProduceRandomDeathDetails();
+                    frankenCorpse.RequirePart<UD_FleshGolems_DestinedForReanimation>().ProduceRandomDeathDetails();
                 }
+                */
 
                 Dictionary<TileMappingKeyword, List<string>> prospectiveTiles = null;
 
@@ -1078,6 +1081,42 @@ namespace XRL.World.Parts
 
                 // PastLife.RestoreParts(p => !IsPartToSkip(p, frankenCorpse));
 
+                if (reanimationHelper.DeathDetails == null)
+                {
+                    UD_FleshGolems_DestinedForReanimation.InitializeRandomDeathDetails(ForCorpse: frankenCorpse);
+
+                    if (reanimationHelper.DeathDetails == null)
+                        MetricsManager.LogModWarning(
+                            mod: ThisMod,
+                            Message: nameof(MakeItALIVE) + " failed to initialize " + nameof(UD_FleshGolems_DeathDetails) +
+                                " for " + (frankenCorpse?.DebugName ?? "null entity"));
+                }
+                else
+                if (reanimationHelper.DeathDetails.DeathDescription == null)
+                {
+                    reanimationHelper.DeathDetails.DeathDescription =
+                        UD_FleshGolems_DestinedForReanimation.ProduceRandomDeathDescriptionWithComponents(
+                            For: frankenCorpse,
+                            out _,
+                            out _,
+                            out _,
+                            out _,
+                            out _,
+                            out _,
+                            out _);
+                    if (frankenCorpse.Blueprint == "UD_FleshGolems Jofo Qudwufo")
+                    {
+                        reanimationHelper.DeathDetails.DeathDescription = new(
+                            Category: "electrocuted",
+                            Were: false,
+                            Killed: "zapped to death",
+                            Killer: UD_FleshGolems_NecromancySystem.System?.TheMadMonger?.GetReferenceDisplayName(Short: true),
+                            With: false,
+                            Method: "failed experiment");
+                        reanimationHelper.DeathDetails.UpdateKiller(UD_FleshGolems_NecromancySystem.System?.TheMadMonger);
+                    }
+                }
+                    
                 frankenCorpse.SetStringProperty("OverlayColor", "&amp;G^k");
 
                 frankenCorpse.Physics.Organic = PastLife.Physics.Organic;
@@ -1113,14 +1152,23 @@ namespace XRL.World.Parts
                 IdentityType identityType = PastLife.GetIdentityType();
 
                 string creatureType = frankenCorpse.GetBlueprint().DisplayName();
+                if (identityType == IdentityType.Player)
+                {
+                    creatureType = frankenCorpse.GetSubtype()
+                        ?? frankenCorpse.GetGenotype()
+                        ?? frankenCorpse.GetSpecies()
+                        ?? creatureType;
+                    creatureType += " corpse";
+                }
+                else
                 if (identityType < IdentityType.ParticipantVillager && identityType > IdentityType.Player)
                 {
-                    creatureType = "corpse of " + PastLife.GetBlueprint().DisplayName().ToLower();
+                    creatureType = "corpse of " + PastLife.GetBlueprint().DisplayName();
                 }
                 else
                 if (identityType < IdentityType.Corpse)
                 {
-                    creatureType = PastLife.GetBlueprint().DisplayName() + " corpse";
+                    creatureType = PastLife.GetBlueprint().DisplayName().ToLower() + " corpse";
                 }
                 creatureType = UD_FleshGolems_ReanimatedCorpse.REANIMATED_ADJECTIVE + " " + creatureType.RemoveAll("[", "]");
                 

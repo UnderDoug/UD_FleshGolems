@@ -115,7 +115,7 @@ namespace UD_FleshGolems.Capabilities
         [SerializeField]
         private bool InheritedCorspesInitialized;
 
-        public GameObject TheMadMonder;
+        public GameObject TheMadMonger;
 
         public UD_FleshGolems_NecromancySystem()
         {
@@ -127,7 +127,7 @@ namespace UD_FleshGolems.Capabilities
             CorpseProductsInitialized = false;
             CountsAsCorspesInitialized = false;
             InheritedCorspesInitialized = false;
-            TheMadMonder = null;
+            TheMadMonger = null;
         }
 
         [ModSensitiveCacheInit]
@@ -206,7 +206,7 @@ namespace UD_FleshGolems.Capabilities
                     UnityEngine.Debug.Log(cacheDebugMessage);
                 }
 
-                TheMadMonder = GameObjectFactory.Factory.CreateObject(
+                TheMadMonger = GameObjectFactory.Factory.CreateObject(
                     ObjectBlueprint: "UD_FleshGolems Mad Monger",
                     Context: nameof(UD_FleshGolems_MadMonger_WorldBuilder));
 

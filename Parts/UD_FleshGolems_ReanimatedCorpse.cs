@@ -389,6 +389,11 @@ namespace XRL.World.Parts
             if (E.Context == "CreatureType" && E.Reference)
             {
                 string replacementName = E.Object.GetBlueprint().DisplayName().RemoveAll("[", "]");
+                if (IdentityType == IdentityType.Player)
+                    replacementName = E.Object.GetSubtype()
+                        ?? E.Object.GetGenotype()
+                        ?? E.Object.GetSpecies()
+                        ?? replacementName;
 
                 if (IdentityType < IdentityType.ParticipantVillager && IdentityType > IdentityType.Player)
                 {

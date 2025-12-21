@@ -26,7 +26,7 @@
       <text MemoryElement="Killed" Known="true">
         <text>I =subject.death.was.killed=, which I do not recommend...</text>
         <text>let me tell you, =subject.death.beingKilled= is not fun...</text>
-        <text>I =subject.death.was.killed=, which is not how I imagined it would happen... and yet, here we are....</text>
+        <text>I =subject.death.was.killed=, which is not how I imagined it would happen... and yet, here we are...</text>
       </text>
       <text MemoryElement="Killed" Known="false">
         <text>best I can recall is that I was killed, but that's probably self-evident.</text>
@@ -80,13 +80,13 @@
       </text>
 
       <text MemoryElement="Method" Known="true">
-        <text>=subject.death.method= is what I succumbed to...</text>
-        <text>=subject.death.method= was used to kill me...</text>
+        <text>=subject.death.a.method= is what I succumbed to...</text>
+        <text>=subject.death.a.method= was used to kill me...</text>
         <text>it was =subject.death.withMethod= that I was killed...</text>
       </text>
       <text MemoryElement="Method" Known="false">
         <text>I can't remember what I was actually killed with...</text>
-        <text>what I was killed with is a mystery to me...</text>
+        <text>what I was killed with has escaped me...</text>
         <text>it seems I can't recall what was used to kill me...</text>
       </text>
 

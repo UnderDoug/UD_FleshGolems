@@ -262,14 +262,22 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     ?.GetDeathDescription()
                     ?.KilledWithMethod(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
 
-        // parameter0: method override.
         [VariableObjectReplacer("death.method")]
         public static string TargetDeath_Method(DelegateContext Context)
             => ContextCapitalize(
                 Context: Context,
                 Output: Context.Target
-                    ?.GetDeathDescription()
-                    ?.GetMethod(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+                    ?.GetDeathDetails()
+                    ?.Method());
+
+        // parameter0: method override.
+        [VariableObjectReplacer("death.a.method")]
+        public static string TargetDeath_A_Method(DelegateContext Context)
+            => ContextCapitalize(
+                Context: Context,
+                Output: Context.Target
+                    ?.GetDeathDetails()
+                    ?.Method(true));
 
         // parameter0: method override.
         [VariableObjectReplacer("death.withMethod")]
@@ -278,7 +286,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Context: Context,
                 Output: Context.Target
                     ?.GetDeathDescription()
-                    ?.WithMethod(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+                    ?.WithMethod("", !Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
 
         // parameter0: adverb.
         // parameter1: killer override.
@@ -312,7 +320,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 {
                     deathDescription.ForceNoMethodArticle = forceNoMethodArticleParam.EqualsNoCase("true");
                 }
-                output = deathDescription.KilledByKiller(adverb, killerOverride) + deathDescription.WithMethod(methodOverride);
+                output = deathDescription.KilledByKiller(adverb, killerOverride) + deathDescription.WithMethod(killerOverride, methodOverride);
                 deathDescription.ForceNoMethodArticle = forceNoMethodArticle;
             }
             return ContextCapitalize(

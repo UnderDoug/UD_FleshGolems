@@ -74,6 +74,7 @@
     <tag Name="UD_FleshGolems ReanimationHelper GenerateSourceInventory" />
     <tag Name="UD_FleshGolems ReanimatedCorpse UseIconColorPart" />
     <tag Name="UD_FleshGolems DeathDetails DeathMemory RudeToAsk" Value ="false" />
+    <tag Name="UD_FleshGolems DeathDetails DeathDescription Category" Value ="electrocuted" />
   </object>
   
   <object Name="UD_FleshGolems Mad Monger" Inherits="Gutsmonger">

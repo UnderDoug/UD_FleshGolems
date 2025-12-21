@@ -172,11 +172,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             KillerDetails? KillerDetails,
             DeathDescription DeathDescription)
         {
-            if (Corpse == null)
-                throw new ArgumentNullException(nameof(Corpse));
-
             if (DeathDescription == null)
                 throw new ArgumentNullException(nameof(DeathDescription));
+
+            DeathDescription.ParentCorpse = Corpse ?? throw new ArgumentNullException(nameof(Corpse));
 
             DeathMemory deathMemory = new(Corpse);
             int amnesiaRoll = deathMemory.SeededRandomHigh(nameof(GetDeathMemoryAmnesiaChanceEvent), 100);
@@ -235,33 +234,34 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             => Killed;
 
         public readonly bool RemembersKilled()
-            => Killed != null
-            && Killed.GetValueOrDefault();
+            => GetRemembersKilled() is bool killed
+            && killed;
 
         public readonly KillerMemory? GetRemembersKiller()
             => Killer;
 
         public readonly bool RemembersKiller()
-            => Killer != null;
+            => GetRemembersKiller() is KillerMemory killer
+            && killer > KillerMemory.Amnesia;
 
         public readonly bool RemembersKillerName()
-            => Killer != null
-            && (KillerMemory)Killer >= KillerMemory.Name;
+            => GetRemembersKiller() is KillerMemory killer
+            && killer >= KillerMemory.Name;
 
         public readonly bool RemembersKillerCreature()
-            => Killer != null
-            && (KillerMemory)Killer >= KillerMemory.Creature;
+            => GetRemembersKiller() is KillerMemory killer
+            && killer >= KillerMemory.Creature;
 
         public readonly bool RemembersKillerFeature()
-            => Killer != null
-            && (KillerMemory)Killer >= KillerMemory.Feature;
+            => GetRemembersKiller() is KillerMemory killer
+            && killer >= KillerMemory.Feature;
 
         public readonly bool? GetRemembersMethod()
             => Method;
 
         public readonly bool RemembersMethod()
-            => Method != null
-            && Method.GetValueOrDefault();
+            => GetRemembersMethod() is bool method
+            && method;
 
         public readonly bool GetIsRudeToAsk()
             => RudeToAsk;

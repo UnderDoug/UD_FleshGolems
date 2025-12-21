@@ -67,12 +67,12 @@ namespace XRL.World.WorldBuilders
             Startup.CacheSomeCorpses();
             
             
-            if (NecromancySystem?.TheMadMonder is not GameObject theMadMonger)
+            if (NecromancySystem?.TheMadMonger is not GameObject theMadMonger)
             {
                 theMadMonger = GameObjectFactory.Factory.CreateObject(
                     ObjectBlueprint: "UD_FleshGolems Mad Monger",
                     Context: nameof(UD_FleshGolems_MadMonger_WorldBuilder));
-                MetricsManager.LogModWarning(ThisMod, "Failed to retreive " + nameof(NecromancySystem.TheMadMonder) + " from " + nameof(NecromancySystem));
+                MetricsManager.LogModWarning(ThisMod, "Failed to retreive " + nameof(NecromancySystem.TheMadMonger) + " from " + nameof(NecromancySystem));
             }
 
             string madMongerRefname = theMadMonger.GetReferenceDisplayName(Context: "LairName");

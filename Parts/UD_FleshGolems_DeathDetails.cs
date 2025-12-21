@@ -65,10 +65,11 @@ namespace XRL.World.Parts
             protected set
             {
                 _Killer?.UnregisterEvent(this, ReplaceInContextEvent.ID);
-                _Killer = value;
+                _Killer = UpdateKiller(value);
                 _Killer?.RegisterEvent(this, ReplaceInContextEvent.ID);
             }
         }
+        public bool KillerIsCached;
 
         public GameObject Weapon;
 
@@ -89,6 +90,7 @@ namespace XRL.World.Parts
             Init = false;
 
             Killer = null;
+            KillerIsCached = false;
             Weapon = null;
 
             DeathMemory = default;
@@ -100,6 +102,17 @@ namespace XRL.World.Parts
 
         public bool Initialize(IDeathEvent DeathEvent)
         {
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(ParentObject?.DebugName ?? NULL),
+                    Debug.Arg(nameof(Init), Init),
+                    Debug.Arg(nameof(DeathEvent.Killer), DeathEvent?.Killer?.DebugName ?? NULL),
+                    Debug.Arg(nameof(DeathEvent.Weapon), DeathEvent?.Weapon?.DebugName ?? NULL),
+                    Debug.Arg(nameof(DeathEvent.Accidental), DeathEvent?.Accidental),
+                });
+
             if (Init)
                 return true;
 
@@ -124,26 +137,41 @@ namespace XRL.World.Parts
             GameObject Weapon,
             GameObject Projectile,
             DeathDescription DeathDescription,
-            bool Accidental)
+            bool Accidental,
+            bool KillerIsCached)
         {
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(ParentObject?.DebugName ?? NULL),
+                    Debug.Arg(nameof(Init), Init),
+                    Debug.Arg(nameof(Killer), Killer?.DebugName ?? NULL),
+                    Debug.Arg(nameof(Weapon), Weapon?.DebugName ?? NULL),
+                    Debug.Arg(nameof(Projectile), Projectile?.DebugName ?? NULL),
+                    Debug.Arg(nameof(DeathDescription), DeathDescription != null),
+                    Debug.Arg(nameof(Accidental), Accidental),
+                });
+
             if (Init)
                 return true;
 
-            if (DeathDescription == null)
+            if (ParentObject is not GameObject corpse
+                || DeathDescription == null)
                 return false;
 
             Init = true;
 
             this.Killer = Killer;
+            this.KillerIsCached = KillerIsCached;
             this.Weapon = Weapon ?? Projectile;
 
             if (Killer != null)
                 KillerDetails = new(Killer);
 
             this.DeathDescription = DeathDescription;
-            this.DeathDescription.ParentCorpse = ParentObject;
 
-            DeathMemory = DeathMemory.Make(ParentObject, Killer, Weapon ?? Projectile, KillerDetails, DeathDescription);
+            DeathMemory = DeathMemory.Make(corpse, Killer, Weapon ?? Projectile, KillerDetails, DeathDescription);
 
             this.Accidental = Accidental;
 
@@ -176,12 +204,16 @@ namespace XRL.World.Parts
         {
             if (KillerDetails == null)
             {
-                MetricsManager.LogModWarning(ThisMod, Name + " attempted to output generic killer for non-existant " + nameof(KillerDetails));
+                MetricsManager.LogModWarning(
+                    mod: ThisMod,
+                    Message: Name + " attempted to output generic killer for non-existant " + nameof(KillerDetails));
                 return null;
             }
             if (!DeathMemory.RemembersKiller())
             {
-                MetricsManager.LogModWarning(ThisMod, Name + " attempted to output generic killer when " + nameof(DeathMemory) + " doesn't recall one");
+                MetricsManager.LogModWarning(
+                    mod: ThisMod, 
+                    Message: Name + " attempted to output generic killer when " + nameof(DeathMemory) + " doesn't recall one");
                 return null;
             }
             return KillerDetails?[DeathMemory];
@@ -211,6 +243,22 @@ namespace XRL.World.Parts
             return "someone";
         }
 
+        public string Method(bool WithIndefiniteArticle = false)
+        {
+            if (DeathMemory.RemembersMethod()
+                && DeathDescription.GetMethod() is string method
+                && !method.IsNullOrEmpty())
+            {
+                if (WithIndefiniteArticle)
+                {
+                    return DeathDescription.GetAMethod(null, DeathDescription.ForceNoMethodArticle);
+                }
+                return method;
+            }
+
+            return "strange method";
+        }
+
         public string KilledWithMethod(string Adverb = null)
         {
             if (Adverb.IsNullOrEmpty()
@@ -223,21 +271,34 @@ namespace XRL.World.Parts
         public string WithMethod()
             => DeathDescription?.WithMethod();
 
+        public GameObject UpdateKiller(GameObject Killer)
+        {
+            if (DeathDescription != null
+                && DeathDescription.Killer != "")
+            {
+                DeathDescription.SetKiller(Killer);
+                KillerDetails?.Update(Killer);
+            }
+            return Killer;
+        }
+
         public override bool AllowStaticRegistration()
             => true;
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
-            || ID == ReplaceInContextEvent.ID
+            // || ID == ReplaceInContextEvent.ID
             || ID == GetDebugInternalsEvent.ID
             ;
         public override bool HandleEvent(ReplaceInContextEvent E)
         {
-            DeathMemory = DeathMemory.CopyMemories(E.Replacement, DeathMemory);
-            KillerDetails?.Update(E.Replacement);
-            if (DeathDescription != null
-                && DeathDescription.Killer != "")
+            if (E.Object == Killer)
             {
-                DeathDescription.SetKiller(E.Replacement);
+                Killer = E.Replacement;
+            }
+            else
+            if (E.Replacement == ParentObject)
+            {
+                DeathMemory = DeathMemory.CopyMemories(E.Replacement, DeathMemory);
             }
             return base.HandleEvent(E);
         }
@@ -251,7 +312,11 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(DeathDescription), DeathDescription?.DebugInternalsString() ?? NULL);
             E.AddEntry(this, Accidental.YehNah(), nameof(Accidental));
             E.AddEntry(this, Environmental.YehNah(), nameof(Environmental));
-            E.AddEntry(this, nameof(DeathDescription.ThirdPersonReason), DeathDescription.ThirdPersonReason(Capitalize: true, Accidental: Accidental, DoReplacer: true));
+            string thirdPersonReason = DeathDescription.ThirdPersonReason(
+                    Capitalize: true,
+                    Accidental: Accidental,
+                    DoReplacer: true).Strip() + ".";
+            E.AddEntry(this, nameof(DeathDescription.ThirdPersonReason), thirdPersonReason);
             return base.HandleEvent(E);
         }
     }

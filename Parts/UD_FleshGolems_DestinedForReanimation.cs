@@ -453,15 +453,11 @@ namespace XRL.World.Parts
                     LogMessage: true,
                     ShowContextFrame: deathIcon != null,
                     PopupID: "UndeathMessage");
-                /*
+                
                 Popup.ShowSpace(
-                    Message: notRelentMsg,
-                    Title: andYetMsg,
-                    AfterRender: new(RelentlessIcon),
+                    Message: "... some time passes... ",
                     LogMessage: true,
-                    ShowContextFrame: deathIcon != null,
-                    PopupID: "UndeathMessage");
-                */
+                    PopupID: "TimePassMessage");
             }
 
             string deathReason = deathMessage;
@@ -651,6 +647,11 @@ namespace XRL.World.Parts
             bool haveMethod = haveWeapon || haveProjectile;
             bool MatchesSpec(DeathDescription DeathDescription)
             {
+                if (For.GetPropertyOrTag("UD_FleshGolems DeathDetails DeathDescription Category") is string categoryPropTag
+                    && categoryPropTag.CachedCommaExpansion()?.ToArray() is string[] categories
+                    && !DeathDescription.Category.EqualsAny(categories))
+                    return false;
+
                 if (haveKiller && DeathDescription.Killer == "")
                     return false;
 
@@ -677,12 +678,25 @@ namespace XRL.World.Parts
 
             return deathDescription;
         }
-        public UD_FleshGolems_DeathDetails ProduceRandomDeathDetails()
+        public UD_FleshGolems_DeathDetails InitializeRandomDeathDetails()
+            => InitializeRandomDeathDetails(ParentObject);
+
+        public static UD_FleshGolems_DeathDetails InitializeRandomDeathDetails(
+            GameObject ForCorpse,
+            UD_FleshGolems_DeathDetails DeathDetails = null)
         {
-            UD_FleshGolems_DeathDetails deathDetails = null;
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ForCorpse), ForCorpse?.DebugName ?? "null"),
+                    Debug.Arg(nameof(UD_FleshGolems.Extensions.IsCorpse), ForCorpse?.IsCorpse()),
+                });
+
+            DeathDetails = ForCorpse.RequirePart<UD_FleshGolems_DeathDetails>();
 
             DeathDescription deathDescription = ProduceRandomDeathDescriptionWithComponents(
-                For: ParentObject,
+                For: ForCorpse,
                 Killer: out GameObject killer,
                 Weapon: out GameObject weapon,
                 Projectile: out GameObject projectile,
@@ -692,17 +706,18 @@ namespace XRL.World.Parts
                 KillerIsCached: out bool killerIsCached);
             try
             {
-                if (ParentObject is GameObject corpse)
+                if (ForCorpse.IsCorpse())
                 {
-                    deathDetails = corpse.RequirePart<UD_FleshGolems_DeathDetails>();
+                    DeathDetails = ForCorpse.RequirePart<UD_FleshGolems_DeathDetails>();
 
-                    if (!deathDetails.Initialize(killer, weapon, projectile, deathDescription, accidental))
+                    if (!DeathDetails.Initialize(killer, weapon, projectile, deathDescription, accidental, killerIsCached))
                     {
-                        corpse.RemovePart(deathDetails);
+                        Debug.CheckNah("Failed to initialize DeathDetails.", indent[1]);
+                        ForCorpse.RemovePart(DeathDetails);
                         return null;
                     }
                 }
-                return deathDetails;
+                return DeathDetails;
             }
             finally
             {
@@ -723,27 +738,39 @@ namespace XRL.World.Parts
             IRenderable RelentlessIcon = null,
             string RelentlessTitle = null)
         {
-            GameObject killer = null;
-            GameObject weapon = null;
-            GameObject projectile = null;
-            bool killerIsCached = false;
+            bool weaponIsProjectile = DeathDetails?.Weapon is GameObject ddWeapon 
+                && (ddWeapon.InheritsFrom("Projectile")
+                    || ddWeapon.HasPart<Projectile>());
+            GameObject killer = DeathDetails?.Killer;
+            GameObject weapon = DeathDetails?.Weapon;
+            GameObject projectile = weaponIsProjectile ? DeathDetails?.Weapon : null;
+            bool killerIsCached = DeathDetails != null && DeathDetails.KillerIsCached;
+            bool accidental = DeathDetails != null && DeathDetails.Accidental;
+            string category = DeathDetails?.DeathDescription?.Category;
+            string reason = DeathDetails?.DeathDescription?.Reason();
             try
             {
-                DeathDescription deathDescription = ProduceRandomDeathDescriptionWithComponents(
-                    For: Dying,
-                    Killer: out killer,
-                    Weapon: out weapon,
-                    Projectile: out projectile,
-                    Category: out string category,
-                    Reason: out string reason,
-                    Accidental: out bool accidental,
-                    KillerIsCached: out killerIsCached,
-                    ChanceRandomKiller: ChanceRandomKiller);
+                DeathDescription deathDescription = DeathDetails?.DeathDescription
+                    ?? ProduceRandomDeathDescriptionWithComponents(
+                        For: Dying,
+                        Killer: out killer,
+                        Weapon: out weapon,
+                        Projectile: out projectile,
+                        Category: out category,
+                        Reason: out reason,
+                        Accidental: out accidental,
+                        KillerIsCached: out killerIsCached,
+                        ChanceRandomKiller: ChanceRandomKiller);
 
                 if (DeathDetails == null)
-                    MetricsManager.LogModWarning(ThisMod, nameof(FakeRandomDeath) + " passed null " + nameof(UD_FleshGolems_DeathDetails) + " for " + (Dying?.DebugName ?? "null entity"));
-
-                DeathDetails?.Initialize(killer, weapon, projectile, deathDescription, accidental);
+                    MetricsManager.LogModWarning(
+                        mod: ThisMod,
+                        Message: nameof(FakeRandomDeath) + " passed null " + nameof(UD_FleshGolems_DeathDetails) +
+                            " for " + (Dying?.DebugName ?? "null entity"));
+                
+                if (DeathDetails != null
+                    && !DeathDetails.Init)
+                    DeathDetails?.Initialize(killer, weapon, projectile, deathDescription, accidental, killerIsCached);
 
                 bool deathFaked = FakeDeath(
                     Dying: Dying,

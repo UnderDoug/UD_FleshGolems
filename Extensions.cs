@@ -89,7 +89,7 @@ namespace UD_FleshGolems
 
         public static bool EqualsAnyNoCase(this string Value, params string[] args)
             => !args.IsNullOrEmpty()
-            && !args.Where(t => (Utils.EitherNull(Value, t, out bool areEqual) && areEqual) || (Value != null && Value.EqualsNoCase(t))).IsNullOrEmpty();
+            && !args.Where(t => Value != null && Value.EqualsNoCase(t)).IsNullOrEmpty();
 
         public static bool EqualsAll<T>(this T Value, params T[] args)
             => !args.IsNullOrEmpty()
@@ -1431,7 +1431,7 @@ namespace UD_FleshGolems
             };
 
             string attributesString = "(" + newConversationText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
-            Debug.Log(newConversationText.PathID.TextAfter(".") + attributesString + newConversationText.Text, Indent: indent[2]);
+            Debug.Log(newConversationText.PathID.TextAfter(".") + attributesString + newConversationText.Text, Indent: indent[1]);
 
             return newConversationText;
         }
@@ -1452,6 +1452,27 @@ namespace UD_FleshGolems
                 output = output[endDelimited..];
             }
             return output;
+        }
+
+        public static string FirstRoughlyHalf(this string String, int Offset = 5)
+        {
+            if (String.IsNullOrEmpty())
+                return null;
+
+            Offset = Stat.RandomCosmetic(-Offset, Offset);
+            int roughlyHalfOfString = Math.Min(Math.Max(0, (String.Length / 2) + Offset), String.Length);
+            return String[..roughlyHalfOfString];
+        }
+
+        public static StringBuilder TrimLatterRoughlyHalf(this StringBuilder SB, int Offset = 5)
+        {
+            if (SB.IsNullOrEmpty())
+                return null;
+
+            Offset = Stat.RandomCosmetic(-Offset, Offset);
+            int roughlyHalfOfString = Math.Min(Math.Max(0, (SB.Length / 2) + Offset), SB.Length);
+            int latterRoughlyHalfOfString = SB.Length - roughlyHalfOfString;
+            return SB.Remove(roughlyHalfOfString, latterRoughlyHalfOfString);
         }
 
         public static string AsString(this List<char> CharList)

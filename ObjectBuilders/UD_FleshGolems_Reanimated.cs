@@ -222,7 +222,7 @@ namespace XRL.World.ObjectBuilders
                     out bool killerIsCached);
 
                 var deathDetails = corpse.RequirePart<UD_FleshGolems_DeathDetails>();
-                deathDetails.Initialize(killer, weapon, projectile, deathDescription, accidental);
+                deathDetails.Initialize(killer, weapon, projectile, deathDescription, accidental, killerIsCached);
 
                 if (killer != null
                     && killer.HasID)
@@ -683,14 +683,16 @@ namespace XRL.World.ObjectBuilders
                 bool doIDSwap = false;
                 if (doIDSwap)
                 {
-                    string creatureID = Entity.ID;
-                    int creatureBaseID = Entity.BaseID;
+                    string entityID = Entity.ID;
+                    int entityBaseID = Entity.BaseID;
 
                     Entity.ID = Corpse.ID;
                     Entity.BaseID = Corpse.BaseID;
 
-                    Corpse.ID = creatureID;
-                    Corpse.BaseID = creatureBaseID;
+                    Corpse.ID = entityID;
+                    Corpse.BaseID = entityBaseID;
+
+                    Debug.Log(nameof(Corpse) + ": " + Corpse.ID + "|" + nameof(Entity) + ": " + Entity.ID);
                 }
 
                 Entity.Obliterate();
