@@ -67,7 +67,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         [SerializeField]
         private bool RudeToAsk;
 
-        public readonly bool IsValid => !EmptyDeath();
+        public readonly bool IsValid => Validate();
 
         private DeathMemory(string CorpseID, bool? Killed = null, KillerMemory? Killer = null, bool? Method = null, bool RudeToAsk = false)
         {
@@ -91,6 +91,9 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         {
             this.CorpseID = CorpseID;
         }
+
+        public readonly string GetCorpseID()
+            => CorpseID;
 
         private readonly string ConstructRandomChannel(string Seed)
             => RandomChannelPrefix + ":" + CorpseID + ":" + Seed;
@@ -273,6 +276,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             && Killer == null
             && Method == null;
 
+        public readonly bool Validate(GameObject Corpse = null)
+            => (Corpse == null || Corpse.ID == CorpseID)
+            && !EmptyDeath();
+
         public readonly bool MemoryIsCompatibleWithElements(IEnumerable<string> ElementsList, bool Known)
         {
             if (ElementsList.IsNullOrEmpty())
@@ -320,15 +327,17 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public readonly bool MemoryIsCompatibleWithElements(string Elements, bool Known)
             => MemoryIsCompatibleWithElements(Elements?.CachedCommaExpansion(), Known);
 
-        public readonly StringMap<string> DebugInternals() => new()
+        public readonly StringMap<string> DebugInternals(GameObject Corpse = null) => new()
         {
             { nameof(CorpseID) + ": " + (CorpseID ?? NULL), null },
-            { nameof(Killed), Killed?.YehNah() },
+            { nameof(IsValid), Validate(Corpse).YehNah() },
+            { nameof(HasAmnesia), HasAmnesia().YehNah() },
+            { nameof(Killed), Killed.YehNah() },
             { nameof(Killer), "[" + (Killer != null ? (int)Killer : "-") + "]" },
-            { nameof(Method), Method?.YehNah() },
+            { nameof(Method), Method.YehNah() },
         };
-        public readonly string DebugInternalsString()
-            => DebugInternals()
+        public readonly string DebugInternalsString(GameObject Corpse = null)
+            => DebugInternals(Corpse)
                 ?.Aggregate(
                     seed: "",
                     func: (a, n) => a + "\n" + n.Value + " " + n.Key);

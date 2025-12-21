@@ -211,7 +211,8 @@ namespace XRL.World.ObjectBuilders
                 corpse.SetStringProperty("SourceBlueprint", Entity.Blueprint);
 
                 var corpseReanimationHelper = corpse.RequirePart<UD_FleshGolems_CorpseReanimationHelper>();
-                corpseReanimationHelper.KillerDetails = UD_FleshGolems_DestinedForReanimation.ProduceRandomDeathDescriptionWithComponents(
+                var deathDescription = UD_FleshGolems_DestinedForReanimation.ProduceRandomDeathDescriptionWithComponents(
+                    Entity,
                     out GameObject killer,
                     out GameObject weapon,
                     out GameObject projectile,
@@ -220,11 +221,14 @@ namespace XRL.World.ObjectBuilders
                     out bool accidental,
                     out bool killerIsCached);
 
+                var deathDetails = corpse.RequirePart<UD_FleshGolems_DeathDetails>();
+                deathDetails.Initialize(killer, weapon, projectile, deathDescription, accidental);
+
                 if (killer != null
                     && killer.HasID)
                 {
-                    corpse.SetStringProperty("KillerID", corpseReanimationHelper.KillerDetails.ID);
-                    corpse.SetStringProperty("KillerBlueprint", corpseReanimationHelper.KillerDetails.Blueprint);
+                    corpse.SetStringProperty("KillerID", deathDetails.KillerDetails?.ID);
+                    corpse.SetStringProperty("KillerBlueprint", deathDetails.KillerDetails?.Blueprint);
                 }
                 corpse.SetStringProperty("DeathReason", deathReason);
 
@@ -610,18 +614,18 @@ namespace XRL.World.ObjectBuilders
             {
                 if (FakeDeath)
                 {
+                    var deathDetails = Corpse.RequirePart<UD_FleshGolems_DeathDetails>();
                     if (DeathEvent == null)
                     {
                         FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(
                             Dying: Entity,
-                            KillerDetails: out reanimationHelper.KillerDetails,
-                            RequireKillerDetails: true,
+                            DeathDetails: ref deathDetails,
                             RelentlessIcon: Corpse.RenderForUI(),
                             RelentlessTitle: Corpse.GetReferenceDisplayName(Short: true));
                     }
                     else
                     {
-                        reanimationHelper.KillerDetails = new(DeathEvent);
+                        deathDetails.Initialize(DeathEvent);
                         FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(
                             Dying: Entity,
                             E: DeathEvent,
@@ -629,7 +633,7 @@ namespace XRL.World.ObjectBuilders
                             RelentlessIcon: Corpse.RenderForUI(),
                             RelentlessTitle: Corpse.GetReferenceDisplayName(Short: true));
                     }
-                    reanimationHelper.KillerDetails.Log();
+                    deathDetails.KillerDetails?.Log();
                 }
 
                 ReplaceInContextEvent.Send(Entity, Corpse);
@@ -676,7 +680,7 @@ namespace XRL.World.ObjectBuilders
                 Entity.MakeInactive();
                 Corpse.MakeActive();
 
-                bool doIDSwap = true;
+                bool doIDSwap = false;
                 if (doIDSwap)
                 {
                     string creatureID = Entity.ID;

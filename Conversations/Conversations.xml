@@ -80,9 +80,9 @@
       </text>
 
       <text MemoryElement="Method" Known="true">
-        <text>=subject.death.killer.method= is what I succumbed to...</text>
-        <text>=subject.death.killer.method= was used to kill me...</text>
-        <text>it was =subject.death.killer.method:a= that took me out...</text>
+        <text>=subject.death.method= is what I succumbed to...</text>
+        <text>=subject.death.method= was used to kill me...</text>
+        <text>it was =subject.death.withMethod= that I was killed...</text>
       </text>
       <text MemoryElement="Method" Known="false">
         <text>I can't remember what I was actually killed with...</text>
@@ -123,7 +123,12 @@
       <text Priority="1">
         <text>I don't actually remember at all...</text>
         <text>I'm struggling to recall...</text>
-        <text>Wait, I {{W|DIED}}??\n\n=ud_nbsp:12=...I'm just joking around! I don't remember, though...</text>
+        <text>
+          Wait, I {{W|DIED}}??
+        
+          =ud_nbsp:12=...I'm just joking around!
+          I don't actually remember, though...
+        </text>
       </text>
 
       <part Name="UD_FleshGolems_AskHowDied" />

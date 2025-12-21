@@ -34,7 +34,11 @@ namespace UD_FleshGolems.Logging
             SetSilenceLogging(!SilenceLogging);
         }
 
-        private static bool DoDebugSetting => DebugEnableLogging && !SilenceLogging;
+        private static bool DoDebugSetting
+            => DebugEnableLogging
+            && (!DebugDisableWorldGenLogging || The.Player != null)
+            && !SilenceLogging;
+            
         private static bool DoDebug
         {
             get

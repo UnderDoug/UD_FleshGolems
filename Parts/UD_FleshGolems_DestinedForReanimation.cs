@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 using ConsoleLib.Console;
 
@@ -18,10 +20,10 @@ using SerializeField = UnityEngine.SerializeField;
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Events;
-using static UD_FleshGolems.Const;
 using UD_FleshGolems.Parts.VengeanceHelpers;
-using System.Linq;
-using System.Reflection;
+
+using static UD_FleshGolems.Const;
+using static UD_FleshGolems.Utils;
 
 namespace XRL.World.Parts
 {
@@ -545,7 +547,7 @@ namespace XRL.World.Parts
             return FakeDeath(null);
         }
 
-        public static void RandomDeathDescriptionAndAccidental(out DeathDescription DeathDescription, out bool Accidental, Predicate<DeathDescription> Filter = null)
+        public static void RandomDeathDescriptionAndAccidental(GameObject For, out DeathDescription DeathDescription, out bool Accidental, Predicate<DeathDescription> Filter = null)
         {
             DeathDescription = DeathCategoryDeathDescriptions
                 ?.Aggregate(
@@ -565,6 +567,7 @@ namespace XRL.World.Parts
             {
                 DeathDescription.Killed = DeathDescription?.Killed
                     ?.StartReplace()
+                    ?.AddObject(For)
                     ?.ToString();
             }
 
@@ -572,6 +575,7 @@ namespace XRL.World.Parts
         }
 
         public static DeathDescription ProduceRandomDeathDescriptionWithComponents(
+            GameObject For,
             out GameObject Killer,
             out GameObject Weapon,
             out GameObject Projectile,
@@ -655,12 +659,13 @@ namespace XRL.World.Parts
 
                 return true;
             }
-            RandomDeathDescriptionAndAccidental(out DeathDescription deathDescription, out Accidental, MatchesSpec);
+            RandomDeathDescriptionAndAccidental(For, out DeathDescription deathDescription, out Accidental, MatchesSpec);
 
             Category = deathDescription.Category;
             Reason = deathDescription.Reason(Accidental);
 
-            deathDescription.SetKiller(Killer)
+            deathDescription
+                .SetKiller(Killer)
                 .SetMethod(Weapon)
                 .SetMethodFallback(Projectile);
 
@@ -677,6 +682,7 @@ namespace XRL.World.Parts
             UD_FleshGolems_DeathDetails deathDetails = null;
 
             DeathDescription deathDescription = ProduceRandomDeathDescriptionWithComponents(
+                For: ParentObject,
                 Killer: out GameObject killer,
                 Weapon: out GameObject weapon,
                 Projectile: out GameObject projectile,
@@ -711,21 +717,20 @@ namespace XRL.World.Parts
 
         public static bool FakeRandomDeath(
             GameObject Dying,
-            out UD_FleshGolems_DeathDetails DeathDetails,
+            ref UD_FleshGolems_DeathDetails DeathDetails,
             int ChanceRandomKiller = 50,
             bool DoAchievement = false,
-            bool RequireDeathDetails = false,
             IRenderable RelentlessIcon = null,
             string RelentlessTitle = null)
         {
             GameObject killer = null;
             GameObject weapon = null;
             GameObject projectile = null;
-            DeathDetails = null;
             bool killerIsCached = false;
             try
             {
                 DeathDescription deathDescription = ProduceRandomDeathDescriptionWithComponents(
+                    For: Dying,
                     Killer: out killer,
                     Weapon: out weapon,
                     Projectile: out projectile,
@@ -734,6 +739,11 @@ namespace XRL.World.Parts
                     Accidental: out bool accidental,
                     KillerIsCached: out killerIsCached,
                     ChanceRandomKiller: ChanceRandomKiller);
+
+                if (DeathDetails == null)
+                    MetricsManager.LogModWarning(ThisMod, nameof(FakeRandomDeath) + " passed null " + nameof(UD_FleshGolems_DeathDetails) + " for " + (Dying?.DebugName ?? "null entity"));
+
+                DeathDetails?.Initialize(killer, weapon, projectile, deathDescription, accidental);
 
                 bool deathFaked = FakeDeath(
                     Dying: Dying,
@@ -749,27 +759,12 @@ namespace XRL.World.Parts
                     RelentlessTitle: RelentlessTitle,
                     DeathDescription: deathDescription);
 
-                if (!deathFaked)
-                {
-                    DeathDetails = null;
-                }
-
                 if (!killerIsCached)
                 {
                     killer?.Obliterate();
                     weapon?.Obliterate();
                 }
                 projectile?.Obliterate();
-
-                if (RequireDeathDetails
-                    && Dying.IsCorpse())
-                {
-                    if (Dying.TryGetPart(out UD_FleshGolems_DeathDetails deathDetails))
-                    {
-                        Dying.RemovePart(deathDetails);
-                    }
-                    Dying.AddPart(DeathDetails);
-                }
 
                 return deathFaked;
             }
@@ -787,18 +782,11 @@ namespace XRL.World.Parts
                     projectile.Obliterate();
             }
         }
-        public bool FakeRandomDeath(out UD_FleshGolems_DeathDetails DeathDetails, int ChanceRandomKiller = 50, bool DoAchievement = false)
+        public bool FakeRandomDeath(ref UD_FleshGolems_DeathDetails DeathDetails, int ChanceRandomKiller = 50, bool DoAchievement = false)
         {
             return FakeRandomDeath(
                 Dying: ParentObject,
-                out DeathDetails,
-                ChanceRandomKiller: ChanceRandomKiller,
-                DoAchievement: DoAchievement);
-        }
-        public bool FakeRandomDeath(int ChanceRandomKiller = 50, bool DoAchievement = false)
-        {
-            return FakeRandomDeath(
-                out _,
+                ref DeathDetails,
                 ChanceRandomKiller: ChanceRandomKiller,
                 DoAchievement: DoAchievement);
         }

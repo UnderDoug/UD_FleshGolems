@@ -70,6 +70,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             }
         }
 
+        public UD_FleshGolems_DeathDetails DeathDetails => ParentCorpse?.GetDeathDetails();
+
         public string Category;
         public bool Were;
         public string Killed;
@@ -407,34 +409,34 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public DeathDescription SetKiller(GameObject Killer, bool WithIndefiniteArticle = false, bool Override = false)
         {
             if (this.Killer != "" || Override)
-                this.Killer = Killer.GetReferenceDisplayName(Short: true, WithIndefiniteArticle: WithIndefiniteArticle);
+                this.Killer = Killer?.GetReferenceDisplayName(Short: true, WithIndefiniteArticle: WithIndefiniteArticle) ?? "";
             return this;
         }
         public DeathDescription SetKillerFallback(GameObject Killer, bool WithIndefiniteArticle = false, bool Override = false)
         {
             if (this.Killer == null
                 || (this.Killer == "" && Override))
-                this.Killer = Killer.GetReferenceDisplayName(Short: true, WithIndefiniteArticle: WithIndefiniteArticle);
+                this.Killer = Killer?.GetReferenceDisplayName(Short: true, WithIndefiniteArticle: WithIndefiniteArticle) ?? "";
             return this;
         }
 
         public DeathDescription SetMethod(string Method, bool Override = false)
         {
             if (this.Method != "" || Override)
-                this.Method = Method;
+                this.Method = Method ?? "";
             return this;
         }
         public DeathDescription SetMethodFallback(string Method, bool Override = false)
         {
             if (this.Method == null
                 || (this.Method == "" && Override))
-                this.Method = Method;
+                this.Method = Method ?? "";
             return this;
         }
         public DeathDescription SetMethod(GameObject Weapon, bool Override = false)
-            => SetMethod(Weapon.GetReferenceDisplayName(Short: true), Override);
+            => SetMethod(Weapon?.GetReferenceDisplayName(Short: true), Override);
         public DeathDescription SetMethodFallback(GameObject Weapon, bool Override = false)
-            => SetMethodFallback(Weapon.GetReferenceDisplayName(Short: true), Override);
+            => SetMethodFallback(Weapon?.GetReferenceDisplayName(Short: true), Override);
 
         public override string ToString()
             => TheyWereKilledByKillerWithMethod();
@@ -463,7 +465,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public string GetBy(string Killer = null, string Method = null)
         {
-            if (GetKiller(Killer) == "" && GetMethod(Method).IsNullOrEmpty())
+            if (GetKiller(Killer).IsNullOrEmpty()
+                && GetMethod(Method).IsNullOrEmpty())
                 return null;
 
             return GetKiller(Killer) != null && By
@@ -473,7 +476,16 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
 
         public string GetKiller(string Killer = null)
-            => Killer ?? this.Killer;
+        {
+            if (Killer != null)
+                return Killer;
+
+            if (DeathDetails?.KillerDetails != null
+                && DeathDetails.DeathMemory.IsValid)
+                return DeathDetails.KnownKiller();
+
+            return this.Killer;
+        }
 
         public string GetWith(string Killer = null, string Method = null, bool ForceNoMethodArticle = false)
         {
@@ -481,7 +493,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 && GetMethod(Method).IsNullOrEmpty())
                 return null;
 
-            return With && !GetMethod().IsNullOrEmpty()
+            return With && !GetMethod(Method).IsNullOrEmpty()
                 ? " with " + (GetArticle(ForceNoMethodArticle) is string article && !article.IsNullOrEmpty() ? article + " " : null)
                 : (!GetKiller(Killer).IsNullOrEmpty() ? "'s " : null); // pass "" as Killer to override result when With is false.
         }
@@ -497,8 +509,18 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public string Reason(bool Accidental = false)
             => KilledByKiller(Accidental ? "accidentally" : null) + WithMethod();
 
-        public string ThirdPersonReason(bool Capitalize = false, bool Accidental = false)
-            => TheyWereKilledByKillerWithMethod(Capitalize: Capitalize, Adverb: Accidental ? "accidentally" : null);
+        public string ThirdPersonReason(bool Capitalize = false, bool Accidental = false, bool DoReplacer = false)
+        {
+            string output = TheyWereKilledByKillerWithMethod(Capitalize: Capitalize, Adverb: Accidental ? "accidentally" : null);
+
+            if (DoReplacer && ParentCorpse != null)
+                output = output
+                    ?.StartReplace()
+                    ?.AddObject(ParentCorpse, "subject")
+                    ?.ToString();
+
+            return output;
+        }
 
         public string BeingKilled(string Adverb = null)
         {

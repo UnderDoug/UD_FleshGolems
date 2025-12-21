@@ -142,7 +142,6 @@ namespace UD_FleshGolems
         public static void CacheSomeEnumValueDictionaries()
         {
             RequireCachedEnumValueDictionary<TileMappingKeyword>();
-            RequireCachedEnumValueDictionary<DeathMemoryElements>();
         }
         public static void ClearSomeCachedEnumValueDictionaries()
         {

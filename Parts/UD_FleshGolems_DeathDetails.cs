@@ -49,6 +49,15 @@ namespace XRL.World.Parts
     public class UD_FleshGolems_DeathDetails : IScribedPart
     {
         [SerializeField]
+        private bool _Init;
+
+        public bool Init
+        {
+            get => _Init;
+            private set => _Init = value;
+        }
+
+        [SerializeField]
         private GameObject _Killer;
         public GameObject Killer
         {
@@ -77,6 +86,8 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_DeathDetails()
         {
+            Init = false;
+
             Killer = null;
             Weapon = null;
 
@@ -89,9 +100,14 @@ namespace XRL.World.Parts
 
         public bool Initialize(IDeathEvent DeathEvent)
         {
+            if (Init)
+                return true;
+
             if (ParentObject is not GameObject corpse
                 || DeathEvent == null)
                 return false;
+
+            Init = true;
 
             Killer = DeathEvent.Killer;
             Weapon = DeathEvent.Weapon;
@@ -110,8 +126,13 @@ namespace XRL.World.Parts
             DeathDescription DeathDescription,
             bool Accidental)
         {
+            if (Init)
+                return true;
+
             if (DeathDescription == null)
-                return false; 
+                return false;
+
+            Init = true;
 
             this.Killer = Killer;
             this.Weapon = Weapon ?? Projectile;
@@ -120,6 +141,7 @@ namespace XRL.World.Parts
                 KillerDetails = new(Killer);
 
             this.DeathDescription = DeathDescription;
+            this.DeathDescription.ParentCorpse = ParentObject;
 
             DeathMemory = DeathMemory.Make(ParentObject, Killer, Weapon ?? Projectile, KillerDetails, DeathDescription);
 
@@ -128,7 +150,29 @@ namespace XRL.World.Parts
             return true;
         }
 
-        public string GetKnownKiller()
+        public string Killed(string Adverb = null)
+        {
+            if (Adverb.IsNullOrEmpty()
+                && Accidental)
+                Adverb = "accidentally";
+
+            return DeathDescription?.GetKilled(Adverb);
+        }
+
+        public string WereKilled(string Adverb = null, bool FirstPerson = false)
+        {
+            string output = DeathDescription?.GetWas();
+
+            if (!FirstPerson)
+                output = DeathDescription?.GetWere()
+                    ?.StartReplace()
+                    ?.AddObject(ParentObject, "subject")
+                    ?.ToString();
+
+            return output + DeathDescription?.GetKilled(Adverb);
+        }
+
+        public string KnownKiller()
         {
             if (KillerDetails == null)
             {
@@ -142,6 +186,42 @@ namespace XRL.World.Parts
             }
             return KillerDetails?[DeathMemory];
         }
+
+        public string KillerFeature()
+        {
+            if (DeathMemory.RemembersKillerFeature())
+                return KillerDetails?.NotableFeature;
+
+            return "someone with an enigmatic form";
+        }
+
+        public string KillerCreature()
+        {
+            if (DeathMemory.RemembersKillerCreature())
+                return KillerDetails?.CreatureType;
+
+            return "a mysterious entity";
+        }
+
+        public string KillerName()
+        {
+            if (DeathMemory.RemembersKillerName())
+                return KillerDetails?.DisplayName;
+
+            return "someone";
+        }
+
+        public string KilledWithMethod(string Adverb = null)
+        {
+            if (Adverb.IsNullOrEmpty()
+                && Accidental)
+                Adverb = "accidentally";
+
+            return DeathDescription?.KilledWithMethod(Adverb);
+        }
+
+        public string WithMethod()
+            => DeathDescription?.WithMethod();
 
         public override bool AllowStaticRegistration()
             => true;
@@ -163,13 +243,15 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(GetDebugInternalsEvent E)
         {
+            E.AddEntry(this, Init.YehNah(), nameof(Init));
             E.AddEntry(this, nameof(Killer), Killer?.DebugName ?? NULL);
             E.AddEntry(this, nameof(Weapon), Weapon?.DebugName ?? NULL);
-            E.AddEntry(this, nameof(DeathMemory), DeathMemory.DebugInternalsString());
+            E.AddEntry(this, nameof(DeathMemory), DeathMemory.DebugInternalsString(ParentObject));
             E.AddEntry(this, nameof(KillerDetails), KillerDetails?.DebugInternalsString() ?? NULL);
             E.AddEntry(this, nameof(DeathDescription), DeathDescription?.DebugInternalsString() ?? NULL);
             E.AddEntry(this, Accidental.YehNah(), nameof(Accidental));
             E.AddEntry(this, Environmental.YehNah(), nameof(Environmental));
+            E.AddEntry(this, nameof(DeathDescription.ThirdPersonReason), DeathDescription.ThirdPersonReason(Capitalize: true, Accidental: Accidental, DoReplacer: true));
             return base.HandleEvent(E);
         }
     }

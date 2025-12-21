@@ -33,6 +33,22 @@
   </option>
   
   <option
+        ID="Option_UD_FleshGolems_DebugDisableWorldGenLogging"
+		    Requires="Option_UD_FleshGolems_DebugEnableLogging!=No"
+        DisplayText="{{UD_FleshGolems_reanimated|Re-animatable Corpses}}: Turn off logs during world gen (improves load time)."
+        Category="Debug"
+        Type="Checkbox"
+        Default="No">
+    <helptext>
+      When enabled, the mod will only output logs once the world has finished generating (just shortly before, actually).
+
+      This option is to aid in testing things that easier to test with logs without the load time being measured in minutes due to the amount of logs during world gen when &quot;Special Reanimated Builder Base Chance One In&quot; is set between 1 and 10.
+
+      The default is {{w|Disabled}}.
+    </helptext>
+  </option>
+  
+  <option
         ID="Option_UD_FleshGolems_DebugEnableAllLogging"
 		    Requires="Option_UD_FleshGolems_DebugEnableLogging!=No"
         DisplayText="{{UD_FleshGolems_reanimated|Re-animatable Corpses}}: Turn on full logs (performance suffers)."

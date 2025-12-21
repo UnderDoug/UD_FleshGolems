@@ -139,7 +139,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     foreach (BaseMutation mutation in mutations.ActiveMutationList)
                     {
                         highestMutationLevel = Math.Max(highestMutationLevel, mutation.Level);
-                        notableFeatures.TryAdd(mutation.GetDisplayName(false), mutation.Level);
+                        notableFeatures.TryAdd(mutation.GetDisplayName(false).ToLower(), mutation.Level);
                     }
 
                 }
@@ -150,10 +150,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     foreach (GameObject implant in Killer.GetInstalledCyberneticsReadonly())
                     {
                         cyberneticsCount++;
-                        notableFeatures.TryAdd(IndefiniteArticle(implant.GetReferenceDisplayName(Short: true)), cyberneticsWeight);
+                        notableFeatures.TryAdd(WithIndefiniteArticle(implant).ToLower(), cyberneticsWeight);
                     }
                 }
-                int naturalWeaponWeight = cyberneticsWeight / cyberneticsCount;
+                int naturalWeaponWeight = Math.Max(1, (cyberneticsWeight / cyberneticsCount) / highestMutationLevel);
                 if (Killer.Body is Body killerBody)
                 {
                     foreach (BodyPart bodyPart in killerBody.LoopParts(HasDefaultBehaviorOrNaturalWeaponEquipped))
@@ -162,12 +162,12 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                             && equipped.IsNatural()
                             && equipped.TryGetPart(out MeleeWeapon equippedMeleeWeapon)
                             && !equippedMeleeWeapon.IsImprovisedWeapon())
-                            notableFeatures.TryAdd(IndefiniteArticle(equipped.GetReferenceDisplayName(Short: true)), naturalWeaponWeight);
+                            notableFeatures.TryAdd(WithIndefiniteArticle(equipped).ToLower(), naturalWeaponWeight);
                         else
                         if (bodyPart.DefaultBehavior is GameObject defaultBehavior
                             && defaultBehavior.TryGetPart(out MeleeWeapon defaultMeleeWeapon)
                             && !defaultMeleeWeapon.IsImprovisedWeapon())
-                            notableFeatures.TryAdd(IndefiniteArticle(defaultBehavior.GetReferenceDisplayName(Short: true)), naturalWeaponWeight);
+                            notableFeatures.TryAdd(WithIndefiniteArticle(defaultBehavior).ToLower(), naturalWeaponWeight);
                     }
                 }
                 notableFeature = notableFeatures.GetWeightedSeededRandom(nameof(GetNotableFeature) + "::" + Killer.ID);
@@ -180,19 +180,17 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         {
             if (Killer?.GetCreatureType() is string creatureType)
             {
-                return (Killer.IsPlural ? "some " : IndefiniteArticle(creatureType)) + creatureType;
+                return (Killer.IsPlural ? "some " : (IndefiniteArticle(creatureType) + " ")) + creatureType;
             }
             return null;
         }
 
         public readonly bool Any()
-        {
-            return !ID.IsNullOrEmpty()
-                    || !Blueprint.IsNullOrEmpty()
-                    || !NotableFeature.IsNullOrEmpty()
-                    || !CreatureType.IsNullOrEmpty()
-                    || !DisplayName.IsNullOrEmpty();
-        }
+            => !ID.IsNullOrEmpty()
+            || !Blueprint.IsNullOrEmpty()
+            || !NotableFeature.IsNullOrEmpty()
+            || !CreatureType.IsNullOrEmpty()
+            || !DisplayName.IsNullOrEmpty();
 
         public readonly KillerDetails Log()
         {

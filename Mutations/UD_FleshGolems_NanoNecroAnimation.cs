@@ -610,6 +610,7 @@ namespace XRL.World.Parts.Mutation
                         .ToString();
 
                     UD_FleshGolems_DestinedForReanimation.RandomDeathDescriptionAndAccidental(
+                        TargetCreature,
                         out DeathDescription deathDescription,
                         out bool accidental,
                         dd => dd.Killer != "");

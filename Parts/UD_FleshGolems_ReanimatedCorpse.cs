@@ -114,36 +114,6 @@ namespace XRL.World.Parts
             }
         }
 
-        public KillerDetails KillerDetails => ParentObject.GetPart<UD_FleshGolems_CorpseReanimationHelper>()?.KillerDetails;
-
-        [SerializeField]
-        private DeathMemoryElements _DeathMemory;
-        public DeathMemoryElements DeathMemory
-        {
-            get
-            {
-                if (_DeathMemory != UndefinedDeathMemoryElement || ParentObject == null)
-                {
-                    if (ParentObject != null
-                        && KillerDetails != null)
-                    {
-                        _DeathMemory = KillerDetails.SyncDeathMemory(_DeathMemory);
-                    }
-                    return _DeathMemory;
-                }
-                DeathMemoryElements value = (DeathMemoryElements)ParentObject.GetSeededRange(nameof(DeathMemory), 1, (int)DeathMemoryElements.All);
-                if (KillerDetails != null)
-                {
-                    value = KillerDetails.SyncDeathMemory(value);
-                }
-                if (ParentObject.BaseID % 6 == 0)
-                {
-                    value = DeathMemoryElements.None;
-                }
-                return _DeathMemory = value;
-            }
-        }
-
         public bool DeathQuestionsAreRude;
 
         public UD_FleshGolems_PastLife PastLife => ParentObject?.GetPart<UD_FleshGolems_PastLife>();
@@ -194,7 +164,6 @@ namespace XRL.World.Parts
         {
             _Reanimator = null;
             _NewDisplayName = null;
-            _DeathMemory = UndefinedDeathMemoryElement;
             DeathQuestionsAreRude = false;
             BleedLiquid = null;
             BleedLiquidPortions = null;
@@ -716,45 +685,6 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
             E.AddEntry(this, nameof(IdentityType), IdentityType.ToStringWithNum());
             E.AddEntry(this, nameof(DeathQuestionsAreRude), DeathQuestionsAreRude);
-
-            static bool hasFlagOrIsNoneAndHasNone(DeathMemoryElements flags, DeathMemoryElements flag)
-                => flag == DeathMemoryElements.None
-                ? flags == DeathMemoryElements.None
-                : flags.HasFlag(flag);
-
-            if (DeathMemory != UndefinedDeathMemoryElement)
-            {
-                List<string> deathMemoryHasFlagsStrings = DeathMemoryElementsValues
-                    ?.ConvertToStringList(kvp => hasFlagOrIsNoneAndHasNone(DeathMemory, kvp.Value).YehNah() + " " + kvp.Key + " (" + (int)kvp.Value + ")");
-
-                bool hasKiller = DeathMemory.HasKillerElement();
-                bool hasMethod = DeathMemory.HasMethodElement();
-                bool hasDescription = DeathMemory.HasDescriptionElement();
-
-                bool hasCompleteText = hasKiller && hasMethod && hasDescription;
-
-                deathMemoryHasFlagsStrings.Add(hasKiller.YehNah() + " Remembers Killer");
-                deathMemoryHasFlagsStrings.Add(hasMethod.YehNah() + " Remembers Method");
-                deathMemoryHasFlagsStrings.Add(hasDescription.YehNah() + " Remembers Description");
-
-                deathMemoryHasFlagsStrings.Add(hasCompleteText.YehNah() + " Rembers Complete Death");
-
-                string deathMemoryHasFlags = deathMemoryHasFlagsStrings
-                    ?.GenerateBulletList(Bullet: null, BulletColor: null);
-                E.AddEntry(this, nameof(DeathMemory) + " (" + (int)DeathMemory + "/" + (int)DeathMemoryElements.All + ")", deathMemoryHasFlags);
-                E.AddEntry(
-                    nameof(UD_FleshGolems_VengeanceAssistant),
-                    nameof(DeathMemory) + " (" + (int)DeathMemory + "/" + (int)DeathMemoryElements.All + ")",
-                    deathMemoryHasFlags);
-            }
-            else
-            {
-                E.AddEntry(this, nameof(DeathMemory) + " (" + (int)DeathMemory + "/" + (int)DeathMemoryElements.All + ")", nameof(UndefinedDeathMemoryElement));
-                E.AddEntry(
-                    nameof(UD_FleshGolems_VengeanceAssistant),
-                    nameof(DeathMemory) + " (" + (int)DeathMemory + "/" + (int)DeathMemoryElements.All + ")",
-                    nameof(UndefinedDeathMemoryElement));
-            }
             E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(DeathQuestionsAreRude), DeathQuestionsAreRude);
             E.AddEntry(this, nameof(IsRenderDisplayNameUpdated), IsRenderDisplayNameUpdated);
             E.AddEntry(this, nameof(IsAlteredDescription), IsAlteredDescription);

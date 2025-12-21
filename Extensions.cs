@@ -1386,6 +1386,16 @@ namespace UD_FleshGolems
             string Joiner = null,
             List<string> AttributesToConcatenate = null)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ConversationText), ConversationText != null),
+                    Debug.Arg(nameof(OtherConversationText), OtherConversationText != null),
+                    Debug.Arg(nameof(Joiner), "\"" + (Joiner ?? "null") + "\""),
+                    Debug.Arg(nameof(AttributesToConcatenate), "\"" + (AttributesToConcatenate?.Aggregate("", (a,n) => a + "," + n)?[1..] ?? "none") + "\""),
+                });
+
             if (ConversationText == null
                 || OtherConversationText == null)
                 return ConversationText ?? OtherConversationText;
@@ -1412,13 +1422,36 @@ namespace UD_FleshGolems
                 otherAttributes[key] = newValue;
             }
 
-            return new()
+            ConversationText newConversationText = new()
             {
                 Parent = ConversationText.Parent ?? OtherConversationText.Parent,
                 ID = ConversationText.ID + ":" + OtherConversationText.Parent?.ID + "." + OtherConversationText.ID,
                 Text = ConversationText.Text + Joiner + OtherConversationText.Text,
                 Attributes = otherAttributes,
             };
+
+            string attributesString = "(" + newConversationText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
+            Debug.Log(newConversationText.PathID.TextAfter(".") + attributesString + newConversationText.Text, Indent: indent[2]);
+
+            return newConversationText;
+        }
+
+        public static string TextAfter(this string Text, string Delimiter, int InstanceNumber = 1, string IfNotFound = null)
+        {
+            if (Text.IsNullOrEmpty() || Delimiter.IsNullOrEmpty())
+                return IfNotFound;
+
+            string output = Text;
+            for (int i = 0; i < InstanceNumber; i++)
+            {
+                if (!output.TryGetIndexOf(Delimiter, out int endDelimited))
+                {
+                    output = IfNotFound;
+                    break;
+                }
+                output = output[endDelimited..];
+            }
+            return output;
         }
 
         public static string AsString(this List<char> CharList)

@@ -267,7 +267,7 @@ namespace UD_FleshGolems
         [VariableObjectReplacer]
         public static string UD_DeathDescription(DelegateContext Context)
         {
-            string deathDescription = Context.Target?.GetKillerDetails()?.DeathDescription.ToString()
+            string deathDescription = Context.Target?.GetDeathDescription()?.ToString()
                 ?? "=subject.verb:were:afterpronoun= killed to death";
 
             if (Context.Parameters is List<string> parameters
@@ -330,20 +330,12 @@ namespace UD_FleshGolems
 
         [VariableObjectReplacer("bodyPart", Default = "body")]
         public static string BodyPart(DelegateContext Context)
-        {
-            string requiredType = null;
-            if (Context.Parameters is List<string> parameters
-                && !parameters.IsNullOrEmpty())
-            {
-                requiredType = parameters[0];
-            }
-            return Context.Target
+            => Context.Target
                 ?.Body
-                ?.LoopPart(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null)
+                ?.LoopPart(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.Capitalize() : null)
                 ?.GetRandomElementCosmetic()
                 ?.Description
                 ?.ContextCapitalize(Context);
-        }
 
         [VariableObjectReplacer]
         public static string UD_xTagSingle(DelegateContext Context)

@@ -367,8 +367,23 @@ namespace UD_FleshGolems
                 return null;
 
             return Object.IsPlural 
-                ? "some" : 
-                Grammar.IndefiniteArticle(Object.GetReferenceDisplayName(Short: true), false).Uncapitalize().Trim();
+                ? "some"
+                : Grammar.IndefiniteArticle(Object.GetReferenceDisplayName(Short: true), false).Uncapitalize().Trim();
+        }
+
+        public static string WithIndefiniteArticle(string Word)
+            => !Word.IsNullOrEmpty()
+            ? IndefiniteArticle(Word) + " " + Word
+            : null;
+
+        public static string WithIndefiniteArticle(GameObject Object)
+        {
+            if (Object == null)
+                return null;
+            string word = Object.GetReferenceDisplayName(Short: true);
+            return Object.IsPlural 
+                ? "some " + word
+                : WithIndefiniteArticle(word);
         }
 
             /* 
