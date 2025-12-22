@@ -1431,7 +1431,11 @@ namespace UD_FleshGolems
             };
 
             string attributesString = "(" + newConversationText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
-            Debug.Log(newConversationText.PathID.TextAfter(".") + attributesString + newConversationText.Text, Indent: indent[1]);
+            Debug.Log(
+                newConversationText.PathID.TextAfter(".") + 
+                attributesString, // + 
+                //newConversationText.Text, 
+                Indent: indent[1]);
 
             return newConversationText;
         }

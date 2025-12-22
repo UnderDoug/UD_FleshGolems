@@ -166,8 +166,9 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 {
                     foreach (GameObject implant in Killer.GetInstalledCyberneticsReadonly())
                     {
+                        int cyberneticsCost = implant?.GetPart<CyberneticsBaseItem>()?.Cost ?? 0;
                         cyberneticsCount++;
-                        notableFeatures.TryAdd(WithIndefiniteArticle(implant).ToLower(), cyberneticsWeight);
+                        notableFeatures.TryAdd(WithIndefiniteArticle(implant).ToLower(), cyberneticsWeight + cyberneticsCost);
                     }
                 }
                 int naturalWeaponWeight = Math.Max(1, (cyberneticsWeight / cyberneticsCount) / highestMutationLevel);

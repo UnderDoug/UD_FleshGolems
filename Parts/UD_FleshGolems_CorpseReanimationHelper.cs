@@ -1100,7 +1100,7 @@ namespace XRL.World.Parts
                         Debug.Log("Giving Jofo Qudwufo a special DeathDescription", Indent: indent[3]);
                         reanimationHelper.DeathDetails.DeathDescription = new(
                             Category: "electrocuted",
-                            Were: false,
+                            Were: true,
                             Killed: "zapped to death",
                             Killer: UD_FleshGolems_NecromancySystem.System?.TheMadMonger?.GetReferenceDisplayName(Short: true),
                             With: false,
@@ -1111,6 +1111,21 @@ namespace XRL.World.Parts
                         reanimationHelper.DeathDetails.UpdateKiller(UD_FleshGolems_NecromancySystem.System?.TheMadMonger);
                     }
                     reanimationHelper.DeathDetails.DeathDescription ??= ProduceRandomDeathDescription(frankenCorpse);
+                    if (reanimationHelper.DeathDetails.DeathMemory == null)
+                    {
+                        reanimationHelper.DeathDetails.DeathMemory = DeathMemory.Make(
+                            Corpse: frankenCorpse,
+                            Killer: reanimationHelper.DeathDetails.Killer,
+                            Weapon: reanimationHelper.DeathDetails.Weapon,
+                            KillerDetails: reanimationHelper.DeathDetails.KillerDetails,
+                            DeathDescription: reanimationHelper.DeathDetails.DeathDescription);
+                    }
+                    else
+                    {
+                        reanimationHelper.DeathDetails.DeathMemory = DeathMemory.CopyMemories(
+                            Corpse: frankenCorpse,
+                            DeathMemory: reanimationHelper.DeathDetails.DeathMemory);
+                    }
                 }
                     
                 frankenCorpse.SetStringProperty("OverlayColor", "&amp;G^k");

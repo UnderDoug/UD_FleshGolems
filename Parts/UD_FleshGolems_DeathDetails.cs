@@ -290,7 +290,7 @@ namespace XRL.World.Parts
             => true;
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
-            // || ID == ReplaceInContextEvent.ID
+            || ID == ReplaceInContextEvent.ID
             || ID == GetDebugInternalsEvent.ID
             ;
         public override bool HandleEvent(ReplaceInContextEvent E)

@@ -54,6 +54,7 @@
     <stat Name="Energy" ShortName="EN" Min="-100000" Max="100000" Value="0" />
     <tag Name="UD_FleshGolems ReanimatedCorpse NoPrefix" Value="1" />
     <tag Name="CorpseBlueprint" Value="Snapjaw Corpse" />
+    <!--(Add this dynamically by completing the quest)-->
     <tag Name="UD_FleshGolems_ReanimatedConversationID" Value="UD_FleshGolems Jofo Qudwufo" />
     <tag Name="UD_FleshGolems_ReanimatedEpithets" Value=", {{UD_FleshGolems_reanimated|reanimated}} snapjaw" />
     <tag Name="PetResponse" Value="=subject.possessive= matted fur is slick with the grime of death.,Your hand squelches against =subject.possessive= disturbingly infirm scalp.,=subject.subjective= =subject.verb:stare:afterpronoun= seemingly through you but is nonetheless happy with the attention (probably; it's hard to tell...),What can only be described as a faint hacking cough can be heard from deep within =subject.possessive= mass." />
@@ -67,13 +68,16 @@
     <tag Name="UD_FleshGolems_SkipLevelsOnReanimate" Value="1" />
     <tag Name="PronounSet" Value="xe/xem/xyr/xyrs/xemself" />
     <property Name="Story" Value="UD_FleshGolems Jofo Qudwufo" />
-    <!--(Add this dynamically by completing the quest)-->
     <tag Name="Kernelmethod_BetterPetSelector_Description" Value="A mound of wet fur and rotting flesh, uncontent with remaining still." />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="UD_FleshGolems PastLife CountsAs" Value="Blueprint:UD_FleshGolems Late Jofo Qudwufo" />
     <tag Name="UD_FleshGolems ReanimationHelper GenerateSourceInventory" />
     <tag Name="UD_FleshGolems ReanimatedCorpse UseIconColorPart" />
     <tag Name="UD_FleshGolems DeathDetails DeathMemory RudeToAsk" Value ="false" />
+    <tag Name="UD_FleshGolems DeathDetails DeathMemory Killed" Value ="true" />
+    <tag Name="UD_FleshGolems DeathDetails DeathMemory Killer" Value ="Name" />
+    <tag Name="UD_FleshGolems DeathDetails DeathMemory Method" Value ="true" />
+    <tag Name="UD_FleshGolems DeathDetails DeathMemory Amnesia" Value ="false" />
     <tag Name="UD_FleshGolems DeathDetails DeathDescription Category" Value ="electrocuted" />
   </object>
   
@@ -99,6 +103,7 @@
     <part Name="UD_FleshGolems_EnforceCyberneticRejectionSyndrome" CostStackMultiplier="1.5" />
     <removepart Name="HasGuards" />
     <tag Name="Gender" Value="male" />
+    <tag Name="CreatureType" Value="mad scientist" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <skill Name="Pistol" />
     <skill Name="Pistol_SteadyHands" />

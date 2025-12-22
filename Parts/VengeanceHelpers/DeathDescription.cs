@@ -44,6 +44,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { "had", "having" },
             { "left", "leaving" },
             { "ran", "running" },
+            { "sought", "seeking" },
             { "spoke", "speaking" },
             { "thought", "thinking" },
             { "took", "taking" },
@@ -354,6 +355,21 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public static DeathDescription GetFromDeathEvent(IDeathEvent E)
             => GetFromDeathEvent(null, E);
 
+        public DeathDescription CopyFrom(DeathDescription Other)
+        {
+            Category = Other.Category;
+            Were = Other.Were;
+            Killed = Other.Killed;
+            Killing = Other.Killing;
+            By = Other.By;
+            Killer = Other.Killer;
+            With = Other.With;
+            Method = Other.Method;
+            ForceNoMethodArticle = Other.ForceNoMethodArticle;
+            PluralMethod = Other.PluralMethod;
+            return this;
+        }
+
         protected DeathDescription ProcessDeathEvent(GameObject Corpse, IDeathEvent E)
         {
             ParentCorpse = Corpse;
@@ -374,15 +390,14 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                         });
             }
             bool killerProperlyNamed = E.Killer != null && E.Killer.HasProperName;
-            string killed = killedCategoryDescriptionsList
+            CopyFrom(killedCategoryDescriptionsList
                 ?.GetRandomElementCosmetic(delegate (DeathDescription deathDescription)
                 {
                     return (deathDescription.Killer != "") == (E.Killer != null)
                         && (deathDescription.Method != "") == (E.Weapon != null);
-                }).Killed
-                ?? Category;
+                }));
 
-            this.SetKilled(killed)
+            SetKilled(Killed ?? Category)
                 .SetKiller(E.Killer, !killerProperlyNamed)
                 .SetMethod(E.Weapon);
 

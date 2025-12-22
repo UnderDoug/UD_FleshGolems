@@ -498,6 +498,13 @@ namespace XRL.World.ObjectBuilders
         public static bool Unkill(GameObject Entity, out GameObject Corpse, string Context = null)
         {
             Corpse = null;
+            UD_FleshGolems_DestinedForReanimation destinedForReanimation = null;
+            if (Entity.IsPlayer() || Entity.HasPlayerBlueprint())
+            {
+                destinedForReanimation = Entity.RequirePart<UD_FleshGolems_DestinedForReanimation>();
+                destinedForReanimation.PlayerWantsFakeDie = true;
+                UD_FleshGolems_DestinedForReanimation.HaveFakedDeath = false;
+            }
             if (!HasWorldGenerated)
             {
                 // return false;
@@ -518,7 +525,7 @@ namespace XRL.World.ObjectBuilders
             {
                 return false;
             }
-            if (!Corpse.TryGetPart(out UD_FleshGolems_DestinedForReanimation destinedForReanimation))
+            if (!Corpse.TryGetPart(out destinedForReanimation))
             {
                 return false;
             }

@@ -30,6 +30,8 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_DestinedForReanimation : IScribedPart, IReanimateEventHandler
     {
+        // Keys list lifted from books' https://codeberg.org/librarianmage/EloquentDeath
+        // which you should check out for being awesome.
         public static Dictionary<string, List<DeathDescription>> DeathCategoryDeathDescriptions => new()
         {
             {   // Heat damage w/ NoBurn (only steam)
@@ -174,6 +176,44 @@ namespace XRL.World.Parts
                     new("died of asphyxiation", Were: false, Killed: "held underwater"),
                 }
             },
+            {   // Psionic damage
+                "psychically extinguished", new()
+                {
+                    new("psychically extinguished"),
+                    new("psychically extinguished", Killed: "commanded to die, and simply did", Method: ""),
+                    new("psychically extinguished", Killed: "sundered dead", Method: ""),
+                    new("psychically extinguished", Killed: "mentally obliterated", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "couldn't maintain a strong enough sense of self", Killer: "", Method: ""),
+                    new("psychically extinguished", Killed: "shown the bredth of the psychic sea", Method: ""),
+                    new("psychically extinguished", Killed: "shown the bredth of the psychic sea", Killer: "Ptoh", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "tried to understand things better left a mystery", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "dared to challenge Ptoh and, well...", Killer: "", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "risked the proximity of a darkling star", Killer: "", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "sought oblivion, and found it", Killer: "", Method: ""),
+                }
+            },
+            {   // Drain damage (syphon vim)
+                "drained to extinction", new()
+                {
+                    new("drained to extinction"),
+                    new("drained to extinction", Killed: "absorbed"),
+                }
+            },
+            {   // Thorns damage
+                "pricked to death", new()
+                {
+                    new("pricked to death"),
+                    new("pricked to death", Killed: "pin-cushioned"),
+                }
+            },
+            {   // Bite damage (any bite)
+                "bitten to death", new()
+                {
+                    new("bitten to death"),
+                    new("bitten to death", Killed: "chewed on"),
+                    new("bitten to death", Killed: "half-eaten"),
+                }
+            },
             {   // Killed
                 "killed", new()
                 {
@@ -183,134 +223,6 @@ namespace XRL.World.Parts
                     new("killed", Killed: "{{R|wasted}}"),
                     new("killed", Killed: "merced"),
                     new("killed", Killed: "taken out"),
-                }
-            },
-        };
-        // Keys list lifted from books' https://codeberg.org/librarianmage/EloquentDeath
-        // which you should check out for being awesome.
-        public static Dictionary<string, List<string>> DeathCategoryDeathMessages => new()
-        {
-            // Heat damage w/ NoBurn (only steam)
-            {
-                "cooked", new()
-                {
-                    "=subject.verb:were:afterpronoun= cooked",
-                    "=subject.verb:were:afterpronoun= hard-boiled",
-                    "=subject.verb:were:afterpronoun= soft-boiled",
-                    "broiled for our sins... ({{W|Ramen}})",
-                    "=subject.verb:were:afterpronoun= flash boiled in steam",
-                    "fell in a pot of broth",
-                    "fell in a pot of stew",
-                    "didn't realize the pot had come to a boil",
-                }
-            },
-            // Heat damage w/o NoBurn
-            {
-                "immolated", new()
-                {
-                    "=subject.verb:were:afterpronoun= immolated",
-                    "=subject.verb:were:afterpronoun= scorched to death",
-                    "couldn't find a way to put =subject.reflexive= out",
-                    "=subject.verb:were:afterpronoun= barbequed",
-                    "=subject.verb:were:afterpronoun= grilled",
-                    "=subject.verb:were:afterpronoun= more \"well-done\" than \"medium-rare\"",
-                    "had to leave the kitchen",
-                    "jumped out of the frying pan",
-                }
-            },
-            // Plasma damage
-            {
-                "plasma-burned to death", new()
-                {
-                    "=subject.verb:were:afterpronoun= plasma-burned to death",
-                    "=subject.verb:were:afterpronoun= deepfried",
-                    "=subject.verb:were:afterpronoun= fried",
-                    "looked in the wrong end of a spacer rifle",
-                    "fell into an astral forge",
-                }
-            },
-            // Cold damage
-            {
-                "frozen to death", new()
-                {
-                    "=subject.verb:were:afterpronoun= frozen to death",
-                    "=subject.verb:were:afterpronoun= snap frozen",
-                    "=subject.verb:were:afterpronoun= flash frozen",
-                    "=subject.verb:were:afterpronoun= chilled to death",
-                }
-            },
-            // Electric damage
-            {
-                "electrocuted", new()
-                {
-                    "=subject.verb:were:afterpronoun= electrocuted",
-                    "=subject.verb:were:afterpronoun= zapped to death",
-                }
-            },
-            // Thirst
-            {
-                "thirst", new()
-                {
-                    "thirst to death",
-                    "=subject.verb:were:afterpronoun= dessicated",
-                }
-            },
-            // Poison damage
-            {
-                "died of poison", new()
-                {
-                    "died of poison",
-                }
-            },
-            // Bleeding damage
-            {
-                "bled to death", new()
-                {
-                    "bled to death",
-                    "=subject.verb:were:afterpronoun= exsanguinated",
-                }
-            },
-            // Metabolic damage (hulk honey)
-            {
-                "failed", new()
-                {
-                    "hulked out way too hard",
-                }
-            },
-            // Asphyxiation damage (osseous ash)
-            {
-                "died of asphyxiation", new()
-                {
-                    "died of asphyxiation",
-                    "=subject.verb:were:afterpronoun= asphyxiated",
-                }
-            },
-            // Psionic damage
-            {
-                "psychically extinguished", new()
-                {
-                    "=subject.verb:were:afterpronoun= psychically extinguished",
-                }
-            },
-            // Drain damage (syphon vim)
-            {
-                "drained to extinction", new()
-                {
-                    "=subject.verb:were:afterpronoun= drained to extinction",
-                }
-            },
-            // Thorns damage
-            {
-                "pricked to death", new()
-                {
-                    "=subject.verb:were:afterpronoun= pricked to death",
-                }
-            },
-            // Bite damage (any bite)
-            {
-                "bitten to death", new()
-                {
-                    "=subject.verb:were:afterpronoun= bitten to death",
                 }
             },
         };
@@ -840,14 +752,22 @@ namespace XRL.World.Parts
 
         public bool ActuallyDoTheFakeDieAndReanimate()
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PlayerWantsFakeDie), PlayerWantsFakeDie),
+                    Debug.Arg(nameof(HaveFakedDeath), HaveFakedDeath),
+                });
             if (ParentObject == null
                 || !PlayerWantsFakeDie
                 || HaveFakedDeath)
             {
                 return false;
             }
-            bool success = UD_FleshGolems_Reanimated.ReplaceEntityWithCorpse(
-                Entity: ParentObject,
+
+            bool success = UD_FleshGolems_Reanimated.ReplacePlayerWithCorpse(
                 FakeDeath: PlayerWantsFakeDie,
                 FakedDeath: out HaveFakedDeath,
                 DeathEvent: null,

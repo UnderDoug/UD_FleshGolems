@@ -6,22 +6,22 @@ using System.Text;
 using XRL.Language;
 using XRL.Rules;
 using XRL.UI;
-using XRL.World.Parts;
 using XRL.World.Text;
+using XRL.World.AI;
+using XRL.World.Parts;
+using XRL.World.Parts.Mutation;
+using XRL.World.Effects;
+
+using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
+using UD_FleshGolems.Events;
 using UD_FleshGolems.Parts.VengeanceHelpers;
 
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Options;
 using static UD_FleshGolems.Utils;
-
-using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
-using XRL.World.Parts.Mutation;
-using XRL.World.Effects;
-using XRL.World.AI;
-using UD_FleshGolems.Events;
 
 namespace XRL.World.Conversations.Parts
 {
@@ -30,6 +30,7 @@ namespace XRL.World.Conversations.Parts
         public static string RecruitedPropTag => nameof(UD_FleshGolems_ReanimatedJoinParty) + ".Recruited";
 
         public bool ReanimatorOnly;
+        public bool AskedFirstOnly;
 
         private bool Visible;
         private bool CanRecruit;
@@ -38,6 +39,7 @@ namespace XRL.World.Conversations.Parts
         public UD_FleshGolems_ReanimatedJoinParty()
         {
             ReanimatorOnly = true;
+            AskedFirstOnly = true;
             Visible = false;
             CanRecruit = false;
             Difficulty = 0;
@@ -104,6 +106,25 @@ namespace XRL.World.Conversations.Parts
             }
         }
 
+        public static int CalculateDifficulty(GameObject Player, GameObject Speaker, out int Defense, out int Attack, bool Silent = false)
+        {
+            using Indent indent = new(1);
+
+            Defense = Speaker.Stat("Level");
+            Attack = Player.Stat("Level") + Player.StatMod("Ego");
+            AdjustDifficultyBasedOnEffects(ref Defense, Player, Speaker);
+            int difficulty = Defense - Attack;
+
+            if (!Silent)
+            {
+                Debug.Log(nameof(Defense), Defense, Indent: indent);
+                Debug.Log(nameof(Attack), Attack, Indent: indent);
+                Debug.Log(nameof(difficulty), difficulty, Indent: indent);
+            }
+
+            return difficulty;
+        }
+
         public static bool CheckCanRecruit(GameObject Player, GameObject Speaker, out int Difficulty, bool Silent = false)
         {
             using Indent indent = new(1);
@@ -120,7 +141,7 @@ namespace XRL.World.Conversations.Parts
                 || Speaker == null)
                 return false;
 
-            bool isPlayerTelepathic = Player.HasPart<Telepathy>();
+            bool isPlayerTelepathic = Player.HasPart<XRL.World.Parts.Mutation.Telepathy>();
             if (Player.IsMissingTongue()
                 && !isPlayerTelepathic)
                 return Player.Fail("You cannot proselytize without a tongue.", Silent);
@@ -135,7 +156,7 @@ namespace XRL.World.Conversations.Parts
 
             if (!Player.CanMakeTelepathicContactWith(Speaker))
             {
-                string telepathicallyFailedMsg = "Without a tongue, you cannot proselytize =subject.name=";
+                string telepathicallyFailedMsg = "Without a tongue, you cannot recruit =subject.name=";
                 if (isPlayerTelepathic)
                 {
                     telepathicallyFailedMsg += ", as you cannot make telepathic contact with =subject.objective=";
@@ -149,21 +170,15 @@ namespace XRL.World.Conversations.Parts
             }
             if (!Player.CheckFrozen(Telepathic: true, Telekinetic: false, Silent: true, Speaker))
             {
-                string frozenFailedMsg = "Frozen solid, you cannot proselytize =subject.name=."
+                string frozenFailedMsg = "Frozen solid, you cannot recruit =subject.name=."
                     .StartReplace()
                     .AddObject(Speaker)
                     .ToString();
                 return Player.Fail(frozenFailedMsg, Silent);
             }
 
-            int defense = Speaker.Stat("Level");
-            int attack = Player.Stat("Level") + Player.StatMod("Ego");
-            AdjustDifficultyBasedOnEffects(ref defense, Player, Speaker);
-            Difficulty = defense - attack;
+            Difficulty = CalculateDifficulty(Player, Speaker, out _, out _);
 
-            Debug.Log(nameof(defense), defense, Indent: indent[1]);
-            Debug.Log(nameof(attack), attack, Indent: indent[1]);
-            Debug.Log(nameof(Difficulty), Difficulty, Indent: indent[1]);
             bool result = Difficulty <= 0;
             Debug.YehNah("able to recruit", result, Indent: indent[0]);
 
@@ -178,13 +193,15 @@ namespace XRL.World.Conversations.Parts
                 && (!ReanimatorOnly
                     || speaker.GetPart<UD_FleshGolems_ReanimatedCorpse>()?.Reanimator == player
                     || speaker.GetEffect<UD_FleshGolems_UnendingSuffering>()?.SourceObject == player)
+                && (!AskedFirstOnly
+                    || UD_FleshGolems_AskHowDied.GetPlayerHasAskedBefore(player, speaker))
                 && CanRecruitReanimatedWithoutRep.Check(player, speaker))
             {
                 Visible = true;
-                CanRecruit = CheckCanRecruit(speaker, player, out Difficulty, true);
             }
             base.Awake();
         }
+        
         public override bool WantEvent(int ID, int Propagation)
             => base.WantEvent(ID, Propagation)
             || ID == IsElementVisibleEvent.ID
@@ -200,26 +217,34 @@ namespace XRL.World.Conversations.Parts
         {
             string lowlight = "K";
             string numeric = "r";
-            string difficulty = Difficulty == int.MaxValue ? ("-" + "\xEC") : (-Difficulty).Signed();
-            if (CanRecruit)
+            if (CheckCanRecruit(The.Player, The.Speaker, out Difficulty, true))
             {
                 lowlight = "g";
                 numeric = "W";
             }
+            string difficulty = Difficulty == int.MaxValue ? ("-" + "\xEC") : (-Difficulty).Signed();
             E.Tag = "{{" + lowlight + "|[{{" + numeric + "|" + difficulty + "}} compelling]}}";
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(EnteredElementEvent E)
         {
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(EnteredElementEvent)),
+                });
+
             if (The.Speaker is GameObject speaker
                 && The.Player is GameObject player
-                && CanRecruit)
+                && CheckCanRecruit(player, speaker, out Difficulty))
             {
+                Debug.Log(nameof(Difficulty), Difficulty, Indent: indent[1]);
                 speaker.SetAlliedLeader<AllyProselytize>(player);
                 speaker.SetIntProperty(RecruitedPropTag, 1);
 
-                if (speaker.TryGetEffect<Lovesick>(out var lovesick))
-                    lovesick.PreviousLeader = The.Player;
+                if (speaker.TryGetEffect(out Lovesick lovesick))
+                    lovesick.PreviousLeader = player;
 
                 string successMsg = "=subject.Name= =subject.verb:join= =object.name=!"
                     .StartReplace()
@@ -238,10 +263,7 @@ namespace XRL.World.Conversations.Parts
                 && Visible
                 && DebugEnableConversationDebugText)
             {
-                int defense = speaker.Stat("Level");
-                int attack = player.Stat("Level") + player.StatMod("Ego");
-                AdjustDifficultyBasedOnEffects(ref defense, player, speaker);
-                int Difficulty = defense - attack;
+                int Difficulty = CalculateDifficulty(player, speaker, out int defense, out int attack, true);
 
                 string textAddition = 
                     "\n\n" +
@@ -249,7 +271,13 @@ namespace XRL.World.Conversations.Parts
                     "\n\n" +
                     "Defense: {{r|" + defense + "}} | Attack: {{g|" + attack + "}} | Difficulty: {{W|" + Difficulty + "}}";
 
-                E.Text += "{{K|" + textAddition + "}}";
+                IConversationElement superParentElement = ParentElement;
+                while (superParentElement.Parent is IConversationElement shallowParentElement)
+                {
+                    superParentElement = shallowParentElement;
+                }
+                superParentElement ??= ParentElement;
+                superParentElement.Text += "{{K|" + textAddition + "}}";
             }
             return base.HandleEvent(E);
         }
