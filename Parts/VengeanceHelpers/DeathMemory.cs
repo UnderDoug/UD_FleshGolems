@@ -16,9 +16,10 @@ using System.Linq;
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
     [Serializable]
-    public struct DeathMemory : IComposite
+    public class DeathMemory : IComposite
     {
         public const string RUDE_TO_ASK_PROPTAG = "UD_FleshGolems DeathDetails DeathMemory RudeToAsk";
+        public const string RUDE_TO_ASK_CHANCE_PROPTAG = "UD_FleshGolems DeathDetails DeathMemory RudeToAsk ChanceOneIn";
         public static int BaseAmnesiaChance => 10;
 
         public static string RandomChannelPrefix => nameof(VengeanceHelpers) + "." + nameof(DeathMemory);
@@ -33,20 +34,18 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             Creature,
             Name,
         }
-        /*
+        
         [SerializeField]
         private GameObject _Corpse;
         public GameObject Corpse
         {
-            readonly get => _Corpse;
+            get => _Corpse;
             private set
             {
                 _Corpse = value;
-                CorpseID = _Corpse.ID;
+                CorpseID = _Corpse?.ID;
             }
         }
-        public UD_FleshGolems_DeathMemory DeathMemoryPart => Corpse?.GetPart<UD_FleshGolems_DeathMemory>();
-        */
 
         [SerializeField]
         private string CorpseID;
@@ -67,51 +66,72 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         [SerializeField]
         private bool RudeToAsk;
 
-        public readonly bool IsValid => Validate();
+        public bool IsValid => Validate();
 
-        private DeathMemory(string CorpseID, bool? Killed = null, KillerMemory? Killer = null, bool? Method = null, bool RudeToAsk = false)
+        private DeathMemory()
         {
-            this.CorpseID = CorpseID;
+            Corpse = null;
+            CorpseID = null;
+            Killed = null;
+            Killer = null;
+            Method = null;
+            RudeToAsk = false;
+        }
+        private DeathMemory(GameObject Corpse, string CorpseID = null, bool? Killed = null, KillerMemory? Killer = null, bool? Method = null, bool RudeToAsk = false)
+            : this()
+        {
+            this.Corpse = Corpse;
+            this.CorpseID ??= CorpseID;
             this.Killed = Killed;
             this.Killer = Killer;
             this.Method = Method;
             this.RudeToAsk = RudeToAsk;
         }
         private DeathMemory(GameObject Corpse)
-            : this(Corpse.ID)
+            : this()
         {
-            // _Corpse = Corpse;
-            // CorpseID = Corpse.ID;
+            this.Corpse = Corpse;
         }
         private DeathMemory(DeathMemory Source)
-            : this(Source.CorpseID, Source.Killed, Source.Killer, Source.Method, Source.RudeToAsk)
+            : this(Source.Corpse, Source.CorpseID, Source.Killed, Source.Killer, Source.Method, Source.RudeToAsk)
         { }
-        private DeathMemory(string CorpseID, DeathMemory Source)
+        private DeathMemory(GameObject Corpse, DeathMemory Source)
             : this(Source)
         {
-            this.CorpseID = CorpseID;
+            this.Corpse = Corpse;
         }
 
-        public readonly string GetCorpseID()
+        public string GetCorpseID()
             => CorpseID;
 
-        private readonly string ConstructRandomChannel(string Seed)
+        private string ConstructRandomChannel(string Seed)
             => RandomChannelPrefix + ":" + CorpseID + ":" + Seed;
 
-        private readonly int SeededRandomHigh(string Seed, int High)
+        private int SeededRandomHigh(string Seed, int High)
             => Stat.SeededRandom(ConstructRandomChannel(Seed), 0, 999) % High;
 
-        private readonly bool SeededRememberKilled()
-            => SeededRandomHigh(nameof(Killed), 2) == 0;
+        private bool SeededRememberKilled()
+            => SeededRandomHigh(nameof(Killed), 3) == 0;
 
-        private readonly KillerMemory SeededRememberKiller()
-            => (KillerMemory)SeededRandomHigh(nameof(Killer), Enum.GetValues(typeof(KillerMemory)).Length);
+        private KillerMemory SeededRememberKiller()
+        {
+            if ((KillerMemory)SeededRandomHigh(nameof(Killer), Enum.GetValues(typeof(KillerMemory)).Length) is KillerMemory killerMemory
+                && killerMemory != KillerMemory.Amnesia)
+                return killerMemory;
+            return (KillerMemory)SeededRandomHigh(nameof(Killer) + ":Again", Enum.GetValues(typeof(KillerMemory)).Length);
+        }
 
-        private readonly bool SeededRememberMethod()
-            => SeededRandomHigh(nameof(Method), 2) == 0;
+        private bool SeededRememberMethod()
+            => SeededRandomHigh(nameof(Method), 3) == 0;
 
-        private readonly bool SeededRudeToAsk()
-            => SeededRandomHigh(nameof(RudeToAsk), RudeToAskChanceOneIn) == 0;
+        private bool SeededRudeToAsk()
+        {
+            int rudeToAskChanceOneIn = RudeToAskChanceOneIn;
+            if (Corpse != null)
+                rudeToAskChanceOneIn = Corpse.GetIntProperty(RUDE_TO_ASK_CHANCE_PROPTAG, rudeToAskChanceOneIn);
+
+            return SeededRandomHigh(nameof(RudeToAsk), rudeToAskChanceOneIn) == 0;
+        }
 
         private DeathMemory SetSeededRememberKilled(bool Amnesia = false)
         {
@@ -169,7 +189,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             GameObject Corpse,
             GameObject Killer,
             GameObject Weapon,
-            KillerDetails? KillerDetails,
+            KillerDetails KillerDetails,
             DeathDescription DeathDescription)
         {
             if (DeathDescription == null)
@@ -207,7 +227,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public static DeathMemory Make(
             GameObject Corpse,
             IDeathEvent DeathEvent,
-            out KillerDetails? KillerDetails,
+            out KillerDetails KillerDetails,
             out DeathDescription DeathDescription)
         {
             KillerDetails = null;
@@ -219,7 +239,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             if (DeathEvent == null)
                 throw new ArgumentNullException(nameof(DeathEvent));
 
-            KillerDetails = DeathEvent.Killer != null ? new(DeathEvent) : null;
+            KillerDetails = DeathEvent.Killer != null ? new(Corpse, DeathEvent) : null;
             DeathDescription = DeathDescription.GetFromDeathEvent(Corpse, DeathEvent);
 
             return Make(Corpse, DeathEvent.Killer, DeathEvent.Weapon, KillerDetails, DeathDescription);
@@ -227,60 +247,61 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public static DeathMemory CopyMemories(GameObject Corpse, DeathMemory DeathMemory)
             => Corpse != null
-            ? new(Corpse.ID, DeathMemory)
+            ? new(Corpse, DeathMemory)
             : default;
 
-        public readonly bool? GetRemembersKilled()
+        public bool? GetRemembersKilled()
             => Killed;
 
-        public readonly bool RemembersKilled()
+        public bool RemembersKilled()
             => GetRemembersKilled() is bool killed
             && killed;
 
-        public readonly KillerMemory? GetRemembersKiller()
+        public KillerMemory? GetRemembersKiller()
             => Killer;
 
-        public readonly bool RemembersKiller()
+        public bool RemembersKiller()
             => GetRemembersKiller() is KillerMemory killer
             && killer > KillerMemory.Amnesia;
 
-        public readonly bool RemembersKillerName()
+        public bool RemembersKillerName()
             => GetRemembersKiller() is KillerMemory killer
             && killer >= KillerMemory.Name;
 
-        public readonly bool RemembersKillerCreature()
+        public bool RemembersKillerCreature()
             => GetRemembersKiller() is KillerMemory killer
             && killer >= KillerMemory.Creature;
 
-        public readonly bool RemembersKillerFeature()
+        public bool RemembersKillerFeature()
             => GetRemembersKiller() is KillerMemory killer
             && killer >= KillerMemory.Feature;
 
-        public readonly bool? GetRemembersMethod()
+        public bool? GetRemembersMethod()
             => Method;
 
-        public readonly bool RemembersMethod()
+        public bool RemembersMethod()
             => GetRemembersMethod() is bool method
             && method;
 
-        public readonly bool GetIsRudeToAsk()
+        public bool GetIsRudeToAsk()
             => RudeToAsk;
 
-        public readonly bool HasAmnesia()
-            => Killed == false
-            && Killer == KillerMemory.Amnesia
-            && Method == false;
+        public bool HasAmnesia()
+            => !EmptyDeath()
+            && (Killed == null || Killed == false)
+            && (Killer == null || Killer == KillerMemory.Amnesia)
+            && (Method == null || Method == false);
 
-        public readonly bool EmptyDeath()
+        public bool EmptyDeath()
             => Killed == null
             && Killer == null
             && Method == null;
 
-        public readonly bool Validate(GameObject Corpse = null)
+        public bool Validate(GameObject Corpse = null)
             => (Corpse == null || Corpse.ID == CorpseID)
             && !EmptyDeath();
 
-        public readonly bool MemoryIsCompatibleWithElements(IEnumerable<string> ElementsList, bool Known)
+        public bool MemoryIsCompatibleWithElements(IEnumerable<string> ElementsList, bool Known)
         {
             if (ElementsList.IsNullOrEmpty())
                 return false;
@@ -324,10 +345,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             }
             return true;
         }
-        public readonly bool MemoryIsCompatibleWithElements(string Elements, bool Known)
+        public bool MemoryIsCompatibleWithElements(string Elements, bool Known)
             => MemoryIsCompatibleWithElements(Elements?.CachedCommaExpansion(), Known);
 
-        public readonly StringMap<string> DebugInternals(GameObject Corpse = null) => new()
+        public StringMap<string> DebugInternals(GameObject Corpse = null) => new()
         {
             { nameof(CorpseID) + ": " + (CorpseID ?? NULL), null },
             { nameof(IsValid), Validate(Corpse).YehNah() },
@@ -336,7 +357,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { nameof(Killer), "[" + (Killer != null ? (int)Killer : "-") + "]" },
             { nameof(Method), Method.YehNah() },
         };
-        public readonly string DebugInternalsString(GameObject Corpse = null)
+        public string DebugInternalsString(GameObject Corpse = null)
             => DebugInternals(Corpse)
                 ?.Aggregate(
                     seed: "",

@@ -365,7 +365,7 @@ namespace XRL.World.Parts
                         Debug.Log(nameof(WasPlayer), WasPlayer, indent[2]);
 
                         if (PastLife.GetBlueprint().InheritsFrom(BRAIN_IN_A_JAR_BLUEPRINT)
-                            || PastLife.IsCorpse()
+                            || PastLife.IsInanimateCorpse()
                             || WasCorpse)
                         {
                             TimesReanimated++;
@@ -1212,7 +1212,7 @@ namespace XRL.World.Parts
                 || (Entity.GetPropertyOrTag("Role") is string rolePropTag && rolePropTag == "Hero"))
                 return IdentityType.Hero;
 
-            if (Entity.IsCorpse())
+            if (Entity.IsInanimateCorpse())
                 return IdentityType.Corpse;
 
             if (Entity.IsParticipantVillager())

@@ -579,7 +579,8 @@ namespace XRL.World.Parts
             out string Reason,
             out bool Accidental,
             out bool KillerIsCached,
-            int ChanceRandomKiller = 50)
+            int ChanceRandomKiller = 50,
+            Predicate<DeathDescription> Filter = null)
         {
             Killer = null;
             Weapon = null;
@@ -652,6 +653,9 @@ namespace XRL.World.Parts
                     && !DeathDescription.Category.EqualsAny(categories))
                     return false;
 
+                if (Filter != null && !Filter(DeathDescription))
+                    return false;
+
                 if (haveKiller && DeathDescription.Killer == "")
                     return false;
 
@@ -678,6 +682,22 @@ namespace XRL.World.Parts
 
             return deathDescription;
         }
+        public static DeathDescription ProduceRandomDeathDescription(
+            GameObject For,
+            int ChanceRandomKiller = 50,
+            Predicate<DeathDescription> Filter = null)
+            => ProduceRandomDeathDescriptionWithComponents(
+                For: For,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                ChanceRandomKiller: ChanceRandomKiller,
+                Filter: Filter);
+
         public UD_FleshGolems_DeathDetails InitializeRandomDeathDetails()
             => InitializeRandomDeathDetails(ParentObject);
 
@@ -690,7 +710,7 @@ namespace XRL.World.Parts
                 ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(ForCorpse), ForCorpse?.DebugName ?? "null"),
-                    Debug.Arg(nameof(UD_FleshGolems.Extensions.IsCorpse), ForCorpse?.IsCorpse()),
+                    Debug.Arg(nameof(UD_FleshGolems.Extensions.IsCorpse), ForCorpse?.IsInanimateCorpse()),
                 });
 
             DeathDetails = ForCorpse.RequirePart<UD_FleshGolems_DeathDetails>();
@@ -706,7 +726,7 @@ namespace XRL.World.Parts
                 KillerIsCached: out bool killerIsCached);
             try
             {
-                if (ForCorpse.IsCorpse())
+                if (ForCorpse.GetBlueprint().IsCorpse())
                 {
                     DeathDetails = ForCorpse.RequirePart<UD_FleshGolems_DeathDetails>();
 

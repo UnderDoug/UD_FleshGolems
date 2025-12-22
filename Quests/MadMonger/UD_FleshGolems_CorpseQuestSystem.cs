@@ -170,7 +170,7 @@ namespace XRL.World.QuestManagers
         public static bool CheckCorpseSpecies(UD_FleshGolems_CorpseQuestStep QuestItem, GameObject CorpseObject)
         {
             return IsCorpse(QuestItem, out CorpseItem corpseItem)
-                && CorpseObject.IsCorpse()
+                && CorpseObject.IsInanimateCorpse()
                 && corpseItem.IsSpecies
                 && GetAllCorpsesOfSpecies(corpseItem.Value).Contains(CorpseObject.Blueprint);
         }
@@ -275,7 +275,7 @@ namespace XRL.World.QuestManagers
         {
             foreach (UD_FleshGolems_CorpseQuestStep questStep in Steps)
             {
-                if (!CorpseObject.IsCorpse())
+                if (!CorpseObject.IsInanimateCorpse())
                 {
                     continue;
                 }
@@ -454,7 +454,7 @@ namespace XRL.World.QuestManagers
         }
 
         static bool IsCorpseWithQuestHelperPart(GameObject GO)
-            => GO.IsCorpse()
+            => GO.IsInanimateCorpse()
             && GO.HasPart<UD_FleshGolems_CorpseQuestHelperPart>();
 
         public static bool CheckItem(UD_FleshGolems_CorpseQuestSystem CorpseQuestSystem, GameObject Item, bool Unfinish = false)

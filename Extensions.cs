@@ -547,7 +547,7 @@ namespace UD_FleshGolems
                 && Blueprint.GetGameObjectBlueprint().IsCorpse(Filter);
         }
 
-        public static bool IsCorpse(this GameObject Corpse, Predicate<GameObjectBlueprint> Filter = null)
+        public static bool IsInanimateCorpse(this GameObject Corpse, Predicate<GameObjectBlueprint> Filter = null)
         {
             return Corpse != null
                 && !Corpse.HasPart<AnimatedObject>()
@@ -1357,10 +1357,10 @@ namespace UD_FleshGolems
         public static bool TryGetDeathDetails(this GameObject Corpse, out UD_FleshGolems_DeathDetails DeathDetails)
             => (DeathDetails = Corpse?.GetDeathDetails()) != null;
 
-        public static KillerDetails? GetKillerDetails(this GameObject Corpse)
+        public static KillerDetails GetKillerDetails(this GameObject Corpse)
             => Corpse?.GetDeathDetails()?.KillerDetails;
 
-        public static bool TryGetKillerDetails(this GameObject Corpse, out KillerDetails? KillerDetails)
+        public static bool TryGetKillerDetails(this GameObject Corpse, out KillerDetails KillerDetails)
             => (KillerDetails = Corpse?.GetKillerDetails()) != null;
 
         public static DeathDescription GetDeathDescription(this GameObject Corpse)
@@ -1480,5 +1480,12 @@ namespace UD_FleshGolems
 
         public static string ContextCapitalize(this string Output, TextDelegateContext Context)
             => Context.Capitalize ? Output?.Capitalize() : Output;
+
+        public static bool Fail(this GameObject Object, string Message, bool Silent)
+        {
+            if (!Silent)
+                return Object.Fail(Message);
+            return false;
+        }
     }
 }

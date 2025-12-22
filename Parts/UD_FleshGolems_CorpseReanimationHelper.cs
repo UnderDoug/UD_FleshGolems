@@ -21,6 +21,7 @@ using XRL.World.Skills;
 using XRL.World.AI;
 
 using static XRL.World.Parts.UD_FleshGolems_PastLife;
+using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
 
 using NanoNecroAnimation = XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
 using RaggedNaturalWeapon = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon;
@@ -28,6 +29,7 @@ using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdje
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
+using UD_FleshGolems.Capabilities;
 using UD_FleshGolems.Parts.PastLifeHelpers;
 using UD_FleshGolems.Parts.VengeanceHelpers;
 using UD_FleshGolems.Events;
@@ -35,7 +37,6 @@ using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
-using UD_FleshGolems.Capabilities;
 
 namespace XRL.World.Parts
 {
@@ -116,7 +117,7 @@ namespace XRL.World.Parts
 
         public UD_FleshGolems_DeathDetails DeathDetails => ParentObject?.GetDeathDetails();
 
-        public KillerDetails? KillerDetails => DeathDetails?.KillerDetails;
+        public KillerDetails KillerDetails => DeathDetails?.KillerDetails;
 
         public GameObject Reanimator;
 
@@ -1081,9 +1082,10 @@ namespace XRL.World.Parts
 
                 // PastLife.RestoreParts(p => !IsPartToSkip(p, frankenCorpse));
 
+                Debug.Log(nameof(reanimationHelper.DeathDetails), Indent: indent[2]);
                 if (reanimationHelper.DeathDetails == null)
                 {
-                    UD_FleshGolems_DestinedForReanimation.InitializeRandomDeathDetails(ForCorpse: frankenCorpse);
+                    InitializeRandomDeathDetails(ForCorpse: frankenCorpse);
 
                     if (reanimationHelper.DeathDetails == null)
                         MetricsManager.LogModWarning(
@@ -1091,30 +1093,24 @@ namespace XRL.World.Parts
                             Message: nameof(MakeItALIVE) + " failed to initialize " + nameof(UD_FleshGolems_DeathDetails) +
                                 " for " + (frankenCorpse?.DebugName ?? "null entity"));
                 }
-                else
-                if (reanimationHelper.DeathDetails.DeathDescription == null)
+                if (reanimationHelper.DeathDetails != null)
                 {
-                    reanimationHelper.DeathDetails.DeathDescription =
-                        UD_FleshGolems_DestinedForReanimation.ProduceRandomDeathDescriptionWithComponents(
-                            For: frankenCorpse,
-                            out _,
-                            out _,
-                            out _,
-                            out _,
-                            out _,
-                            out _,
-                            out _);
                     if (frankenCorpse.Blueprint == "UD_FleshGolems Jofo Qudwufo")
                     {
+                        Debug.Log("Giving Jofo Qudwufo a special DeathDescription", Indent: indent[3]);
                         reanimationHelper.DeathDetails.DeathDescription = new(
                             Category: "electrocuted",
                             Were: false,
                             Killed: "zapped to death",
                             Killer: UD_FleshGolems_NecromancySystem.System?.TheMadMonger?.GetReferenceDisplayName(Short: true),
                             With: false,
-                            Method: "failed experiment");
+                            Method: "failed experiment")
+                        {
+                            ParentCorpse = frankenCorpse,
+                        };
                         reanimationHelper.DeathDetails.UpdateKiller(UD_FleshGolems_NecromancySystem.System?.TheMadMonger);
                     }
+                    reanimationHelper.DeathDetails.DeathDescription ??= ProduceRandomDeathDescription(frankenCorpse);
                 }
                     
                 frankenCorpse.SetStringProperty("OverlayColor", "&amp;G^k");

@@ -12,7 +12,7 @@ namespace UD_FleshGolems.Events
     [GameEvent(Cache = Cache.Pool)]
     public class GetDeathMemoryAmnesiaChanceEvent : IDeathMemoryEvent<GetDeathMemoryAmnesiaChanceEvent>
     {
-        public KillerDetails? KillerDetails;
+        public KillerDetails KillerDetails;
         public DeathDescription DeathDescription;
 
         public int BaseChance;
@@ -44,7 +44,7 @@ namespace UD_FleshGolems.Events
             GameObject Corpse,
             GameObject Killer,
             GameObject Weapon,
-            KillerDetails? KillerDetails,
+            KillerDetails KillerDetails,
             DeathDescription DeathDescription,
             int BaseChance,
             string Context)
@@ -83,7 +83,7 @@ namespace UD_FleshGolems.Events
             GameObject Corpse,
             GameObject Killer,
             GameObject Weapon,
-            KillerDetails? KillerDetails,
+            KillerDetails KillerDetails,
             DeathDescription DeathDescription,
             int BaseChance,
             string Context)

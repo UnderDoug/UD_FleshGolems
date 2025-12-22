@@ -137,9 +137,9 @@
         <text>There was something else...</text>
       </choice>
 
-      <choice ID="JoinPartyChoice" IfSourceOfSuffering="true">
+      <choice ID="ReanimatedJoinPartyChoice" IfSourceOfSuffering="true">
         <text>Come along now... {{r|friend}}.</text>
-        <part Name="WaterRitualJoinParty" />
+        <part Name="UD_FleshGolems_ReanimatedJoinParty" />
       </choice>
       
       <choice ID="GoEnd" Target="End">
@@ -153,9 +153,9 @@
   <conversation ID="UD_FleshGolems NewlyReanimatedBeings">
     
     <node ID="choices">
-      <choice ID="JoinPartyChoice" IfSourceOfSuffering="true" IfAlreadyAskedHowDied="true">
+      <choice ID="ReanimatedReanimatedJoinPartyChoice" IfSourceOfSuffering="true" IfAlreadyAskedHowDied="true">
         <text>Come along now... {{r|friend}}.</text>
-        <part Name="WaterRitualJoinParty" />
+        <part Name="UD_FleshGolems_ReanimatedJoinParty" />
       </choice>
       
       <choice ID="GoEnd" Target="End">
@@ -174,7 +174,7 @@
         {{emote|*wilhelm scream*}}
       </text>
       <choice UseID="AskHowDied" />
-      <choice UseID="JoinPartyChoice" />
+      <choice UseID="ReanimatedJoinPartyChoice" />
       <choice UseID="GoEnd" />
     </start>
     

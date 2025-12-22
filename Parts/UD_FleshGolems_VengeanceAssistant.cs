@@ -50,12 +50,12 @@ namespace XRL.World.Parts
 
         public bool IsCorpseOfThisEntity(GameObject Object)
             => Object != null
-            && Object.IsCorpse()
+            && Object.IsInanimateCorpse()
             && Object.GetStringProperty("SourceID") == ParentObject?.ID;
 
         public bool IsCorpseOfThisEntityOrDying(GameObject Object, IDeathEvent E)
             => Object != null
-            && Object.IsCorpse()
+            && Object.IsInanimateCorpse()
             && Object.GetStringProperty("SourceID") is string sourceID
             && (sourceID == ParentObject?.ID
                 || sourceID == E.Dying?.ID);
@@ -83,7 +83,7 @@ namespace XRL.World.Parts
                     deathDetails = corpse.RequirePart<UD_FleshGolems_DeathDetails>();
                 }
                 deathDetails.Initialize(E);
-                Debug.CheckYeh(nameof(KillerDetails), "Got!", Indent: indent[1]);
+                Debug.CheckYeh(nameof(deathDetails), "Got!", Indent: indent[1]);
                 corpseReanimationHelper.KillerDetails?.Log();
             }
 

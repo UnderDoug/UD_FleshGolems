@@ -45,9 +45,11 @@ using static UD_FleshGolems.Parts.VengeanceHelpers.DeathMemory;
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
     [Serializable]
-    public struct KillerDetails : IComposite
+    public class KillerDetails : IComposite
     {
         public const string NOTABLE_FEATURE_PROPTAG = "UD_FleshGolems KillerDetails NotableFeature";
+
+        public GameObject ParentCorpse;
 
         public string ID;
         public string Blueprint;
@@ -58,14 +60,28 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public bool? KillerIsDeceased;
 
+        private KillerDetails()
+        {
+            ParentCorpse = null;
+            ID = null;
+            Blueprint = null; ;
+            NotableFeature = null;
+            CreatureType = null;
+            DisplayName = null;
+            KillerIsDeceased = null;
+        }
+
         private KillerDetails(
+            GameObject ParentCorpse,
             string ID = null,
             string Blueprint = null,
             string NotableFeature = null,
             string CreatureType = null,
             string DisplayName = null,
             bool? KillerIsDeceased = null)
+            : this()
         {
+            this.ParentCorpse = ParentCorpse;
             this.ID = ID;
             this.Blueprint = Blueprint;
             this.NotableFeature = NotableFeature;
@@ -73,16 +89,17 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             this.DisplayName = DisplayName;
             this.KillerIsDeceased = KillerIsDeceased;
         }
-        public KillerDetails(GameObject Killer)
-            : this()
+
+        public KillerDetails(GameObject ParentCorpse, GameObject Killer)
+            : this(ParentCorpse)
         {
             Update(Killer);
         }
-        public KillerDetails(IDeathEvent E)
-            : this(E?.Killer)
+        public KillerDetails(GameObject ParentCorpse, IDeathEvent E)
+            : this(ParentCorpse, E?.Killer)
         { }
 
-        public readonly string this[KillerMemory? KillerMemory]
+        public string this[KillerMemory? KillerMemory]
         {
             get
             {
@@ -101,10 +118,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 return null;
             }
         }
-        public readonly string this[DeathMemory DeathMemory]
+        public string this[DeathMemory DeathMemory]
             => this[DeathMemory.GetRemembersKiller()];
 
-        public KillerDetails? Update(GameObject Killer)
+        public KillerDetails Update(GameObject Killer)
         {
             ID = Killer?.ID;
             Blueprint = Killer?.Blueprint;
@@ -171,6 +188,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     }
                 }
                 notableFeature = notableFeatures.GetWeightedSeededRandom(nameof(GetNotableFeature) + "::" + Killer.ID);
+                if (notableFeature.IsNullOrEmpty())
+                {
+                    notableFeature = "forgettable features";
+                }
                 Killer.SetNotableFeature(notableFeature);
             }
             return "someone with " + notableFeature;
@@ -185,14 +206,14 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             return null;
         }
 
-        public readonly bool Any()
+        public bool Any()
             => !ID.IsNullOrEmpty()
             || !Blueprint.IsNullOrEmpty()
             || !NotableFeature.IsNullOrEmpty()
             || !CreatureType.IsNullOrEmpty()
             || !DisplayName.IsNullOrEmpty();
 
-        public readonly KillerDetails Log()
+        public KillerDetails Log()
         {
             using Indent indent = new(1);
             Debug.LogCaller(indent);
@@ -205,7 +226,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             return this;
         }
 
-        public readonly StringMap<string> DebugInternals() => new()
+        public StringMap<string> DebugInternals() => new()
         {
             { nameof(ID), ID ?? NULL },
             { nameof(Blueprint), Blueprint ?? NULL },
@@ -215,7 +236,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { nameof(KillerIsDeceased), KillerIsDeceased?.ToString() ?? NULL },
         };
 
-        public readonly string DebugInternalsString()
+        public string DebugInternalsString()
             => DebugInternals()
             ?.Aggregate(
                 seed: "", 

@@ -114,8 +114,6 @@ namespace XRL.World.Parts
             }
         }
 
-        public bool DeathQuestionsAreRude;
-
         public UD_FleshGolems_PastLife PastLife => ParentObject?.GetPart<UD_FleshGolems_PastLife>();
 
         public IdentityType IdentityType => PastLife?.GetIdentityType() ?? IdentityType.None;
@@ -164,7 +162,6 @@ namespace XRL.World.Parts
         {
             _Reanimator = null;
             _NewDisplayName = null;
-            DeathQuestionsAreRude = false;
             BleedLiquid = null;
             BleedLiquidPortions = null;
             IsRenderDisplayNameUpdated = false;
@@ -214,8 +211,6 @@ namespace XRL.World.Parts
 
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
             SecretlySealLiquidVolume(ParentObject);
-
-            DeathQuestionsAreRude = ParentObject.BaseID % 4 == 0;
 
             AttemptToSuffer();
             base.Initialize();
@@ -370,6 +365,11 @@ namespace XRL.World.Parts
             }
         }
 
+        public override void Register(GameObject Object, IEventRegistrar Registrar)
+        {
+            Registrar.Register("GameStart");
+            base.Register(Object, Registrar);
+        }
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
@@ -685,12 +685,28 @@ namespace XRL.World.Parts
             }
             return base.HandleEvent(E);
         }
+        public override bool FireEvent(Event E)
+        {
+            if (E.ID == "GameStart"
+                && ParentObject == The.Player)
+            {
+                string creatureType = ParentObject.GetSubtype()
+                    ?? ParentObject.GetGenotype()
+                    ?? ParentObject.GetSpecies();
+
+                if (!creatureType.IsNullOrEmpty())
+                {
+                    creatureType = REANIMATED_ADJECTIVE + " " + creatureType + " corpse";
+                }
+                ParentObject.SetCreatureType(creatureType);
+            }
+            return base.FireEvent(E);
+        }
+
         public override bool HandleEvent(GetDebugInternalsEvent E)
         {
             E.AddEntry(this, nameof(Reanimator), Reanimator?.DebugName ?? NULL);
             E.AddEntry(this, nameof(IdentityType), IdentityType.ToStringWithNum());
-            E.AddEntry(this, nameof(DeathQuestionsAreRude), DeathQuestionsAreRude);
-            E.AddEntry(nameof(UD_FleshGolems_VengeanceAssistant), nameof(DeathQuestionsAreRude), DeathQuestionsAreRude);
             E.AddEntry(this, nameof(IsRenderDisplayNameUpdated), IsRenderDisplayNameUpdated);
             E.AddEntry(this, nameof(IsAlteredDescription), IsAlteredDescription);
 

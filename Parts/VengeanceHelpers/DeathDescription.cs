@@ -40,10 +40,12 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { "caught", "catching" },
             { "drank", "drinking" },
             { "forgot", "forgetting" },
+            { "got", "getting" },
             { "had", "having" },
             { "left", "leaving" },
             { "ran", "running" },
             { "spoke", "speaking" },
+            { "thought", "thinking" },
             { "took", "taking" },
         };
 
@@ -71,6 +73,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         }
 
         public UD_FleshGolems_DeathDetails DeathDetails => ParentCorpse?.GetDeathDetails();
+
+        public DeathMemory DeathMemory => ParentCorpse?.GetDeathDetails()?.DeathMemory;
 
         public string Category;
         public bool Were;
@@ -496,8 +500,14 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 && GetMethod(Method).IsNullOrEmpty())
                 return null;
 
+            string withString = "with";
+            if (DeathMemory != null
+                && DeathMemory.GetRemembersKiller() is DeathMemory.KillerMemory killerMemory
+                && killerMemory == DeathMemory.KillerMemory.Feature)
+                withString = "using";
+
             return With && !GetMethod(Method).IsNullOrEmpty()
-                ? " with " + (GetArticle(ForceNoMethodArticle) is string article && !article.IsNullOrEmpty() ? article + " " : null)
+                ? " " + withString + " " + (GetArticle(ForceNoMethodArticle) is string article && !article.IsNullOrEmpty() ? article + " " : null)
                 : (!GetKiller(Killer).IsNullOrEmpty() ? "'s " : null); // pass "" as Killer to override result when With is false.
         }
 

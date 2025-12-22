@@ -75,7 +75,7 @@ namespace XRL.World.Parts
 
         public DeathMemory DeathMemory;
 
-        public KillerDetails? KillerDetails;
+        public KillerDetails KillerDetails;
 
         public DeathDescription DeathDescription;
 
@@ -83,7 +83,7 @@ namespace XRL.World.Parts
 
         public bool Environmental => DeathDescription?.Method == "";
 
-        public bool DeathQuestionsAreRude => DeathMemory.GetIsRudeToAsk();
+        public bool DeathQuestionsAreRude => DeathMemory != null && DeathMemory.GetIsRudeToAsk();
 
         public UD_FleshGolems_DeathDetails()
         {
@@ -167,7 +167,7 @@ namespace XRL.World.Parts
             this.Weapon = Weapon ?? Projectile;
 
             if (Killer != null)
-                KillerDetails = new(Killer);
+                KillerDetails = new(ParentObject, Killer);
 
             this.DeathDescription = DeathDescription;
 
@@ -277,7 +277,11 @@ namespace XRL.World.Parts
                 && DeathDescription.Killer != "")
             {
                 DeathDescription.SetKiller(Killer);
-                KillerDetails?.Update(Killer);
+                if (KillerDetails != null)
+                {
+                    KillerDetails?.Update(Killer);
+                }
+                KillerDetails ??= new(ParentObject, Killer);
             }
             return Killer;
         }
@@ -312,10 +316,15 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(DeathDescription), DeathDescription?.DebugInternalsString() ?? NULL);
             E.AddEntry(this, Accidental.YehNah(), nameof(Accidental));
             E.AddEntry(this, Environmental.YehNah(), nameof(Environmental));
-            string thirdPersonReason = DeathDescription.ThirdPersonReason(
-                    Capitalize: true,
-                    Accidental: Accidental,
-                    DoReplacer: true).Strip() + ".";
+            string thirdPersonReason = DeathDescription?.ThirdPersonReason(
+                Capitalize: true,
+                Accidental: Accidental,
+                DoReplacer: true)?.Strip();
+            thirdPersonReason ??= "=subject.Subjective= simply died"
+                .StartReplace()
+                .AddObject(ParentObject, "subject")
+                .ToString();
+            thirdPersonReason += ".";
             E.AddEntry(this, nameof(DeathDescription.ThirdPersonReason), thirdPersonReason);
             return base.HandleEvent(E);
         }

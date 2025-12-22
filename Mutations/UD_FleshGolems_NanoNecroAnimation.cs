@@ -276,7 +276,7 @@ namespace XRL.World.Parts.Mutation
         public static bool IsReanimatableCorpse(GameObject Corpse)
         {
             return Corpse != null
-                && Corpse.IsCorpse(IsReanimatableCorpse)
+                && Corpse.IsInanimateCorpse(IsReanimatableCorpse)
                 && !Corpse.HasPart<AnimatedObject>()
                 && !Corpse.HasPart<UD_FleshGolems_ReanimatedCorpse>();
         }
@@ -350,7 +350,7 @@ namespace XRL.World.Parts.Mutation
 
                 Cell placementCell = Summoner?.CurrentCell
                     ?.GetAdjacentCells(corpseRadius)
-                    ?.GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject) && c.HasObject(GO => GO.IsCorpse()));
+                    ?.GetRandomElementCosmeticExcluding(Exclude: c => !c.IsEmptyFor(corpseObject) && c.HasObject(GO => GO.IsInanimateCorpse()));
 
                 placementCell ??= Summoner?.CurrentCell
                     ?.GetAdjacentCells(corpseRadius)

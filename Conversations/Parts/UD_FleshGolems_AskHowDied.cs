@@ -221,7 +221,7 @@ namespace XRL.World.Conversations.Parts
         public static ConversationText GetKilledByPlayerText(GetTextElementEvent E)
             => GetKilledByPlayerTexts(E)?.GetRandomElementCosmetic();
 
-        public static List<ConversationText> GetDeathMemoryCompatibleTexts(GetTextElementEvent E, DeathMemory? DeathMemory = null)
+        public static List<ConversationText> GetDeathMemoryCompatibleTexts(GetTextElementEvent E, DeathMemory DeathMemory = null)
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
@@ -344,8 +344,6 @@ namespace XRL.World.Conversations.Parts
                 || !DeathMemory.IsValid
                 || !ConversationText.HasAttribute(MEMORY_ELEMENT))
                 return false;
-
-            List<string> memoryElements = ConversationText.Attributes[MEMORY_ELEMENT]?.CachedCommaExpansion();
 
             if (DeathMemory.HasAmnesia()
                 && ConversationText.HasAttributeWithValue(KNOWN, "true"))
@@ -536,43 +534,46 @@ namespace XRL.World.Conversations.Parts
 
             List<ConversationText> sortedConversationTextList = new();
             int maxAttempts = (ConversationTextList?.Count ?? 1) * 10;
-            int attemptCount = 0; ;
-            while (!ConversationTextList.IsNullOrEmpty() && attemptCount++ < maxAttempts)
+            int attemptCount = 0;
+            if ((ConversationTextList?.Count ?? 1) > 1)
             {
-                ConversationText currentText = ConversationTextList[0];
-                ConversationTextList.Remove(currentText);
-
-                Debug.Log(
-                    attemptCount + "] " + currentText?.PathID?.TextAfter("."),
-                    nameof(sortedConversationTextList) + " (" + sortedConversationTextList.Count + ")",
-                    Indent: indent[1]);
-
-                if (HasKilledMemoryElement(currentText))
+                while (!ConversationTextList.IsNullOrEmpty() && attemptCount++ < maxAttempts)
                 {
-                    sortedConversationTextList.Add(currentText);
-                    Debug.CheckYeh(nameof(HasKilledMemoryElement), indent[2]);
-                    continue;
-                }
-                if (sortedConversationTextList.Any(ct => HasKilledMemoryElement(ct)))
-                {
-                    if (HasKillerEquivalentMemoryElement(currentText))
+                    ConversationText currentText = ConversationTextList[0];
+                    ConversationTextList.Remove(currentText);
+
+                    Debug.Log(
+                        attemptCount + "] " + currentText?.PathID?.TextAfter("."),
+                        nameof(sortedConversationTextList) + " (" + sortedConversationTextList.Count + ")",
+                        Indent: indent[1]);
+
+                    if (HasKilledMemoryElement(currentText))
                     {
                         sortedConversationTextList.Add(currentText);
-                        Debug.CheckYeh(nameof(HasKillerEquivalentMemoryElement), indent[2]);
+                        Debug.CheckYeh(nameof(HasKilledMemoryElement), indent[2]);
                         continue;
                     }
-                    if (sortedConversationTextList.Any(ct => HasKillerEquivalentMemoryElement(ct)))
+                    if (sortedConversationTextList.Any(ct => HasKilledMemoryElement(ct)))
                     {
-                        if (HasMethodMemoryElement(currentText))
+                        if (HasKillerEquivalentMemoryElement(currentText))
                         {
                             sortedConversationTextList.Add(currentText);
-                            Debug.CheckYeh(nameof(HasMethodMemoryElement), indent[2]);
+                            Debug.CheckYeh(nameof(HasKillerEquivalentMemoryElement), indent[2]);
                             continue;
                         }
+                        if (sortedConversationTextList.Any(ct => HasKillerEquivalentMemoryElement(ct)))
+                        {
+                            if (HasMethodMemoryElement(currentText))
+                            {
+                                sortedConversationTextList.Add(currentText);
+                                Debug.CheckYeh(nameof(HasMethodMemoryElement), indent[2]);
+                                continue;
+                            }
+                        }
                     }
+                    ConversationTextList.Add(currentText);
+                    Debug.CheckNah("Added back to pool.", indent[2]);
                 }
-                ConversationTextList.Add(currentText);
-                Debug.CheckNah("Added back to pool.", indent[2]);
             }
             if (!ConversationTextList.IsNullOrEmpty())
             {
@@ -696,29 +697,14 @@ namespace XRL.World.Conversations.Parts
                         List<ConversationText> possibleTextsWorkingList = new(possibleTexts);
                         List<ConversationText> constructedCompleteTextList = new();
 
-                        static bool constructedTextListHasAnySameElements(List<string> ConstructedTextElements,  ConversationText ConversationText)
-                        {
-                            List<string> conversationTextElements = GetDeathMemoryElements(ConversationText);
-                            return ConstructedTextElements.OverlapsWith(conversationTextElements);
-                        }
+                        bool isConversationTextUnableToFitInList(ConversationText ConversationText)
+                            => !CheckConversationTextFitsInList(ref constructedCompleteTextList, deathDetails.DeathMemory, ConversationText);
 
                         Debug.Log("Compiling " + nameof(constructedCompleteTextList), Indent: indent[1]);
                         while (!possibleTextsWorkingList.IsNullOrEmpty() && attempt++ < maxAttempts)
                         {
-                            List<string> constructedTextElements = possibleTextsWorkingList
-                                ?.Aggregate(
-                                    seed: new List<string>(),
-                                    func: delegate (List<string> acc, ConversationText next)
-                                    {
-                                        if (GetDeathMemoryElements(next) is List<string> deathMemoryElements)
-                                            acc.AddRange(deathMemoryElements);
-                                        return acc;
-                                    })
-                                ?.Distinct()
-                                ?.ToList();
-
                             ConversationText prospectiveText = possibleTextsWorkingList
-                                ?.GetRandomElementCosmeticExcluding(ct => constructedTextListHasAnySameElements(constructedTextElements, ct));
+                                ?.GetRandomElementCosmeticExcluding(isConversationTextUnableToFitInList);
                             if (prospectiveText == null)
                             {
                                 MetricsManager.LogModWarning(
@@ -730,20 +716,13 @@ namespace XRL.World.Conversations.Parts
                             Debug.Log(nameof(prospectiveText), prospectiveText.PathID.TextAfter("."), Indent: indent[2]);
                             if (AddConversationTextToListIfFits(ref constructedCompleteTextList, deathDetails.DeathMemory, prospectiveText))
                             {
-                                constructedTextElements = possibleTextsWorkingList
-                                ?.Aggregate(
-                                    seed: new List<string>(),
-                                    func: delegate (List<string> acc, ConversationText next)
-                                    {
-                                        if (GetDeathMemoryElements(next) is List<string> deathMemoryElements)
-                                            acc.AddRange(deathMemoryElements);
-                                        return acc;
-                                    })
-                                ?.Distinct()
-                                ?.ToList();
+                                possibleTextsWorkingList.RemoveAll(isConversationTextUnableToFitInList);
                             }
-                            possibleTextsWorkingList.Remove(prospectiveText);
-                            possibleTextsWorkingList.RemoveAll(ct => constructedTextListHasAnySameElements(constructedTextElements, ct));
+                            else
+                            {
+                                possibleTextsWorkingList.Remove(prospectiveText);
+                            }
+                            _ = indent[1];
                             if (CheckCompleteConversationText(possibleTextsWorkingList, deathDetails.DeathMemory))
                             {
                                 Debug.CheckYeh("Texts Completed", indent[1]);

@@ -51,18 +51,18 @@ namespace XRL.World.QuestManagers
             public bool CorpseCompletesThisStep(GameObject CorpseObject) => Taxonomy switch
             {
                 CorpseTaxonomy.Any
-                    => CorpseObject.IsCorpse(),
+                    => CorpseObject.IsInanimateCorpse(),
 
                 CorpseTaxonomy.Species
-                    => CorpseObject.IsCorpse()
+                    => CorpseObject.IsInanimateCorpse()
                     && GetAllCorpsesOfSpecies(Value).Contains(CorpseObject.Blueprint),
 
                 CorpseTaxonomy.Base
-                    => CorpseObject.IsCorpse()
+                    => CorpseObject.IsInanimateCorpse()
                     && CorpseObject.GetBlueprint().InheritsFrom(Value),
 
                 CorpseTaxonomy.Faction
-                    => CorpseObject.IsCorpse()
+                    => CorpseObject.IsInanimateCorpse()
                     && GetAllCorpsesOfFaction(Value).Contains(CorpseObject.Blueprint),
 
                 _ => false,

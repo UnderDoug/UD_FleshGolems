@@ -34,7 +34,7 @@ namespace XRL.World.ObjectBuilders
                 && 1.ChanceIn(SpecialChanceOneIn) 
                 && !ContextsToIgnore.Contains(Context)
                 && !BlueprintsToIgnore.Contains(Object.Blueprint)
-                && !Object.IsCorpse()
+                && !Object.IsInanimateCorpse()
                 && !Object.HasTagOrProperty("UD_FleshGolems OptionallyReanimated Excluded"))
             {
                 if (UD_FleshGolems_Reanimated.HasWorldGenerated)

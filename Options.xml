@@ -18,6 +18,18 @@
       The default is {{w|Disabled}}.
     </helptext>
   </option>
+  <option
+        ID="Option_UD_FleshGolems_DebugEnableConversationDebugText"
+        DisplayText="{{UD_FleshGolems_reanimated|Re-animatable Corpses}}: Enable Conversation Debugging Text."
+        Category="Debug"
+        Type="Checkbox"
+        Default="No">
+    <helptext>
+      When enabled, relevant conversation nodes will contain debug values appended to the end of them.
+
+      The default is {{w|Disabled}}.
+    </helptext>
+  </option>
   
   <option
         ID="Option_UD_FleshGolems_DebugEnableLogging"

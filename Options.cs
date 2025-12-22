@@ -8,6 +8,7 @@ namespace UD_FleshGolems
     {
         // Debug Settings
         [OptionFlag] public static bool DebugEnableTestKit;
+        [OptionFlag] public static bool DebugEnableConversationDebugText;
         [OptionFlag] public static bool DebugEnableLogging;
         [OptionFlag] public static bool DebugDisableWorldGenLogging;
         [OptionFlag] public static bool DebugEnableAllLogging;
