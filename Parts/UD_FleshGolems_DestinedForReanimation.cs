@@ -174,13 +174,18 @@ namespace XRL.World.Parts
                     new("died of asphyxiation", Were: false, Killed: "inhaled too much osseous ash", Killer: "", Method: ""),
                     new("died of asphyxiation", Were: false, Killed: "tried to breathe underwater", Killer: "", Method: ""),
                     new("died of asphyxiation", Were: false, Killed: "held underwater"),
+                    new("died of asphyxiation", Were: false, Killed: "forgot to inhale again after the last exhale", Killer: "", Method: ""),
+                    new("died of asphyxiation", Were: false, Killed: "ran out of air", By: false),
                 }
             },
             {   // Psionic damage
                 "psychically extinguished", new()
                 {
                     new("psychically extinguished"),
-                    new("psychically extinguished", Killed: "commanded to die, and simply did", Method: ""),
+                    new("psychically extinguished", Killed: "commanded to die", Method: ""),
+                    new("psychically extinguished", Killed: "compelled to simply die", Method: ""),
+                    new("psychically extinguished", Killed: "convinced to die", Method: ""),
+                    new("psychically extinguished", Killed: "convinced to embrace death", Method: ""),
                     new("psychically extinguished", Killed: "sundered dead", Method: ""),
                     new("psychically extinguished", Killed: "mentally obliterated", Method: ""),
                     new("psychically extinguished", Were: false, Killed: "couldn't maintain a strong enough sense of self", Killer: "", Method: ""),
@@ -189,7 +194,8 @@ namespace XRL.World.Parts
                     new("psychically extinguished", Were: false, Killed: "tried to understand things better left a mystery", Method: ""),
                     new("psychically extinguished", Were: false, Killed: "dared to challenge Ptoh and, well...", Killer: "", Method: ""),
                     new("psychically extinguished", Were: false, Killed: "risked the proximity of a darkling star", Killer: "", Method: ""),
-                    new("psychically extinguished", Were: false, Killed: "sought oblivion, and found it", Killer: "", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "sought oblivion too keenly", Killer: "", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "had a shattered mental mirror", Killer: "", Method: ""),
                 }
             },
             {   // Drain damage (syphon vim)
@@ -197,6 +203,11 @@ namespace XRL.World.Parts
                 {
                     new("drained to extinction"),
                     new("drained to extinction", Killed: "absorbed"),
+                    new("drained to extinction", Were: false, Killed: "went =subject.bodyPart:head=-to-head with a leech", Killer: "", Method: ""),
+                    new("drained to extinction", Killed: "drained of all vital essence", Method: ""),
+                    new("drained to extinction", Killed: "syphoned to a husk"),
+                    new("drained to extinction", Were: false, Killed: "didn't notice the stat-saps", Killer: "", Method: ""),
+                    new("drained to extinction", Were: false, Killed: "didn't notice the leeches", Killer: "", Method: ""),
                 }
             },
             {   // Thorns damage
@@ -204,6 +215,12 @@ namespace XRL.World.Parts
                 {
                     new("pricked to death"),
                     new("pricked to death", Killed: "pin-cushioned"),
+                    new("pricked to death", Killed: "skewered"),
+                    new("pricked to death", Were: false, Killed: "sat on a junk dollar", Killer: "", Method: ""),
+                    new("pricked to death", Killed: "shoved onto a junk dollar"),
+                    new("pricked to death", Were: false, Killed: "fell on top of an urshiib", Killer: "", Method: ""),
+                    new("pricked to death", Were: false, Killed: "made the wrong urshiib angry", Killer: "", Method: ""),
+                    new("pricked to death", Were: false, Killed: "got the thorns", By: false, Method: ""),
                 }
             },
             {   // Bite damage (any bite)
@@ -212,6 +229,10 @@ namespace XRL.World.Parts
                     new("bitten to death"),
                     new("bitten to death", Killed: "chewed on"),
                     new("bitten to death", Killed: "half-eaten"),
+                    new("bitten to death", Killed: "chomped"),
+                    new("bitten to death", Were: false, Killed: "got too close to a salt kraken", Killer: "", Method: ""),
+                    new("bitten to death", Were: false, Killed: "tried to swim with a madpole", Killer: "", Method: ""),
+                    new("bitten to death", Were: false, Killed: "upset some cannibals", Killer: "", Method: ""),
                 }
             },
             {   // Killed
@@ -220,9 +241,14 @@ namespace XRL.World.Parts
                     new("killed"),
                     new("killed", Killed: "killed in a duel"),
                     new("killed", Killed: "thoroughly ended"),
+                    new("killed", Killed: "ended"),
                     new("killed", Killed: "{{R|wasted}}"),
                     new("killed", Killed: "merced"),
                     new("killed", Killed: "taken out"),
+                    new("killed", Killed: "taken down"),
+                    new("killed", Killed: "put down"),
+                    new("killed", Killed: "knocked off"),
+                    new("killed", Killed: "run through"),
                 }
             },
         };
@@ -760,20 +786,32 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(PlayerWantsFakeDie), PlayerWantsFakeDie),
                     Debug.Arg(nameof(HaveFakedDeath), HaveFakedDeath),
                 });
-            if (ParentObject == null
+            if (ParentObject is not GameObject player
                 || !PlayerWantsFakeDie
-                || HaveFakedDeath)
+                || HaveFakedDeath
+                || (!player.IsPlayer() 
+                    && !player.HasPlayerBlueprint()))
             {
                 return false;
             }
 
-            bool success = UD_FleshGolems_Reanimated.ReplacePlayerWithCorpse(
+            bool success = UD_FleshGolems_Reanimated.ReplaceEntityWithCorpse(
+                Entity: player,
                 FakeDeath: PlayerWantsFakeDie,
                 FakedDeath: out HaveFakedDeath,
                 DeathEvent: null,
                 Corpse: Corpse);
 
             PlayerWantsFakeDie = false;
+            if (success)
+            {
+                foreach (Type playerMutator in ModManager.GetTypesWithAttribute(typeof(PlayerMutator)))
+                {
+                    Stat.ReseedFrom("PLAYERMUTATOR" + playerMutator.Name);
+                    (Activator.CreateInstance(playerMutator) as IPlayerMutator)?.mutate(player);
+                }
+                Stat.ReseedFrom("GameStart");
+            }
             return success;
         }
 
@@ -854,6 +892,7 @@ namespace XRL.World.Parts
             return base.WantEvent(ID, cascade)
                 || (ID == BeforeObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID))
                 // || (ID == AfterObjectCreatedEvent.ID && FailedToRegisterEvents.Contains(AfterObjectCreatedEvent.ID))
+                // || ID == EnteredCellEvent.ID
                 || (ID == EnvironmentalUpdateEvent.ID && FailedToRegisterEvents.Contains(EnvironmentalUpdateEvent.ID))
                 || (ID == BeforeZoneBuiltEvent.ID && DelayTillZoneBuild)
                 || ID == GetShortDescriptionEvent.ID
@@ -906,6 +945,20 @@ namespace XRL.World.Parts
             }
             return base.HandleEvent(E);
         }
+        public override bool HandleEvent(EnteredCellEvent E)
+        {
+            if ((E.Object.IsPlayer()
+                    || E.Object.HasPlayerBlueprint())
+                && !HaveFakedDeath)
+            {
+                PlayerWantsFakeDie = true;
+                if (!IfPlayerStartUndeadUseTurnTickNotStringy)
+                {
+                    ActuallyDoTheFakeDieAndReanimate();
+                }
+            }
+            return base.HandleEvent(E);
+        }
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
         {
             ProcessObjectCreationEvent(E);
@@ -950,7 +1003,6 @@ namespace XRL.World.Parts
         public override bool FireEvent(Event E)
         {
             if (E.ID == "GameStart"
-                && Corpse != null
                 && !HaveFakedDeath)
             {
                 PlayerWantsFakeDie = true;
@@ -963,7 +1015,8 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(BeforeDieEvent E)
         {
-            if (!BuiltToBeReanimated
+            if (!Attempted
+                && !BuiltToBeReanimated
                 && ParentObject is GameObject dying
                 && dying == E.Dying
                 && dying.TryGetPart(out Corpse dyingCorpse)
@@ -977,6 +1030,7 @@ namespace XRL.World.Parts
                     DeathEvent: E,
                     Corpse: Corpse))
             {
+                Attempted = true;
                 return false;
             }
             return base.HandleEvent(E);

@@ -33,7 +33,6 @@ namespace XRL.World.Conversations.Parts
         public bool AskedFirstOnly;
 
         private bool Visible;
-        private bool CanRecruit;
         private int Difficulty;
 
         public UD_FleshGolems_ReanimatedJoinParty()
@@ -41,7 +40,6 @@ namespace XRL.World.Conversations.Parts
             ReanimatorOnly = true;
             AskedFirstOnly = true;
             Visible = false;
-            CanRecruit = false;
             Difficulty = 0;
         }
 
@@ -141,46 +139,40 @@ namespace XRL.World.Conversations.Parts
                 || Speaker == null)
                 return false;
 
-            bool isPlayerTelepathic = Player.HasPart<XRL.World.Parts.Mutation.Telepathy>();
-            if (Player.IsMissingTongue()
-                && !isPlayerTelepathic)
-                return Player.Fail("You cannot proselytize without a tongue.", Silent);
-
-            if (!Player.CheckFrozen(Telepathic: true))
-                return false;
+            string doReplacement(string Text)
+                => Text
+                    ?.StartReplace()
+                    ?.AddObject(Speaker)
+                    ?.AddObject(Player)
+                    ?.ToString();
 
             if (Speaker == Player
                 || Speaker.HasCopyRelationship(Player)
                 || Speaker.IsOriginalPlayerBody())
-                return Player.Fail("You can't proselytize " + Player.itself + "!", Silent);
+                return Player.Fail(doReplacement("=object.Name= can't recruit =object.reflexive=!"), Silent);
 
-            if (!Player.CanMakeTelepathicContactWith(Speaker))
+            if (Player.IsMissingTongue() && !Player.CanMakeTelepathicContactWith(Speaker))
             {
-                string telepathicallyFailedMsg = "Without a tongue, you cannot recruit =subject.name=";
-                if (isPlayerTelepathic)
+                string telepathicallyFailedMsg = "Without a tongue, =object.name= cannot recruit =subject.name=";
+                if (Player.HasPart<XRL.World.Parts.Mutation.Telepathy>())
                 {
-                    telepathicallyFailedMsg += ", as you cannot make telepathic contact with =subject.objective=";
+                    telepathicallyFailedMsg += ", as =object.name= cannot make telepathic contact with =subject.objective=";
                 }
                 telepathicallyFailedMsg += ".";
-                telepathicallyFailedMsg = telepathicallyFailedMsg
-                    .StartReplace()
-                    .AddObject(Speaker)
-                    .ToString();
-                return Player.Fail(telepathicallyFailedMsg, Silent);
+                return Player.Fail(doReplacement(telepathicallyFailedMsg), Silent);
             }
+
             if (!Player.CheckFrozen(Telepathic: true, Telekinetic: false, Silent: true, Speaker))
-            {
-                string frozenFailedMsg = "Frozen solid, you cannot recruit =subject.name=."
-                    .StartReplace()
-                    .AddObject(Speaker)
-                    .ToString();
-                return Player.Fail(frozenFailedMsg, Silent);
-            }
+                return Player.Fail(doReplacement("Frozen solid, =object.name= cannot recruit =subject.name=."), Silent);
 
             Difficulty = CalculateDifficulty(Player, Speaker, out _, out _);
 
             bool result = Difficulty <= 0;
             Debug.YehNah("able to recruit", result, Indent: indent[0]);
+
+            if (!Silent
+                && !result)
+                Player.Fail(doReplacement("=object.Name= cannot recruit =subject.name= because =subject.subjective==subject.verb:'ve:afterpronoun= farmed more aura than =object.subjective= =ovject.verb:have:afterpronoun=."), Silent);
 
             return result;
         }
@@ -198,6 +190,7 @@ namespace XRL.World.Conversations.Parts
                 && CanRecruitReanimatedWithoutRep.Check(player, speaker))
             {
                 Visible = true;
+                Difficulty = CalculateDifficulty(player, speaker, out _, out _, Silent: true);
             }
             base.Awake();
         }
@@ -233,27 +226,32 @@ namespace XRL.World.Conversations.Parts
                 ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(EnteredElementEvent)),
+                    Debug.Arg(nameof(RecruitedPropTag), The.Speaker?.GetIntProperty(RecruitedPropTag) ?? -1),
                 });
 
-            if (The.Speaker is GameObject speaker
-                && The.Player is GameObject player
-                && CheckCanRecruit(player, speaker, out Difficulty))
-            {
-                Debug.Log(nameof(Difficulty), Difficulty, Indent: indent[1]);
-                speaker.SetAlliedLeader<AllyProselytize>(player);
-                speaker.SetIntProperty(RecruitedPropTag, 1);
+            if (The.Speaker is not GameObject speaker
+                || The.Player is not GameObject player
+                || !CheckCanRecruit(player, speaker, out Difficulty))
+                return false;
 
-                if (speaker.TryGetEffect(out Lovesick lovesick))
-                    lovesick.PreviousLeader = player;
+            Visible = false;
+            Debug.Log(nameof(Difficulty), Difficulty, Indent: indent[1]);
+            speaker.SetAlliedLeader<AllyProselytize>(player);
+            speaker.SetIntProperty(RecruitedPropTag, 1);
 
-                string successMsg = "=subject.Name= =subject.verb:join= =object.name=!"
-                    .StartReplace()
-                    .AddObject(speaker)
-                    .AddObject(player)
-                    .ToString();
+            Debug.Log(nameof(RecruitedPropTag), speaker.GetIntProperty(RecruitedPropTag), Indent: indent[1]);
 
-                Popup.Show(successMsg);
-            }
+            if (speaker.TryGetEffect(out Lovesick lovesick))
+                lovesick.PreviousLeader = player;
+
+            string successMsg = "=subject.Name= =subject.verb:join= =object.name=!"
+                .StartReplace()
+                .AddObject(speaker)
+                .AddObject(player)
+                .ToString();
+
+            Popup.Show(successMsg);
+
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(PrepareTextLateEvent E)
@@ -274,7 +272,14 @@ namespace XRL.World.Conversations.Parts
                 IConversationElement superParentElement = ParentElement;
                 while (superParentElement.Parent is IConversationElement shallowParentElement)
                 {
+                    bool doBreak = false;
+                    if (superParentElement is Choice
+                        && shallowParentElement is not Choice)
+                        doBreak = true;
                     superParentElement = shallowParentElement;
+
+                    if (doBreak)
+                        break;
                 }
                 superParentElement ??= ParentElement;
                 superParentElement.Text += "{{K|" + textAddition + "}}";

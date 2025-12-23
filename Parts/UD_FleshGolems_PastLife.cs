@@ -1061,7 +1061,8 @@ namespace XRL.World.Parts
                         FrankenBrain.PartyMembers = pastBrain.PartyMembers;
                         foreach ((int memberID, PartyMember partyMember) in FrankenBrain.PartyMembers)
                         {
-                            if (memberID == pastBrain.PartyLeader.BaseID)
+                            if (pastBrain.PartyLeader != null
+                                && memberID == pastBrain.PartyLeader.BaseID)
                             {
                                 FrankenBrain.SetPartyLeader(pastBrain.PartyLeader, Flags: partyMember.Flags, Silent: true);
                                 Debug.CheckYeh("Party Leader set", pastBrain.PartyLeader?.DebugName ?? NULL, Indent: indent[3]);

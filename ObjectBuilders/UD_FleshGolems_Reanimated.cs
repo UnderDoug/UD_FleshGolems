@@ -221,6 +221,7 @@ namespace XRL.World.ObjectBuilders
                     out bool accidental,
                     out bool killerIsCached);
 
+                Debug.YehNah(nameof(deathDescription), deathDescription != null, Indent: indent[1]);
                 var deathDetails = corpse.RequirePart<UD_FleshGolems_DeathDetails>();
                 deathDetails.Initialize(killer, weapon, projectile, deathDescription, accidental, killerIsCached);
 
@@ -504,6 +505,7 @@ namespace XRL.World.ObjectBuilders
                 destinedForReanimation = Entity.RequirePart<UD_FleshGolems_DestinedForReanimation>();
                 destinedForReanimation.PlayerWantsFakeDie = true;
                 UD_FleshGolems_DestinedForReanimation.HaveFakedDeath = false;
+                // return true;
             }
             if (!HasWorldGenerated)
             {

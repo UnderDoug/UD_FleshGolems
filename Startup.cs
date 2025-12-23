@@ -215,6 +215,10 @@ namespace UD_FleshGolems
                     player.ReceiveObject(recoilerObject);
                 }
                 player.ReceiveObject("Floating Glowsphere");
+                if (GameObject.Create("ScrapCape", AutoMod: "ModDisguise") is GameObject scrapCape)
+                {
+                    player.ReceiveObject(scrapCape);
+                }
             }
         }
         public static bool IsStaticRecoiler(GameObjectBlueprint Model)

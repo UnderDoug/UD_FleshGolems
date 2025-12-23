@@ -12,6 +12,7 @@ using static UD_FleshGolems.Const;
 using SerializeField = UnityEngine.SerializeField;
 using XRL.World.Parts;
 using System.Linq;
+using UD_FleshGolems.Logging;
 
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
@@ -41,21 +42,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             Creature,
             Name,
         }
-        
-        [SerializeField]
-        private GameObject _Corpse;
-        public GameObject Corpse
-        {
-            get => _Corpse;
-            private set
-            {
-                _Corpse = value;
-                CorpseID = _Corpse?.ID;
-            }
-        }
 
-        [SerializeField]
-        private string CorpseID;
+        public GameObject Corpse;
 
         // null: info doesn't exist;
         // false: info exists but is unknown;
@@ -80,17 +68,15 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         private DeathMemory()
         {
             Corpse = null;
-            CorpseID = null;
             Killed = null;
             Killer = null;
             Method = null;
             RudeToAsk = false;
         }
-        private DeathMemory(GameObject Corpse, string CorpseID = null, bool? Killed = null, KillerMemory? Killer = null, bool? Method = null, bool RudeToAsk = false)
+        private DeathMemory(GameObject Corpse, bool? Killed = null, KillerMemory? Killer = null, bool? Method = null, bool RudeToAsk = false)
             : this()
         {
             this.Corpse = Corpse;
-            this.CorpseID ??= CorpseID;
             this.Killed = Killed;
             this.Killer = Killer;
             this.Method = Method;
@@ -102,7 +88,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             this.Corpse = Corpse;
         }
         private DeathMemory(DeathMemory Source)
-            : this(Source.Corpse, Source.CorpseID, Source.Killed, Source.Killer, Source.Method, Source.RudeToAsk)
+            : this(Source.Corpse, Source.Killed, Source.Killer, Source.Method, Source.RudeToAsk)
         { }
         private DeathMemory(GameObject Corpse, DeathMemory Source)
             : this(Source)
@@ -111,10 +97,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         }
 
         public string GetCorpseID()
-            => CorpseID;
+            => Corpse?.ID;
 
         private string ConstructRandomChannel(string Seed)
-            => RandomChannelPrefix + ":" + CorpseID + ":" + Seed;
+            => RandomChannelPrefix + ":" + Corpse?.ID + ":" + Seed;
 
         private int SeededRandomHigh(string Seed, int High)
             => Stat.SeededRandom(ConstructRandomChannel(Seed), 0, 999) % High;
@@ -138,7 +124,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         private DeathMemory SetSeededRememberKilled(bool Amnesia = false, bool? Override = null)
         {
-            if (Override.HasValue)
+            if (Override != null)
             {
                 Killed = Override;
                 return this;
@@ -147,12 +133,13 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             Killed = false;
             if (!Amnesia)
                 Killed = SeededRememberKilled();
+
             return this;
         }
 
         private DeathMemory SetSeededRememberKiller(bool Amnesia = false, KillerMemory? Override = null)
         {
-            if (Override.HasValue)
+            if (Override != null)
             {
                 Killer = Override;
                 return this;
@@ -161,12 +148,13 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             Killer = KillerMemory.Amnesia;
             if (!Amnesia)
                 Killer = SeededRememberKiller();
+
             return this;
         }
 
         private DeathMemory SetSeededRememberMethod(bool Amnesia = false, bool? Override = null)
         {
-            if (Override.HasValue)
+            if (Override != null)
             {
                 Method = Override;
                 return this;
@@ -175,13 +163,14 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             Method = false;
             if (!Amnesia)
                 Method = SeededRememberMethod();
+
             return this;
         }
 
         private DeathMemory SetSeededRudeToAsk(bool? Override = null, int? ChanceOneIn = null)
         {
             bool setRudeToAsk;
-            if (Override.HasValue)
+            if (Override != null)
             {
                 setRudeToAsk = Override.GetValueOrDefault();
             }
@@ -189,6 +178,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             {
                 setRudeToAsk = SeededRudeToAsk(ChanceOneIn);
             }
+
             RudeToAsk = setRudeToAsk;
             return this;
         }
@@ -236,6 +226,38 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             KillerDetails KillerDetails,
             DeathDescription DeathDescription)
         {
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(Killer), Killer?.DebugName ?? NULL),
+                    Debug.Arg(nameof(Weapon), Weapon?.DebugName ?? NULL),
+                    Debug.Arg(nameof(KillerDetails), (KillerDetails != null).YehNah()),
+                    Debug.Arg(nameof(DeathDescription), (DeathDescription != null).YehNah()),
+                });
+
+            int rudeToAskChanceOverride = -1;
+            int? rudeToAskChanceOneIn = null;
+            if (Corpse?.GetPropertyOrTag(RUDE_TO_ASK_CHANCE_PROPTAG, null) is string rudeToAskChancePropTag
+                && int.TryParse(rudeToAskChancePropTag, out rudeToAskChanceOverride)
+                && rudeToAskChanceOverride >= 0)
+                rudeToAskChanceOneIn = rudeToAskChanceOverride;
+
+            bool? overrideRudeToAsk = null;
+            if (Corpse?.GetPropertyOrTag(RUDE_TO_ASK_PROPTAG) is string rudeToAskPropTag)
+            {
+                if (rudeToAskPropTag.EqualsNoCase("true"))
+                    overrideRudeToAsk = true;
+                else
+                if (rudeToAskPropTag.EqualsNoCase("false"))
+                    overrideRudeToAsk = false;
+
+                Debug.CheckYeh(RUDE_TO_ASK_PROPTAG, rudeToAskPropTag, indent[1]);
+            }
+
+            SetSeededRudeToAsk(overrideRudeToAsk, rudeToAskChanceOneIn);
+
             int amnesiaRoll = SeededRandomHigh(nameof(GetDeathMemoryAmnesiaChanceEvent), 100);
             int amnesiaChance = GetDeathMemoryAmnesiaChanceEvent.GetFor(
                 Corpse: Corpse,
@@ -250,7 +272,10 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             if (Corpse?.GetPropertyOrTag(AMNESIA_CHANCE_PROPTAG) is string amnesiaChancePropTag
                 && int.TryParse(amnesiaChancePropTag, out amnesiaChanceOverride)
                 && amnesiaChanceOverride >= 0)
+            {
                 amnesiaChance = amnesiaChanceOverride;
+                Debug.CheckYeh(AMNESIA_CHANCE_PROPTAG, amnesiaChanceOverride, indent[1]);
+            }
 
             if (Corpse?.GetPropertyOrTag(AMNESIA_PROPTAG) is string amnesiaPropTag)
             {
@@ -259,6 +284,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 else
                 if (amnesiaPropTag.EqualsNoCase("false"))
                     amnesiaChance = 0;
+
+                Debug.CheckYeh(AMNESIA_PROPTAG, amnesiaPropTag, indent[1]);
             }
 
             bool amnesia = amnesiaChance >= amnesiaRoll;
@@ -274,6 +301,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 else
                 if (killedOverridePropTag.EqualsNoCase("false"))
                     killedOverride = false;
+
+                Debug.CheckYeh(KILLED_PROPTAG, killedOverridePropTag, indent[1]);
             }
             if (Corpse?.GetPropertyOrTag(KILLER_PROPTAG) is string killerOverridePropTag)
             {
@@ -293,6 +322,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     "False" or
                     _ => KillerMemory.Amnesia,
                 };
+                Debug.CheckYeh(KILLER_PROPTAG, killerOverridePropTag.ToLower().Capitalize(), indent[1]);
             }
             if (Corpse?.GetPropertyOrTag(METHOD_PROPTAG) is string methodOverridePropTag)
             {
@@ -301,6 +331,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 else
                 if (methodOverridePropTag.EqualsNoCase("false"))
                     methodOverride = false;
+
+                Debug.CheckYeh(METHOD_PROPTAG, methodOverridePropTag, indent[1]);
             }
 
             if (!DeathDescription.Killed.IsNullOrEmpty())
@@ -312,24 +344,13 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             if (Weapon != null || !DeathDescription.Method.IsNullOrEmpty())
                 SetSeededRememberMethod(amnesia, methodOverride);
 
-            bool? overrideRudeToAsk = null;
-            if (Corpse?.GetPropertyOrTag(RUDE_TO_ASK_PROPTAG) is string rudeToAskPropTag)
-            {
-                if (rudeToAskPropTag.EqualsNoCase("true"))
-                    overrideRudeToAsk = true;
-                else
-                if (rudeToAskPropTag.EqualsNoCase("false"))
-                    overrideRudeToAsk = false;
-            }
+            Debug.YehNah(nameof(killedOverride), killedOverride, indent[0]);
+            Debug.Log("[" + (killerOverride != null ? (int)killerOverride : "-") + "] " + nameof(killerOverride), Indent: indent[0]);
+            Debug.YehNah(nameof(methodOverride), methodOverride, indent[0]);
 
-            int rudeToAskChanceOverride = -1;
-            int? rudeToAskChanceOneIn = null;
-            if (Corpse?.GetPropertyOrTag(RUDE_TO_ASK_CHANCE_PROPTAG, null) is string rudeToAskChancePropTag
-                && int.TryParse(rudeToAskChancePropTag, out rudeToAskChanceOverride)
-                && rudeToAskChanceOverride >= 0)
-                rudeToAskChanceOneIn = rudeToAskChanceOverride;
-
-            SetSeededRudeToAsk(overrideRudeToAsk, rudeToAskChanceOneIn);
+            Debug.YehNah(nameof(Killed), Killed, indent[0]);
+            Debug.Log("[" + (this.Killer != null ? (int)this.Killer : "-") + "]", nameof(this.Killer), indent[0]);
+            Debug.YehNah(nameof(Method), Method, indent[0]);
 
             return this;
         }
@@ -399,7 +420,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             && Method == null;
 
         public bool Validate(GameObject Corpse = null)
-            => (Corpse == null || Corpse.ID == CorpseID)
+            => (Corpse == null || Corpse == this.Corpse)
             && !EmptyDeath();
 
         public bool MemoryIsCompatibleWithElements(IEnumerable<string> ElementsList, bool Known)
@@ -453,40 +474,86 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
         public bool MemoryIsCompatibleWithElements(string Elements, bool Known)
             => MemoryIsCompatibleWithElements(Elements?.CachedCommaExpansion(), Known);
 
-        public StringMap<string> DebugInternals(GameObject Corpse = null) => new()
+        public StringMap<string> DebugInternals(GameObject Corpse = null)
+            => new()
+            {
+                { this.Corpse?.ID ?? NULL, nameof(this.Corpse) + "." + nameof(this.Corpse.ID) + ":" },
+                { nameof(IsValid), Validate(Corpse).YehNah() },
+                { nameof(HasAmnesia), HasAmnesia().YehNah() },
+                { nameof(Killed), Killed.YehNah() },
+                { nameof(Killer), "[" + (Killer != null ? (int)Killer : "-") + "]" },
+                { nameof(Method), Method.YehNah() },
+            };
+
+        private static string ProcessDebugInternalKVP(
+            string Accumulator,
+            KeyValuePair<string, string> Next,
+            string Joiner = "\n",
+            bool Color = false)
         {
-            { ":" + (CorpseID ?? NULL), nameof(CorpseID) },
-            { nameof(IsValid), Validate(Corpse).YehNah() },
-            { nameof(HasAmnesia), HasAmnesia().YehNah() },
-            { nameof(Killed), Killed.YehNah() },
-            { nameof(Killer), "[" + (Killer != null ? (int)Killer : "-") + "]" },
-            { nameof(Method), Method.YehNah() },
-        };
+            if (!Accumulator.IsNullOrEmpty())
+                Accumulator += Joiner;
+            string value = Next.Value;
+            string key = Next.Key;
+            if (Color
+                && !value.IsNullOrEmpty()
+                && !key.IsNullOrEmpty())
+            {
+                if (value.Contains("-"))
+                    value = value[0] + "{{w|" + value[1] + "}}" + value[2];
+                else
+                if (value.Length > 2 && int.TryParse(value[1].ToString(), out _))
+                    value = value[0] + "{{W|" + value[1] + "}}" + value[2];
+                else
+                if (value.Contains(TICK))
+                    value = value[0] + "{{g|" + value[1] + "}}" + value[2];
+                else
+                if (value.Contains(CROSS))
+                    value = value[0] + "{{r|" + value[1] + "}}" + value[2];
+                else
+                if (int.TryParse(key, out int corpseID))
+                    key = "{{w|" + corpseID + "}}";
+            }
+            return Accumulator + value + " " + key;
+        }
         public string DebugInternalsString(GameObject Corpse = null, string Joiner = "\n", bool Color = false)
             => DebugInternals(Corpse)
-                ?.Aggregate(
-                    seed: "",
-                    func: delegate (string a, KeyValuePair<string, string> n)
-                    {
-                        if (!a.IsNullOrEmpty())
-                            a += Joiner;
-                        string value = n.Value;
-                        string key = n.Key;
-                        if (Color)
-                        {
-                            if (value.Contains("-"))
-                                value = value[0] + "{{W|" + value[1] + "}}" + value[2];
-                            else
-                            if (value.Contains(TICK))
-                                value = value[0] + "{{g|" + value[1] + "}}" + value[2];
-                            else
-                            if (value.Contains(CROSS))
-                                value = value[0] + "{{r|" + value[1] + "}}" + value[2];
-                            else
-                            if (key.TryGetIndexOf(": ", out int colonEndIndex))
-                                key = key[..colonEndIndex] + "{{w|" + key[colonEndIndex..] + "}}";
-                        }
-                        return a + value + " " + key;
-                    });
+                ?.Aggregate("", func: (a, n) => ProcessDebugInternalKVP(a, n, Joiner, Color));
+
+        public static int ConvertNullableBoolToInt(bool? NullableBool)
+        {
+            if (NullableBool == null)
+                return 0;
+
+            if (NullableBool.GetValueOrDefault())
+                return 1;
+            else
+                return -1;
+        }
+        public static bool? ConvertIntToNullableBool(int Int)
+            => Int == 0 ? null : Int > 0;
+
+        public static int ConvertNullableKillerMemoryToInt(KillerMemory? NullableKillerMemory)
+            => NullableKillerMemory == null ? -1 : (int)NullableKillerMemory.GetValueOrDefault();
+
+        public static KillerMemory? ConvertIntToNullableKillerMemory(int Int)
+            => Int >= 0 ? (KillerMemory)Int : null;
+
+        public virtual void Write(SerializationWriter Writer)
+        {
+            Writer.WriteGameObject(Corpse);
+            Writer.WriteOptimized(ConvertNullableBoolToInt(Killed));
+            Writer.WriteOptimized(ConvertNullableKillerMemoryToInt(Killer));
+            Writer.WriteOptimized(ConvertNullableBoolToInt(Method));
+            Writer.Write(RudeToAsk);
+        }
+        public virtual void Read(SerializationReader Reader)
+        {
+            Corpse = Reader.ReadGameObject();
+            Killed = ConvertIntToNullableBool(Reader.ReadOptimizedInt32());
+            Killer = ConvertIntToNullableKillerMemory(Reader.ReadOptimizedInt32());
+            Method = ConvertIntToNullableBool(Reader.ReadOptimizedInt32());
+            RudeToAsk = Reader.ReadBoolean();
+        }
     }
 }

@@ -106,11 +106,6 @@ namespace XRL.World.Parts
             nameof(EyelessKingCrabSkuttle1),
         };
 
-        public static List<string> BlueprintsToSkipCheckingForCorpses => new()
-        {
-            "OrPet",
-        };
-
         public bool IsALIVE;
 
         public bool AlwaysAnimate;
@@ -1097,18 +1092,26 @@ namespace XRL.World.Parts
                 {
                     if (frankenCorpse.Blueprint == "UD_FleshGolems Jofo Qudwufo")
                     {
+                        GameObject madMonger = UD_FleshGolems_NecromancySystem.System?.TheMadMonger;
                         Debug.Log("Giving Jofo Qudwufo a special DeathDescription", Indent: indent[3]);
                         reanimationHelper.DeathDetails.DeathDescription = new(
                             Category: "electrocuted",
                             Were: true,
                             Killed: "zapped to death",
-                            Killer: UD_FleshGolems_NecromancySystem.System?.TheMadMonger?.GetReferenceDisplayName(Short: true),
+                            Killer: madMonger?.GetReferenceDisplayName(Short: true),
                             With: false,
                             Method: "failed experiment")
                         {
                             ParentCorpse = frankenCorpse,
                         };
-                        reanimationHelper.DeathDetails.UpdateKiller(UD_FleshGolems_NecromancySystem.System?.TheMadMonger);
+                        reanimationHelper.DeathDetails.UpdateKiller(madMonger);
+                        GameObject madMongerWeapon =
+                            madMonger?.GetInventoryAndEquipment()
+                                ?.GetRandomElementCosmetic(IsNotImprovisedWeapon);
+                        if (madMongerWeapon != null)
+                        {
+                            reanimationHelper.DeathDetails.UpdateWeapon(madMongerWeapon, false);
+                        }
                     }
                     reanimationHelper.DeathDetails.DeathDescription ??= ProduceRandomDeathDescription(frankenCorpse);
                     if (reanimationHelper.DeathDetails.DeathMemory == null)
@@ -1165,10 +1168,10 @@ namespace XRL.World.Parts
                 string creatureType = frankenCorpse.GetBlueprint().DisplayName();
                 if (identityType == IdentityType.Player)
                 {
-                    creatureType = frankenCorpse.GetSubtype()
-                        ?? frankenCorpse.GetGenotype()
-                        ?? frankenCorpse.GetSpecies()
-                        ?? creatureType;
+                    creatureType = frankenCorpse.GetSubtype()?.ToLower()
+                        ?? frankenCorpse.GetGenotype()?.ToLower()
+                        ?? frankenCorpse.GetSpecies()?.ToLower()
+                        ?? creatureType?.ToLower();
                     creatureType += " corpse";
                 }
                 else

@@ -1125,4 +1125,61 @@
     <tag Name="Tier" Value="5" />
   </object>
   
+  <!--
+  
+  Fixes
+  
+  -->
+  <object Name="TibularHydrojets" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="HyperElasticAnkleTendons" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="StabilizerArmLocks" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="RapidReleaseFingerFlexors" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="CarbideHandBones" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="Pentaceps" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="InflatableAxons" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="PneumaticPistons" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="AnchorSpikes" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="GroundingShunts" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="BionicHands" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="UltraElasticAnkleTendons" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="GiantHands" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="PalladiumElectrodeposits" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="FulleriteHandBones" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="MotorizedTreads" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  <object Name="CrysteelHandBones" Load="Merge">
+    <tag Name="Gender" Value="plural" />
+  </object>
+  
 </objects>

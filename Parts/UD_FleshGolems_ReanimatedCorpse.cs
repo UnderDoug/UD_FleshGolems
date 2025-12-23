@@ -390,10 +390,10 @@ namespace XRL.World.Parts
             {
                 string replacementName = E.Object.GetBlueprint().DisplayName().RemoveAll("[", "]");
                 if (IdentityType == IdentityType.Player)
-                    replacementName = E.Object.GetSubtype()
-                        ?? E.Object.GetGenotype()
-                        ?? E.Object.GetSpecies()
-                        ?? replacementName;
+                    replacementName = E.Object.GetSubtype()?.ToLower()
+                        ?? E.Object.GetGenotype()?.ToLower()
+                        ?? E.Object.GetSpecies()?.ToLower()
+                        ?? replacementName?.ToLower();
 
                 if (IdentityType < IdentityType.ParticipantVillager && IdentityType > IdentityType.Player)
                 {

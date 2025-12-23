@@ -29,6 +29,7 @@ using XRL.World.Capabilities;
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
 using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
 using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
+using static XRL.World.Parts.UD_FleshGolems_VengeanceAssistant;
 using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
 
 using UD_FleshGolems;
@@ -48,7 +49,123 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_DeathDetails : IScribedPart
     {
-        [SerializeField]
+        public static Dictionary<string, List<string>> CategorizedEvidenceOfDeath = new()
+        {
+            {   // Heat damage w/ NoBurn (only steam)
+                "cooked", new()
+                {
+                    "burn-scars",
+                    "charred =subject.uD_xTag:TextFragments:Skin=",
+                }
+            },
+            {   // Heat damage w/o NoBurn
+                "immolated", new()
+                {
+                    "charred =subject.uD_xTag:TextFragments:Skin=",
+                    "scorch-marks",
+                }
+            },
+            {   // Plasma damage
+                "plasma-burned to death", new()
+                {
+                    "scorch-marks",
+                    "an {{auroral|auroral}} after-glow",
+                }
+            },
+            {   // Cold damage
+                "frozen to death", new()
+                {
+                    "frost-bitten extremities",
+                    "an icy countenance",
+                }
+            },
+            {   // Electric damage
+                "electrocuted", new()
+                {
+                    "electrical burns",
+                    "lightning-shaped scars",
+                }
+            },
+            {   // Thirst
+                "thirst", new()
+                {
+                    "sunken features",
+                    "signs of dessication",
+                }
+            },
+            {   // Poison damage
+                "died of poison", new()
+                {
+                    "sunken features",
+                    "a palid complexion",
+                    "blackened extremities",
+                }
+            },
+            {   // Bleeding damage
+                "bled to death", new()
+                {
+                    "hollow features",
+                    "a palid complexion",
+                }
+            },
+            {   // Metabolic damage (hulk honey)
+                "failed", new()
+                {
+                    "bent limbs",
+                    "exaggerated features",
+                }
+            },
+            {   // Asphyxiation damage (osseous ash)
+                "died of asphyxiation", new()
+                {
+                    "bulging features",
+                }
+            },
+            {   // Psionic damage
+                "psychically extinguished", new()
+                {
+                    "a far-away stare",
+                    "a haunted affect",
+                }
+            },
+            {   // Drain damage (syphon vim)
+                "drained to extinction", new()
+                {
+                    "hollow features",
+                    "sunken features",
+                    "a palid complexion",
+                }
+            },
+            {   // Thorns damage
+                "pricked to death", new()
+                {
+                    "puncture scars",
+                    "holes where they shouldn't be",
+                }
+            },
+            {   // Bite damage (any bite)
+                "bitten to death", new()
+                {
+                    "bite-marks",
+                    "teeth-marks",
+                    "pieces missing",
+                }
+            },
+            {   // Killed
+                "killed", new()
+                {
+                    "battle scars",
+                    "signs of a lost fight",
+                }
+            },
+        };
+        public static List<string> GenericEvidenceOfDeath = new()
+        {
+            "mangled limbs",
+            "open wounds",
+            "visible decay",
+        };
+
         private bool _Init;
 
         public bool Init
@@ -57,17 +174,16 @@ namespace XRL.World.Parts
             private set => _Init = value;
         }
 
-        [SerializeField]
+        public static List<int> KillerEventIDs => new()
+        {
+            ReplaceInContextEvent.ID,
+            OnDeathRemovalEvent.ID,
+        };
         private GameObject _Killer;
         public GameObject Killer
         {
             get => _Killer;
-            protected set
-            {
-                _Killer?.UnregisterEvent(this, ReplaceInContextEvent.ID);
-                _Killer = UpdateKiller(value);
-                _Killer?.RegisterEvent(this, ReplaceInContextEvent.ID);
-            }
+            protected set => UpdateKiller(value);
         }
         public bool KillerIsCached;
 
@@ -85,6 +201,8 @@ namespace XRL.World.Parts
 
         public bool DeathQuestionsAreRude => DeathMemory != null && DeathMemory.GetIsRudeToAsk();
 
+        public List<string> EvidenceOfDeath;
+
         public UD_FleshGolems_DeathDetails()
         {
             Init = false;
@@ -98,6 +216,8 @@ namespace XRL.World.Parts
             DeathDescription = null;
 
             Accidental = false;
+
+            EvidenceOfDeath = null;
         }
 
         public bool Initialize(IDeathEvent DeathEvent)
@@ -273,8 +393,11 @@ namespace XRL.World.Parts
 
         public GameObject UpdateKiller(GameObject Killer)
         {
-            if (DeathDescription != null
-                && DeathDescription.Killer != "")
+            foreach (int eventID in KillerEventIDs)
+                _Killer?.UnregisterEvent(this, eventID);
+
+            _Killer = Killer;
+            if (DeathDescription != null)
             {
                 DeathDescription.SetKiller(Killer);
                 if (KillerDetails != null)
@@ -283,7 +406,21 @@ namespace XRL.World.Parts
                 }
                 KillerDetails ??= new(ParentObject, Killer);
             }
+
+            foreach (int eventID in KillerEventIDs)
+                _Killer?.RegisterEvent(this, eventID);
             return Killer;
+        }
+
+        public GameObject UpdateWeapon(GameObject Weapon, bool OverrideNonEmptyMethod = true)
+        {
+            this.Weapon = Weapon;
+            if (DeathDescription != null
+                && OverrideNonEmptyMethod)
+            {
+                DeathDescription.SetMethod(Weapon);
+            }
+            return Weapon;
         }
 
         public override bool AllowStaticRegistration()
@@ -291,6 +428,7 @@ namespace XRL.World.Parts
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
             || ID == ReplaceInContextEvent.ID
+            || ID == GetExtraPhysicalFeaturesEvent.ID
             || ID == GetDebugInternalsEvent.ID
             ;
         public override bool HandleEvent(ReplaceInContextEvent E)
@@ -303,6 +441,69 @@ namespace XRL.World.Parts
             if (E.Replacement == ParentObject)
             {
                 DeathMemory = DeathMemory.CopyMemories(E.Replacement, DeathMemory);
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(OnDeathRemovalEvent E)
+        {
+            if (E.Dying == Killer
+                && E.Dying.GetDropInventory() is IInventory dropInventory
+                && dropInventory.GetInventoryZone() is Zone deathZone
+                && deathZone.Built
+                && dropInventory.GetInventoryCell() is Cell dropCell
+                && dropCell.FindObject(GO => IsCorpseOfThisEntityOrDying(ParentObject, GO, E)) is GameObject corpse)
+            {
+                UpdateKiller(corpse);
+            }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(GetExtraPhysicalFeaturesEvent E)
+        {
+            if (E.Object == ParentObject)
+            {
+                if (EvidenceOfDeath == null)
+                {
+                    EvidenceOfDeath = new();
+
+                    List<string> categorizedEvidenceList = null;
+                    if (DeathDescription?.Category is string category
+                        && CategorizedEvidenceOfDeath.ContainsKey(category))
+                        categorizedEvidenceList = new(CategorizedEvidenceOfDeath[category]);
+
+                    List<string> genericEvidenceList = new(GenericEvidenceOfDeath);
+
+                    if (!categorizedEvidenceList.IsNullOrEmpty())
+                    {
+                        string categorizedEvidence = categorizedEvidenceList.GetRandomElementCosmetic();
+                        categorizedEvidenceList.Remove(categorizedEvidence);
+                        EvidenceOfDeath.Add(categorizedEvidence);
+                        if (!categorizedEvidenceList.IsNullOrEmpty())
+                        {
+                            genericEvidenceList.AddRange(categorizedEvidenceList);
+                        }
+                    }
+                    if (!genericEvidenceList.IsNullOrEmpty())
+                    {
+                        string genericEvidence = null;
+                        if (EvidenceOfDeath.Count < 1)
+                        {
+                            genericEvidence = genericEvidenceList.GetRandomElementCosmetic();
+                            genericEvidenceList.Remove(genericEvidence);
+                            EvidenceOfDeath.Add(genericEvidence);
+                        }
+                        if (!genericEvidenceList.IsNullOrEmpty()
+                            && Stat.RollCached("1d3") == 1)
+                        {
+                            genericEvidence = genericEvidenceList.GetRandomElementCosmetic();
+                            genericEvidenceList.Remove(genericEvidence);
+                            EvidenceOfDeath.Add(genericEvidence);
+                        }
+                    }
+                }
+                foreach (string evidence in EvidenceOfDeath ?? new())
+                {
+                    E.Features.Add(evidence);
+                }
             }
             return base.HandleEvent(E);
         }
@@ -326,7 +527,21 @@ namespace XRL.World.Parts
                 .ToString();
             thirdPersonReason += ".";
             E.AddEntry(this, nameof(DeathDescription.ThirdPersonReason), thirdPersonReason);
+            E.AddEntry(this, nameof(EvidenceOfDeath), EvidenceOfDeath?.Aggregate("", (a, n) => a + "," + n)?[1..]);
             return base.HandleEvent(E);
+        }
+
+        public override void Write(GameObject Basis, SerializationWriter Writer)
+        {
+            Writer.Write(_Init);
+            Writer.WriteGameObject(_Killer);
+            base.Write(Basis, Writer);
+        }
+        public override void Read(GameObject Basis, SerializationReader Reader)
+        {
+            _Init = Reader.ReadBoolean();
+            _Killer = Reader.ReadGameObject();
+            base.Read(Basis, Reader);
         }
     }
 }

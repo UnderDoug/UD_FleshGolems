@@ -112,6 +112,9 @@ namespace UD_FleshGolems
 
         public static string GetPlayerBlueprint()
         {
+            if (The.Player != null)
+                return The.Player.Blueprint;
+
             if (!EmbarkBuilderConfiguration.activeModules.IsNullOrEmpty())
             {
                 foreach (AbstractEmbarkBuilderModule activeModule in EmbarkBuilderConfiguration.activeModules)
@@ -386,11 +389,15 @@ namespace UD_FleshGolems
                 : WithIndefiniteArticle(word);
         }
 
-            /* 
-             * 
-             * Wishes!
-             * 
-             */
+        public static bool IsNotImprovisedWeapon(GameObject Object)
+            => Object.TryGetPart(out MeleeWeapon mw)
+            && !mw.IsImprovisedWeapon();
 
-        }
+        /* 
+         * 
+         * Wishes!
+         * 
+         */
+
+    }
     }

@@ -39,20 +39,26 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { "brought", "bringing" },
             { "caught", "catching" },
             { "drank", "drinking" },
+            { "faught", "fighting" },
+            { "fell", "falling" },
             { "forgot", "forgetting" },
             { "got", "getting" },
             { "had", "having" },
             { "left", "leaving" },
+            { "made", "making" },
             { "ran", "running" },
             { "sought", "seeking" },
             { "spoke", "speaking" },
             { "thought", "thinking" },
+            { "taught", "teaching" },
             { "took", "taking" },
+            { "went", "going" },
         };
 
-        [SerializeField]
+        protected static char[] Vowels = new char[] { 'A', 'a', 'E', 'e', 'I', 'i', 'O', 'o', 'U', 'u', };
+
         private string ParentCorpseID;
-        [SerializeField]
+
         private GameObject _ParentCorpse;
         public GameObject ParentCorpse
         {
@@ -181,36 +187,37 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 VerbFormConversions[verbing] = Verbed;
             }
             else
-            if (VerbFormConversionExceptions.TryGetValue(Verbed, out verbing)
-                && !verbing.IsNullOrEmpty())
             {
-                VerbFormConversions[Verbed] = verbing;
-                VerbFormConversions[verbing] = Verbed;
-            }
-            else
-            if (Verbed.EndsWith("ied"))
-            {
-                verbing = Verbed[..^3] + "ying";
-                VerbFormConversions[Verbed] = verbing;
-                VerbFormConversions[verbing] = Verbed;
-            }
-            else
-            if (Verbed.EndsWith("ed"))
-            {
-                verbing = Verbed[..^2] + "ing";
-                VerbFormConversions[Verbed] = verbing;
-                VerbFormConversions[verbing] = Verbed;
-            }
-            else
-            if (Verbed.EndsWith("e"))
-            {
-                verbing = Verbed[..^1] + "ing";
-                VerbFormConversions[Verbed] = verbing;
-                VerbFormConversions[verbing] = Verbed;
-            }
-            else
-            {
-                verbing = Verbed + "ing";
+                if (!VerbFormConversionExceptions.TryGetValue(Verbed, out verbing)
+                    || verbing.IsNullOrEmpty())
+                {
+                    if (Verbed.EndsWith("ied"))
+                    {
+                        verbing = Verbed[..^3] + "ying";
+                    }
+                    else
+                    if (Verbed.EndsWith("ed"))
+                    {
+                        verbing = Verbed[..^2] + "ing";
+                    }
+                    else
+                    if (Verbed.EndsWith("e"))
+                    {
+                        verbing = Verbed[..^1] + "ing";
+                    }
+                    else
+                    {
+                        verbing = Verbed + "ing";
+                    }
+                    if (!verbing.IsNullOrEmpty()
+                        && Verbed.Length > 4
+                        && Verbed[^5].EqualsAny(Vowels)
+                        && !Verbed[^4].EqualsAny(Vowels)
+                        && !Verbed[^4].EqualsAny('Y', 'y'))
+                    {
+                        verbing = Verbed[..^4] + Verbed[^4] + Verbed[^3..];
+                    }
+                }
                 VerbFormConversions[Verbed] = verbing;
                 VerbFormConversions[verbing] = Verbed;
             }
@@ -389,7 +396,9 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                             return acc;
                         });
             }
-            bool killerProperlyNamed = E.Killer != null && E.Killer.HasProperName;
+            bool killerProperlyNamed = E.Killer != null
+                && (E.Killer.HasProperName
+                    || E.Killer.IsPlayer());
             CopyFrom(killedCategoryDescriptionsList
                 ?.GetRandomElementCosmetic(delegate (DeathDescription deathDescription)
                 {
@@ -699,7 +708,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             { nameof(Category), Category ?? NULL },
             { nameof(Were), Were.ToString() },
             { nameof(Killed), Killed ?? NULL },
-            { nameof(Killing), (Killing ?? NULL) + "/" + (BeingKilled() ?? NULL) },
+            { nameof(Killing), (Killing ?? NULL) + "|" + (BeingKilled() ?? NULL) },
             { nameof(By), By.ToString() },
             { nameof(Killer), Killer ?? NULL },
             { nameof(With), With.ToString() },
@@ -713,5 +722,16 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 ?.Aggregate(
                     seed: "",
                     func: (a, n) => a + "\n" + n.Key + ": " + n.Value);
+
+        public virtual void Write(SerializationWriter Writer)
+        {
+            Writer.WriteGameObject(_ParentCorpse);
+            Writer.WriteOptimized(ParentCorpseID);
+        }
+        public virtual void Read(SerializationReader Reader)
+        {
+            _ParentCorpse = Reader.ReadGameObject();
+            ParentCorpseID = Reader.ReadOptimizedString();
+        }
     }
 }

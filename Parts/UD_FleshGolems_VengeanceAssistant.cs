@@ -53,6 +53,13 @@ namespace XRL.World.Parts
             && Object.IsInanimateCorpse()
             && Object.GetStringProperty("SourceID") == ParentObject?.ID;
 
+        public static bool IsCorpseOfThisEntityOrDying(GameObject Entity, GameObject Object, IDeathEvent E)
+            => Object != null
+            && Object.IsInanimateCorpse()
+            && Object.GetStringProperty("SourceID") is string sourceID
+            && (sourceID == Entity?.ID
+                || sourceID == E.Dying?.ID);
+
         public bool IsCorpseOfThisEntityOrDying(GameObject Object, IDeathEvent E)
             => Object != null
             && Object.IsInanimateCorpse()

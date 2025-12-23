@@ -928,7 +928,7 @@ namespace XRL.World.Conversations.Parts
                                         lastWord = lastWord[shaderIndex..];
                                     }
                                 }
-                                fragment = lastWord.FirstRoughlyHalf(3);
+                                fragment = lastWord.FirstRoughlyHalf(1);
 
                                 Debug.Log(nameof(shader), shader, indent[2]);
                                 Debug.Log(nameof(fragment), fragment, indent[2]);
@@ -1008,7 +1008,7 @@ namespace XRL.World.Conversations.Parts
                 && speaker.GetDeathDetails() is UD_FleshGolems_DeathDetails deathDetails)
             {
                 string debugString = deathDetails.DeathMemory?.DebugInternalsString(speaker, " | ", true);
-                E.Text += "{{K|" + debugString + "}}";
+                E.Text += "\n\n{{K|" + debugString + "}}";
             }
             return base.HandleEvent(E);
         }
