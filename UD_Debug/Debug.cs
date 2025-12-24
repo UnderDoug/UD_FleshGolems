@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Linq;
 
@@ -14,7 +15,6 @@ using UD_FleshGolems;
 using static UD_FleshGolems.Options;
 using static UD_FleshGolems.Utils;
 using static UD_FleshGolems.Const;
-using System.Runtime.CompilerServices;
 
 namespace UD_FleshGolems.Logging
 {

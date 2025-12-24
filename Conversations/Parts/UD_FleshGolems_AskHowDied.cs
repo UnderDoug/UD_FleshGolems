@@ -457,11 +457,12 @@ namespace XRL.World.Conversations.Parts
                 ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(ConversationTextList.Count), ConversationTextList?.Count ?? 0),
-                    Debug.Arg(nameof(ConversationTextList.Count), ConversationTextList?.Count ?? 0),
+                    Debug.Arg(nameof(DeathMemory) + "." + nameof(DeathMemory.IsValid), DeathMemory.IsValid),
                     Debug.Arg(nameof(ProspectiveConversationText.PathID), ProspectiveConversationText?.PathID?.TextAfter(".") ?? "no ID"),
                 });
 
             ConversationTextList ??= new();
+
             if (!DeathMemory.IsValid
                 || ProspectiveConversationText == null)
                 return false;
@@ -614,15 +615,15 @@ namespace XRL.World.Conversations.Parts
                     func: delegate (ConversationText acc, ConversationText next)
                     {
                         ConversationText newConversationText = acc;
-                        Debug.Log(iteration + "] " + newConversationText?.PathID?.TextAfter("."), Indent: indent[1]);
                         if (next != seedConversationText)
                         {
                             if (iteration % 2 == 0)
                                 next.Text = next.Text?.Capitalize();
 
                             newConversationText = acc.Append(next, getJoiner(iteration), new() { MEMORY_ELEMENT });
-                            iteration++;
                         }
+                        Debug.Log(iteration + "] " + newConversationText?.PathID?.TextAfter("."), Indent: indent[1]);
+                        iteration++;
                         return newConversationText;
                     });
         }

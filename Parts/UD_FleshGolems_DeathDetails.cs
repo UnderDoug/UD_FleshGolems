@@ -423,6 +423,50 @@ namespace XRL.World.Parts
             return Weapon;
         }
 
+        public List<string> GetEvidenceOfDeath()
+        {
+            if (EvidenceOfDeath == null)
+            {
+                EvidenceOfDeath = new();
+
+                List<string> categorizedEvidenceList = null;
+                if (DeathDescription?.Category is string category
+                    && CategorizedEvidenceOfDeath.ContainsKey(category))
+                    categorizedEvidenceList = new(CategorizedEvidenceOfDeath[category]);
+
+                List<string> genericEvidenceList = new(GenericEvidenceOfDeath);
+
+                if (!categorizedEvidenceList.IsNullOrEmpty())
+                {
+                    string categorizedEvidence = categorizedEvidenceList.GetRandomElementCosmetic();
+                    categorizedEvidenceList.Remove(categorizedEvidence);
+                    EvidenceOfDeath.Add(categorizedEvidence);
+                    if (!categorizedEvidenceList.IsNullOrEmpty())
+                    {
+                        genericEvidenceList.AddRange(categorizedEvidenceList);
+                    }
+                }
+                if (!genericEvidenceList.IsNullOrEmpty())
+                {
+                    string genericEvidence = null;
+                    if (EvidenceOfDeath.Count < 1)
+                    {
+                        genericEvidence = genericEvidenceList.GetRandomElementCosmetic();
+                        genericEvidenceList.Remove(genericEvidence);
+                        EvidenceOfDeath.Add(genericEvidence);
+                    }
+                    if (!genericEvidenceList.IsNullOrEmpty()
+                        && Stat.RollCached("1d3") == 1)
+                    {
+                        genericEvidence = genericEvidenceList.GetRandomElementCosmetic();
+                        genericEvidenceList.Remove(genericEvidence);
+                        EvidenceOfDeath.Add(genericEvidence);
+                    }
+                }
+            }
+            return EvidenceOfDeath;
+        }
+
         public override bool AllowStaticRegistration()
             => true;
         public override bool WantEvent(int ID, int Cascade)
@@ -461,46 +505,7 @@ namespace XRL.World.Parts
         {
             if (E.Object == ParentObject)
             {
-                if (EvidenceOfDeath == null)
-                {
-                    EvidenceOfDeath = new();
-
-                    List<string> categorizedEvidenceList = null;
-                    if (DeathDescription?.Category is string category
-                        && CategorizedEvidenceOfDeath.ContainsKey(category))
-                        categorizedEvidenceList = new(CategorizedEvidenceOfDeath[category]);
-
-                    List<string> genericEvidenceList = new(GenericEvidenceOfDeath);
-
-                    if (!categorizedEvidenceList.IsNullOrEmpty())
-                    {
-                        string categorizedEvidence = categorizedEvidenceList.GetRandomElementCosmetic();
-                        categorizedEvidenceList.Remove(categorizedEvidence);
-                        EvidenceOfDeath.Add(categorizedEvidence);
-                        if (!categorizedEvidenceList.IsNullOrEmpty())
-                        {
-                            genericEvidenceList.AddRange(categorizedEvidenceList);
-                        }
-                    }
-                    if (!genericEvidenceList.IsNullOrEmpty())
-                    {
-                        string genericEvidence = null;
-                        if (EvidenceOfDeath.Count < 1)
-                        {
-                            genericEvidence = genericEvidenceList.GetRandomElementCosmetic();
-                            genericEvidenceList.Remove(genericEvidence);
-                            EvidenceOfDeath.Add(genericEvidence);
-                        }
-                        if (!genericEvidenceList.IsNullOrEmpty()
-                            && Stat.RollCached("1d3") == 1)
-                        {
-                            genericEvidence = genericEvidenceList.GetRandomElementCosmetic();
-                            genericEvidenceList.Remove(genericEvidence);
-                            EvidenceOfDeath.Add(genericEvidence);
-                        }
-                    }
-                }
-                foreach (string evidence in EvidenceOfDeath ?? new())
+                foreach (string evidence in GetEvidenceOfDeath() ?? new())
                 {
                     E.Features.Add(evidence);
                 }

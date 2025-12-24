@@ -690,9 +690,9 @@ namespace XRL.World.Parts
             if (E.ID == "GameStart"
                 && ParentObject == The.Player)
             {
-                string creatureType = ParentObject.GetSubtype()
-                    ?? ParentObject.GetGenotype()
-                    ?? ParentObject.GetSpecies();
+                string creatureType = ParentObject.GetSubtype()?.ToLower()
+                    ?? ParentObject.GetGenotype()?.ToLower()
+                    ?? ParentObject.GetSpecies()?.ToLower();
 
                 if (!creatureType.IsNullOrEmpty())
                 {

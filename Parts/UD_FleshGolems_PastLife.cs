@@ -972,9 +972,7 @@ namespace XRL.World.Parts
                 previouslySentientBeingsRep -= 25;
                 Debug.CheckYeh(nameof(PastLife.WasBuiltReanimated), nameof(previouslySentientBeingsRep) + "-" + previouslySentientBeingsRep, indent[2]);
             }
-            if (!UD_FleshGolems_Reanimated.HasWorldGenerated
-                || (frankenCorpse.TryGetPart(out UD_FleshGolems_DestinedForReanimation destinedForReanimation)
-                    && destinedForReanimation.DelayTillZoneBuild))
+            if (!UD_FleshGolems_Reanimated.HasWorldGenerated)
             {
                 previouslySentientBeingsRep -= 25;
                 Debug.CheckYeh(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), nameof(previouslySentientBeingsRep) + "-" + previouslySentientBeingsRep, indent[2]);

@@ -312,10 +312,6 @@ namespace XRL.World.ObjectBuilders
                     var destinedForReanimation = Entity.RequirePart<UD_FleshGolems_DestinedForReanimation>();
                     destinedForReanimation.Corpse = corpse;
                     destinedForReanimation.BuiltToBeReanimated = true;
-                    if (EntityNeedsDelayedReanimation(Entity) && false)
-                    {
-                        destinedForReanimation.DelayTillZoneBuild = true;
-                    }
                 }
             }
             catch (Exception x)
@@ -498,14 +494,22 @@ namespace XRL.World.ObjectBuilders
 
         public static bool Unkill(GameObject Entity, out GameObject Corpse, string Context = null)
         {
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                        Debug.Arg(nameof(Entity), Entity?.DebugName ?? NULL),
+                        Debug.Arg(nameof(Context), Context ?? NULL),
+                });
             Corpse = null;
             UD_FleshGolems_DestinedForReanimation destinedForReanimation = null;
             if (Entity.IsPlayer() || Entity.HasPlayerBlueprint())
             {
                 destinedForReanimation = Entity.RequirePart<UD_FleshGolems_DestinedForReanimation>();
                 destinedForReanimation.PlayerWantsFakeDie = true;
+                destinedForReanimation.BuiltToBeReanimated = true;
                 UD_FleshGolems_DestinedForReanimation.HaveFakedDeath = false;
-                // return true;
+                return true;
             }
             if (!HasWorldGenerated)
             {
@@ -554,6 +558,51 @@ namespace XRL.World.ObjectBuilders
         public static bool Unkill(GameObject Creature, string Context = null)
         {
             return Unkill(Creature, out _, Context);
+        }
+
+        public static bool InitializeDeathDetailsThenFakeDeath(
+            GameObject Entity,
+            GameObject Corpse,
+            IDeathEvent DeathEvent = null)
+        {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(Entity), Entity?.DebugName ?? NULL),
+                    Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
+                    Debug.Arg(nameof(DeathEvent), DeathEvent != null),
+                });
+
+            if (Entity == null
+                || Corpse == null)
+                return false;
+
+            bool success;
+            var deathDetails = Corpse.RequirePart<UD_FleshGolems_DeathDetails>();
+            if (DeathEvent == null)
+            {
+                success = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(
+                    Dying: Entity,
+                    DeathDetails: ref deathDetails,
+                    RelentlessIcon: Corpse.RenderForUI(),
+                    RelentlessTitle: Corpse.GetReferenceDisplayName(Short: true));
+            }
+            else
+            {
+                deathDetails.Initialize(DeathEvent);
+                success = UD_FleshGolems_DestinedForReanimation.FakeDeath(
+                    Dying: Entity,
+                    E: DeathEvent,
+                    DoAchievement: true,
+                    RelentlessIcon: Corpse.RenderForUI(),
+                    RelentlessTitle: Corpse.GetReferenceDisplayName(Short: true));
+            }
+            deathDetails.KillerDetails?.Log();
+
+            Debug.YehNah(nameof(success), success, indent);
+            
+            return success;
         }
 
         public static bool ReplaceEntityWithCorpse(
@@ -623,26 +672,7 @@ namespace XRL.World.ObjectBuilders
             {
                 if (FakeDeath)
                 {
-                    var deathDetails = Corpse.RequirePart<UD_FleshGolems_DeathDetails>();
-                    if (DeathEvent == null)
-                    {
-                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeRandomDeath(
-                            Dying: Entity,
-                            DeathDetails: ref deathDetails,
-                            RelentlessIcon: Corpse.RenderForUI(),
-                            RelentlessTitle: Corpse.GetReferenceDisplayName(Short: true));
-                    }
-                    else
-                    {
-                        deathDetails.Initialize(DeathEvent);
-                        FakedDeath = UD_FleshGolems_DestinedForReanimation.FakeDeath(
-                            Dying: Entity,
-                            E: DeathEvent,
-                            DoAchievement: true,
-                            RelentlessIcon: Corpse.RenderForUI(),
-                            RelentlessTitle: Corpse.GetReferenceDisplayName(Short: true));
-                    }
-                    deathDetails.KillerDetails?.Log();
+                    InitializeDeathDetailsThenFakeDeath(Entity, Corpse, DeathEvent);
                 }
 
                 ReplaceInContextEvent.Send(Entity, Corpse);

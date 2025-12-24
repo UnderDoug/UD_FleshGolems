@@ -112,6 +112,20 @@ namespace UD_FleshGolems
         public static bool HasPlayerBlueprint(this GameObject Entity)
             => Entity.Blueprint.IsPlayerBlueprint();
 
+        public static string ToLiteral(this string String, bool Quotes = false)
+        {
+            if (String.IsNullOrEmpty())
+            {
+                return null;
+            }
+            string output = Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(String, false);
+            if (Quotes)
+            {
+                output = "\"" + output + "\"";
+            }
+            return output;
+        }
+
         public static string ThisManyTimes(this string @string, int Times = 1)
         {
             if (Times < 1)
@@ -1413,7 +1427,7 @@ namespace UD_FleshGolems
                 {
                     Debug.Arg(nameof(ConversationText), ConversationText != null),
                     Debug.Arg(nameof(OtherConversationText), OtherConversationText != null),
-                    Debug.Arg(nameof(Joiner), "\"" + (Joiner ?? "null") + "\""),
+                    Debug.Arg(nameof(Joiner), "\"" + (Joiner?.ToLiteral() ?? "null") + "\""),
                     Debug.Arg(nameof(AttributesToConcatenate), "\"" + (AttributesToConcatenate?.Aggregate("", (a,n) => a + "," + n)?[1..] ?? "none") + "\""),
                 });
 

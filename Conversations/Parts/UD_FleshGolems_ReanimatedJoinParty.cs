@@ -35,12 +35,16 @@ namespace XRL.World.Conversations.Parts
         private bool Visible;
         private int Difficulty;
 
+        private string DebugString;
+
         public UD_FleshGolems_ReanimatedJoinParty()
         {
             ReanimatorOnly = true;
             AskedFirstOnly = true;
             Visible = false;
             Difficulty = 0;
+
+            DebugString = null;
         }
 
         private static void AdjustProselytized(ref int Difficulty, Effect FX, GameObject Player)
@@ -172,7 +176,11 @@ namespace XRL.World.Conversations.Parts
 
             if (!Silent
                 && !result)
-                Player.Fail(doReplacement("=object.Name= cannot recruit =subject.name= because =subject.subjective==subject.verb:'ve:afterpronoun= farmed more aura than =object.subjective= =ovject.verb:have:afterpronoun=."), Silent);
+                Player.Fail(
+                    Message: doReplacement("=object.Name= cannot recruit =subject.name= because " +
+                        "=subject.subjective==subject.verb:'ve:afterpronoun= " +
+                        "farmed more aura than =object.subjective= =object.verb:have:afterpronoun=."),
+                    Silent: Silent);
 
             return result;
         }
@@ -257,18 +265,8 @@ namespace XRL.World.Conversations.Parts
         public override bool HandleEvent(PrepareTextLateEvent E)
         {
             if (The.Speaker is GameObject speaker
-                && The.Player is GameObject player
-                && Visible
-                && DebugEnableConversationDebugText)
+                && The.Player is GameObject player)
             {
-                int Difficulty = CalculateDifficulty(player, speaker, out int defense, out int attack, true);
-
-                string textAddition = 
-                    "\n\n" +
-                    HONLY.ThisManyTimes(40) +
-                    "\n\n" +
-                    "Defense: {{r|" + defense + "}} | Attack: {{g|" + attack + "}} | Difficulty: {{W|" + Difficulty + "}}";
-
                 IConversationElement superParentElement = ParentElement;
                 while (superParentElement.Parent is IConversationElement shallowParentElement)
                 {
@@ -282,7 +280,32 @@ namespace XRL.World.Conversations.Parts
                         break;
                 }
                 superParentElement ??= ParentElement;
-                superParentElement.Text += "{{K|" + textAddition + "}}";
+
+                if (Visible
+                    && DebugEnableConversationDebugText)
+                {
+                    if (DebugString.IsNullOrEmpty())
+                    {
+                        int Difficulty = CalculateDifficulty(player, speaker, out int defense, out int attack, true);
+
+                        DebugString =
+                            "{{K|" +
+                            "\n\n" +
+                            HONLY.ThisManyTimes(40) +
+                            "\n\n" +
+                            "Defense: {{r|" + defense + "}} | Attack: {{g|" + attack + "}} | Difficulty: {{W|" + Difficulty + "}}" +
+                            "}}";
+                    }
+                    if (!superParentElement.Text.Contains(DebugString))
+                        superParentElement.Text += DebugString;
+                }
+                else
+                {
+                    if (superParentElement.Text.Contains(DebugString))
+                        superParentElement.Text.Remove(DebugString);
+
+                    DebugString = null;
+                }
             }
             return base.HandleEvent(E);
         }

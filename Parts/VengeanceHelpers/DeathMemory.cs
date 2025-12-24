@@ -434,27 +434,32 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 switch (element)
                 {
                     case nameof(Killed):
-                        if (RemembersKilled() != Known)
+                        if (RemembersKilled() != Known
+                            || GetRemembersKilled() == null)
                             return false;
                         break;
 
                     case nameof(Killer):
-                        if (RemembersKiller() != Known)
+                        if (RemembersKiller() != Known
+                            || GetRemembersKiller() == null)
                             return false;
                         break;
                     case nameof(Killer) + nameof(KillerMemory.Name):
                         if (RemembersKillerName() != Known
-                            || (killerMemory >= KillerMemory.Name) != Known)
+                            || (killerMemory >= KillerMemory.Name) != Known
+                            || GetRemembersKiller() == null)
                             return false;
                         break;
                     case nameof(Killer) + nameof(KillerMemory.Creature):
                         if (RemembersKillerCreature() != Known
-                            || (killerMemory >= KillerMemory.Creature) != Known)
+                            || (killerMemory >= KillerMemory.Creature) != Known
+                            || GetRemembersKiller() == null)
                             return false;
                         break;
                     case nameof(Killer) + nameof(KillerMemory.Feature):
                         if (RemembersKillerFeature() != Known
-                            || (killerMemory >= KillerMemory.Feature) != Known)
+                            || (killerMemory >= KillerMemory.Feature) != Known
+                            || GetRemembersKiller() == null)
                             return false;
                         break;
 
@@ -464,7 +469,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                         break;
 
                     case nameof(Method):
-                        if (RemembersMethod() != Known)
+                        if (RemembersMethod() != Known
+                            || GetRemembersMethod() == null)
                             return false;
                         break;
                 }

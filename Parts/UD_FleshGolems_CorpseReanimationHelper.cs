@@ -105,6 +105,10 @@ namespace XRL.World.Parts
             nameof(GoatfolkClan1),
             nameof(EyelessKingCrabSkuttle1),
         };
+        public static List<string> IPartsToReplaceWhenReanimating => new()
+        {
+            nameof(ConversationScript),
+        };
 
         public bool IsALIVE;
 
@@ -118,16 +122,60 @@ namespace XRL.World.Parts
 
         private List<int> FailedToRegisterEvents;
 
+        [SerializeField]
+        private string CorpseTile;
+
+        [SerializeField]
+        private string CorpseTileColor;
+
+        [SerializeField]
+        private string CorpseColorString;
+
+        [SerializeField]
+        private string CorpseDetailColor;
+
         public UD_FleshGolems_CorpseReanimationHelper()
         {
             IsALIVE = false;
             AlwaysAnimate = false;
             Reanimator = null;
             FailedToRegisterEvents = new();
+
+            CorpseTile = null;
+            CorpseTileColor = null;
+            CorpseDetailColor = null;
         }
 
-        public override bool AllowStaticRegistration()
-            => true;
+        public bool RestoreCorpseTile()
+        {
+            if (CorpseTile.IsNullOrEmpty()
+                && ParentObject?.Render?.Tile != CorpseTile)
+            {
+                ParentObject.Render.Tile = CorpseTile;
+                return true;
+            }
+            return false;
+        }
+        public bool RestoreCorpseColors()
+        {
+            bool any = false;
+            if (CorpseTileColor.IsNullOrEmpty()
+                && ParentObject?.Render?.TileColor != CorpseTileColor)
+            {
+                ParentObject.Render.TileColor = CorpseTileColor;
+            }
+            if (CorpseColorString.IsNullOrEmpty()
+                && ParentObject?.Render?.ColorString != CorpseColorString)
+            {
+                ParentObject.Render.ColorString = CorpseColorString;
+            }
+            if (CorpseDetailColor.IsNullOrEmpty()
+                && ParentObject?.Render?.DetailColor != CorpseDetailColor)
+            {
+                ParentObject.Render.DetailColor = CorpseDetailColor;
+            }
+            return any;
+        }
 
         public bool Animate(out GameObject FrankenCorpse)
         {
@@ -1129,6 +1177,8 @@ namespace XRL.World.Parts
                             Corpse: frankenCorpse,
                             DeathMemory: reanimationHelper.DeathDetails.DeathMemory);
                     }
+
+                    reanimationHelper.DeathDetails.GetEvidenceOfDeath();
                 }
                     
                 frankenCorpse.SetStringProperty("OverlayColor", "&amp;G^k");
@@ -1292,15 +1342,6 @@ namespace XRL.World.Parts
                     PastLife.RestoreFactionRelationships();
                     PastLife.RestoreSelectPropTags();
 
-                    bool iIsProblemPartOrFollowerPartOrPartAlreadyHave(IPart p)
-                    {
-                        return IPartsToSkipWhenReanimating.Contains(p.Name)
-                            || frankenCorpse.HasPart(p.Name)
-                            || (frankenCorpse.GetPropertyOrTag(REANIMATED_PART_EXCLUSIONS_PROPTAG) is string propertyPartExclusions
-                                && propertyPartExclusions.CachedCommaExpansion() is List<string> partExclusionsList
-                                && partExclusionsList.Contains(p.Name));
-                    }
-
                     _ = indent[2];
 
                     AssignStatsFromBlueprint(frankenCorpse, sourceBlueprint, HitpointsFallbackToMinimum: true);
@@ -1319,12 +1360,15 @@ namespace XRL.World.Parts
                         MentalAdjustmentFactor: mentalAdjustmentFactor,
                         HitpointsFallbackToMinimum: true);
 
-                    AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: iIsProblemPartOrFollowerPartOrPartAlreadyHave);
+                    bool isPartToSkip(IPart p)
+                        => (!IPartsToReplaceWhenReanimating.Contains(p.Name)
+                                && frankenCorpse.HasPart(p.Name))
+                            || IsPartToSkip(p, frankenCorpse);
+
+                    AssignPartsFromBlueprint(frankenCorpse, sourceBlueprint, Exclude: isPartToSkip);
 
                     if (!sourceBlueprint.HasPart(nameof(Combat)))
-                    {
                         frankenCorpse.RemovePart<Combat>(); // this makes clams continue to work like clams.
-                    }
 
                     AssignMutationsFromBlueprint(frankenMutations, sourceBlueprint);
 
@@ -1624,6 +1668,7 @@ namespace XRL.World.Parts
 
                 if (chosenTile != null)
                 {
+                    reanimationHelper.CorpseTile = chosenTile;
                     frankenCorpse.Render.Tile = chosenTile;
                     Debug.Log("Tile changed", "\"" + chosenTile + "\"", indent[2]);
                 }
@@ -1677,6 +1722,10 @@ namespace XRL.World.Parts
                         frankenCorpse.Render.DetailColor = setColors["DetailColor"][^1].ToString();
                     }
                 }
+
+                reanimationHelper.CorpseTileColor = frankenCorpse.Render.TileColor;
+                reanimationHelper.CorpseColorString = frankenCorpse.Render.ColorString;
+                reanimationHelper.CorpseDetailColor = frankenCorpse.Render.DetailColor;
 
                 frankenMutations = frankenCorpse.RequirePart<Mutations>();
                 bool giveRegen = true;
@@ -1824,21 +1873,23 @@ namespace XRL.World.Parts
                 }
             }
         }
+        public override bool AllowStaticRegistration()
+            => true;
+
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
             || ID == BeforeObjectCreatedEvent.ID
             || ID == AnimateEvent.ID
             || ID == EnteredCellEvent.ID
             || (ID == DroppedEvent.ID && FailedToRegisterEvents.Contains(DroppedEvent.ID))
-            || ID == GetDebugInternalsEvent.ID;
+            || ID == GetDebugInternalsEvent.ID
+            ;
 
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
         {
-            if (!IsALIVE
-                && ParentObject == E.Object
-                && false)
+            if (!IsALIVE && ParentObject == E.Object)
             {
-                using Indent indent = new();
+                using Indent indent = new(1);
                 Debug.LogCaller(indent,
                     ArgPairs: new Debug.ArgPair[]
                     {

@@ -21,6 +21,11 @@
       </text>
     </choice>
 
+    <choice ID="ReanimatedJoinPartyChoice" IfSourceOfSuffering="true">
+      <text>Come along now... {{r|friend}}.</text>
+      <part Name="UD_FleshGolems_ReanimatedJoinParty" />
+    </choice>
+
     <node ID="HowIDied">
 
       <text ID="KilledKnown" MemoryElement="Killed" Known="true">
@@ -137,10 +142,10 @@
         <text>There was something else...</text>
       </choice>
 
-      <choice ID="ReanimatedJoinPartyChoice" IfSourceOfSuffering="true">
+      <!--choice ID="ReanimatedJoinPartyChoice" IfSourceOfSuffering="true">
         <text>Come along now... {{r|friend}}.</text>
         <part Name="UD_FleshGolems_ReanimatedJoinParty" />
-      </choice>
+      </choice-->
       
       <choice ID="GoEnd" Target="End">
         <text IfSourceOfSuffering="true" Priority="1">Unlive and drink... {{r|friend}}...</text>
@@ -150,6 +155,7 @@
     </node>
     
   </conversation>
+  
   <conversation ID="UD_FleshGolems NewlyReanimatedBeings">
     
     <node ID="choices">
