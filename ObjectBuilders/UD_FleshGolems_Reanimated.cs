@@ -39,6 +39,8 @@ namespace XRL.World.ObjectBuilders
     {
         public const string CREATURE_BLUEPRINT = "Creature";
 
+        public static bool USE_OLD_METHOD_FOR_PLAYER => true;
+
         public static bool IsGameRunning => The.Game != null && The.Game.Running;
         public static bool HasWorldGenerated => IsGameRunning && The.Player != null;
 
@@ -301,7 +303,7 @@ namespace XRL.World.ObjectBuilders
                     pastLife.Initialize(Entity);
                 }
 
-                corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(Entity);
+                pastLife = corpse.RequirePart<UD_FleshGolems_PastLife>().Initialize(Entity);
                 if (ForImmediateReanimation)
                 {
                     string reanimatedDisplayName = REANIMATED_ADJECTIVE + " " + corpse.Render.DisplayName;
@@ -503,13 +505,15 @@ namespace XRL.World.ObjectBuilders
                 });
             Corpse = null;
             UD_FleshGolems_DestinedForReanimation destinedForReanimation = null;
-            if (Entity.IsPlayer() || Entity.HasPlayerBlueprint())
+            if (Entity.IsPlayer() 
+                || Entity.HasPlayerBlueprint())
             {
                 destinedForReanimation = Entity.RequirePart<UD_FleshGolems_DestinedForReanimation>();
                 destinedForReanimation.PlayerWantsFakeDie = true;
                 destinedForReanimation.BuiltToBeReanimated = true;
                 UD_FleshGolems_DestinedForReanimation.HaveFakedDeath = false;
-                return true;
+                if (!USE_OLD_METHOD_FOR_PLAYER)
+                    return true;
             }
             if (!HasWorldGenerated)
             {

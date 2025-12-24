@@ -39,6 +39,7 @@ using static UD_FleshGolems.Utils;
 
 using SerializeField = UnityEngine.SerializeField;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
+using XRL.World.Conversations.Parts;
 
 namespace XRL.World.Parts
 {
@@ -75,6 +76,7 @@ namespace XRL.World.Parts
             "BleedLiquid",
             "Humanoid",
             "Bleeds",
+            UD_FleshGolems_AskHowDied.ASK_HOW_DIED_PROP,
         };
 
         public static List<string> PartsToNotRetain = new()
@@ -173,6 +175,7 @@ namespace XRL.World.Parts
         public Body Body => BrainInAJar?.Body;
         public Dictionary<PseudoLimb, string> ExtraLimbs;
 
+        public EntityTaxa EntityTaxa;
         public string Species => BrainInAJar?.GetSpecies();
         public string Genotype => BrainInAJar?.GetGenotype();
         public string Subtype => BrainInAJar?.GetSubtype();
@@ -210,6 +213,8 @@ namespace XRL.World.Parts
             DeathAddress = new();
 
             ExtraLimbs = new();
+
+            EntityTaxa = new();
 
             MutationsList = new();
 
@@ -594,10 +599,11 @@ namespace XRL.World.Parts
                             Debug.CheckNah("no " + nameof(PastLife.Statistics), Indent: indent[2]);
                         }
 
-                        BrainInAJar.SetSpecies(PastLife.GetSpecies());
-                        BrainInAJar.SetGenotype(PastLife.GetGenotype());
-                        BrainInAJar.SetSubtype(PastLife.GetSubtype());
-
+                        EntityTaxa = new(PastLife);
+                        BrainInAJar.SetSpecies(EntityTaxa.Species);
+                        BrainInAJar.SetGenotype(EntityTaxa.Genotype);
+                        BrainInAJar.SetSubtype(EntityTaxa.Subtype);
+                        
                         Debug.Log(nameof(Species), Species ?? NULL, indent[2]);
                         Debug.Log(nameof(Genotype), Genotype ?? NULL, indent[2]);
                         Debug.Log(nameof(Subtype), Subtype ?? NULL, indent[2]);
@@ -1701,11 +1707,13 @@ namespace XRL.World.Parts
             {
                 FrankenCorpse.SetSpecies(pastSpecies);
             }
-            if (PastLife.Genotype is string pastGenotype)
+            if (PastLife.Genotype is string pastGenotype
+                && FrankenCorpse.GetGenotype() == null)
             {
                 FrankenCorpse.SetGenotype(pastGenotype);
             }
-            if (PastLife.Subtype is string pastSubtype)
+            if (PastLife.Subtype is string pastSubtype
+                && FrankenCorpse.GetSubtype() == null)
             {
                 FrankenCorpse.SetSubtype(pastSubtype);
             }

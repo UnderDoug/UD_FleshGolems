@@ -591,6 +591,30 @@ namespace XRL.World.Conversations.Parts
             ConversationTextList = sortedConversationTextList;
         }
 
+        private static string GetJoiner(int Iteration)
+                => Iteration % 2 == 0
+                ? "\n\n"
+                : " ";
+        private static ConversationText MergeAccumulatedTextWithNextText(
+            ConversationText Accumulate,
+            ConversationText Next,
+            ref int Iteration,
+            ConversationText SeedConversationText,
+            Indent Indent)
+        {
+            ConversationText newConversationText = Accumulate;
+            if (Next != SeedConversationText)
+            {
+                if (Iteration % 2 == 1)
+                    Next.ReplacerCapitalize();
+
+                newConversationText = Accumulate.Append(Next, GetJoiner(Iteration), new() { MEMORY_ELEMENT });
+            }
+            string capitalized = Iteration % 2 == 1 ? " Cap" : " noCap";
+            Debug.Log("[" + Iteration + "] " + newConversationText?.PathID?.TextAfter(".") + capitalized, Indent: Indent);
+            Iteration++;
+            return newConversationText;
+        }
         public static ConversationText CompileConversationTexts(params ConversationText[] ConversationTexts)
         {
             using Indent indent = new(1);
@@ -605,27 +629,12 @@ namespace XRL.World.Conversations.Parts
 
             int iteration = 0;
             ConversationText seedConversationText = ConversationTexts[0];
-            static string getJoiner(int Iteration)
-                => Iteration % 2 == 0
-                ? "\n\n"
-                : " ";
+            ConversationText mergeAccumulatedTextWithNextText(ConversationText Accumulate, ConversationText Next)
+                => MergeAccumulatedTextWithNextText(Accumulate, Next, ref iteration, seedConversationText, indent[1]);
             return ConversationTexts
                 .Aggregate(
                     seed: seedConversationText,
-                    func: delegate (ConversationText acc, ConversationText next)
-                    {
-                        ConversationText newConversationText = acc;
-                        if (next != seedConversationText)
-                        {
-                            if (iteration % 2 == 0)
-                                next.Text = next.Text?.Capitalize();
-
-                            newConversationText = acc.Append(next, getJoiner(iteration), new() { MEMORY_ELEMENT });
-                        }
-                        Debug.Log(iteration + "] " + newConversationText?.PathID?.TextAfter("."), Indent: indent[1]);
-                        iteration++;
-                        return newConversationText;
-                    });
+                    func: mergeAccumulatedTextWithNextText);
         }
 
         public static bool GetPlayerHasAskedBefore(GameObject Player, GameObject Speaker)
@@ -665,6 +674,8 @@ namespace XRL.World.Conversations.Parts
                 {
                     Debug.Arg(nameof(KnowsPlayerKilledThem), KnowsPlayerKilledThem),
                 });
+
+            SetPlayerHasAskedBefore(The.Player, The.Speaker);
         }
 
         public override bool WantEvent(int ID, int Propagation)
@@ -901,7 +912,7 @@ namespace XRL.World.Conversations.Parts
 
                     if (!speaker.IsPlayerLed())
                     {
-                        Debug.Log("Preparing killedByPlayer for non-party member...", Indent: indent[1]);
+                        Debug.Log("Preparing " + nameof(KilledByPlayerTexts) + " for non-party member...", Indent: indent[1]);
                         if (E.Text?.ToString()?.Split(' ')?.ToList() is List<string> textWords)
                         {
                             int offset = Stat.RandomCosmetic(-2, 2);
@@ -949,7 +960,7 @@ namespace XRL.World.Conversations.Parts
                         {
                             E.Text.TrimLatterRoughlyHalf(5);
                         }
-                        killedByPlayerString = "=no2nd.restore=... \n\n=ud_nbsp:6=... " + killedByPlayerString;
+                        killedByPlayerString = "=no2nd.restore=... \n\n=ud_nbsp:4=... " + killedByPlayerString;
                     }
                     else
                     {
@@ -980,8 +991,6 @@ namespace XRL.World.Conversations.Parts
             if (The.Speaker is GameObject speaker
                 && The.Player is GameObject player)
             {
-                SetPlayerHasAskedBefore(player, speaker);
-
                 if (KnowsPlayerKilledThem
                     && !speaker.IsPlayerLed())
                 {
@@ -1009,6 +1018,10 @@ namespace XRL.World.Conversations.Parts
                 && speaker.GetDeathDetails() is UD_FleshGolems_DeathDetails deathDetails)
             {
                 string debugString = deathDetails.DeathMemory?.DebugInternalsString(speaker, " | ", true);
+                if (debugString.TryGetIndexOf("RudeToAsk | ", out int firstPipeIndex))
+                {
+                    debugString = debugString[..(firstPipeIndex - 3)] + "\n" + debugString.TextAfter(" | ", 3);
+                }
                 E.Text += "\n\n{{K|" + debugString + "}}";
             }
             return base.HandleEvent(E);

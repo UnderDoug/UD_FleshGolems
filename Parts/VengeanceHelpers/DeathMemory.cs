@@ -485,6 +485,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             {
                 { this.Corpse?.ID ?? NULL, nameof(this.Corpse) + "." + nameof(this.Corpse.ID) + ":" },
                 { nameof(IsValid), Validate(Corpse).YehNah() },
+                { nameof(RudeToAsk), RudeToAsk.YehNah() },
                 { nameof(HasAmnesia), HasAmnesia().YehNah() },
                 { nameof(Killed), Killed.YehNah() },
                 { nameof(Killer), "[" + (Killer != null ? (int)Killer : "-") + "]" },
@@ -508,8 +509,16 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 if (value.Contains("-"))
                     value = value[0] + "{{w|" + value[1] + "}}" + value[2];
                 else
-                if (value.Length > 2 && int.TryParse(value[1].ToString(), out _))
-                    value = value[0] + "{{W|" + value[1] + "}}" + value[2];
+                if (value.Length > 2 && int.TryParse(value[1].ToString(), out int valueNum))
+                {
+                    if (valueNum == 0)
+                        value = value[0] + "{{r|" + value[1] + "}}" + value[2];
+                    else
+                    if (valueNum < 3)
+                        value = value[0] + "{{W|" + value[1] + "}}" + value[2];
+                    else
+                        value = value[0] + "{{g|" + value[1] + "}}" + value[2];
+                }
                 else
                 if (value.Contains(TICK))
                     value = value[0] + "{{g|" + value[1] + "}}" + value[2];

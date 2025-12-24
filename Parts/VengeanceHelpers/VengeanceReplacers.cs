@@ -286,7 +286,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Context: Context,
                 Output: Context.Target
                     ?.GetDeathDescription()
-                    ?.WithMethod(null, !Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+                    ?.WithMethod("", !Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
 
         // parameter0: adverb.
         // parameter1: killer override.

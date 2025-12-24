@@ -127,6 +127,13 @@ namespace XRL.World.Conversations.Parts
             return difficulty;
         }
 
+        private static string DoReplacement(string Text)
+            => Text
+                ?.StartReplace()
+                ?.AddObject(The.Speaker)
+                ?.AddObject(The.Player)
+                ?.ToString();
+
         public static bool CheckCanRecruit(GameObject Player, GameObject Speaker, out int Difficulty, bool Silent = false)
         {
             using Indent indent = new(1);
@@ -143,17 +150,10 @@ namespace XRL.World.Conversations.Parts
                 || Speaker == null)
                 return false;
 
-            string doReplacement(string Text)
-                => Text
-                    ?.StartReplace()
-                    ?.AddObject(Speaker)
-                    ?.AddObject(Player)
-                    ?.ToString();
-
             if (Speaker == Player
                 || Speaker.HasCopyRelationship(Player)
                 || Speaker.IsOriginalPlayerBody())
-                return Player.Fail(doReplacement("=object.Name= can't recruit =object.reflexive=!"), Silent);
+                return Player.Fail(DoReplacement("=object.Name= can't recruit =object.reflexive=!"), Silent);
 
             if (Player.IsMissingTongue() && !Player.CanMakeTelepathicContactWith(Speaker))
             {
@@ -163,11 +163,11 @@ namespace XRL.World.Conversations.Parts
                     telepathicallyFailedMsg += ", as =object.name= cannot make telepathic contact with =subject.objective=";
                 }
                 telepathicallyFailedMsg += ".";
-                return Player.Fail(doReplacement(telepathicallyFailedMsg), Silent);
+                return Player.Fail(DoReplacement(telepathicallyFailedMsg), Silent);
             }
 
             if (!Player.CheckFrozen(Telepathic: true, Telekinetic: false, Silent: true, Speaker))
-                return Player.Fail(doReplacement("Frozen solid, =object.name= cannot recruit =subject.name=."), Silent);
+                return Player.Fail(DoReplacement("Frozen solid, =object.name= cannot recruit =subject.name=."), Silent);
 
             Difficulty = CalculateDifficulty(Player, Speaker, out _, out _);
 
@@ -177,9 +177,9 @@ namespace XRL.World.Conversations.Parts
             if (!Silent
                 && !result)
                 Player.Fail(
-                    Message: doReplacement("=object.Name= cannot recruit =subject.name= because " +
+                    Message: DoReplacement("=object.Refname= cannot recruit =subject.t= because " +
                         "=subject.subjective==subject.verb:'ve:afterpronoun= " +
-                        "farmed more aura than =object.subjective= =object.verb:have:afterpronoun=."),
+                        "farmed more aura than =object.subjective=."),
                     Silent: Silent);
 
             return result;
@@ -205,11 +205,15 @@ namespace XRL.World.Conversations.Parts
         
         public override bool WantEvent(int ID, int Propagation)
             => base.WantEvent(ID, Propagation)
+            || ID == HideElementEvent.ID
             || ID == IsElementVisibleEvent.ID
             || ID == GetChoiceTagEvent.ID
             || ID == EnteredElementEvent.ID
             || ID == PrepareTextLateEvent.ID
             ;
+        public override bool HandleEvent(HideElementEvent E)
+            => false;
+
         public override bool HandleEvent(IsElementVisibleEvent E)
             => base.HandleEvent(E)
             && Visible
@@ -252,13 +256,11 @@ namespace XRL.World.Conversations.Parts
             if (speaker.TryGetEffect(out Lovesick lovesick))
                 lovesick.PreviousLeader = player;
 
-            string successMsg = "=subject.Name= =subject.verb:join= =object.name=!"
-                .StartReplace()
-                .AddObject(speaker)
-                .AddObject(player)
-                .ToString();
+            string successMsg = "=subject.T= =subject.verb:sense= that =object.refname= " +
+                "=object.verb:have= guidance to offer =subject.objective= in =subject.possessive= " +
+                "new life and decides to join =object.objective=!";
 
-            Popup.Show(successMsg);
+            Popup.Show(DoReplacement(successMsg));
 
             return base.HandleEvent(E);
         }
@@ -270,13 +272,14 @@ namespace XRL.World.Conversations.Parts
                 IConversationElement superParentElement = ParentElement;
                 while (superParentElement.Parent is IConversationElement shallowParentElement)
                 {
-                    bool doBreak = false;
+                    bool found = false;
                     if (superParentElement is Choice
                         && shallowParentElement is not Choice)
-                        doBreak = true;
+                        found = true;
+
                     superParentElement = shallowParentElement;
 
-                    if (doBreak)
+                    if (found)
                         break;
                 }
                 superParentElement ??= ParentElement;
@@ -284,27 +287,28 @@ namespace XRL.World.Conversations.Parts
                 if (Visible
                     && DebugEnableConversationDebugText)
                 {
-                    if (DebugString.IsNullOrEmpty())
+                    if (!DebugString.IsNullOrEmpty())
                     {
-                        int Difficulty = CalculateDifficulty(player, speaker, out int defense, out int attack, true);
-
-                        DebugString =
-                            "{{K|" +
-                            "\n\n" +
-                            HONLY.ThisManyTimes(40) +
-                            "\n\n" +
-                            "Defense: {{r|" + defense + "}} | Attack: {{g|" + attack + "}} | Difficulty: {{W|" + Difficulty + "}}" +
-                            "}}";
+                        if (superParentElement.Text.Contains(DebugString))
+                            superParentElement.Text.Remove(DebugString);
                     }
+
+                    int Difficulty = CalculateDifficulty(player, speaker, out int defense, out int attack, true);
+
+                    string defenseString = "Defense: {{r|" + defense + "}}";
+                    string attackString = "Attack: {{g|" + attack + "}}";
+                    string difficultyString = "Difficulty: {{W|" + Difficulty + "}}";
+
+                    DebugString = "\n\n{{K|" + defenseString + " | " + attackString + " | " + difficultyString + "}}";
+
                     if (!superParentElement.Text.Contains(DebugString))
                         superParentElement.Text += DebugString;
                 }
                 else
                 {
-                    if (superParentElement.Text.Contains(DebugString))
+                    if (!DebugString.IsNullOrEmpty()
+                        && superParentElement.Text.Contains(DebugString))
                         superParentElement.Text.Remove(DebugString);
-
-                    DebugString = null;
                 }
             }
             return base.HandleEvent(E);

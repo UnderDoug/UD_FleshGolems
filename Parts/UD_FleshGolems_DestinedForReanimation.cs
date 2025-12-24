@@ -15,6 +15,8 @@ using XRL.World.ObjectBuilders;
 using XRL.World.Capabilities;
 using XRL.World.Parts.Mutation;
 
+using static XRL.World.ObjectBuilders.UD_FleshGolems_Reanimated;
+
 using SerializeField = UnityEngine.SerializeField;
 
 using UD_FleshGolems;
@@ -792,7 +794,7 @@ namespace XRL.World.Parts
                 return false;
             }
 
-            bool success = UD_FleshGolems_Reanimated.ReplaceEntityWithCorpse(
+            bool success = ReplaceEntityWithCorpse(
                 Entity: player,
                 FakeDeath: PlayerWantsFakeDie,
                 FakedDeath: out HaveFakedDeath,
@@ -802,12 +804,17 @@ namespace XRL.World.Parts
             PlayerWantsFakeDie = false;
             if (success)
             {
-                foreach (Type playerMutator in ModManager.GetTypesWithAttribute(typeof(PlayerMutator)))
+                GetPlayerTaxa().RestoreTaxa(Corpse);
+                if (success
+                    && false)
                 {
-                    Stat.ReseedFrom("PLAYERMUTATOR" + playerMutator.Name);
-                    (Activator.CreateInstance(playerMutator) as IPlayerMutator)?.mutate(player);
+                    foreach (Type playerMutator in ModManager.GetTypesWithAttribute(typeof(PlayerMutator)))
+                    {
+                        Stat.ReseedFrom("PLAYERMUTATOR" + playerMutator.Name);
+                        (Activator.CreateInstance(playerMutator) as IPlayerMutator)?.mutate(Corpse);
+                    }
+                    Stat.ReseedFrom("GameStart");
                 }
-                Stat.ReseedFrom("GameStart");
             }
             return success;
         }
@@ -828,20 +835,34 @@ namespace XRL.World.Parts
                 && ParentObject is GameObject entity
                 && entity == E.Object
                 && (Corpse != null
-                    || UD_FleshGolems_Reanimated.TryProduceCorpse(entity, out Corpse))
+                    || TryProduceCorpse(entity, out Corpse))
                 && Corpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
             {
-                if (entity.IsPlayer()
-                    || entity.HasPlayerBlueprint())
+                if (USE_OLD_METHOD_FOR_PLAYER)
                 {
-                    Corpse.AddPart(this, Creation: true);
-                    PlayerWantsFakeDie = true;
-                    Corpse.RegisterPartEvent(this, "GameStart");
+                    if (!entity.IsPlayer()
+                        && !entity.HasPlayerBlueprint())
+                    {
+                        reanimationHelper.Animate();
+                        E.ReplacementObject = Corpse;
+                        Attempted = true;
+                    }
                 }
-                reanimationHelper.Animate();
-                E.ReplacementObject = Corpse;
-                Attempted = true;
-                return true;
+                else
+                {
+                    if (entity.IsPlayer()
+                        || entity.HasPlayerBlueprint())
+                    {
+                        Corpse.AddPart(this, Creation: true);
+                        PlayerWantsFakeDie = true;
+                        Corpse.RegisterPartEvent(this, "GameStart");
+                    }
+                    reanimationHelper.Animate();
+                    E.ReplacementObject = Corpse;
+                    Attempted = true;
+                }
+                if (Attempted)
+                    return true;
             }
             return false;
         }
@@ -926,7 +947,7 @@ namespace XRL.World.Parts
                         || entity.HasPlayerBlueprint())
                     && !HaveFakedDeath
                     && (Corpse != null 
-                        || UD_FleshGolems_Reanimated.TryProduceCorpse(entity, out Corpse)))
+                        || TryProduceCorpse(entity, out Corpse)))
                 {
                     entity.RegisterPartEvent(this, "GameStart");
                 }
@@ -953,26 +974,45 @@ namespace XRL.World.Parts
 
                 if (!HaveFakedDeath
                     && BuiltToBeReanimated
-                    && PlayerWantsFakeDie)
+                    && PlayerWantsFakeDie
+                    && !ActuallyDoTheFakeDieAndReanimate()
+                    )
                 {
                     Debug.CheckYeh("!" + nameof(HaveFakedDeath), indent[1]);
                     Debug.CheckYeh(nameof(BuiltToBeReanimated), indent[1]);
                     Debug.CheckYeh(nameof(PlayerWantsFakeDie), indent[1]);
 
-                    if (UD_FleshGolems_Reanimated.InitializeDeathDetailsThenFakeDeath(ParentObject, Corpse, null))
+                    string replacedTile = null;
+                    string replacedTileColor = null;
+                    string replacedColorString = null;
+                    string replacedDetailColor = null;
+                    if (ParentObject.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
+                    {
+                        reanimationHelper.RestoreCorpseTile(out replacedTile);
+                        reanimationHelper.RestoreCorpseColors(out replacedTileColor, out replacedColorString, out replacedDetailColor);
+                    }
+                    if (InitializeDeathDetailsThenFakeDeath(ParentObject, Corpse, null))
                     {
                         if (ParentObject.GetBlueprint().IsCorpse())
                             ParentObject.RemovePart(this);
-
-                        if (ParentObject.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
-                        {
-                            reanimationHelper.RestoreCorpseTile();
-                            reanimationHelper.RestoreCorpseColors();
-                        }
                     }
                     else
                     {
-                        Debug.CheckNah(nameof(UD_FleshGolems_Reanimated.InitializeDeathDetailsThenFakeDeath) + " Failed", indent[0]);
+                        if (ParentObject.Render != null)
+                        {
+                            if (!replacedTile.IsNullOrEmpty())
+                                ParentObject.Render.Tile = replacedTile;
+
+                            if (!replacedTileColor.IsNullOrEmpty())
+                                ParentObject.Render.TileColor = replacedTileColor;
+
+                            if (!replacedColorString.IsNullOrEmpty())
+                                ParentObject.Render.ColorString = replacedColorString;
+
+                            if (!replacedDetailColor.IsNullOrEmpty())
+                                ParentObject.Render.DetailColor = replacedDetailColor;
+                        }
+                        Debug.CheckNah(nameof(InitializeDeathDetailsThenFakeDeath) + " Failed", indent[0]);
                     }
                 }
             }
@@ -988,7 +1028,7 @@ namespace XRL.World.Parts
                 && !dyingCorpse.CorpseBlueprint.IsNullOrEmpty()
                 && dying.IsPlayer()
                 && (!PlayerWantsFakeDie || !HaveFakedDeath)
-                && UD_FleshGolems_Reanimated.ReplaceEntityWithCorpse(
+                && ReplaceEntityWithCorpse(
                     Entity: ParentObject,
                     FakeDeath: PlayerWantsFakeDie,
                     FakedDeath: out HaveFakedDeath,

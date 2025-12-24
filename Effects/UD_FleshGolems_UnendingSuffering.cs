@@ -444,9 +444,11 @@ namespace XRL.World.Effects
                 ColorLatch = true;
                 E.RenderString = "\u0003";
                 E.ApplyColors(GetForegroundColor(), ICON_COLOR_PRIORITY);
-                return false;
             }
-            ColorLatch = false;
+            else
+            {
+                ColorLatch = false;
+            }
             return base.Render(E);
         }
         public override bool HandleEvent(GetDebugInternalsEvent E)

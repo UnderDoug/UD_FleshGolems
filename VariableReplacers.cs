@@ -485,7 +485,6 @@ namespace UD_FleshGolems
          * Variable Post Processors
          * 
          */
-
         [VariablePostProcessor("no2nd.restore")]
         public static void UD_post_no2nd_restore(DelegateContext Context)
         {
@@ -494,6 +493,16 @@ namespace UD_FleshGolems
                 Grammar.AllowSecondPerson = storedAllowSecondPerson;
             }
             StoredAllowSecondPerson = null;
+        }
+
+        [VariablePostProcessor("capitalize")]
+        public static void UD_Capitalize(DelegateContext Context)
+        {
+            if (Context.Value.ToString() is string contextValue)
+            {
+                Context.Value.Clear();
+                Context.Value.Append(contextValue.Capitalize());
+            }
         }
     }
 }

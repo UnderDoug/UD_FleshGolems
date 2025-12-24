@@ -1126,6 +1126,25 @@ namespace UD_FleshGolems
         public static string Uncapitalize(this string String)
             => String[0].ToString().ToLower() + String[1..];
 
+        public static string ReplacerCapitalize(this string String)
+        {
+            if (!String.IsNullOrEmpty()
+                && String.Length > 1
+                && String.StartsWith("=")
+                && String[1..].TryGetIndexOf("=", out int replacerEnd, false))
+            {
+                String = String[..replacerEnd] + "|capitalize" + String[replacerEnd..];
+            }
+            return String;
+        }
+
+        public static ConversationText ReplacerCapitalize(this ConversationText ConversationText)
+        {
+            if (ConversationText?.Text != null)
+                ConversationText.Text = ConversationText.Text.ReplacerCapitalize();
+            return ConversationText;
+        }
+
         public static bool TryGetIndexOf(this string Text, string Search, out int Index, bool EndOfSearch = true)
             => !((Index = Text.IndexOf(Search) + (EndOfSearch ? Search?.Length ?? 0 : 0)) < 0);
 
@@ -1469,7 +1488,7 @@ namespace UD_FleshGolems
             Debug.Log(
                 newConversationText.PathID.TextAfter(".") + 
                 attributesString, // + 
-                //newConversationText.Text, 
+                // newConversationText.Text?.ToLiteral(), 
                 Indent: indent[1]);
 
             return newConversationText;

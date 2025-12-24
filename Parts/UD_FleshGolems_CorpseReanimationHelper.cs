@@ -146,33 +146,47 @@ namespace XRL.World.Parts
             CorpseDetailColor = null;
         }
 
-        public bool RestoreCorpseTile()
+        public bool RestoreCorpseTile(out string ReplacedTile)
         {
+            ReplacedTile = null;
             if (CorpseTile.IsNullOrEmpty()
                 && ParentObject?.Render?.Tile != CorpseTile)
             {
+                ReplacedTile = ParentObject.Render.Tile;
                 ParentObject.Render.Tile = CorpseTile;
                 return true;
             }
             return false;
         }
-        public bool RestoreCorpseColors()
+        public bool RestoreCorpseColors(
+            out string ReplacedTileColor,
+            out string ReplacedColorString,
+            out string ReplacedDetailColor)
         {
+            ReplacedTileColor = null;
+            ReplacedColorString = null;
+            ReplacedDetailColor = null;
             bool any = false;
             if (CorpseTileColor.IsNullOrEmpty()
                 && ParentObject?.Render?.TileColor != CorpseTileColor)
             {
+                ReplacedTileColor = ParentObject.Render.TileColor;
                 ParentObject.Render.TileColor = CorpseTileColor;
+                any = true;
             }
             if (CorpseColorString.IsNullOrEmpty()
                 && ParentObject?.Render?.ColorString != CorpseColorString)
             {
+                ReplacedColorString = ParentObject.Render.ColorString;
                 ParentObject.Render.ColorString = CorpseColorString;
+                any = true;
             }
             if (CorpseDetailColor.IsNullOrEmpty()
                 && ParentObject?.Render?.DetailColor != CorpseDetailColor)
             {
+                ReplacedDetailColor = ParentObject.Render.DetailColor;
                 ParentObject.Render.DetailColor = CorpseDetailColor;
+                any = true;
             }
             return any;
         }
@@ -1328,16 +1342,20 @@ namespace XRL.World.Parts
                         setColors = setColorsPropTagByPastLifeBlueprint.CachedDictionaryExpansion();
                     }
 
-                    if (sourceBlueprint.xTags != null && sourceBlueprint.xTags.TryGetValue(REANIMATED_TAXA_XTAG, out Dictionary<string, string> sourceTaxa))
-                    {
-                        foreach ((string taxonLabel, string taxon) in sourceTaxa)
-                        {
+                    if (PastLife.EntityTaxa != null)
+                        foreach ((string taxonLabel, string taxon) in PastLife.EntityTaxa.GetCustomTaxa())
                             CollectProspectiveTiles(
                                 Dictionary: ref prospectiveTiles,
                                 Keyword: TileMappingKeyword.Taxon,
                                 Lookup: new string[] { taxonLabel, taxon, });
-                        }
-                    }
+                    else
+                    if (sourceBlueprint.xTags is Dictionary<string, Dictionary < string, string>> sourceXTags
+                        && sourceXTags.TryGetValue(REANIMATED_TAXA_XTAG, out Dictionary<string, string> sourceTaxa))
+                        foreach ((string taxonLabel, string taxon) in sourceTaxa)
+                            CollectProspectiveTiles(
+                                Dictionary: ref prospectiveTiles,
+                                Keyword: TileMappingKeyword.Taxon,
+                                Lookup: new string[] { taxonLabel, taxon, });
 
                     PastLife.RestoreFactionRelationships();
                     PastLife.RestoreSelectPropTags();
@@ -1497,13 +1515,13 @@ namespace XRL.World.Parts
                     bool generateInventory = frankenCorpse.HasPropertyOrTag(REANIMATED_GEN_SOURCE_INV_PROPTAG) || PastLife.WasBuiltReanimated;
 
                     Debug.Log("Granting SourceBlueprint Natural Equipment...", Indent: indent[2]);
-                    Debug.Log(sourceBlueprint.Name, nameof(sourceBlueprint.Inventory), indent[3]);
+                    Debug.Log(sourceBlueprint?.Name, nameof(sourceBlueprint.Inventory), indent[3]);
                     if (sourceBlueprint.Inventory != null)
                     {
                         foreach (InventoryObject inventoryObject in sourceBlueprint.Inventory)
                         {
                             string itemLabel = (inventoryObject?.Blueprint ?? NULL) + " | ";
-                            if (GameObjectFactory.Factory.GetBlueprintIfExists(inventoryObject.Blueprint) is GameObjectBlueprint inventoryObjectBlueprint
+                            if (inventoryObject?.Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint inventoryObjectBlueprint
                                 && inventoryObjectBlueprint.IsNatural())
                             {
                                 if (GameObject.CreateSample(inventoryObjectBlueprint.Name) is GameObject sampleNaturalGear
@@ -1560,17 +1578,24 @@ namespace XRL.World.Parts
                     Debug.Log("Granting SourceBlueprint Inventory...", Indent: indent[2]);
                     if (generateInventory)
                     {
-                        if (GameObject.CreateSample(sourceBlueprint.Name) is GameObject sampleSourceEntity)
+                        try
                         {
-                            Debug.CheckYeh("Inventory Generated", Indent: indent[3]);
-                            if (UD_FleshGolems_Reanimated.TryTransferInventoryToCorpse(sampleSourceEntity, Corpse))
+                            if (GameObject.CreateSample(sourceBlueprint?.Name) is GameObject sampleSourceEntity)
                             {
-                                Debug.CheckYeh("Transferred", Indent: indent[3]);
+                                Debug.CheckYeh("Inventory Generated", Indent: indent[3]);
+                                if (UD_FleshGolems_Reanimated.TryTransferInventoryToCorpse(sampleSourceEntity, Corpse))
+                                {
+                                    Debug.CheckYeh("Transferred", Indent: indent[3]);
+                                }
+                                else
+                                {
+                                    Debug.CheckNah("Transfer Failed", Indent: indent[3]);
+                                }
                             }
-                            else
-                            {
-                                Debug.CheckNah("Transfer Failed", Indent: indent[3]);
-                            }
+                        }
+                        catch (Exception x)
+                        {
+                            MetricsManager.LogException(nameof(generateInventory), x, GAME_MOD_EXCEPTION);
                         }
                     }
                     else
