@@ -805,6 +805,7 @@ namespace XRL.World.Parts
             if (success)
             {
                 GetPlayerTaxa().RestoreTaxa(Corpse);
+                Corpse.SetStringProperty("OriginalPlayerBody", "Not really, but we pretend!");
                 if (success
                     && false)
                 {

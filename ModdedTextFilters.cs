@@ -1,0 +1,389 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+using System.Linq;
+
+using Qud.API;
+
+using XRL;
+using XRL.World;
+using XRL.World.Text.Attributes;
+using XRL.World.Text.Delegates;
+using XRL.World.Parts;
+using XRL.Language;
+
+using UD_FleshGolems;
+using UD_FleshGolems.Logging;
+using UD_FleshGolems.Parts.VengeanceHelpers;
+using Debug = UD_FleshGolems.Logging.Debug;
+
+using static UD_FleshGolems.Const;
+using XRL.Rules;
+
+namespace UD_FleshGolems
+{
+    public static class ModdedTextFilters
+    {
+        private readonly struct Word
+        {
+            public static Word Empty => new(null, null, null, null);
+
+            private readonly bool Open;
+            private readonly string Shader;
+            public readonly string Text;
+            private readonly bool Close;
+
+            public int Length => Text?.Length ?? 0;
+
+            private Word(bool? Open, string Shader, string Text, bool? Close)
+            {
+                this.Open = Open.GetValueOrDefault();
+                this.Shader = Shader;
+                this.Text = Text;
+                this.Close = Close.GetValueOrDefault();
+            }
+            public Word(string Text)
+                : this(
+                      Open: Text?.StartsWith("{{"),
+                      Shader: null,
+                      Text: null,
+                      Close: Text?.EndsWith("}}"))
+            {
+                this.Text = Text?.RemoveAll("{", "}");
+                if (!this.Text.IsNullOrEmpty()
+                    && this.Text.TryGetIndexOf("|", out int pipeBefore, EndOfSearch: false)
+                    && pipeBefore + 1 is int pipeAfter)
+                {
+                    Shader = this.Text[..pipeBefore];
+                    this.Text = this.Text[pipeAfter..];
+                }
+            }
+
+            public char this[int Index] => Text[Index];
+
+            public string this[System.Range Range] => Text[Range];
+
+            public override readonly string ToString()
+                => (Open ? "{{" : null)
+                + (!Shader.IsNullOrEmpty() ? Shader + "|" : null)
+                + Text
+                + (Close ? "}}" : null);
+            
+            public static Word ReplaceWord(Word? Word, string Text)
+                => new(Word?.Open, Word?.Shader, Text, Word?.Close);
+            
+            public readonly Word ReplaceWord(string Text)
+                => ReplaceWord(this, Text);
+
+            public readonly bool IsCapitalized()
+                => Text
+                    ?.Strip()
+                    ?.Aggregate(
+                        seed: "",
+                        func: (string a, char n) => a + (Char.IsLetter(n) ? n : null)) is string strippedWord
+                && strippedWord[0].ToString() == strippedWord[0].ToString().ToUpper();
+
+            public readonly string LettersOnly()
+            => Text
+                ?.Strip()
+                ?.Aggregate(
+                    seed: "",
+                    func: (string a, char n) => a + (Char.IsLetter(n) ? n : null));
+
+            public readonly Word MatchCapitalization(string Word)
+                => Word.IsCapitalized()
+                ? ReplaceWord(this, Text.Capitalize())
+                : ReplaceWord(this, Text.Uncapitalize());
+
+            public readonly Word Replace(string OldValue, string NewValue)
+                => ReplaceWord(this, Text?.Replace(OldValue, NewValue));
+
+            public readonly bool Contains(string String)
+                => !Text.IsNullOrEmpty()
+                && Text.Contains(String);
+
+            public readonly bool StartsWith(string String)
+                => !Text.IsNullOrEmpty()
+                && Text.StartsWith(String);
+
+            public readonly bool EndsWith(string String)
+                => !Text.IsNullOrEmpty()
+                && Text.EndsWith(String);
+
+            public readonly bool TextEquals(string String)
+                => !Text.IsNullOrEmpty()
+                && Text.Equals(String);
+
+            public readonly bool TextEqualsNoCase(string String)
+                => !Text.IsNullOrEmpty()
+                && Text.EqualsNoCase(String);
+
+            public readonly bool Any(Func<char, bool> predicate)
+                => !Text.IsNullOrEmpty()
+                && Text.Any(predicate);
+
+            public readonly bool All(Func<char, bool> predicate)
+                => !Text.IsNullOrEmpty()
+                && Text.All(predicate);
+
+            public IEnumerable<char> EnumerateText()
+            {
+                if (Text.IsNullOrEmpty())
+                    yield break;
+
+                foreach (char @char in Text)
+                    yield return @char;
+            }
+        }
+        public static string DeleteString => "##DELETE";
+        public static Dictionary<string, List<string>> SnapifyWordReplacements => new()
+        {
+            {
+                "I", new() { "me" }
+            },
+            {
+                "am", new() { "is", DeleteString, }
+            },
+            {
+                "are", new() { "is", DeleteString, }
+            },
+            {
+                "is", new() { "is", DeleteString, }
+            },
+            {
+                "you", new() { "yoo", "yu", }
+            },
+            {
+                "the", new() { "tha", "da", DeleteString, }
+            },
+        };
+        public static Dictionary<string, List<string>> SnapifyPartialReplacements => new()
+        {
+            {
+                "ar", new() { "arf- ar", "a-{{emote|*snap*}} ar", }
+            },
+            {
+                "ra", new() { "raf-ra", "ra-{{emote|*snap*}} ra", }
+            },
+            {
+                "re", new() { "reh- re", }
+            },
+            {
+                "ru", new() { "ruh- ru", "ru-{{emote|*snap*}} ru", }
+            },
+            {
+                "y", new() { "yipp- y", "yi- yi- y", }
+            },
+            {
+                "th", new() { "d", "y", DeleteString, }
+            },
+            {
+                "ee", new() { "e- yi yi -", "ee- yi! -", "i", }
+            },
+            {
+                "ph", new() { "ff", "f", }
+            },
+        };
+        public static List<List<char>> SnapifySwaps => new()
+        {
+            new() { 'p', 'b', 'd', },
+            new() { 'k', 'g', },
+            new() { 'y', 'h', },
+            new() { 'd', 't', },
+            new() { 'n', 'm', },
+        };
+        public static List<string> SnapifyAdditions => new()
+        {
+            "raff!",
+            "arf!",
+            "yi! yi!",
+            "graa!",
+            "{{emote|*snap*}}",
+        };
+
+        public static bool IsCapitalized(this string Word)
+            => Word
+                ?.Strip()
+                ?.Aggregate(
+                    seed: "",
+                    func: (string a, char n) => a + (Char.IsLetter(n) ? n : null)) is string strippedWord
+            && strippedWord[0].ToString() == strippedWord[0].ToString().ToUpper();
+
+        public static string LettersOnly(this string Word)
+            => Word
+                ?.Strip()
+                ?.Aggregate(
+                    seed: "", 
+                    func: (string a, char n) => a + (Char.IsLetter(n) ? n : null));
+
+        public static string MatchCapitalization(this string Replacement, string Word)
+            => Word.IsCapitalized()
+            ? Replacement.Capitalize()
+            : Replacement.Uncapitalize();
+
+        private static string CreateSentence(string Accumulator, Word Next)
+            => VariableReplacers.CreateSentence(Accumulator, Next.ToString());
+
+        public static string Snapify(string Phrase)
+        {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(Phrase) + "." + nameof(Phrase.Length), Phrase?.Length ?? 0),
+                });
+
+            if (Phrase?.Split(' ')?.ToList()?.ConvertAll(s => new Word(s)) is List<Word> words
+                && words.Count > 0)
+            {
+                for (int i = 0; i < words.Count; i++)
+                {
+                    if (words[i] is Word word)
+                    {
+                        bool stop = false;
+                        if (stop)
+                        {
+                            continue;
+                        }
+                        foreach ((string key, List<string> values) in SnapifyWordReplacements)
+                        {
+                            if (word.LettersOnly() is string wordWithoutPunctuation
+                                && wordWithoutPunctuation.EqualsNoCase(key))
+                            {
+                                if (values.GetRandomElementCosmetic()?.ToLower() is string replacement)
+                                {
+                                    words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
+                                    stop = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (stop)
+                        {
+                            continue;
+                        }
+                        foreach ((string key, List<string> values) in SnapifyPartialReplacements)
+                        {
+                            if (word.LettersOnly() is string wordWithoutPunctuation
+                                && values.GetRandomElementCosmetic() is string replacement)
+                            {
+                                if (wordWithoutPunctuation.StartsWith(key)
+                                    && Stat.RollCached("1d2") == 0)
+                                {
+                                    wordWithoutPunctuation = replacement + wordWithoutPunctuation[key.Length..];
+                                    words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
+                                    stop = true;
+                                    break;
+                                }
+
+                                for (int j = 0; j < wordWithoutPunctuation.Length - 1; j++)
+                                {
+                                    if (wordWithoutPunctuation[j..].StartsWith(key)
+                                        && Stat.RollCached("1d4") == 0)
+                                    {
+                                        string start = wordWithoutPunctuation[..j];
+                                        string end = wordWithoutPunctuation[(j + key.Length)..];
+                                        wordWithoutPunctuation = start + replacement + end;
+                                        words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
+                                        stop = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (stop)
+                        {
+                            continue;
+                        }
+                        foreach (List<char> swaps in SnapifySwaps)
+                        {
+                            int maxIndex = word.Length - 1;
+                            string replacementWord = "";
+                            int skipCount = 0;
+                            bool didSwap = false;
+                            char previousSwap = default;
+                            for (int j = 0; j < word.Length; j++)
+                            {
+                                skipCount = Math.Max(0, skipCount--);
+                                if (skipCount > 0)
+                                {
+                                    continue;
+                                }
+                                if (j != maxIndex)
+                                {
+                                    if (swaps.Contains(word[j])
+                                        && word[j] is char currentChar
+                                        && swaps.GetRandomElementCosmeticExcluding(c => c == currentChar) is char swapChar)
+                                    {
+                                        bool currentMatchesPreviousChar = j > 0 && word[j - 1] == currentChar;
+                                        bool currentMatchesNextChar = j < maxIndex && word[j + 1] == currentChar;
+                                        bool swapMatchesPreviousChar = j > 0 && word[j - 1] == swapChar;
+                                        bool swapMatchesNextChar = j < maxIndex && word[j + 1] == swapChar;
+                                        bool currentMatchesPreviousSwap = didSwap && currentChar == previousSwap;
+
+                                        if (currentMatchesPreviousSwap)
+                                        {
+                                            previousSwap = default;
+                                            didSwap = false;
+                                            continue;
+                                        }
+                                        if (Stat.RollCached("1d2") == 0)
+                                        {
+                                            if (currentMatchesNextChar || swapMatchesNextChar)
+                                                skipCount++;
+
+                                            if (didSwap
+                                                && (currentMatchesPreviousChar
+                                                    || swapMatchesPreviousChar))
+                                            {
+                                                previousSwap = default;
+                                                didSwap = false;
+                                                continue;
+                                            }
+
+                                            replacementWord += swapChar;
+                                            previousSwap = swapChar;
+                                            didSwap = true;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                previousSwap = default;
+                                didSwap = false;
+                                replacementWord += word[j];
+                            }
+                            words[i] = words[i].ReplaceWord(replacementWord);
+                        }
+                        if (stop)
+                        {
+                            continue;
+                        }
+                    }
+                }
+                for (int i = words.Count - 1; i >= 0; i--)
+                {
+                    if (Stat.RollCached("1d6") == 0
+                        && SnapifyAdditions.GetRandomElementCosmetic() is string snapifyAddition)
+                    {
+                        words.Insert(i, new(snapifyAddition));
+                    }
+                }
+                if (!words.IsNullOrEmpty())
+                {
+                    Phrase = words.Aggregate("", CreateSentence);
+                    Phrase.RemoveAll(" " + DeleteString, DeleteString + " ", DeleteString);
+                }
+            }
+            return Phrase;
+        }
+        public static StringBuilder Snapify(this StringBuilder SB)
+        {
+            if (SB == null)
+                return null;
+
+            string snapified = Snapify(SB.ToString());
+            return SB.Clear().Append(snapified);
+        }
+    }
+}

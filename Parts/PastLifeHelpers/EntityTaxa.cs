@@ -67,12 +67,15 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
             }
         }
 
-        public bool RestoreTaxa(GameObject Entity, bool RestoreNull = false)
+        public bool RestoreTaxa(GameObject Entity, bool RestoreNull = false, bool OverrideValues = false)
         {
             bool any = false;
             foreach ((string label, string value) in this)
             {
-                if (RestoreNull || value != null)
+                if ((RestoreNull 
+                        || value != null)
+                    && (OverrideValues
+                        || Entity.GetStringProperty(label) != null))
                 {
                     Entity.SetStringProperty(label, value);
                     any = true;

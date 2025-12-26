@@ -605,7 +605,7 @@ namespace XRL.World.Conversations.Parts
             ConversationText newConversationText = Accumulate;
             if (Next != SeedConversationText)
             {
-                if (Iteration % 2 == 1)
+                if (Iteration % 2 == 0)
                     Next.ReplacerCapitalize();
 
                 newConversationText = Accumulate.Append(Next, GetJoiner(Iteration), new() { MEMORY_ELEMENT });
@@ -976,13 +976,17 @@ namespace XRL.World.Conversations.Parts
 
                     if (E.Text?.ToString()?.Capitalize() is string capitalizedText)
                         E.Text?.Clear()?.Append(capitalizedText);
-
                 }
             }
-            string text = E.Text?.ToString()?.Capitalize();
+            string text = E.Text
+                ?.ToString()
+                ?.Capitalize();
 
-            E.Text.Clear();
-            E.Text.Append(text);
+            E.Text
+                .Clear()
+                .Append("=ud_text:" + text + "|capitalize.sentences=")
+                .StartReplace()
+                .Execute();
 
             return base.HandleEvent(E);
         }

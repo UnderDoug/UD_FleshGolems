@@ -109,6 +109,10 @@ namespace XRL.World.Parts
         {
             nameof(ConversationScript),
         };
+        public static List<string> IPartsToRemoveWhenReanimating => new()
+        {
+            nameof(MentalShield),
+        };
 
         public bool IsALIVE;
 
@@ -1138,6 +1142,11 @@ namespace XRL.World.Parts
                         ?.ToArray());
 
                 // PastLife.RestoreParts(p => !IsPartToSkip(p, frankenCorpse));
+
+                if (!IPartsToRemoveWhenReanimating.IsNullOrEmpty())
+                    foreach (string part in IPartsToRemoveWhenReanimating)
+                        if (frankenCorpse.HasPart(part))
+                            frankenCorpse.RemovePart(part);
 
                 Debug.Log(nameof(reanimationHelper.DeathDetails), Indent: indent[2]);
                 if (reanimationHelper.DeathDetails == null)

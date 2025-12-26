@@ -4,10 +4,13 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 
+using Qud.API;
+
 using XRL;
 using XRL.World;
 using XRL.World.Text.Attributes;
 using XRL.World.Text.Delegates;
+using XRL.World.Parts;
 using XRL.Language;
 
 using UD_FleshGolems;
@@ -16,9 +19,6 @@ using UD_FleshGolems.Parts.VengeanceHelpers;
 using Debug = UD_FleshGolems.Logging.Debug;
 
 using static UD_FleshGolems.Const;
-using System.Globalization;
-using Qud.API;
-using XRL.World.Parts;
 
 namespace UD_FleshGolems
 {
@@ -37,6 +37,13 @@ namespace UD_FleshGolems
             return Registry;
         }
 
+        public static List<char> CapitalizingPunctuation = new()
+        {
+            '.',
+            '!',
+            '?',
+        };
+
         /* 
          * 
          * Variable (no object)
@@ -46,6 +53,11 @@ namespace UD_FleshGolems
         public static string Test_Parameter_Separators(DelegateContext Context)
             => Context.Parameters
                 ?.Aggregate("", (a, n) => a + ":" + n);
+
+        [VariableReplacer("ud_text")]
+        public static string UD_Text(DelegateContext Context)
+            => Context.Parameters
+                ?.Aggregate("", (a, n) => a + (!a.IsNullOrEmpty() ? ":" : null) + n);
 
         [VariableReplacer]
         public static string ud_nbsp(DelegateContext Context)
@@ -504,5 +516,93 @@ namespace UD_FleshGolems
                 Context.Value.Append(contextValue.Capitalize());
             }
         }
+
+        public static bool EndsInCapitalizingPunctuation(this string Word, bool ExcludeElipses = false)
+            => !Word.IsNullOrEmpty()
+            && Word.Length > 0
+            && Word[^1].EqualsAny(CapitalizingPunctuation.ToArray())
+                && (!ExcludeElipses
+                    || (Word.Length > 1
+                        && Word[^2] != '.'));
+
+        public static string CreateSentence(string Accumulator, string Next)
+            => Accumulator + (!Accumulator.IsNullOrEmpty() ? " " : null) + Next;
+
+        [VariablePostProcessor("capitalize.sentences")]
+        public static void UD_CapitalizeSentences(DelegateContext Context)
+        {
+            bool excludeElipses = false;
+            if (Context.Parameters is List<string> contextParams
+                && contextParams.Count > 0
+                && contextParams[0].EqualsNoCase("ExcludeElipses"))
+                excludeElipses = true;
+
+            if (Context.Value.ToString() is string contextValue)
+            {
+                List<List<string>> lines = new();
+                foreach (string line in contextValue.Split("\n"))
+                {
+                    if (line?.Split(' ')?.ToList() is List<string> words)
+                    {
+                        lines.Add(words);
+                    }
+                    else
+                    {
+                        lines.Add(new() { line });
+                    }
+                }
+                if (!lines.IsNullOrEmpty())
+                {
+                    for (int i = 0; i < lines.Count; i++)
+                    {
+                        if (lines[i] is List<string> words)
+                        {
+                            bool capitalizeNext = true;
+                            if (words[0].Capitalize() is string capitalizedFirst
+                                && capitalizedFirst != words[0])
+                            {
+                                lines[i][0] = capitalizedFirst;
+                                if (!words[0].EndsInCapitalizingPunctuation(excludeElipses))
+                                    capitalizeNext = false;
+                            }
+                            for (int j = 0; j < words.Count; j++)
+                            {
+                                if (words[j] is string word)
+                                {
+                                    if (capitalizeNext
+                                        && word.Capitalize() is string capitalizedWord
+                                        && capitalizedWord != word)
+                                        words[j] = capitalizedWord;
+
+                                    if (!words[j].EndsInCapitalizingPunctuation(excludeElipses))
+                                        capitalizeNext = false;
+                                    else
+                                        capitalizeNext = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                List<string> compiledWords = new();
+                if (!lines.IsNullOrEmpty())
+                {
+                    foreach (List<string> words in lines)
+                    {
+                        compiledWords.Add(words?.Aggregate("", CreateSentence) ?? "");
+                    }
+                }
+                Context.Value.Clear();
+                Context.Value.Append(
+                    compiledWords
+                        ?.Aggregate("", (a, n) => a + (!a.IsNullOrEmpty() ? "\n" : null) + n)
+                        ?.Capitalize()
+                    ?? contextValue
+                        ?.Capitalize());
+            }
+        }
+
+        [VariablePostProcessor("snapify")]
+        public static void UD_Snapify(DelegateContext Context)
+            => Context.Value.Snapify();
     }
 }

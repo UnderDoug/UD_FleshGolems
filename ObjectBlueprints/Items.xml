@@ -3,6 +3,7 @@
   <object Name="Corpse" Load="Merge">
     <part Name="UD_FleshGolems_CorpseReanimationHelper" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Corpse Corpse" CorpseChance="0" />
+    <removepart Name="Inorganic" />
     <tag Name="Animatable" />
     <removetag Name="Tier" />
     <builder Name="Animated" ChanceOneIn="3000" />
@@ -178,6 +179,7 @@
     <tag Name="BodyType" Value="RailedMechanism" />
     <tag Name="Species" Value="infrastructure" />
     <part Name="Metal" />
+    <part Name="Inorganic" />
     <part Name="Corpse" CorpseBlueprint="UD_FleshGolems Robot Corpse Corpse" CorpseChance="100" />
     <property Name="BleedLiquid" Value="oil-1000" />
     <xtagTextFragments
@@ -536,6 +538,7 @@
     <removepart Name="Food" />
     <removetag Name="CanCookTemporary" />
     <tag Name="Breakable" />
+    <part Name="Inorganic" />
     <xtagTextFragments
       Skin="crust"
       PoeticFeatures="chipped rock,broken outcrop,eroded crust,cracked stone"
@@ -745,6 +748,7 @@
     <tag Name="DynamicObjectsTable:AnimatableFurniture" />
     <tag Name="BodyType" Value="Jelly" />
     <tag Name="Species" Value="jelly" />
+    <part Name="Inorganic" />
     <property Name="BleedLiquid" Value="salt-1000" />
     <tag Name="UD_FleshGolems_CorpseDescription" Value="=subject.UD_xTag:2:U:UD_FleshGolems_CorpseText:Components= are brought =subject.uD_xTag:UD_FleshGolems_CorpseText:WretchedVerbs= back into a horrific facsimile of life. =subject.UD_xTag:UD_FleshGolems_CorpseText:UnappealingAdjectives= =subject.uD_xTag:2:U:UD_FleshGolems_CorpseText:UnsettlingNoises= escape =subject.possessive= every movement and twist the gut of anyone unfortunate enough to hear it." />
     <xtagTextFragments

@@ -444,6 +444,7 @@ namespace XRL.World.Effects
                 ColorLatch = true;
                 E.RenderString = "\u0003";
                 E.ApplyColors(GetForegroundColor(), ICON_COLOR_PRIORITY);
+                return false;
             }
             else
             {

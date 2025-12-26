@@ -259,11 +259,15 @@ namespace UD_FleshGolems
 
         public static T GetRandomElementCosmeticExcluding<T>(this IEnumerable<T> Enumerable, Predicate<T> Exclude)
             where T : class
-        {
-            List<T> filteredList = new(Enumerable);
-            filteredList.RemoveAll(m => Exclude != null && Exclude(m));
-            return filteredList.GetRandomElementCosmetic();
-        }
+            => Enumerable
+                ?.Where(t => Exclude == null || !Exclude(t))
+                ?.GetRandomElementCosmetic();
+
+        public static char GetRandomElementCosmeticExcluding(this IEnumerable<char> Enumerable, Predicate<char> Exclude)
+            => Enumerable
+                ?.Where(t => Exclude == null || !Exclude(t))
+                ?.GetRandomElementCosmetic()
+            ?? default;
 
         public static Commerce BlurValue(this Commerce Commerce, int Margin)
         {
@@ -1133,7 +1137,7 @@ namespace UD_FleshGolems
                 && String.StartsWith("=")
                 && String[1..].TryGetIndexOf("=", out int replacerEnd, false))
             {
-                String = String[..replacerEnd] + "|capitalize" + String[replacerEnd..];
+                String = String[..(replacerEnd + 1)] + "|capitalize" + String[(replacerEnd + 1)..];
             }
             return String;
         }
