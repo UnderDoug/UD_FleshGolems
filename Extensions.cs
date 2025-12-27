@@ -923,6 +923,11 @@ namespace UD_FleshGolems
             return Int;
         }
 
+        public static string ReplaceNoCase(this string Text, string OldValue, string NewValue)
+            => !Text.IsNullOrEmpty()
+            ? Regex.Replace(Text, OldValue ?? "", NewValue ?? "", RegexOptions.IgnoreCase)
+            : Text;
+
         public static string Remove(this string Text, string String)
             => Text.Replace(String, "");
 
@@ -1119,27 +1124,23 @@ namespace UD_FleshGolems
             : Enum.ToString();
 
         public static string SafeJoin<T>(this IEnumerable<T> Enumerable, string Delimiter = ", ")
-        {
-            if (Enumerable == null || Enumerable.Count() < 1)
-                return null;
-
-            return Enumerable.ConvertToStringList(t => t?.ToString() ?? "").Join(delimiter: Delimiter);
-        }
+            => (Enumerable != null
+                && Enumerable.Count() > 0)
+            ? Enumerable.ConvertToStringList(t => t?.ToString() ?? "").Join(delimiter: Delimiter)
+            : null;
 
         public static string Uncapitalize(this string String)
-            => String[0].ToString().ToLower() + String[1..];
+            => !String.IsNullOrEmpty()
+            ? String[0].ToString()?.ToLower() + (String.Length > 1 ? String[1..] : null)
+            : String;
 
         public static string ReplacerCapitalize(this string String)
-        {
-            if (!String.IsNullOrEmpty()
+            => !String.IsNullOrEmpty()
                 && String.Length > 1
                 && String.StartsWith("=")
-                && String[1..].TryGetIndexOf("=", out int replacerEnd, false))
-            {
-                String = String[..(replacerEnd + 1)] + "|capitalize" + String[(replacerEnd + 1)..];
-            }
-            return String;
-        }
+                && String[1..].TryGetIndexOf("=", out int replacerEnd, false)
+            ? String[..(replacerEnd + 1)] + "|capitalize" + String[(replacerEnd + 1)..]
+            : String;
 
         public static ConversationText ReplacerCapitalize(this ConversationText ConversationText)
         {

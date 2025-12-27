@@ -12,149 +12,37 @@ using XRL.World.Text.Attributes;
 using XRL.World.Text.Delegates;
 using XRL.World.Parts;
 using XRL.Language;
+using XRL.Rules;
 
-using UD_FleshGolems;
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Parts.VengeanceHelpers;
 using Debug = UD_FleshGolems.Logging.Debug;
 
 using static UD_FleshGolems.Const;
-using XRL.Rules;
+using UD_FleshGolems.ModdedText.TextHelpers;
 
-namespace UD_FleshGolems
+namespace UD_FleshGolems.ModdedText
 {
     public static class ModdedTextFilters
     {
-        private readonly struct Word
-        {
-            public static Word Empty => new(null, null, null, null);
-
-            private readonly bool Open;
-            private readonly string Shader;
-            public readonly string Text;
-            private readonly bool Close;
-
-            public int Length => Text?.Length ?? 0;
-
-            private Word(bool? Open, string Shader, string Text, bool? Close)
-            {
-                this.Open = Open.GetValueOrDefault();
-                this.Shader = Shader;
-                this.Text = Text;
-                this.Close = Close.GetValueOrDefault();
-            }
-            public Word(string Text)
-                : this(
-                      Open: Text?.StartsWith("{{"),
-                      Shader: null,
-                      Text: null,
-                      Close: Text?.EndsWith("}}"))
-            {
-                this.Text = Text?.RemoveAll("{", "}");
-                if (!this.Text.IsNullOrEmpty()
-                    && this.Text.TryGetIndexOf("|", out int pipeBefore, EndOfSearch: false)
-                    && pipeBefore + 1 is int pipeAfter)
-                {
-                    Shader = this.Text[..pipeBefore];
-                    this.Text = this.Text[pipeAfter..];
-                }
-            }
-
-            public char this[int Index] => Text[Index];
-
-            public string this[System.Range Range] => Text[Range];
-
-            public override readonly string ToString()
-                => (Open ? "{{" : null)
-                + (!Shader.IsNullOrEmpty() ? Shader + "|" : null)
-                + Text
-                + (Close ? "}}" : null);
-            
-            public static Word ReplaceWord(Word? Word, string Text)
-                => new(Word?.Open, Word?.Shader, Text, Word?.Close);
-            
-            public readonly Word ReplaceWord(string Text)
-                => ReplaceWord(this, Text);
-
-            public readonly bool IsCapitalized()
-                => Text
-                    ?.Strip()
-                    ?.Aggregate(
-                        seed: "",
-                        func: (string a, char n) => a + (Char.IsLetter(n) ? n : null)) is string strippedWord
-                && strippedWord[0].ToString() == strippedWord[0].ToString().ToUpper();
-
-            public readonly string LettersOnly()
-            => Text
-                ?.Strip()
-                ?.Aggregate(
-                    seed: "",
-                    func: (string a, char n) => a + (Char.IsLetter(n) ? n : null));
-
-            public readonly bool ImpliesCapitalization(bool ExcludeElipses = false)
-                => Text.IsNullOrEmpty()
-                || Text.EndsInCapitalizingPunctuation(ExcludeElipses);
-
-            public readonly Word MatchCapitalization(string Word)
-                => Word.IsCapitalized()
-                ? ReplaceWord(this, Text.Capitalize())
-                : ReplaceWord(this, Text.Uncapitalize());
-
-            public readonly Word Replace(string OldValue, string NewValue)
-                => ReplaceWord(this, Text?.Replace(OldValue, NewValue));
-
-            public readonly bool Contains(string String)
-                => !Text.IsNullOrEmpty()
-                && Text.Contains(String);
-
-            public readonly bool StartsWith(string String)
-                => !Text.IsNullOrEmpty()
-                && Text.StartsWith(String);
-
-            public readonly bool EndsWith(string String)
-                => !Text.IsNullOrEmpty()
-                && Text.EndsWith(String);
-
-            public readonly bool TextEquals(string String)
-                => !Text.IsNullOrEmpty()
-                && Text.Equals(String);
-
-            public readonly bool TextEqualsNoCase(string String)
-                => !Text.IsNullOrEmpty()
-                && Text.EqualsNoCase(String);
-
-            public readonly bool Any(Func<char, bool> predicate)
-                => !Text.IsNullOrEmpty()
-                && Text.Any(predicate);
-
-            public readonly bool All(Func<char, bool> predicate)
-                => !Text.IsNullOrEmpty()
-                && Text.All(predicate);
-
-            public IEnumerable<char> EnumerateText()
-            {
-                if (Text.IsNullOrEmpty())
-                    yield break;
-
-                foreach (char @char in Text)
-                    yield return @char;
-            }
-        }
         public static string DeleteString => "##DELETE";
         public static string NoSpace => "##NoSpace";
+
+        public static List<string> IsOrDelete => new() { "is", DeleteString, };
+        public static List<string> NotsOrNo => new() { "not", "not", "no", };
         public static Dictionary<string, List<string>> SnapifyWordReplacements => new()
         {
             {
                 "I", new() { "me" }
             },
             {
-                "am", new() { "is", DeleteString, }
+                "am", IsOrDelete
             },
             {
-                "are", new() { "is", DeleteString, }
+                "are", IsOrDelete
             },
             {
-                "is", new() { "is", DeleteString, }
+                "is", IsOrDelete
             },
             {
                 "you", new() { "yoo", "yu", }
@@ -169,7 +57,28 @@ namespace UD_FleshGolems
                 "an", new() { DeleteString, }
             },
             {
-                "ing", new() { "ing", DeleteString, }
+                "to", new() { DeleteString, }
+            },
+            {
+                "ing", new() { "ing", DeleteString, DeleteString, }
+            },
+            {
+                "can't", NotsOrNo
+            },
+            {
+                "won't", NotsOrNo
+            },
+            {
+                "don't", NotsOrNo
+            },
+            {
+                "doesn't", NotsOrNo
+            },
+            {
+                "haven't", NotsOrNo
+            },
+            {
+                "aren't", NotsOrNo
             },
         };
         public static Dictionary<string, List<string>> SnapifyPartialReplacements => new()
@@ -214,15 +123,15 @@ namespace UD_FleshGolems
                 "ph", new() { "ff", "f", }
             },
         };
-        public static List<List<char>> SnapifySwaps => new()
+        public static Dictionary<List<char>, int> SnapifySwaps => new()
         {
-            new() { 'p', 'b', 'd', },
-            new() { 'k', 'g', },
-            new() { 'y', 'h', },
-            new() { 'd', 't', },
-            new() { 'n', 'm', },
-            new() { 'v', 'b', 'f', },
-            new() { 'w', 'v', },
+            { new() { 'p', 'b', 'd', }, 1 },
+            { new() { 'k', 'g', }, 3 },
+            { new() { 'y', 'h', }, 3 },
+            { new() { 'd', 't', }, 1 },
+            { new() { 'n', 'm', }, 1 },
+            { new() { 'v', 'b', 'f', }, 1 },
+            // { new() { 'w', 'v', }, 4 },
         };
         public static List<string> SnapifyAdditions => new()
         {
@@ -242,7 +151,7 @@ namespace UD_FleshGolems
                 ?.Strip()
                 ?.Aggregate(
                     seed: "",
-                    func: (string a, char n) => a + (Char.IsLetter(n) ? n : null)) is string strippedWord
+                    func: (a, n) => a + (char.IsLetter(n) ? n : null)) is string strippedWord
             && strippedWord[0].ToString() == strippedWord[0].ToString().ToUpper();
 
         public static string LettersOnly(this string Word)
@@ -250,7 +159,7 @@ namespace UD_FleshGolems
                 ?.Strip()
                 ?.Aggregate(
                     seed: "", 
-                    func: (string a, char n) => a + (Char.IsLetter(n) ? n : null));
+                    func: (a, n) => a + (char.IsLetter(n) ? n : null));
 
         public static string MatchCapitalization(this string Replacement, string Word)
             => Word.IsCapitalized()
@@ -288,6 +197,7 @@ namespace UD_FleshGolems
                             {
                                 if (values.GetRandomElementCosmetic() is string replacement)
                                 {
+                                    string originalWordWithoutPunctuation = wordWithoutPunctuation;
                                     if (key.EqualsNoCase("I")
                                         && i > 0
                                         && words[i - 1] is Word previousWord
@@ -295,8 +205,10 @@ namespace UD_FleshGolems
                                     {
                                         wordWithoutPunctuation = wordWithoutPunctuation.Uncapitalize();
                                     }
-                                    words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
-                                    stop = true;
+                                    words[i] = words[i].Replace(
+                                        OldValue: originalWordWithoutPunctuation,
+                                        NewValue: replacement.MatchCapitalization(wordWithoutPunctuation));
+                                    //stop = true;
                                     break;
                                 }
                             }
@@ -315,20 +227,20 @@ namespace UD_FleshGolems
                                 {
                                     wordWithoutPunctuation = replacement + wordWithoutPunctuation[key.Length..];
                                     words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
-                                    stop = true;
+                                    // stop = true;
                                     break;
                                 }
 
                                 for (int j = 0; j < wordWithoutPunctuation.Length - 1; j++)
                                 {
                                     if (wordWithoutPunctuation[j..].StartsWith(key)
-                                        && Stat.RollCached("1d4") == 1)
+                                        && Stat.RollCached("1d1") == 1)
                                     {
                                         string start = wordWithoutPunctuation[..j];
                                         string end = wordWithoutPunctuation[(j + key.Length)..];
                                         wordWithoutPunctuation = start + replacement + end;
                                         words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
-                                        stop = true;
+                                        // stop = true;
                                         break;
                                     }
                                 }
@@ -338,7 +250,7 @@ namespace UD_FleshGolems
                         {
                             continue;
                         }
-                        foreach (List<char> swaps in SnapifySwaps)
+                        foreach ((List<char> swaps, int odds) in SnapifySwaps)
                         {
                             int maxIndex = word.Length - 1;
                             string replacementWord = "";
@@ -347,11 +259,12 @@ namespace UD_FleshGolems
                             char previousSwap = default;
                             for (int j = 0; j < word.Length; j++)
                             {
-                                skipCount = Math.Max(0, skipCount--);
                                 if (skipCount > 0)
                                 {
+                                    skipCount = Math.Max(0, --skipCount);
                                     continue;
                                 }
+                                skipCount = Math.Max(0, --skipCount);
                                 if (j != maxIndex)
                                 {
                                     if (swaps.Contains(word[j])
@@ -370,7 +283,7 @@ namespace UD_FleshGolems
                                             didSwap = false;
                                             continue;
                                         }
-                                        if (Stat.RollCached("1d2") == 1)
+                                        if (Stat.RollCached("1d" + odds) == 1)
                                         {
                                             if (currentMatchesNextChar || swapMatchesNextChar)
                                                 skipCount++;

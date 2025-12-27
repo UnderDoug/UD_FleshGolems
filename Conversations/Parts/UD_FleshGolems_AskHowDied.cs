@@ -978,15 +978,11 @@ namespace XRL.World.Conversations.Parts
                         E.Text?.Clear()?.Append(capitalizedText);
                 }
             }
-            string text = E.Text
-                ?.ToString()
-                ?.Capitalize();
-
-            E.Text
-                .Clear()
-                .Append("=ud_text:" + text + "|capitalize.sentences=")
+            string text = ("=capitalize.sentences:" + E.Text?.ToString() + "=")
                 .StartReplace()
-                .Execute();
+                .ToString();
+
+            E.Text.Clear().Append(text);
 
             return base.HandleEvent(E);
         }

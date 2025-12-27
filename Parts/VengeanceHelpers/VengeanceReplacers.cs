@@ -270,7 +270,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     ?.GetDeathDetails()
                     ?.Method());
 
-        // parameter0: method override.
         [VariableObjectReplacer("death.a.method")]
         public static string TargetDeath_A_Method(DelegateContext Context)
             => ContextCapitalize(
@@ -279,14 +278,27 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     ?.GetDeathDetails()
                     ?.Method(true));
 
-        // parameter0: method override.
-        [VariableObjectReplacer("death.withMethod")]
-        public static string TargetDeath_WithMethod(DelegateContext Context)
+        [VariableObjectReplacer("death.with.method")]
+        public static string TargetDeath_With_Method(DelegateContext Context)
             => ContextCapitalize(
                 Context: Context,
                 Output: Context.Target
-                    ?.GetDeathDescription()
-                    ?.WithMethod("", !Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null));
+                        ?.GetDeathDescription()
+                        ?.GetWith("")
+                    + Context.Target
+                        ?.GetDeathDetails()
+                        ?.Method());
+
+        [VariableObjectReplacer("death.with.a.method")]
+        public static string TargetDeath_With_A_Method(DelegateContext Context)
+            => ContextCapitalize(
+                Context: Context,
+                Output: Context.Target
+                        ?.GetDeathDescription()
+                        ?.GetWith("") 
+                    + Context.Target
+                        ?.GetDeathDetails()
+                        ?.Method(true));
 
         // parameter0: adverb.
         // parameter1: killer override.

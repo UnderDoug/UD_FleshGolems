@@ -529,7 +529,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 && DeathMemory.GetRemembersKiller() is DeathMemory.KillerMemory killerMemory
                 && killerMemory == DeathMemory.KillerMemory.Feature
                 && GetKiller(Killer) != null)
-
                 withString = "using";
 
             return With && !GetMethod(Method).IsNullOrEmpty()

@@ -87,7 +87,7 @@
       <text ID="MethodKnown" MemoryElement="Method" Known="true">
         <text>=subject.death.a.method= is what I succumbed to...</text>
         <text>=subject.death.a.method= was used to kill me...</text>
-        <text>it was =subject.death.withMethod= that I was killed...</text>
+        <text>it was =subject.death.with.a.method= that I was killed...</text>
       </text>
       <text ID="MethodUnknown" MemoryElement="Method" Known="false">
         <text>I can't remember what I was actually killed with...</text>
@@ -102,8 +102,8 @@
       </text>
 
       <text ID="EnvironmentalKnown" MemoryElement="Environment" Known="true">
-        <text>I wasn't really killed by someone...</text>
-        <text>It was more of a self-inflicted accident, I think...</text>
+        <text>I wasn't really killed by someone specfic...</text>
+        <text>It was more self-inflicted, I think... =subject.death.accidentally:, of course...=</text>
         <text>No one killed me exactly...</text>
       </text>
 
