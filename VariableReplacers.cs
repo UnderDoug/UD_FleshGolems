@@ -54,7 +54,7 @@ namespace UD_FleshGolems
             => Context.Parameters
                 ?.Aggregate("", (a, n) => a + ":" + n);
 
-        [VariableReplacer("ud_text")]
+        [VariableReplacer(Keys: "ud_text", Capitalization = false)]
         public static string UD_Text(DelegateContext Context)
             => Context.Parameters
                 ?.Aggregate("", (a, n) => a + (!a.IsNullOrEmpty() ? ":" : null) + n);

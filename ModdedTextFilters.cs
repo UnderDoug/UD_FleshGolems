@@ -91,6 +91,10 @@ namespace UD_FleshGolems
                     seed: "",
                     func: (string a, char n) => a + (Char.IsLetter(n) ? n : null));
 
+            public readonly bool ImpliesCapitalization(bool ExcludeElipses = false)
+                => Text.IsNullOrEmpty()
+                || Text.EndsInCapitalizingPunctuation(ExcludeElipses);
+
             public readonly Word MatchCapitalization(string Word)
                 => Word.IsCapitalized()
                 ? ReplaceWord(this, Text.Capitalize())
@@ -137,6 +141,7 @@ namespace UD_FleshGolems
             }
         }
         public static string DeleteString => "##DELETE";
+        public static string NoSpace => "##NoSpace";
         public static Dictionary<string, List<string>> SnapifyWordReplacements => new()
         {
             {
@@ -156,6 +161,15 @@ namespace UD_FleshGolems
             },
             {
                 "the", new() { "tha", "da", DeleteString, }
+            },
+            {
+                "a", new() { DeleteString, }
+            },
+            {
+                "an", new() { DeleteString, }
+            },
+            {
+                "ing", new() { "ing", DeleteString, }
             },
         };
         public static Dictionary<string, List<string>> SnapifyPartialReplacements => new()
@@ -182,6 +196,21 @@ namespace UD_FleshGolems
                 "ee", new() { "e- yi yi -", "ee- yi! -", "i", }
             },
             {
+                "ve", new() { "b", "be", }
+            },
+            {
+                "dr", new() { "d", }
+            },
+            {
+                "oul", new() { "ul", "u", "oo", }
+            },
+            {
+                "ou", new() { "ow", "-awoo! -", }
+            },
+            {
+                "he", new() { "he-yeye-", "", }
+            },
+            {
                 "ph", new() { "ff", "f", }
             },
         };
@@ -192,14 +221,20 @@ namespace UD_FleshGolems
             new() { 'y', 'h', },
             new() { 'd', 't', },
             new() { 'n', 'm', },
+            new() { 'v', 'b', 'f', },
+            new() { 'w', 'v', },
         };
         public static List<string> SnapifyAdditions => new()
         {
             "raff!",
+            NoSpace + "- raff!",
             "arf!",
+            NoSpace + "- yi! yi!",
             "yi! yi!",
+            NoSpace + "- graa!",
             "graa!",
             "{{emote|*snap*}}",
+            "{{emote|*snap-snap*}}",
         };
 
         public static bool IsCapitalized(this string Word)
@@ -251,8 +286,15 @@ namespace UD_FleshGolems
                             if (word.LettersOnly() is string wordWithoutPunctuation
                                 && wordWithoutPunctuation.EqualsNoCase(key))
                             {
-                                if (values.GetRandomElementCosmetic()?.ToLower() is string replacement)
+                                if (values.GetRandomElementCosmetic() is string replacement)
                                 {
+                                    if (key.EqualsNoCase("I")
+                                        && i > 0
+                                        && words[i - 1] is Word previousWord
+                                        && !previousWord.ImpliesCapitalization())
+                                    {
+                                        wordWithoutPunctuation = wordWithoutPunctuation.Uncapitalize();
+                                    }
                                     words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
                                     stop = true;
                                     break;
@@ -269,7 +311,7 @@ namespace UD_FleshGolems
                                 && values.GetRandomElementCosmetic() is string replacement)
                             {
                                 if (wordWithoutPunctuation.StartsWith(key)
-                                    && Stat.RollCached("1d2") == 0)
+                                    && Stat.RollCached("1d2") == 1)
                                 {
                                     wordWithoutPunctuation = replacement + wordWithoutPunctuation[key.Length..];
                                     words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
@@ -280,7 +322,7 @@ namespace UD_FleshGolems
                                 for (int j = 0; j < wordWithoutPunctuation.Length - 1; j++)
                                 {
                                     if (wordWithoutPunctuation[j..].StartsWith(key)
-                                        && Stat.RollCached("1d4") == 0)
+                                        && Stat.RollCached("1d4") == 1)
                                     {
                                         string start = wordWithoutPunctuation[..j];
                                         string end = wordWithoutPunctuation[(j + key.Length)..];
@@ -328,7 +370,7 @@ namespace UD_FleshGolems
                                             didSwap = false;
                                             continue;
                                         }
-                                        if (Stat.RollCached("1d2") == 0)
+                                        if (Stat.RollCached("1d2") == 1)
                                         {
                                             if (currentMatchesNextChar || swapMatchesNextChar)
                                                 skipCount++;
@@ -371,8 +413,19 @@ namespace UD_FleshGolems
                 }
                 if (!words.IsNullOrEmpty())
                 {
-                    Phrase = words.Aggregate("", CreateSentence);
-                    Phrase.RemoveAll(" " + DeleteString, DeleteString + " ", DeleteString);
+                    Phrase = words
+                            ?.Aggregate("", CreateSentence)
+                            ?.RemoveAllNoCase(" " + DeleteString, DeleteString + " ", DeleteString)
+                        ?? Phrase;
+
+                    while (Phrase.TryGetIndexOf(NoSpace, out int noSpaceStartIndex, false)
+                        && noSpaceStartIndex - 1 is int noSpaceStartWithSpaceIndex
+                        && noSpaceStartWithSpaceIndex >= 0
+                        && noSpaceStartIndex + (NoSpace?.Length ?? 0) is int noSpaceEndIndex
+                        && noSpaceEndIndex <= Phrase.Length)
+                    {
+                        Phrase = Phrase[..noSpaceStartWithSpaceIndex] + Phrase[noSpaceEndIndex..];
+                    }
                 }
             }
             return Phrase;

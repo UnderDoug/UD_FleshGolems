@@ -33,6 +33,7 @@ using Options = UD_FleshGolems.Options;
 using ConvoDelegateContext = XRL.World.Conversations.DelegateContext;
 using TextDelegateContext = XRL.World.Text.Delegates.DelegateContext;
 using XRL.World.Conversations.Parts;
+using System.Text.RegularExpressions;
 
 namespace UD_FleshGolems
 {
@@ -926,14 +927,12 @@ namespace UD_FleshGolems
             => Text.Replace(String, "");
 
         public static string RemoveAll(this string Text, params string[] Items)
-        {
-            if (!Items.IsNullOrEmpty())
-                foreach (string item in Items)
-                    if (!item.IsNullOrEmpty())
-                        Text = Text.Remove(item);
+            => Items?.Aggregate(Text, (a, n) => a?.Remove(n))
+            ?? Text;
 
-            return Text;
-        }
+        public static string RemoveAllNoCase(this string Text, params string[] Items)
+            => Items?.Aggregate(Text, (a, n) => Regex.Replace(a, n, "", RegexOptions.IgnoreCase))
+            ?? Text;
 
         public static string YehNah(this bool? Yeh)
             => Utils.YehNah(Yeh);

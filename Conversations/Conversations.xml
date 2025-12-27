@@ -63,9 +63,9 @@
 
       <text ID="KillerCreatureKnown" MemoryElement="KillerCreature" Known="true">
         <text>the type of creature that killed me was =subject.death.killer.creature=...</text>
-        <text>=subject.death.killer.creature=... That's what got me... {{emote|*slowly shakes =subject.bodypart:head=*}} ... =subject.death.killer.creature=...</text>
+        <text>=subject.death.killer.creature=... that's what got me... {{emote|*slowly shakes =subject.bodypart:head=*}} ... =subject.death.killer.creature=...</text>
         <text>would you believe it? =subject.death.killer.creature=, of all things... {{K|=subject.death.killer.creature=}}...</text>
-        <text>Look out the next time there's =subject.death.killer.creature= nearby... =subject.death.killer.creature='s what got me!</text>
+        <text>look out the next time there's =subject.death.killer.creature= nearby... =subject.death.killer.creature='s what got me!</text>
       </text>
       <text ID="KillerCreatureUnknown" MemoryElement="KillerCreature" Known="false">
         <text>I couldn't tell you so much as {{Y|what}} they were, let alone who... some mysterious entity, certainly...</text>
@@ -87,7 +87,7 @@
       <text ID="MethodKnown" MemoryElement="Method" Known="true">
         <text>=subject.death.a.method= is what I succumbed to...</text>
         <text>=subject.death.a.method= was used to kill me...</text>
-        <text>it =subject.death.withMethod= that I was killed...</text>
+        <text>it was =subject.death.withMethod= that I was killed...</text>
       </text>
       <text ID="MethodUnknown" MemoryElement="Method" Known="false">
         <text>I can't remember what I was actually killed with...</text>

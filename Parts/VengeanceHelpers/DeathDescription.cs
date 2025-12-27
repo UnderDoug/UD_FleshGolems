@@ -520,14 +520,16 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public string GetWith(string Killer = null, string Method = null, bool ForceNoMethodArticle = false)
         {
-            if (GetKiller(Killer).IsNullOrEmpty()
+            if (GetKiller(Killer) == null
                 && GetMethod(Method).IsNullOrEmpty())
                 return null;
 
             string withString = "with";
             if (DeathMemory != null
                 && DeathMemory.GetRemembersKiller() is DeathMemory.KillerMemory killerMemory
-                && killerMemory == DeathMemory.KillerMemory.Feature)
+                && killerMemory == DeathMemory.KillerMemory.Feature
+                && GetKiller(Killer) != null)
+
                 withString = "using";
 
             return With && !GetMethod(Method).IsNullOrEmpty()
