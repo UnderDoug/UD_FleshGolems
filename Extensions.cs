@@ -34,6 +34,7 @@ using ConvoDelegateContext = XRL.World.Conversations.DelegateContext;
 using TextDelegateContext = XRL.World.Text.Delegates.DelegateContext;
 using XRL.World.Conversations.Parts;
 using System.Text.RegularExpressions;
+using UD_FleshGolems.ModdedText.TextHelpers;
 
 namespace UD_FleshGolems
 {
@@ -108,7 +109,7 @@ namespace UD_FleshGolems
                 && inheritedTypes.Contains(Type));
 
         public static bool IsPlayerBlueprint(this string Blueprint)
-            => Blueprint == Startup.PlayerBlueprint;
+            => Blueprint == Startup.Initializers.PlayerBlueprint;
 
         public static bool HasPlayerBlueprint(this GameObject Entity)
             => Entity.Blueprint.IsPlayerBlueprint();
@@ -1131,7 +1132,7 @@ namespace UD_FleshGolems
 
         public static string Uncapitalize(this string String)
             => !String.IsNullOrEmpty()
-            ? String[0].ToString()?.ToLower() + (String.Length > 1 ? String[1..] : null)
+            ? String.UncapitalizeEx()
             : String;
 
         public static string ReplacerCapitalize(this string String)
@@ -1140,13 +1141,161 @@ namespace UD_FleshGolems
                 && String.StartsWith("=")
                 && String[1..].TryGetIndexOf("=", out int replacerEnd, false)
             ? String[..(replacerEnd + 1)] + "|capitalize" + String[(replacerEnd + 1)..]
-            : String;
+            : String.CapitalizeEx();
 
         public static ConversationText ReplacerCapitalize(this ConversationText ConversationText)
         {
-            if (ConversationText?.Text != null)
-                ConversationText.Text = ConversationText.Text.ReplacerCapitalize();
+            if (ConversationText?.Text is string conversationTextString)
+                ConversationText.Text = conversationTextString.ReplacerCapitalize();
             return ConversationText;
+        }
+
+        public static bool IsLetterAndNotException(this char Char)
+            => char.IsLetter(Char)
+            && !Char.EqualsAny(CapitalizationExceptions);
+
+        public static bool IsUpper(this string String)
+            => !String.IsNullOrEmpty()
+            && String == String.ToUpper();
+
+        public static bool IsUpper(this char Char)
+            => Char != default
+            && Char.ToString().IsUpper();
+
+        public static bool IsLower(this string String)
+            => !String.IsNullOrEmpty()
+            && String == String.ToLower();
+
+        public static bool IsLower(this char Char)
+            => Char != default
+            && Char.ToString().IsLower();
+
+        public static bool TryCapitalize(this char Char, out char CapChar)
+        {
+            CapChar = default;
+            if (Char != default
+                && Char.ToString().Capitalize() is string capitalized
+                && capitalized != Char.ToString())
+            {
+                CapChar = capitalized[0];
+                return true;
+            }
+            return false;
+        }
+        public static string CapitalizeExcept(this string Text, params char[] Exceptions)
+        {
+            for (int i = 0; i < (Text?.Length ?? 0); i++)
+            {
+                if (!Text[i].IsLetterAndNotException())
+                    continue;
+
+                if (Text[i].IsUpper())
+                    break;
+
+                if (Text[i].TryCapitalize(out char capChar))
+                    return (i >= 0 ? Text[..i] : null) +
+                        capChar +
+                        (Text.Length > i ? Text[(i + 1)..] : null);
+            }
+            return Text;
+        }
+        public static string CapitalizeEx(this string Text)
+            => Text.CapitalizeExcept(CapitalizationExceptions);
+
+        public static bool TryUncapitalize(this char Char, out char UncapChar)
+        {
+            UncapChar = default;
+            if (Char != default
+                && Char.ToString().ToLower() is string uncapitalized
+                && uncapitalized != Char.ToString())
+            {
+                UncapChar = uncapitalized[0];
+                return true;
+            }
+            return false;
+        }
+        public static string UncapitalizeExcept(this string Text, params char[] Exceptions)
+        {
+            for (int i = 0; i < (Text?.Length ?? 0); i++)
+            {
+                if (!Text[i].IsLetterAndNotException())
+                    continue;
+
+                if (Text[i].IsLower())
+                    break;
+
+                if (Text[i].TryUncapitalize(out char uncapChar))
+                    return (i >= 0 ? Text[..i] : null) +
+                        uncapChar +
+                        (Text.Length > i ? Text[(i + 1)..] : null);
+            }
+            return Text;
+        }
+        public static string UncapitalizeEx(this string Text)
+            => Text.UncapitalizeExcept(CapitalizationExceptions);
+
+        public static string CapitalizeSentences(this string String, bool ExcludeElipses = true)
+        {
+            if (!String.IsNullOrEmpty())
+            {
+                List<List<Word>> lines = new();
+                foreach (string line in String.Split("\n"))
+                {
+                    if (line?.Split(' ')?.ToList()?.ConvertAll(s => new Word(s)) is List<Word> words)
+                    {
+                        lines.Add(words);
+                    }
+                    else
+                    {
+                        lines.Add(new() { new(line) });
+                    }
+                }
+                if (!lines.IsNullOrEmpty())
+                {
+                    for (int i = 0; i < lines.Count; i++)
+                    {
+                        if (lines[i] is List<Word> words)
+                        {
+                            bool capitalizeNext = true;
+                            if (words[0].Capitalize().Text is string capitalizedFirst
+                                && capitalizedFirst != words[0].Text)
+                            {
+                                lines[i][0] = lines[i][0].ReplaceWord(capitalizedFirst);
+                                if (!words[0].ImpliesCapitalization(ExcludeElipses))
+                                    capitalizeNext = false;
+                            }
+                            for (int j = 0; j < words.Count; j++)
+                            {
+                                if (words[j] is Word word)
+                                {
+                                    if (capitalizeNext
+                                        && word.Capitalize().Text is string capitalizedWord
+                                        && capitalizedWord != word.Text)
+                                        words[j] = word.ReplaceWord(capitalizedWord);
+
+                                    if (!words[j].ImpliesCapitalization(ExcludeElipses))
+                                        capitalizeNext = false;
+                                    else
+                                        capitalizeNext = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                List<string> compiledWords = new();
+                if (!lines.IsNullOrEmpty())
+                {
+                    foreach (List<Word> words in lines)
+                    {
+                        compiledWords.Add(words?.Aggregate("", CreateSentence) ?? "");
+                    }
+                }
+                String = compiledWords
+                        ?.Aggregate("", (a, n) => a + (!a.IsNullOrEmpty() ? "\n" : null) + n)
+                        ?.CapitalizeExcept()
+                    ?? String;
+            }
+            return String?.CapitalizeExcept();
         }
 
         public static bool TryGetIndexOf(this string Text, string Search, out int Index, bool EndOfSearch = true)
@@ -1541,7 +1690,7 @@ namespace UD_FleshGolems
             => CharList.Aggregate("", (a, n) => a += n);
 
         public static string ContextCapitalize(this string Output, TextDelegateContext Context)
-            => Context.Capitalize ? Output?.Capitalize() : Output;
+            => Context.Capitalize ? Output?.CapitalizeExcept() : Output;
 
         public static bool Fail(this GameObject Object, string Message, bool Silent)
         {

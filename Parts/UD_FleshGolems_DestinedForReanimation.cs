@@ -175,7 +175,7 @@ namespace XRL.World.Parts
                     new("died of asphyxiation", Killed: "suffocated"),
                     new("died of asphyxiation", Were: false, Killed: "inhaled too much osseous ash", Killer: "", Method: ""),
                     new("died of asphyxiation", Were: false, Killed: "tried to breathe underwater", Killer: "", Method: ""),
-                    new("died of asphyxiation", Were: false, Killed: "held underwater"),
+                    new("died of asphyxiation", Killed: "held underwater"),
                     new("died of asphyxiation", Were: false, Killed: "forgot to inhale again after the last exhale", Killer: "", Method: ""),
                     new("died of asphyxiation", Were: false, Killed: "ran out of air", By: false),
                 }

@@ -98,12 +98,12 @@
       <text ID="MultiKillerKnown" MemoryElement="KillerName,KillerCreature,Killed" Known="true">
         <text>=subject.death.killer.name=, =subject.death.killer.creature= got me... I =subject.death.was.killed=, which wasn't fun...</text>
         <text>=subject.death.killer.creature= called =subject.death.killer.name= saw me =subject.death.killed=...\n\nLook out if you see =no2nd==killer.objective|no2nd.restore=...</text>
-        <text>I =subject.death.was.killed= by =subject.death.killer.creature= called =subject.death.killer.creature=... if I ever see =no2nd==killer.objective|no2nd.restore= again...\n\n... well, I'm not sure what I'd do, actually... =no2nd==killer.subjective|no2nd.restore= did kill me the first time, and I'm not keen on a second...</text>
+        <text>I =subject.death.was.killed= by =subject.death.killer.creature= called =subject.death.killer.name=... if I ever see =no2nd==killer.objective|no2nd.restore= again...\n\n... well, I'm not sure what I'd do, actually... =no2nd==killer.subjective|no2nd.restore= did kill me the first time, and I'm not keen on a second...</text>
       </text>
 
       <text ID="EnvironmentalKnown" MemoryElement="Environment" Known="true">
         <text>I wasn't really killed by someone specfic...</text>
-        <text>It was more self-inflicted, I think... =subject.death.accidentally:, of course...=</text>
+        <text>It was more self-inflicted, I think...=subject.death.accidentally: :, of course...=</text>
         <text>No one killed me exactly...</text>
       </text>
 

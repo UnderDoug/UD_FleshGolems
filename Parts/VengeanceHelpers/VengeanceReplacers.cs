@@ -22,7 +22,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
     public static class VengeanceReplacers
     {
         private static string ContextCapitalize(DelegateContext Context, string Output)
-            => Context.Capitalize ? Output?.Capitalize() : Output;
+            => Context.Capitalize ? Output?.CapitalizeEx() : Output;
 
         private static Dictionary<string, string> GetOrderedLabelledContextParameters(
             int Offset,
@@ -295,10 +295,14 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Context: Context,
                 Output: Context.Target
                         ?.GetDeathDescription()
-                        ?.GetWith("") 
+                        ?.GetWith(
+                            Killer: "",
+                            With: true,
+                            ForceNoMethodArticle: true,
+                            PrependSpace: false) 
                     + Context.Target
                         ?.GetDeathDetails()
-                        ?.Method(true));
+                        ?.Method(WithIndefiniteArticle: true));
 
         // parameter0: adverb.
         // parameter1: killer override.
@@ -332,7 +336,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 {
                     deathDescription.ForceNoMethodArticle = forceNoMethodArticleParam.EqualsNoCase("true");
                 }
-                output = deathDescription.KilledByKiller(adverb, killerOverride) + deathDescription.WithMethod(killerOverride, methodOverride);
+                output = deathDescription.KilledByKiller(adverb, killerOverride) + deathDescription.WithMethod(killerOverride, null, methodOverride);
                 deathDescription.ForceNoMethodArticle = forceNoMethodArticle;
             }
             return ContextCapitalize(
@@ -452,9 +456,118 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Output: output);
         }
 
-        // death.was.killed.byWith, death.was.verbed.byWith
+        public static string AccidentalString(string Accidental, DelegateContext Context)
+        {
+            if (Accidental.IsNullOrEmpty()
+                || Context == null)
+                return null;
 
-        // death.was.killed.byKiller.withMethod, death.was.verbed.byKiller.withMethod
+            string prepend;
+            string append;
+            Dictionary<string, string> contextParams = GetOrderedLabelledContextParameters(
+                Offset: 0,
+                Context: Context,
+                ParameterLabels: new string[]
+                {
+                    nameof(prepend),
+                    nameof(append),
+                });
+
+            prepend = contextParams[nameof(prepend)];
+            append = contextParams[nameof(append)];
+
+            return prepend + Accidental + append;
+        }
+
+        // parameter0: prepend
+        // parameter1: append
+        [VariableObjectReplacer("death.accidentally")]
+        public static string TargetDeath_Accidentally(DelegateContext Context)
+            => Context.Target?.GetDeathDetails() is UD_FleshGolems_DeathDetails deathDetails
+                && deathDetails.Accidental
+            ? ContextCapitalize(
+                Context: Context,
+                Output: AccidentalString("accidentally", Context))
+            : null;
+
+        // parameter0: alternative
+        // parameter1: prepend
+        // parameter2: append
+        [VariableObjectReplacer("death.accidentally.or")]
+        public static string TargetDeath_Accidentally_Or(DelegateContext Context)
+        {
+            if (Context.Target?.GetDeathDetails() is UD_FleshGolems_DeathDetails deathDetails)
+            {
+                if (deathDetails.Accidental)
+                {
+                    Context.Parameters.RemoveAt(0);
+                    return TargetDeath_Accidentally(Context);
+                }
+            }
+            return ContextCapitalize(
+                Context: Context,
+                Output: Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null);
+        }
+
+        // parameter0: prepend
+        // parameter1: append
+        [VariableObjectReplacer("death.accidental")]
+        public static string TargetDeath_Accidental(DelegateContext Context)
+            => Context.Target?.GetDeathDetails() is UD_FleshGolems_DeathDetails deathDetails
+                && deathDetails.Accidental
+            ? ContextCapitalize(
+                Context: Context,
+                Output: AccidentalString("accidental", Context))
+            : null;
+
+        // parameter0: alternative
+        // parameter1: prepend
+        // parameter2: append
+        [VariableObjectReplacer("death.accidental.or")]
+        public static string TargetDeath_Accidental_Or(DelegateContext Context)
+        {
+            if (Context.Target?.GetDeathDetails() is UD_FleshGolems_DeathDetails deathDetails)
+            {
+                if (deathDetails.Accidental)
+                {
+                    Context.Parameters.RemoveAt(0);
+                    return TargetDeath_Accidental(Context);
+                }
+            }
+            return ContextCapitalize(
+                Context: Context,
+                Output: Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null);
+        }
+
+        // parameter0: prepend
+        // parameter1: append
+        [VariableObjectReplacer("death.accident")]
+        public static string TargetDeath_Accident(DelegateContext Context)
+            => Context.Target?.GetDeathDetails() is UD_FleshGolems_DeathDetails deathDetails
+                && deathDetails.Accidental
+            ? ContextCapitalize(
+                Context: Context,
+                Output: AccidentalString("accident", Context))
+            : null;
+
+        // parameter0: alternative
+        // parameter1: prepend
+        // parameter2: append
+        [VariableObjectReplacer("death.accident.or")]
+        public static string TargetDeath_Accident_Or(DelegateContext Context)
+        {
+            if (Context.Target?.GetDeathDetails() is UD_FleshGolems_DeathDetails deathDetails)
+            {
+                if (deathDetails.Accidental)
+                {
+                    Context.Parameters.RemoveAt(0);
+                    return TargetDeath_Accident(Context);
+                }
+            }
+            return ContextCapitalize(
+                Context: Context,
+                Output: Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0] : null);
+        }
 
         // death.fullDescription
     }

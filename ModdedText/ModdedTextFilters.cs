@@ -130,7 +130,7 @@ namespace UD_FleshGolems.ModdedText
             { new() { 'y', 'h', }, 3 },
             { new() { 'd', 't', }, 1 },
             { new() { 'n', 'm', }, 1 },
-            { new() { 'v', 'b', 'f', }, 1 },
+            { new() { 'v', 'b', }, 1 },
             // { new() { 'w', 'v', }, 4 },
         };
         public static List<string> SnapifyAdditions => new()
@@ -163,11 +163,11 @@ namespace UD_FleshGolems.ModdedText
 
         public static string MatchCapitalization(this string Replacement, string Word)
             => Word.IsCapitalized()
-            ? Replacement.Capitalize()
+            ? Replacement.CapitalizeExcept()
             : Replacement.Uncapitalize();
 
         private static string CreateSentence(string Accumulator, Word Next)
-            => VariableReplacers.CreateSentence(Accumulator, Next.ToString());
+            => Utils.CreateSentence(Accumulator, Next.ToString());
 
         public static string Snapify(string Phrase)
         {
@@ -190,66 +190,88 @@ namespace UD_FleshGolems.ModdedText
                         {
                             continue;
                         }
+
+                        Debug.Log(
+                            nameof(SnapifyWordReplacements) + "." + nameof(SnapifyWordReplacements.Count),
+                            SnapifyWordReplacements?.Count ?? 0,
+                            Indent: indent[1]);
+
                         foreach ((string key, List<string> values) in SnapifyWordReplacements)
                         {
-                            if (word.LettersOnly() is string wordWithoutPunctuation
+                            if (values.GetRandomElementCosmetic() is string replacement
+                                && word.LettersOnly() is string wordWithoutPunctuation
                                 && wordWithoutPunctuation.EqualsNoCase(key))
                             {
-                                if (values.GetRandomElementCosmetic() is string replacement)
+                                string originalWordWithoutPunctuation = wordWithoutPunctuation;
+                                if (key.EqualsNoCase("I")
+                                    && i > 0
+                                    && words[i - 1] is Word previousWord
+                                    && !previousWord.ImpliesCapitalization())
                                 {
-                                    string originalWordWithoutPunctuation = wordWithoutPunctuation;
-                                    if (key.EqualsNoCase("I")
-                                        && i > 0
-                                        && words[i - 1] is Word previousWord
-                                        && !previousWord.ImpliesCapitalization())
-                                    {
-                                        wordWithoutPunctuation = wordWithoutPunctuation.Uncapitalize();
-                                    }
-                                    words[i] = words[i].Replace(
-                                        OldValue: originalWordWithoutPunctuation,
-                                        NewValue: replacement.MatchCapitalization(wordWithoutPunctuation));
-                                    //stop = true;
-                                    break;
+                                    wordWithoutPunctuation = wordWithoutPunctuation.Uncapitalize();
                                 }
+                                words[i] = words[i].Replace(
+                                    OldValue: originalWordWithoutPunctuation,
+                                    NewValue: replacement.MatchCapitalization(wordWithoutPunctuation));
+                                //stop = true;
+                                string debugReplaceString = replacement + " (" + replacement.MatchCapitalization(wordWithoutPunctuation) + ")";
+                                Debug.CheckYeh(word.ToString() + "|" + key + ": " + debugReplaceString, Indent: indent[2]);
+                                Debug.Log(nameof(originalWordWithoutPunctuation), originalWordWithoutPunctuation, Indent: indent[3]);
+                                Debug.Log(nameof(wordWithoutPunctuation), wordWithoutPunctuation, Indent: indent[3]);
+                                break;
+                            }
+                            else
+                            {
+                                Debug.CheckNah(word.ToString() + "|" + key, Indent: indent[2]);
                             }
                         }
+                        word = words[i];
                         if (stop)
                         {
                             continue;
                         }
+
+                        Debug.Log(
+                            nameof(SnapifyPartialReplacements) + "." + nameof(SnapifyPartialReplacements.Count),
+                            SnapifyPartialReplacements?.Count ?? 0,
+                            Indent: indent[1]);
+
                         foreach ((string key, List<string> values) in SnapifyPartialReplacements)
                         {
-                            if (word.LettersOnly() is string wordWithoutPunctuation
-                                && values.GetRandomElementCosmetic() is string replacement)
+                            if (values.GetRandomElementCosmetic() is string replacement)
                             {
-                                if (wordWithoutPunctuation.StartsWith(key)
-                                    && Stat.RollCached("1d2") == 1)
+                                Word? newWord = word.ReplaceWord(null);
+                                for (int j = 0; j < word.Length - 1; j++)
                                 {
-                                    wordWithoutPunctuation = replacement + wordWithoutPunctuation[key.Length..];
-                                    words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
-                                    // stop = true;
-                                    break;
-                                }
-
-                                for (int j = 0; j < wordWithoutPunctuation.Length - 1; j++)
-                                {
-                                    if (wordWithoutPunctuation[j..].StartsWith(key)
+                                    int k = j + key.Length;
+                                    if (k < word.Length
+                                        && word[j..k].EqualsNoCase(key)
                                         && Stat.RollCached("1d1") == 1)
                                     {
-                                        string start = wordWithoutPunctuation[..j];
-                                        string end = wordWithoutPunctuation[(j + key.Length)..];
-                                        wordWithoutPunctuation = start + replacement + end;
-                                        words[i] = words[i].Replace(wordWithoutPunctuation, replacement.MatchCapitalization(wordWithoutPunctuation));
+                                        newWord = words[i].ReplaceWord(newWord?.Text + replacement);
+                                        // words[i] = words[i].ReplaceWord(word[..j] + replacement + word[k..]);
                                         // stop = true;
-                                        break;
+                                        // break;
+                                    }
+                                    else
+                                    {
+                                        newWord = word.ReplaceWord(newWord?.Text + word[j]);
                                     }
                                 }
+                                words[i] = newWord ?? words[i];
                             }
                         }
+                        word = words[i];
                         if (stop)
                         {
                             continue;
                         }
+
+                        Debug.Log(
+                            nameof(SnapifySwaps) + "." + nameof(SnapifySwaps.Count),
+                            SnapifySwaps?.Count ?? 0,
+                            Indent: indent[1]);
+
                         foreach ((List<char> swaps, int odds) in SnapifySwaps)
                         {
                             int maxIndex = word.Length - 1;
@@ -310,18 +332,30 @@ namespace UD_FleshGolems.ModdedText
                             }
                             words[i] = words[i].ReplaceWord(replacementWord);
                         }
+                        word = words[i];
                         if (stop)
                         {
                             continue;
                         }
                     }
                 }
+
+                Debug.Log(
+                    nameof(SnapifyAdditions) + "." + nameof(SnapifyAdditions.Count),
+                    SnapifyAdditions?.Count ?? 0,
+                    Indent: indent[1]);
+
                 for (int i = words.Count - 1; i >= 0; i--)
                 {
-                    if (Stat.RollCached("1d6") == 0
+                    if (Stat.RollCached("1d6") == 1
                         && SnapifyAdditions.GetRandomElementCosmetic() is string snapifyAddition)
                     {
                         words.Insert(i, new(snapifyAddition));
+                        Debug.CheckYeh(nameof(i) + ": " + i + " \"" + snapifyAddition + "\"", Indent: indent[2]);
+                    }
+                    else
+                    {
+                        Debug.CheckNah(nameof(i) + ": " + i, Indent: indent[2]);
                     }
                 }
                 if (!words.IsNullOrEmpty())
@@ -331,6 +365,9 @@ namespace UD_FleshGolems.ModdedText
                             ?.RemoveAllNoCase(" " + DeleteString, DeleteString + " ", DeleteString)
                         ?? Phrase;
 
+
+                    Debug.Log(nameof(NoSpace), Indent: indent[1]);
+
                     while (Phrase.TryGetIndexOf(NoSpace, out int noSpaceStartIndex, false)
                         && noSpaceStartIndex - 1 is int noSpaceStartWithSpaceIndex
                         && noSpaceStartWithSpaceIndex >= 0
@@ -338,6 +375,7 @@ namespace UD_FleshGolems.ModdedText
                         && noSpaceEndIndex <= Phrase.Length)
                     {
                         Phrase = Phrase[..noSpaceStartWithSpaceIndex] + Phrase[noSpaceEndIndex..];
+                        Debug.CheckYeh("removed between " + noSpaceStartWithSpaceIndex + " and " + noSpaceEndIndex, Indent: indent[2]);
                     }
                 }
             }

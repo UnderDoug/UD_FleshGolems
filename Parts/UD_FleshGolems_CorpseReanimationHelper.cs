@@ -33,6 +33,7 @@ using UD_FleshGolems.Capabilities;
 using UD_FleshGolems.Parts.PastLifeHelpers;
 using UD_FleshGolems.Parts.VengeanceHelpers;
 using UD_FleshGolems.Events;
+using UD_FleshGolems.Startup;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
 
@@ -67,7 +68,7 @@ namespace XRL.World.Parts
 
         private static Dictionary<string, TileMappingKeyword> _TileMappingKeywordValues;
         public static Dictionary<string, TileMappingKeyword> TileMappingKeywordValues
-            => _TileMappingKeywordValues ??= Startup.RequireCachedEnumValueDictionary<TileMappingKeyword>();
+            => _TileMappingKeywordValues ??= Initializers.RequireCachedEnumValueDictionary<TileMappingKeyword>();
 
         public const string REANIMATED_CONVO_ID_TAG = "UD_FleshGolems_ReanimatedConversationID";
         public const string REANIMATED_EPITHETS_TAG = "UD_FleshGolems_ReanimatedEpithets";

@@ -14,6 +14,7 @@ using XRL.World.ZoneBuilders;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Capabilities;
+using UD_FleshGolems.Startup;
 using static UD_FleshGolems.Utils;
 
 namespace XRL.World.WorldBuilders
@@ -64,7 +65,7 @@ namespace XRL.World.WorldBuilders
 
             WorldCreationProgress.StepProgress("Maddening science...");
 
-            Startup.CacheSomeCorpses();
+            Initializers.CacheSomeCorpses();
             
             
             if (NecromancySystem?.TheMadMonger is not GameObject theMadMonger)

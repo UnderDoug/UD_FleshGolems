@@ -72,6 +72,4 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
         public override readonly string ToString()
             => DeathZone + "[" + X + "," + Y + "]";
     }
-
-
 }

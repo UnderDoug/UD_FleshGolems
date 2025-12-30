@@ -32,13 +32,39 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                   Text: null,
                   Close: Text?.EndsWith("}}"))
         {
-            this.Text = Text?.RemoveAll("{", "}");
-            if (!this.Text.IsNullOrEmpty()
-                && this.Text.TryGetIndexOf("|", out int pipeBefore, EndOfSearch: false)
-                && pipeBefore + 1 is int pipeAfter)
+            this.Text = Text;
+            if (this.Text != null)
             {
-                Shader = this.Text[..pipeBefore];
-                this.Text = this.Text[pipeAfter..];
+                if (this.Text.StartsWith("{{"))
+                {
+                    this.Text = this.Text[2..];
+                }
+                if (this.Text.EndsWith("}}"))
+                {
+                    this.Text = this.Text[..^2];
+                }
+                if (!this.Text.IsNullOrEmpty())
+                {
+                    if (this.Text.TryGetIndexOf("|", out int pipeBefore, EndOfSearch: false)
+                        && pipeBefore + 1 is int pipeAfter)
+                    {
+                        if (!this.Text.TryGetIndexOf("=", out int replacerStart, EndOfSearch: false)
+                            || replacerStart > pipeBefore)
+                        {
+                            Shader = this.Text[..pipeBefore];
+                            this.Text = this.Text[pipeAfter..];
+                        }
+                    }
+                    else
+                    if (Open)
+                    {
+                        Shader = this.Text;
+                        this.Text = null;
+                    }
+                    else
+                    {
+                    }
+                }
             }
         }
 
@@ -59,17 +85,17 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
             => ReplaceWord(this, Text);
 
         public readonly Word Capitalize()
-            => ReplaceWord(Text.Capitalize());
+            => ReplaceWord(Text.CapitalizeEx());
 
         public readonly Word Uncapitalize()
-            => ReplaceWord(Text.Uncapitalize());
+            => ReplaceWord(Text.UncapitalizeEx());
 
         public readonly bool IsCapitalized()
             => Text
                 ?.Strip()
                 ?.Aggregate(
                     seed: "",
-                    func: (a, n) => a + (char.IsLetter(n) ? n : null)) is string strippedWord
+                    func: (a, n) => a + (n.IsLetterAndNotException() ? n : null)) is string strippedWord
             && strippedWord[0].ToString() == strippedWord[0].ToString().ToUpper();
 
         public readonly string LettersOnly()
@@ -85,7 +111,7 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
 
         public readonly Word MatchCapitalization(string Word)
             => Word.IsCapitalized()
-            ? ReplaceWord(this, Text.Capitalize())
+            ? ReplaceWord(this, Text.CapitalizeExcept())
             : ReplaceWord(this, Text.Uncapitalize());
 
         public readonly Word Replace(string OldValue, string NewValue)

@@ -21,12 +21,12 @@ using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
 using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
 using XRL.Language;
 
-namespace UD_FleshGolems
+namespace UD_FleshGolems.Startup
 {
     [HasModSensitiveStaticCache]
     [HasGameBasedStaticCache]
     [HasCallAfterGameLoaded]
-    public static class Startup
+    public static class Initializers
     {
         [ModSensitiveStaticCache]
         public static bool CachedCorpses = false;

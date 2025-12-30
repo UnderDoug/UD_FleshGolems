@@ -602,15 +602,19 @@ namespace XRL.World.Conversations.Parts
             ConversationText SeedConversationText,
             Indent Indent)
         {
+            int capIteration = 2;
+            int capOffset = 0;
+            bool doCapitalization = Iteration % capIteration == capOffset;
+
             ConversationText newConversationText = Accumulate;
             if (Next != SeedConversationText)
             {
-                if (Iteration % 2 == 0)
+                if (doCapitalization)
                     Next.ReplacerCapitalize();
 
                 newConversationText = Accumulate.Append(Next, GetJoiner(Iteration), new() { MEMORY_ELEMENT });
             }
-            string capitalized = Iteration % 2 == 1 ? " Cap" : " noCap";
+            string capitalized = doCapitalization ? " Cap" : " noCap";
             Debug.Log("[" + Iteration + "] " + newConversationText?.PathID?.TextAfter(".") + capitalized, Indent: Indent);
             Iteration++;
             return newConversationText;
@@ -966,21 +970,20 @@ namespace XRL.World.Conversations.Parts
                     {
                         E.Text.Clear();
                     }
-                    E.Text.Append(killedByPlayerString)
+
+                    E.Text.Append(killedByPlayerString
                         .StartReplace()
                         .AddObject(E.Subject)
                         .AddObject(E.Object)
                         .AddObject(killer, "killer")
                         .AddObject(weapon, "weapon")
-                        .Execute();
+                        .ToString());
 
                     if (E.Text?.ToString()?.Capitalize() is string capitalizedText)
                         E.Text?.Clear()?.Append(capitalizedText);
                 }
             }
-            string text = ("=capitalize.sentences:" + E.Text?.ToString() + "=")
-                .StartReplace()
-                .ToString();
+            string text = E.Text?.ToString()?.CapitalizeSentences(ExcludeElipses: true);
 
             E.Text.Clear().Append(text);
 

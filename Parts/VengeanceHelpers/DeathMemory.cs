@@ -43,22 +43,16 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             Name,
         }
 
+        [NonSerialized]
         public GameObject Corpse;
 
         // null: info doesn't exist;
         // false: info exists but is unknown;
         // true: info exists and is known.
         // enum: higher number means greater detail. Each one includes the ones less than it.
-        [SerializeField]
         private bool? Killed;
-
-        [SerializeField]
         private KillerMemory? Killer;
-
-        [SerializeField]
         private bool? Method;
-
-        [SerializeField]
         private bool RudeToAsk;
 
         public bool IsValid => Validate();
@@ -306,7 +300,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             }
             if (Corpse?.GetPropertyOrTag(KILLER_PROPTAG) is string killerOverridePropTag)
             {
-                killerOverride = killerOverridePropTag.ToLower().Capitalize() switch
+                killerOverride = killerOverridePropTag.ToLower().CapitalizeExcept() switch
                 {
                     "3" or
                     "True" or
@@ -322,7 +316,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     "False" or
                     _ => KillerMemory.Amnesia,
                 };
-                Debug.CheckYeh(KILLER_PROPTAG, killerOverridePropTag.ToLower().Capitalize(), indent[1]);
+                Debug.CheckYeh(KILLER_PROPTAG, killerOverridePropTag.ToLower().CapitalizeExcept(), indent[1]);
             }
             if (Corpse?.GetPropertyOrTag(METHOD_PROPTAG) is string methodOverridePropTag)
             {

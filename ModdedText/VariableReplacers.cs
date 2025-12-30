@@ -36,13 +36,6 @@ namespace UD_FleshGolems.ModdedText
             return Registry;
         }
 
-        public static List<char> CapitalizingPunctuation = new()
-        {
-            '.',
-            '!',
-            '?',
-        };
-
         /* 
          * 
          * Variable (no object)
@@ -52,103 +45,6 @@ namespace UD_FleshGolems.ModdedText
         public static string Test_Parameter_Separators(DelegateContext Context)
             => Context.Parameters
                 ?.Aggregate("", (a, n) => a + ":" + n);
-
-        public static bool EndsInCapitalizingPunctuation(this string Word, bool ExcludeElipses = false)
-            => !Word.IsNullOrEmpty()
-            && Word.Length > 0
-            && Word[^1].EqualsAny(CapitalizingPunctuation.ToArray())
-                && (!ExcludeElipses
-                    || Word.Length > 1
-                        && Word[^2] != '.');
-
-        public static string CreateSentence(string Accumulator, string Next)
-            => Accumulator + (!Accumulator.IsNullOrEmpty() ? " " : null) + Next;
-
-        public static string CreateSentence(string Accumulator, Word Next)
-            => Accumulator + (!Accumulator.IsNullOrEmpty() ? " " : null) + Next.ToString();
-
-        [VariableReplacer("capitalize.sentences")]
-        public static string UD_CapitalizeSentences(DelegateContext Context)
-        {
-            bool excludeElipses = false;
-            string contextValue = Context?.Value?.ToString();
-            if (Context.Parameters is List<string> contextParams)
-            {
-                if (contextParams.Count > 0
-                && contextParams[0].EqualsNoCase("ExcludeElipses"))
-                {
-                    contextParams.RemoveAt(0);
-                    excludeElipses = true;
-                }
-                contextValue = contextParams
-                        ?.Aggregate("", (a, n) => a + (!a.IsNullOrEmpty() ? ":" : null) + n)
-                    ?? contextValue;
-            }
-
-            if (!contextValue.IsNullOrEmpty())
-            {
-                List<List<Word>> lines = new();
-                foreach (string line in contextValue.Split("\n"))
-                {
-                    if (line?.Split(' ')?.ToList()?.ConvertAll(s => new Word(s)) is List<Word> words)
-                    {
-                        lines.Add(words);
-                    }
-                    else
-                    {
-                        lines.Add(new() { new(line) });
-                    }
-                }
-                if (!lines.IsNullOrEmpty())
-                {
-                    for (int i = 0; i < lines.Count; i++)
-                    {
-                        if (lines[i] is List<Word> words)
-                        {
-                            bool capitalizeNext = true;
-                            if (words[0].Capitalize().Text is string capitalizedFirst
-                                && capitalizedFirst != words[0].Text)
-                            {
-                                lines[i][0] = lines[i][0].ReplaceWord(capitalizedFirst);
-                                if (!words[0].ImpliesCapitalization(excludeElipses))
-                                    capitalizeNext = false;
-                            }
-                            for (int j = 0; j < words.Count; j++)
-                            {
-                                if (words[j] is Word word)
-                                {
-                                    if (capitalizeNext
-                                        && word.Capitalize().Text is string capitalizedWord
-                                        && capitalizedWord != word.Text)
-                                        words[j] = word.ReplaceWord(capitalizedWord);
-
-                                    if (!words[j].ImpliesCapitalization(excludeElipses))
-                                        capitalizeNext = false;
-                                    else
-                                        capitalizeNext = true;
-                                }
-                            }
-                        }
-                    }
-                }
-                List<string> compiledWords = new();
-                if (!lines.IsNullOrEmpty())
-                {
-                    foreach (List<Word> words in lines)
-                    {
-                        compiledWords.Add(words?.Aggregate("", CreateSentence) ?? "");
-                    }
-                }
-                Context.Value.Clear();
-                Context.Value.Append(
-                    compiledWords
-                        ?.Aggregate("", (a, n) => a + (!a.IsNullOrEmpty() ? "\n" : null) + n)
-                        ?.Capitalize()
-                    ?? contextValue
-                        ?.Capitalize());
-            }
-            return contextValue;
-        }
 
         [VariableReplacer]
         public static string ud_nbsp(DelegateContext Context)
@@ -301,7 +197,7 @@ namespace UD_FleshGolems.ModdedText
             ParseDeathMemoryContextParameters(Context, out string article, out string afterArticleAdjectives);
             string output = article + afterArticleAdjectives + Result;
             return Context.Capitalize
-                ? output?.Capitalize()
+                ? output?.CapitalizeExcept()
                 : output;
         }
 
@@ -435,7 +331,7 @@ namespace UD_FleshGolems.ModdedText
         public static string BodyPart(DelegateContext Context)
             => Context.Target
                 ?.Body
-                ?.LoopPart(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.Capitalize() : null)
+                ?.LoopPart(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.CapitalizeExcept() : null)
                 ?.GetRandomElementCosmetic()
                 ?.Description
                 ?.ContextCapitalize(Context);
@@ -604,7 +500,7 @@ namespace UD_FleshGolems.ModdedText
             if (Context.Value.ToString() is string contextValue)
             {
                 Context.Value.Clear();
-                Context.Value.Append(contextValue.Capitalize());
+                Context.Value.Append(contextValue.CapitalizeExcept());
             }
         }
 

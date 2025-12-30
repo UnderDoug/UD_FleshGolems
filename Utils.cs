@@ -51,6 +51,20 @@ namespace UD_FleshGolems
 
         private static EntityTaxa PlayerTaxa = null;
 
+
+        public static List<char> CapitalizingPunctuation = new()
+        {
+            '.',
+            '!',
+            '?',
+        };
+
+        public static char[] CapitalizationExceptions => new char[]
+        {
+            NBSP[0],
+            NBSP.Capitalize()[0],
+        };
+
         public static ModInfo GetFirstCallingModNot(ModInfo ThisMod)
         {
             try
@@ -245,6 +259,21 @@ namespace UD_FleshGolems
 
         public static string YehNah(bool? Yeh = null)
             => "[" + (Yeh == null ? "-" : (Yeh.GetValueOrDefault() ? TICK : CROSS)) + "]";
+
+
+        public static bool EndsInCapitalizingPunctuation(this string Word, bool ExcludeElipses = false)
+            => !Word.IsNullOrEmpty()
+            && Word.Length > 0
+            && Word[^1].EqualsAny(CapitalizingPunctuation.ToArray())
+                && (!ExcludeElipses
+                    || Word.Length > 1
+                        && Word[^2] != '.');
+
+        public static string CreateSentence(string Accumulator, string Next)
+            => Accumulator + (!Accumulator.IsNullOrEmpty() ? " " : null) + Next;
+
+        public static string CreateSentence(string Accumulator, ModdedText.TextHelpers.Word Next)
+            => Accumulator + (!Accumulator.IsNullOrEmpty() ? " " : null) + Next.ToString();
 
         public static int CapDamageTo1HPRemaining(GameObject Creature, int DamageAmount)
         {
