@@ -63,6 +63,8 @@ namespace UD_FleshGolems
         {
             NBSP[0],
             NBSP.Capitalize()[0],
+            'ÿ',
+            'Ÿ',
         };
 
         public static ModInfo GetFirstCallingModNot(ModInfo ThisMod)
@@ -136,9 +138,9 @@ namespace UD_FleshGolems
                 Debug.LogMethod(indent,
                     ArgPairs: new Debug.ArgPair[]
                     {
-                    Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
-                    Debug.Arg(nameof(The.Player), The.Player != null),
-                    Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
+                        Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
+                        Debug.Arg(nameof(The.Player), The.Player != null),
+                        Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
                     });
                 return PlayerTaxa;
             }
@@ -195,9 +197,9 @@ namespace UD_FleshGolems
                                 Debug.LogMethod(indent,
                                     ArgPairs: new Debug.ArgPair[]
                                     {
-                                Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
-                                Debug.Arg(nameof(The.Player), The.Player != null),
-                                Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
+                                        Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
+                                        Debug.Arg(nameof(The.Player), The.Player != null),
+                                        Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
                                     });
                             }
                             
@@ -218,9 +220,9 @@ namespace UD_FleshGolems
                 Debug.LogMethod(indent,
                     ArgPairs: new Debug.ArgPair[]
                     {
-                    Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
-                    Debug.Arg(nameof(The.Player), The.Player != null),
-                    Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
+                        Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
+                        Debug.Arg(nameof(The.Player), The.Player != null),
+                        Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
                     });
                 return PlayerTaxa;
             }
@@ -237,25 +239,17 @@ namespace UD_FleshGolems
         }
 
         public static string GetPlayerBlueprint()
-        {
-            if (The.Player != null)
-                return The.Player.Blueprint;
+            => The.Player?.Blueprint
+            ?? GetPlayerTaxa()?.Blueprint;
 
-            return GetPlayerTaxa()?.Blueprint;
-        }
+        public static string AppendTick(string String, bool AppendSpace = true)
+            => String + "[" + TICK + "]" + (AppendSpace ? " " : "");
 
-        public static string AppendTick(string String, bool WithSpaceAfter = true)
-        {
-            return String + "[" + TICK + "]" + (WithSpaceAfter ? " " : "");
-        }
-        public static string AppendCross(string String, bool WithSpaceAfter = true)
-        {
-            return String + "[" + CROSS + "]" + (WithSpaceAfter ? " " : "");
-        }
-        public static string AppendYehNah(string String, bool Yeh, bool WithSpaceAfter = true)
-        {
-            return String + "[" + (Yeh ? TICK : CROSS) + "]" + (WithSpaceAfter ? " " : "");
-        }
+        public static string AppendCross(string String, bool AppendSpace = true)
+            => String + "[" + CROSS + "]" + (AppendSpace ? " " : "");
+
+        public static string AppendYehNah(string String, bool Yeh, bool AppendSpace = true)
+            => String + "[" + (Yeh ? TICK : CROSS) + "]" + (AppendSpace ? " " : "");
 
         public static string YehNah(bool? Yeh = null)
             => "[" + (Yeh == null ? "-" : (Yeh.GetValueOrDefault() ? TICK : CROSS)) + "]";
@@ -276,83 +270,60 @@ namespace UD_FleshGolems
             => Accumulator + (!Accumulator.IsNullOrEmpty() ? " " : null) + Next.ToString();
 
         public static int CapDamageTo1HPRemaining(GameObject Creature, int DamageAmount)
-        {
-            if (Creature == null || Creature.GetStat("Hitpoints") is not Statistic hitpoints)
-            {
-                return 0;
-            }
-            return Math.Max(0, Math.Min(hitpoints.Value - 1, DamageAmount));
-        }
+            => (Creature == null
+                || Creature.GetStat("Hitpoints") is not Statistic hitpoints)
+            ? 0
+            : Math.Max(0, Math.Min(hitpoints.Value - 1, DamageAmount));
 
         public static GameObject DeepCopyMapInventory(GameObject Source)
-        {
-            if (Source == null)
-            {
-                return null;
-            }
-            return Source.DeepCopy(MapInv: DeepCopyMapInventory);
-        }
+            => Source?.DeepCopy(MapInv: DeepCopyMapInventory);
 
         public static bool IsBaseBlueprint(GameObjectBlueprint Blueprint)
-        {
-            return Blueprint != null
-                && Blueprint.IsBaseBlueprint();
-        }
+            => Blueprint != null
+            && Blueprint.IsBaseBlueprint();
 
         public static bool IsNotBaseBlueprint(GameObjectBlueprint Blueprint)
-        {
-            return Blueprint != null
-                && !Blueprint.IsBaseBlueprint();
-        }
+            => Blueprint != null
+            && !Blueprint.IsBaseBlueprint();
 
         public static bool IsNotBaseBlueprintOrPossiblyExcludedFromDynamicEncounters(GameObjectBlueprint Blueprint)
-        {
-            return IsNotBaseBlueprint(Blueprint)
-                && UD_FleshGolems_NecromancySystem.PossiblyExcludedFromDynamicEncounters(Blueprint);
-        }
+            => IsNotBaseBlueprint(Blueprint)
+            && UD_FleshGolems_NecromancySystem.PossiblyExcludedFromDynamicEncounters(Blueprint);
 
         public static GameObjectBlueprint GetGameObjectBlueprint(string Blueprint)
-        {
-            return GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint);
-        }
+            => GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint);
 
         public static bool ThisBlueprintInheritsFromThatOne(string ThisBlueprint, string ThatBlueprint)
-        {
-            return !ThatBlueprint.IsNullOrEmpty()
-                && ThisBlueprint?.GetGameObjectBlueprint() is GameObjectBlueprint thisGameObjectBlueprint
-                && thisGameObjectBlueprint.InheritsFrom(ThatBlueprint);
-        }
+            => !ThatBlueprint.IsNullOrEmpty()
+            && ThisBlueprint?.GetGameObjectBlueprint() is GameObjectBlueprint thisGameObjectBlueprint
+            && thisGameObjectBlueprint.InheritsFrom(ThatBlueprint);
 
         public static bool IsBaseGameObjectBlueprint(string Blueprint)
-        {
-            return Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
-                && gameObjectBlueprint.IsBaseBlueprint();
-        }
+            => Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
+            && gameObjectBlueprint.IsBaseBlueprint();
 
         public static bool IsGameObjectBlueprintExcludedFromDynamicEncounters(string Blueprint)
-        {
-            return Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
-                && gameObjectBlueprint.IsExcludedFromDynamicEncounters();
-        }
+            => Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint gameObjectBlueprint
+            && gameObjectBlueprint.IsExcludedFromDynamicEncounters();
 
         public static List<string> GetDistinctFromPopulation(
             string TableName,
-            int n,
-            Dictionary<string, string> vars = null,
-            string defaultIfNull = null)
+            int N,
+            Dictionary<string, string> Vars = null,
+            string DefaultIfNull = null)
         {
             using Indent indent = new();
             Debug.LogCaller(indent[1],
                 ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(TableName), TableName),
-                    Debug.Arg(nameof(n), n),
-                    Debug.Arg(nameof(vars), vars == null ? 0 : vars.Count),
-                    Debug.Arg(nameof(defaultIfNull), defaultIfNull)
+                    Debug.Arg(nameof(N), N),
+                    Debug.Arg(nameof(Vars), Vars == null ? 0 : Vars.Count),
+                    Debug.Arg(nameof(DefaultIfNull), DefaultIfNull)
                 });
 
             List<string> returnList = new();
-            if (PopulationManager.RollDistinctFrom(TableName, n, vars, defaultIfNull) is List<List<PopulationResult>> populationResultsList)
+            if (PopulationManager.RollDistinctFrom(TableName, N, Vars, DefaultIfNull) is List<List<PopulationResult>> populationResultsList)
             {
                 foreach (List<PopulationResult> populationResults in populationResultsList)
                 {
@@ -403,13 +374,9 @@ namespace UD_FleshGolems
                 .ToString();
 
         public static string Bullet(string Bullet = "\u0007", string BulletColor = "K")
-        {
-            if (BulletColor.IsNullOrEmpty())
-            {
-                return Bullet;
-            }
-            return "{{" + BulletColor + "|" + Bullet + "}}";
-        }
+            => BulletColor.IsNullOrEmpty()
+            ? Bullet
+            : "{{" + BulletColor + "|" + Bullet + "}}";
 
         public static string GetMutationClassByName(string Name)
             => MutationFactory.GetMutationEntryByName(Name)?.Class;
@@ -461,17 +428,15 @@ namespace UD_FleshGolems
 
         public static ICollection<T> SafeCombineLists<T>(params ICollection<T>[] args)
         {
-            List<T> output = new();
             if (args.IsNullOrEmpty())
-            {
-                return output;
-            }
+                return null;
+
+            List<T> output = new();
             foreach (ICollection<T> arg in args)
             {
                 if (arg.IsNullOrEmpty())
-                {
                     continue;
-                }
+
                 output.AddRange(arg);
             }
             return output;
@@ -489,7 +454,8 @@ namespace UD_FleshGolems
                 });
 
         public static string IndefiniteArticle(string Word)
-            => Grammar.IndefiniteArticle(Word, false)?.Uncapitalize()?.Trim();
+            => Grammar.IndefiniteArticle(Word, false)
+                ?.Trim();
 
         public static string IndefiniteArticle(GameObject Object)
         {
@@ -498,7 +464,8 @@ namespace UD_FleshGolems
 
             return Object.IsPlural 
                 ? "some"
-                : Grammar.IndefiniteArticle(Object.GetReferenceDisplayName(Short: true), false).Uncapitalize().Trim();
+                : Grammar.IndefiniteArticle(Object.GetReferenceDisplayName(Short: true), false)
+                    ?.Trim();
         }
 
         public static string WithIndefiniteArticle(string Word)
@@ -508,9 +475,9 @@ namespace UD_FleshGolems
 
         public static string WithIndefiniteArticle(GameObject Object)
         {
-            if (Object == null)
+            if (Object.GetReferenceDisplayName(Short: true) is not string word)
                 return null;
-            string word = Object.GetReferenceDisplayName(Short: true);
+
             return Object.IsPlural 
                 ? "some " + word
                 : WithIndefiniteArticle(word);
@@ -527,4 +494,4 @@ namespace UD_FleshGolems
          */
 
     }
-    }
+}

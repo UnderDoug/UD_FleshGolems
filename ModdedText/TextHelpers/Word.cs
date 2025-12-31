@@ -84,6 +84,9 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
         public readonly Word ReplaceWord(string Text)
             => ReplaceWord(this, Text);
 
+        public readonly Word CopyWithoutText()
+            => ReplaceWord(this, null);
+
         public readonly Word Capitalize()
             => ReplaceWord(Text.CapitalizeEx());
 

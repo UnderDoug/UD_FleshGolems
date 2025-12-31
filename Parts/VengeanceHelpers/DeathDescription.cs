@@ -523,8 +523,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 || DeathMemory.GetRemembersKiller() is not DeathMemory.KillerMemory killerMemory
                 || killerMemory != DeathMemory.KillerMemory.Feature
                 || GetKiller(Killer) == null
-            ? "with "
-            : "using ";
+            ? "with"
+            : "using";
 
         public string GetWith(
             string Killer = null,
@@ -549,7 +549,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string spaceAfter = AppendSpace ? " " : null;
             string article = GetArticle(method, ForceNoMethodArticle, AppendSpace);
             if (article != null)
-                spaceAfter = " ";
+                spaceAfter = null;
             return spaceBefore + WithUsing(Killer) + spaceAfter + article;
         }
 

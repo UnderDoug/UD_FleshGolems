@@ -291,6 +291,38 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         [VariableObjectReplacer("death.with.a.method")]
         public static string TargetDeath_With_A_Method(DelegateContext Context)
+        {
+            string with = Context.Target
+                        ?.GetDeathDescription()
+                        ?.GetWith(
+                            Killer: "",
+                            With: true,
+                            ForceNoMethodArticle: true,
+                            PrependSpace: false);
+
+            string aMethod = Context.Target
+                        ?.GetDeathDetails()
+                        ?.Method(WithIndefiniteArticle: true);
+
+            string capitalize = "null";
+            if (Context != null)
+                capitalize = Context.Capitalize.ToString();
+
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(Context.Capitalize), capitalize),
+                    Debug.Arg(nameof(with), with),
+                    Debug.Arg(nameof(aMethod), aMethod),
+                });
+
+            return ContextCapitalize(
+                Context: Context,
+                Output: with + aMethod);
+        }
+            
+        /*
             => ContextCapitalize(
                 Context: Context,
                 Output: Context.Target
@@ -303,6 +335,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     + Context.Target
                         ?.GetDeathDetails()
                         ?.Method(WithIndefiniteArticle: true));
+        */
 
         // parameter0: adverb.
         // parameter1: killer override.

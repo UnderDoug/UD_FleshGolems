@@ -185,7 +185,33 @@ namespace XRL.World.Conversations.Parts
             return result;
         }
 
-        public override void Awake()
+        public static bool TryGetParentNode(IConversationPart ConversationPart, out IConversationElement ParentNode)
+        {
+            ParentNode = ConversationPart?.ParentElement;
+            if (ConversationPart == null
+                || ParentNode == null)
+                return false;
+
+            while (ParentNode.Parent is IConversationElement shallowParentElement)
+            {
+                bool found = false;
+                if (ParentNode is Choice
+                    && shallowParentElement is not Choice)
+                    found = true;
+
+                ParentNode = shallowParentElement;
+
+                if (found)
+                    break;
+            }
+            ParentNode ??= ConversationPart.ParentElement;
+
+            return ParentNode != null;
+        }
+        public bool TryGetParentNode(out IConversationElement ParentNode)
+            => TryGetParentNode(this, out ParentNode);
+
+        public bool SetVisibleAndDifficulty(out bool Visible, out int Difficulty)
         {
             if (The.Speaker is GameObject speaker
                 && The.Player is GameObject player
@@ -199,7 +225,23 @@ namespace XRL.World.Conversations.Parts
             {
                 Visible = true;
                 Difficulty = CalculateDifficulty(player, speaker, out _, out _, Silent: true);
+                return true;
             }
+            Visible = this.Visible;
+            Difficulty = this.Difficulty;
+            return false;
+        }
+
+        public override void Awake()
+        {
+            using Indent indent = new(1);
+            string debugString = Debug.GetCallingTypeAndMethod() + "." + nameof(SetVisibleAndDifficulty);
+
+            if (SetVisibleAndDifficulty(out Visible, out Difficulty))
+                Debug.CheckYeh(debugString, indent);
+            else
+                Debug.CheckNah(debugString, indent);
+
             base.Awake();
         }
         
@@ -210,6 +252,7 @@ namespace XRL.World.Conversations.Parts
             || ID == GetChoiceTagEvent.ID
             || ID == EnteredElementEvent.ID
             || ID == PrepareTextLateEvent.ID
+            || ID == LeaveElementEvent.ID
             ;
         public override bool HandleEvent(HideElementEvent E)
             => false;
@@ -267,23 +310,9 @@ namespace XRL.World.Conversations.Parts
         public override bool HandleEvent(PrepareTextLateEvent E)
         {
             if (The.Speaker is GameObject speaker
-                && The.Player is GameObject player)
+                && The.Player is GameObject player
+                && TryGetParentNode(out IConversationElement superParentElement))
             {
-                IConversationElement superParentElement = ParentElement;
-                while (superParentElement.Parent is IConversationElement shallowParentElement)
-                {
-                    bool found = false;
-                    if (superParentElement is Choice
-                        && shallowParentElement is not Choice)
-                        found = true;
-
-                    superParentElement = shallowParentElement;
-
-                    if (found)
-                        break;
-                }
-                superParentElement ??= ParentElement;
-
                 if (Visible
                     && DebugEnableConversationDebugText)
                 {
@@ -311,6 +340,18 @@ namespace XRL.World.Conversations.Parts
                         superParentElement.Text.Remove(DebugString);
                 }
             }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(LeaveElementEvent E)
+        {
+            using Indent indent = new(1);
+            string debugString = Debug.GetCallingTypeAndMethod() + "(" + nameof(LeaveElementEvent) + ")." + nameof(SetVisibleAndDifficulty);
+
+            if (SetVisibleAndDifficulty(out Visible, out Difficulty))
+                Debug.CheckYeh(debugString, indent);
+            else
+                Debug.CheckNah(debugString, indent);
+
             return base.HandleEvent(E);
         }
     }

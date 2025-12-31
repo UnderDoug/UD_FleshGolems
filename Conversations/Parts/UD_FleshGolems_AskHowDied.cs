@@ -39,6 +39,8 @@ namespace XRL.World.Conversations.Parts
         public const string PLAYER_LED = "PlayerLed";
 
         public const string ASK_HOW_DIED_PROP = "UD_FleshGolems AskedHowDied";
+        public const string ACCUSED_PLAYER_PROP = "UD_FleshGolems AccusedPlayerOfKillingThem";
+
         public const string DUMMY_KILLER_BLUEPRINT = "UD_FleshGolems KillerDetails Dummy Killer";
         public const string DUMMY_WEAPON_BLUEPRINT = "UD_FleshGolems KillerDetails Dummy Weapon";
 
@@ -665,6 +667,9 @@ namespace XRL.World.Conversations.Parts
             return GetPlayerHasAskedBefore(Player, Speaker);
         }
 
+        public string GetAccusedProp()
+            => ACCUSED_PLAYER_PROP + ":" + The.Player?.ID;
+
         public override void Awake()
         {
             base.Awake();
@@ -684,11 +689,35 @@ namespace XRL.World.Conversations.Parts
 
         public override bool WantEvent(int ID, int Propagation)
             => base.WantEvent(ID, Propagation)
+            || ID == EnteredElementEvent.ID
             || ID == GetTextElementEvent.ID
             || ID == PrepareTextEvent.ID
-            || ID == EnteredElementEvent.ID
             || ID == PrepareTextLateEvent.ID
             ;
+        public override bool HandleEvent(EnteredElementEvent E)
+        {
+            if (The.Speaker is GameObject speaker
+                && The.Player is GameObject player)
+            {
+                if (KnowsPlayerKilledThem
+                    && !speaker.IsPlayerLed())
+                {
+                    ParentElement.Attributes ??= new();
+                    ParentElement.Attributes["AllowEscape"] = "false";
+                    if (ParentElement is Node parentNode)
+                        parentNode.AllowEscape = false;
+
+                    ParentElement.Elements?.RemoveAll(e => e is Choice && !e.HasPart<StartFight>());
+                    if (ParentElement.Elements?.Where(e => e is Choice) is not List<IConversationElement> choices
+                        || choices.IsNullOrEmpty())
+                    {
+                        Choice fightChoice = ParentElement.AddChoice(Text: "Oh! Shi-", Target: "End");
+                        fightChoice.AddPart(new StartFight());
+                    }
+                }
+            }
+            return base.HandleEvent(E);
+        }
         public override bool HandleEvent(GetTextElementEvent E)
         {
             using Indent indent = new(1);
@@ -704,7 +733,8 @@ namespace XRL.World.Conversations.Parts
                 && The.Player is GameObject player
                 && speaker.TryGetPart(out UD_FleshGolems_DeathDetails deathDetails))
             {
-                if (deathDetails.DeathQuestionsAreRude)
+                if (deathDetails.DeathQuestionsAreRude
+                    && !speaker.IsPlayerLed())
                 {
                     Debug.Log(nameof(deathDetails.DeathQuestionsAreRude), Indent: indent[1]);
 
@@ -714,6 +744,12 @@ namespace XRL.World.Conversations.Parts
                 }
                 else
                 {
+                    if (deathDetails.DeathQuestionsAreRude)
+                    {
+                        string playerRefName = player?.GetReferenceDisplayName(Short: true);
+                        Debug.Log(nameof(deathDetails.DeathQuestionsAreRude) + " but I'm friends with " + playerRefName, Indent: indent[1]);
+                    }
+
                     if (!deathDetails.DeathMemory.Validate(speaker))
                         Debug.Log(
                             nameof(deathDetails.DeathMemory) + " failed to validate " + speaker?.DebugName,
@@ -763,15 +799,14 @@ namespace XRL.World.Conversations.Parts
                                         nameof(possibleTextsWorkingList) + " list after at " + attempt.Things(nameof(attempt)));
                                 break;
                             }
+
                             Debug.Log(nameof(prospectiveText), prospectiveText.PathID.TextAfter("."), Indent: indent[2]);
+
                             if (AddConversationTextToListIfFits(ref constructedCompleteTextList, deathDetails.DeathMemory, prospectiveText))
-                            {
                                 possibleTextsWorkingList.RemoveAll(isConversationTextUnableToFitInList);
-                            }
                             else
-                            {
                                 possibleTextsWorkingList.Remove(prospectiveText);
-                            }
+
                             _ = indent[1];
                             if (CheckCompleteConversationText(possibleTextsWorkingList, deathDetails.DeathMemory))
                             {
@@ -904,113 +939,97 @@ namespace XRL.World.Conversations.Parts
                     weapon?.Obliterate();
 
                 if (KnowsPlayerKilledThem
-                    && KilledByPlayerTexts?.GetRandomElementCosmetic()?.Text is string killedByPlayerString)
+                    && KilledByPlayerTexts?.GetRandomElementCosmetic()?.Text is string killedByPlayerString
+                    && speaker.GetIntProperty(GetAccusedProp(), 0) is int accusedCount)
                 {
-                    E.Text
-                        .StartReplace()
-                        .AddObject(E.Subject)
-                        .AddObject(E.Object)
-                        .AddObject(killer, "killer")
-                        .AddObject(weapon, "weapon")
-                        .Execute();
-
-                    if (!speaker.IsPlayerLed())
+                    if (accusedCount == 0
+                        || (Math.Min(Math.Max(4, accusedCount), 8) is int makeAccusationDieSize
+                            && Stat.RollCached("1d" + makeAccusationDieSize) == 1))
                     {
-                        Debug.Log("Preparing " + nameof(KilledByPlayerTexts) + " for non-party member...", Indent: indent[1]);
-                        if (E.Text?.ToString()?.Split(' ')?.ToList() is List<string> textWords)
+                        speaker.ModIntProperty(GetAccusedProp(), 1);
+
+                        E.Text
+                            .StartReplace()
+                            .AddObject(E.Subject)
+                            .AddObject(E.Object)
+                            .AddObject(killer, "killer")
+                            .AddObject(weapon, "weapon")
+                            .Execute();
+
+                        if (!speaker.IsPlayerLed())
                         {
-                            int offset = Stat.RandomCosmetic(-2, 2);
-                            int roughlyHalfSelectedWords = Math.Min(Math.Max(0, (textWords.Count / 2) + offset), textWords.Count);
-                            int latterRoughlyHalfSelectedWords = textWords.Count - roughlyHalfSelectedWords;
-                            textWords.RemoveRange(roughlyHalfSelectedWords, latterRoughlyHalfSelectedWords);
-
-                            if (textWords[^1] is string lastWord)
+                            Debug.Log("Preparing " + nameof(KilledByPlayerTexts) + " for non-party member...", Indent: indent[1]);
+                            if (E.Text?.ToString()?.Split(' ')?.ToList() is List<string> textWords)
                             {
-                                string colorFormatOpen = null;
-                                string colorFormatClose = null;
-                                string shader = null;
-                                string fragment = null;
-                                if (lastWord.StartsWith("{{"))
+                                int offset = Stat.RandomCosmetic(-2, 2);
+                                int roughlyHalfSelectedWords = Math.Min(Math.Max(0, (textWords.Count / 2) + offset), textWords.Count);
+                                int latterRoughlyHalfSelectedWords = textWords.Count - roughlyHalfSelectedWords;
+                                textWords.RemoveRange(roughlyHalfSelectedWords, latterRoughlyHalfSelectedWords);
+
+                                if (textWords[^1] is string lastWord)
                                 {
-                                    colorFormatOpen = "{{";
-                                    colorFormatClose = "}}";
-                                    if (lastWord.EndsWith("}}"))
+                                    string colorFormatOpen = null;
+                                    string colorFormatClose = null;
+                                    string shader = null;
+                                    string fragment = null;
+                                    if (lastWord.StartsWith("{{"))
                                     {
-                                        lastWord = lastWord[..^2];
+                                        colorFormatOpen = "{{";
+                                        colorFormatClose = "}}";
+                                        if (lastWord.EndsWith("}}"))
+                                        {
+                                            lastWord = lastWord[..^2];
+                                        }
+                                        if (lastWord.TryGetIndexOf("|", out int shaderIndex))
+                                        {
+                                            shader = lastWord[2..][..(shaderIndex - 2)];
+                                            lastWord = lastWord[shaderIndex..];
+                                        }
                                     }
-                                    if (lastWord.TryGetIndexOf("|", out int shaderIndex))
-                                    {
-                                        shader = lastWord[2..][..(shaderIndex - 2)];
-                                        lastWord = lastWord[shaderIndex..];
-                                    }
+                                    fragment = lastWord.FirstRoughlyHalf(1);
+
+                                    Debug.Log(nameof(shader), shader, indent[2]);
+                                    Debug.Log(nameof(fragment), fragment, indent[2]);
+
+                                    textWords[^1] = colorFormatOpen + shader + fragment + colorFormatClose;
                                 }
-                                fragment = lastWord.FirstRoughlyHalf(1);
-
-                                Debug.Log(nameof(shader), shader, indent[2]);
-                                Debug.Log(nameof(fragment), fragment, indent[2]);
-
-                                textWords[^1] = colorFormatOpen + shader + fragment + colorFormatClose;
+                                E.Text.Clear().Append(textWords.Aggregate(
+                                    seed: "",
+                                    func: delegate (string a, string n)
+                                    {
+                                        if (!a.IsNullOrEmpty())
+                                            a += " ";
+                                        return a + n;
+                                    }));
                             }
-                            E.Text.Clear().Append(textWords.Aggregate(
-                                seed: "", 
-                                func: delegate (string a, string n)
-                                {
-                                    if (!a.IsNullOrEmpty())
-                                        a += " ";
-                                    return a + n;
-                                }));
+                            else
+                            {
+                                E.Text.TrimLatterRoughlyHalf(5);
+                            }
+                            killedByPlayerString = "=no2nd.restore=... \n\n=ud_nbsp:4=... " + killedByPlayerString;
                         }
                         else
                         {
-                            E.Text.TrimLatterRoughlyHalf(5);
+                            E.Text.Clear();
                         }
-                        killedByPlayerString = "=no2nd.restore=... \n\n=ud_nbsp:4=... " + killedByPlayerString;
-                    }
-                    else
-                    {
-                        E.Text.Clear();
-                    }
 
-                    E.Text.Append(killedByPlayerString
-                        .StartReplace()
-                        .AddObject(E.Subject)
-                        .AddObject(E.Object)
-                        .AddObject(killer, "killer")
-                        .AddObject(weapon, "weapon")
-                        .ToString());
+                        E.Text.Append(killedByPlayerString
+                            .StartReplace()
+                            .AddObject(E.Subject)
+                            .AddObject(E.Object)
+                            .AddObject(killer, "killer")
+                            .AddObject(weapon, "weapon")
+                            .ToString());
 
-                    if (E.Text?.ToString()?.Capitalize() is string capitalizedText)
-                        E.Text?.Clear()?.Append(capitalizedText);
+                        if (E.Text?.ToString()?.CapitalizeEx() is string capitalizedText)
+                            E.Text?.Clear()?.Append(capitalizedText);
+                    }
                 }
             }
             string text = E.Text?.ToString()?.CapitalizeSentences(ExcludeElipses: true);
 
             E.Text.Clear().Append(text);
 
-            return base.HandleEvent(E);
-        }
-        public override bool HandleEvent(EnteredElementEvent E)
-        {
-            if (The.Speaker is GameObject speaker
-                && The.Player is GameObject player)
-            {
-                if (KnowsPlayerKilledThem
-                    && !speaker.IsPlayerLed())
-                {
-                    ParentElement.Attributes ??= new();
-                    ParentElement.Attributes["AllowEscape"] = "false";
-                    if (ParentElement is Node parentNode)
-                        parentNode.AllowEscape = false;
-
-                    ParentElement.Elements?.RemoveAll(e => e is Choice && !e.HasPart<StartFight>());
-                    if (ParentElement.Elements?.Where(e => e is Choice) is not List<IConversationElement> choices
-                        || choices.IsNullOrEmpty())
-                    {
-                        Choice fightChoice = ParentElement.AddChoice(Text: "Oh! Shi-", Target: "End");
-                        fightChoice.AddPart(new StartFight());
-                    }
-                }
-            }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(PrepareTextLateEvent E)

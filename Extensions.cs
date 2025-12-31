@@ -44,31 +44,24 @@ namespace UD_FleshGolems
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
         {
             if (typeof(Extensions).GetMethod(nameof(GetWeightedRandom)) is MethodBase getWeightedRandom)
-            {
                 Registry.Register(getWeightedRandom, true);
-            }
+
+            if (typeof(Extensions).GetMethod(nameof(GetWeightedSeededRandom)) is MethodBase getWeightedSeededRandom)
+                Registry.Register(getWeightedSeededRandom, true);
+
             return Registry;
         }
         public static bool Contains(this ICollection<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
-        {
-            foreach ((MethodBase method, bool _) in DebugRegistry)
-            {
-                if (MethodBase.Equals(method))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+            => !DebugRegistry.IsNullOrEmpty()
+            && MethodBase is not null
+            && DebugRegistry.Any(mb => mb.Equals(MethodBase));
+
         public static bool GetValue(this ICollection<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
         {
             foreach ((MethodBase methodBase, bool value) in DebugRegistry)
-            {
                 if (MethodBase.Equals(methodBase))
-                {
                     return value;
-                }
-            }
+
             throw new ArgumentOutOfRangeException(nameof(MethodBase), "Not found.");
         }
         public static bool TryGetValue(
@@ -77,7 +70,9 @@ namespace UD_FleshGolems
             out bool Value)
         {
             Value = default;
-            if (DebugRegistry.Contains(MethodBase))
+            if (!DebugRegistry.IsNullOrEmpty()
+                && MethodBase is not null
+                && DebugRegistry.Contains(MethodBase))
             {
                 Value = DebugRegistry.GetValue(MethodBase);
                 return true;
@@ -85,9 +80,12 @@ namespace UD_FleshGolems
             return false;
         }
 
+        public static bool EqualIncludingBothNull<T>(this T Operand1, T Operand2)
+            => (Utils.EitherNull(Operand1, Operand2, out bool areEqual) && areEqual) || (Operand1 != null && Operand1.Equals(Operand2));
+
         public static bool EqualsAny<T>(this T Value, params T[] args)
             => !args.IsNullOrEmpty()
-            && !args.Where(t => (Utils.EitherNull(Value, t, out bool areEqual) && areEqual) || (Value != null && Value.Equals(t))).IsNullOrEmpty();
+            && !args.Where(t => t.EqualIncludingBothNull(Value)).IsNullOrEmpty();
 
         public static bool EqualsAnyNoCase(this string Value, params string[] args)
             => !args.IsNullOrEmpty()
@@ -144,120 +142,10 @@ namespace UD_FleshGolems
             return output;
         }
         public static string ThisManyTimes(this char @char, int Times = 1)
-        {
-            return @char.ToString().ThisManyTimes(Times);
-        }
+            => @char.ToString().ThisManyTimes(Times);
 
-        public static void AddUnique<T>(this ICollection<T> Collection, T Item, EqualityComparer<T> Comparer)
-        {
-            if (Collection == null)
-            {
-                throw new ArgumentNullException(nameof(Collection));
-            }
-            if (Item == null)
-            {
-                throw new ArgumentNullException(nameof(Item));
-            }
-            foreach (T item in Collection)
-            {
-                if ((Comparer != null && Comparer.Equals(item, Item))
-                    || (Comparer == null && Item.Equals(item)))
-                {
-                    return;
-                }
-            }
-            Collection.Add(Item);
-        }
-        public static void AddUnique<T>(this ICollection<T> Collection, T Item)
-        {
-            Collection?.AddUnique(Item, null);
-        }
-
-        /// <summary>
-        /// Adds an <paramref name="Item"/> to the <paramref name="List"/> if it doesn't already contain the item. Replaces the <paramref name="Item"/> in the <paramref name="List"/>, or only conditonally does so <paramref name="OnBasisOldNew"/> of the provided <see cref="Func{T, T, bool}"/>, returning true if the <paramref name="List"/> is altered.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="List">The list of <paramref name="Item"/>s to add the unique entry to.</param>
-        /// <param name="Item">The item being added tp the <paramref name="List"/> if the <paramref name="List"/> already contains the item according to the provided <paramref name="Compare"/>.</param>
-        /// <param name="Compare">The function by which to determine whether the <paramref name="List"/> already contains the passed <paramref name="Item"/>.</param>
-        /// <param name="OnBasisOldNew">The function by which to determine if the passed <paramref name="Item"/> should replace an existing one as determined by <paramref name="Compare"/>.</param>
-        /// <returns>
-        ///     <see langword="true"/> if the <paramref name="List"/> is altered;<br />
-        ///     <see langword="false"/>, otherwise.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        ///     If <paramref name="List"/> is <see langword="null"/>, or if <paramref name="Item"/>.<see cref="object.Equals"/>(<see langword="default"/>)
-        /// </exception>
-        public static bool AddUnique<T>(this IList<T> List, T Item, Func<T, T, bool> Compare, Func<T, T, bool> OnBasisOldNew)
-        {
-            if (List == null)
-            {
-                throw new ArgumentNullException(nameof(List));
-            }
-            if (Item.Equals(default))
-            {
-                throw new ArgumentNullException(nameof(Item));
-            }
-            int index = -1;
-            foreach (T item in List)
-            {
-                if ((Compare != null && Compare(item, Item))
-                    || (Compare == null && item.Equals(Item)))
-                {
-                    index = List.IndexOf(item);
-                    break;
-                }
-            }
-            if (index >= 0)
-            {
-                if (OnBasisOldNew == null || OnBasisOldNew(Item, List[index]))
-                {
-                    List[index] = Item;
-                    return true;
-                }
-                return false;
-            }
-            List.Add(Item);
-            return true;
-        }
-
-        public static bool AddUnique<T>(this IList<T> List, T Item, EqualityComparer<T> EqComparer, Comparer<T> Comparer)
-        {
-            if (List == null)
-            {
-                throw new ArgumentNullException(nameof(List));
-            }
-            int index = -1;
-            foreach (T item in List)
-            {
-                if ((EqComparer != null && EqComparer.Equals(item, Item))
-                    || (EqComparer == null && item.Equals(Item)))
-                {
-                    index = List.IndexOf(item);
-                    break;
-                }
-            }
-            if (index >= 0)
-            {
-                if (Comparer == null || Comparer.Compare(Item, List[index]) > 0)
-                {
-                    List[index] = Item;
-                    return true;
-                }
-                return false;
-            }
-            List.Add(Item);
-            return true;
-        }
-        public static bool AddUniqueObject<T>(this IList<T> List, T Item, EqualityComparer<T> EqComparer, Comparer<T> Comparer)
-            where T : class
-        {
-            if (Item is null)
-            {
-                throw new ArgumentNullException(nameof(Item));
-            }
-            return List.AddUnique(Item, EqComparer, Comparer);
-        }
+        public static void AddUnique<T>(this List<T> Collection, T Item)
+            => Collection?.AddIfNot(Item, e => Collection.Contains(Item));
 
         public static T GetRandomElementCosmeticExcluding<T>(this IEnumerable<T> Enumerable, Predicate<T> Exclude)
             where T : class
@@ -288,67 +176,48 @@ namespace UD_FleshGolems
         public static IEnumerable<string> GetPartNames(this GameObject Object)
         {
             foreach (IPart part in Object.PartsList)
-            {
                 yield return part.Name;
-            }
         }
 
         public static bool OverlapsWith<T>(this IEnumerable<T> Enumerable1, IEnumerable<T> Enumerable2)
         {
-            foreach (T item1 in Enumerable1)
-            {
-                foreach (T item2 in Enumerable2)
-                {
-                    if (item1.Equals(item2))
-                    {
-                        return true;
-                    }    
-                }
-            }
+            if (Enumerable1 != null
+                && Enumerable2 != null)
+                foreach (T item1 in Enumerable1)
+                    foreach (T item2 in Enumerable2)
+                        if (item1.Equals(item2))
+                            return true;
+
             return false;
         }
 
         public static bool ContainsAny<T>(this IEnumerable<T> Enumerable, params T[] Items)
-        {
-            if (Items == null || Enumerable == null)
-            {
-                return (Items == null) == (Enumerable == null);
-            }
-            return Enumerable.OverlapsWith(Items);
-        }
+            => Items == null
+                || Enumerable == null
+            ? (Items == null) == (Enumerable == null)
+            : Enumerable.OverlapsWith(Items);
 
         public static bool ContainsAll<T>(this ICollection<T> Collection1, ICollection<T> Collection2)
         {
             int matches = 0;
-            int targetMatches = Collection2.Count;
-            if (targetMatches > Collection1.Count)
-            {
+            int targetNumMatches = Collection2.Count;
+
+            if (targetNumMatches > Collection1.Count)
                 return false;
-            }
+
             foreach (T item2 in Collection2)
-            {
                 foreach (T item1 in Collection1)
-                {
-                    if (item1.Equals(item2))
-                    {
-                        matches++;
-                        if (targetMatches == matches)
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-            return targetMatches >= matches;
+                    if (item1.Equals(item2)
+                        && targetNumMatches == ++matches)
+                        break;
+
+            return targetNumMatches >= matches;
         }
         public static bool ContainsAll<T>(this ICollection<T> Collection, params T[] Items)
-        {
-            if (Items == null || Collection == null)
-            {
-                return (Items == null) == (Collection == null);
-            }
-            return Collection.ContainsAll((ICollection<T>)Items);
-        }
+            => (Items == null 
+                || Collection == null)
+            ? (Items == null) == (Collection == null)
+            : Collection.ContainsAll((ICollection<T>)Items);
 
         public static bool ContainsAll(this string String, params string[] Strings)
         {
@@ -381,15 +250,15 @@ namespace UD_FleshGolems
         }
 
         public static int DamageTo1HP(this GameObject Creature)
-        {
-            if (Creature == null || Creature.GetStat("Hitpoints") is not Statistic hitpoints)
-            {
-                return 0;
-            }
-            return hitpoints.Value - 1;
-        }
+            => (Creature == null 
+                || Creature.GetStat("Hitpoints") is not Statistic hitpoints)
+            ? 0
+            : hitpoints.Value - 1;
 
-        public static T OverrideWithDeepCopyOrRequirePart<T>(this GameObject GameObject, T PartToCopy, Func<GameObject, GameObject> MapInv = null)
+        public static T OverrideWithDeepCopyOrRequirePart<T>(
+            this GameObject GameObject,
+            T PartToCopy,
+            Func<GameObject, GameObject> MapInv = null)
             where T : IPart, new()
         {
             if (PartToCopy == null)
@@ -457,22 +326,20 @@ namespace UD_FleshGolems
         {
             BodyPart.DefaultBehavior = DefaultBehavior;
             if (SetDefaultBehaviorBlueprint)
-            {
                 BodyPart.DefaultBehaviorBlueprint = DefaultBehavior.Blueprint;
-            }
+
             return BodyPart.DefaultBehavior == DefaultBehavior 
-                && (!SetDefaultBehaviorBlueprint || BodyPart.DefaultBehaviorBlueprint == DefaultBehavior.Blueprint);
+                && (!SetDefaultBehaviorBlueprint 
+                    || BodyPart.DefaultBehaviorBlueprint == DefaultBehavior.Blueprint);
         }
 
-        public static IEnumerable<GameObjectBlueprint> GetBlueprints(this GameObjectFactory Factory, Predicate<GameObjectBlueprint> Filter)
-        {
-            return Factory.BlueprintList.Where(bp => Filter == null || Filter(bp));
-        }
+        public static IEnumerable<GameObjectBlueprint> GetBlueprints(
+            this GameObjectFactory Factory,
+            Predicate<GameObjectBlueprint> Filter)
+            => Factory.BlueprintList.Where(bp => Filter == null || Filter(bp));
 
         public static GameObjectBlueprint GetGameObjectBlueprint(this string Blueprint)
-        {
-            return Utils.GetGameObjectBlueprint(Blueprint);
-        }
+            => Utils.GetGameObjectBlueprint(Blueprint);
 
         public static IEnumerable<GameObjectBlueprint> GetBlueprintInherits(this GameObjectBlueprint Blueprint)
         {
@@ -484,18 +351,14 @@ namespace UD_FleshGolems
             }
         }
         public static IReadOnlyList<GameObjectBlueprint> GetBlueprintInheritsList(this GameObjectBlueprint Blueprint)
-        {
-            return Blueprint?.GetBlueprintInherits()?.ToList();
-        }
+            => Blueprint?.GetBlueprintInherits()?.ToList();
 
         public static string GetCorpseBlueprint(this GameObjectBlueprint Blueprint)
-        {
-            if (Blueprint.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string corpseBlueprint))
-            {
-                return corpseBlueprint;
-            }
-            return null;
-        }
+            => (Blueprint != null
+                && Blueprint.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseBlueprint), out string corpseBlueprint))
+            ? corpseBlueprint
+            : null;
+
         public static bool TryGetCorpseBlueprint(this GameObjectBlueprint Blueprint, out string CorpseBlueprint)
             => (CorpseBlueprint = Blueprint?.GetCorpseBlueprint()) != null
             && GameObjectFactory.Factory.HasBlueprint(CorpseBlueprint);
@@ -504,13 +367,11 @@ namespace UD_FleshGolems
             => (CorpseModel = Blueprint?.GetCorpseBlueprint()?.GetGameObjectBlueprint()) != null;
 
         public static int? GetCorpseChance(this GameObjectBlueprint Blueprint)
-        {
-            if (Blueprint.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseChance), out int corpseChance))
-            {
-                return corpseChance;
-            }
-            return null;
-        }
+            => (Blueprint != null
+                && Blueprint.TryGetPartParameter(nameof(Corpse), nameof(Corpse.CorpseChance), out int corpseChance))
+            ? corpseChance
+            : null;
+
         public static bool TryGetCorpseChance(this GameObjectBlueprint Blueprint, out int CorpseChance)
         {
             CorpseChance = 0;
@@ -534,58 +395,50 @@ namespace UD_FleshGolems
                 && Blueprint.TryGetCorpseChance(out CorpseChance);
         }
         public static CorpseEntityPair GetCorpseBlueprintWeightPair(this GameObjectBlueprint Blueprint)
-        {
-            CorpseEntityPair CorpseBlueprintWeightPair = null;
-            if (Blueprint?.GetCorpseBlueprint() is string corpseBlueprint
+            => (Blueprint?.GetCorpseBlueprint() is string corpseBlueprint
                 && Blueprint?.GetCorpseChance() is int corpseChance)
-            {
-                CorpseBlueprintWeightPair = new(new CorpseBlueprint(corpseBlueprint), new EntityBlueprint(Blueprint), corpseChance, CorpseEntityPair.PairRelationship.PrimaryCorpse);
-            }
-            return CorpseBlueprintWeightPair;
-        }
-        public static bool TryGetCorpseBlueprintAndChance(this GameObjectBlueprint Blueprint, out CorpseEntityPair CorpseBlueprintWeightPair)
-        {
-            return (CorpseBlueprintWeightPair = GetCorpseBlueprintWeightPair(Blueprint)) != null;
-        }
+            ? new(
+                Corpse: new CorpseBlueprint(corpseBlueprint),
+                Entity: new EntityBlueprint(Blueprint),
+                Weight: corpseChance,
+                Relationship: CorpseEntityPair.PairRelationship.PrimaryCorpse)
+            : null;
+
+        public static bool TryGetCorpseBlueprintAndChance(
+            this GameObjectBlueprint Blueprint,
+            out CorpseEntityPair CorpseBlueprintWeightPair)
+            => (CorpseBlueprintWeightPair = GetCorpseBlueprintWeightPair(Blueprint)) != null;
+
+        public static bool IsOrInheritsCorpseOrPseudoCorpse(this GameObjectBlueprint Blueprint)
+            => Blueprint != null
+            && (Blueprint.InheritsFrom("Corpse")
+                || Blueprint.Name == "Corpse"
+                || Blueprint.HasTag(PSEUDOCORPSE));
 
         public static bool IsCorpse(this GameObjectBlueprint Blueprint, Predicate<GameObjectBlueprint> Filter)
-        {
-            return Blueprint != null
-                && (Blueprint.InheritsFrom("Corpse") || Blueprint.Name == "Corpse" || Blueprint.HasTag(PSEUDOCORPSE))
-                && (Filter == null || Filter(Blueprint));
-        }
+            => Blueprint != null
+            && Blueprint.IsOrInheritsCorpseOrPseudoCorpse()
+            && (Filter == null || Filter(Blueprint));
 
         public static bool IsCorpse(this GameObjectBlueprint Blueprint)
-        {
-            return Blueprint != null
-                && Blueprint.IsCorpse(null);
-        }
+            => Blueprint != null
+            && Blueprint.IsCorpse(null);
 
         public static bool IsCorpse(this string Blueprint, Predicate<GameObjectBlueprint> Filter = null)
-        {
-            return Blueprint != null
-                && Blueprint.GetGameObjectBlueprint().IsCorpse(Filter);
-        }
+            => Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint blueprintModel
+            && blueprintModel.IsCorpse(Filter);
 
         public static bool IsInanimateCorpse(this GameObject Corpse, Predicate<GameObjectBlueprint> Filter = null)
-        {
-            return Corpse != null
-                && !Corpse.HasPart<AnimatedObject>()
-                && Corpse.HasPart<UD_FleshGolems_CorpseReanimationHelper>()
-                && Corpse.GetBlueprint().IsCorpse(Filter);
-        }
+            => Corpse != null
+            && !Corpse.HasPart<AnimatedObject>()
+            && Corpse.HasPart<UD_FleshGolems_CorpseReanimationHelper>()
+            && Corpse.GetBlueprint() is GameObjectBlueprint corpseModel
+            && corpseModel.IsCorpse(Filter);
 
         public static bool InheritsFromAny(this GameObjectBlueprint Blueprint, params string[] BaseBlueprints)
-        {
-            foreach (string baseBlueprint in BaseBlueprints)
-            {
-                if (Blueprint.InheritsFrom(baseBlueprint))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+            => Blueprint != null
+            && !BaseBlueprints.IsNullOrEmpty()
+            && BaseBlueprints.Any(bb => Blueprint.InheritsFrom(bb));
 
         public static bool InheritsFrom(this GameObject Object, string BaseBlueprint)
             => Object != null
@@ -594,17 +447,9 @@ namespace UD_FleshGolems
         public static bool InheritsFrom(this string Blueprint, string BaseBlueprint)
             => Utils.ThisBlueprintInheritsFromThatOne(Blueprint, BaseBlueprint);
 
-        public static bool InheritsFromAny(this string Blueprint, List<string> BaseBlueprints)
-        {
-            foreach (string baseBlueprint in BaseBlueprints)
-            {
-                if (Blueprint.InheritsFrom(baseBlueprint))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+        public static bool InheritsFromAny(this string Blueprint, params string[] BaseBlueprints)
+            => Blueprint?.GetGameObjectBlueprint() is GameObjectBlueprint blueprintModel
+            && blueprintModel.InheritsFromAny(BaseBlueprints);
 
         public static bool IsBaseBlueprint(this string Blueprint)
             => Utils.IsBaseGameObjectBlueprint(Blueprint);
@@ -629,32 +474,22 @@ namespace UD_FleshGolems
         public static IEnumerable<BodyPart> LoopParts(this Body Body, Predicate<BodyPart> Filter)
         {
             if (Body == null)
-            {
                 yield break;
-            }
+
             foreach (BodyPart bodyPart in Body.LoopParts())
-            {
                 if (Filter == null || Filter(bodyPart))
-                {
                     yield return bodyPart;
-                }
-            }
         }
 
         public static Dictionary<T, int> ConvertToWeightedList<T>(this IEnumerable<T> Items)
         {
             Dictionary<T, int> weightedList = new();
             foreach (T item in Items)
-            {
                 if (weightedList.ContainsKey(item))
-                {
                     weightedList[item]++;
-                }
                 else
-                {
                     weightedList.Add(item, 1);
-                }
-            }
+
             return weightedList;
         }
 
@@ -664,14 +499,11 @@ namespace UD_FleshGolems
             foreach ((BlueprintBox blueprint, int weight) in Entries)
             {
                 string key = blueprint.ToString();
+
                 if (weightedList.ContainsKey(key))
-                {
                     weightedList[key] += weight;
-                }
                 else
-                {
                     weightedList.Add(key, weight);
-                }
             }
             return weightedList;
         }
@@ -682,14 +514,11 @@ namespace UD_FleshGolems
             foreach ((BlueprintBox blueprint, int weight, Relationship rel) in Entries)
             {
                 string key = blueprint.ToString() + "@" + rel.ToString();
+
                 if (weightedList.ContainsKey(key))
-                {
                     weightedList[key] += weight;
-                }
                 else
-                {
                     weightedList.Add(key, weight);
-                }
             }
             return weightedList;
         }
@@ -698,13 +527,9 @@ namespace UD_FleshGolems
             this string Text,
             string Bullet = "\u0007",
             string BulletColor = "K")
-        {
-            if (Bullet.IsNullOrEmpty())
-            {
-                return Text;
-            }
-            return Utils.Bullet(Bullet, BulletColor) + " " + Text;
-        }
+            => Bullet.IsNullOrEmpty()
+            ? Text
+            : Utils.Bullet(Bullet, BulletColor) + " " + Text;
 
         public static string GenerateBulletList(
             this IEnumerable<string> Items,
@@ -795,10 +620,7 @@ namespace UD_FleshGolems
             this IEnumerable<T> Entries)
         {
             foreach ((T item, int count) in Entries.ConvertToWeightedList())
-            {
                 yield return count.Things(item.ToString());
-            }
-            yield break;
         }
 
         public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(
@@ -806,23 +628,17 @@ namespace UD_FleshGolems
             Func<KeyValuePair<string, T>, string> Proc)
         {
             foreach (KeyValuePair<string, T> entry in Entries)
-            {
-                string procOutput = Proc != null ? Proc(entry) : entry.Key + ": " + entry.Value.ToString();
-                yield return procOutput;
-            }
-            yield break;
+                yield return Proc != null ? Proc(entry) : entry.Key + ": " + entry.Value.ToString();
         }
+
         public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(
             this IEnumerable<KeyValuePair<string,T>> Entries,
             Func<T, string> Proc)
-        {
-            return Entries.ConvertToStringListWithKeyValue(kvp => kvp.Key + ": " + (Proc != null ? Proc(kvp.Value) : kvp.Value.ToString()));
-        }
+            => Entries.ConvertToStringListWithKeyValue(kvp => kvp.Key + ": " + (Proc != null ? Proc(kvp.Value) : kvp.Value.ToString()));
+
         public static IEnumerable<string> ConvertToStringListWithKeyValue<T>(
             this IEnumerable<KeyValuePair<string,T>> Entries)
-        {
-            return Entries.ConvertToStringListWithKeyValue((Func<T, string>)null);
-        }
+            => Entries.ConvertToStringListWithKeyValue((Func<T, string>)null);
 
         public static T GetWeightedSeededRandom<T>(this Dictionary<T, int> WeightedList, string Seed, bool Include0Weight = true)
         {
@@ -833,9 +649,8 @@ namespace UD_FleshGolems
             foreach (T ticket in tickets)
             {
                 if (Include0Weight && WeightedList[ticket] == 0)
-                {
                     WeightedList[ticket]++;
-                }
+
                 maxWeight += WeightedList[ticket];
             }
             int rolledAmount = 0;
@@ -860,21 +675,17 @@ namespace UD_FleshGolems
             foreach ((T ticket, int weight) in WeightedList)
             {
                 if (weight < 1)
-                {
                     continue;
-                }
+
                 cumulativeWeight += weight;
+
                 if (rolledAmount < cumulativeWeight)
-                {
                     return ticket;
-                }
             }
             return default;
         }
         public static T GetWeightedRandom<T>(this Dictionary<T, int> WeightedList, bool Include0Weight = true)
-        {
-            return WeightedList.GetWeightedSeededRandom(null, Include0Weight);
-        }
+            => WeightedList.GetWeightedSeededRandom(null, Include0Weight);
 
         public static List<T> ForEach<T>(this List<T> List, Action<T> Action)
         {
@@ -895,32 +706,26 @@ namespace UD_FleshGolems
         }
 
         public static TOut ForEach<T, TOut>(this IEnumerable<T> Enumerable, Action<T> Action, TOut Return)
-        {
-            if (!Enumerable.IsNullOrEmpty())
-                return Enumerable.ToList().ForEach(Action, Return);
-            return Return;
-        }
+            => !Enumerable.IsNullOrEmpty()
+            ? Enumerable.ToList().ForEach(Action, Return)
+            : Return;
 
         public static string Pluralize<T>(this T EnumEntry)
             where T : struct, Enum
-        {
-            return EnumEntry.ToString().Pluralize();
-        }
+            => EnumEntry.ToString().Pluralize();
 
         public static int SetMinValue(ref this int Int, int Min)
         {
             if (Int < Min)
-            {
                 Int = Min;
-            }
+
             return Int;
         }
         public static int SetMaxValue(ref this int Int, int Max)
         {
             if (Int > Max)
-            {
                 Int = Max;
-            }
+
             return Int;
         }
 
@@ -949,19 +754,16 @@ namespace UD_FleshGolems
         public static string BodyPartString(this BodyPart BodyPart, bool WithManager = false, bool WithParent = false, bool Recursive = false)
         {
             if (BodyPart == null)
-            {
                 return NULL;
-            }
+
             string managed = null;
             if (WithManager && !BodyPart.Manager.IsNullOrEmpty())
-            {
                 managed = "[::" + BodyPart.Manager + "]";
-            }
+
             string parent = null;
             if (WithParent && BodyPart.ParentPart is BodyPart parentPart)
-            {
                 parent = " of parent " + parentPart.BodyPartString(WithManager, Recursive, Recursive);
-            }
+
             return "(" + BodyPart.ID + "):" + BodyPart.Type + "/" + BodyPart.VariantType + managed + parent;
         }
 
@@ -972,19 +774,21 @@ namespace UD_FleshGolems
 
             Traverse rootWalk = new(Root);
 
-            foreach (string fieldName in rootWalk.Fields())
+            foreach (string fieldName in rootWalk?.Fields() ?? new())
                 yield return fieldName;
 
-            foreach (string propertyName in rootWalk.Properties())
+            foreach (string propertyName in rootWalk?.Properties() ?? new())
                 yield return propertyName;
         }
 
         public static IEnumerable<MemberInfo> GetMembers(this object Root, IEnumerable<string> MemberNameList)
-            => Root?.GetType()?.GetMembers()
+            => Root
+                ?.GetType()
+                ?.GetMembers()
                 ?.Where(mi => !MemberNameList.IsNullOrEmpty() && MemberNameList.Contains(mi.Name));
 
         public static IEnumerable<MemberInfo> GetFieldsAndProperties(this object Root)
-            => Root.GetMembers(Root.GetFieldAndPropertyNames());
+            => Root?.GetMembers(Root?.GetFieldAndPropertyNames());
 
         public static IEnumerable<KeyValuePair<string, Traverse>> GetAssignableDeclaredFieldAndPropertyKeyValuePairs(
             this object Root,
@@ -1147,6 +951,14 @@ namespace UD_FleshGolems
         {
             if (ConversationText?.Text is string conversationTextString)
                 ConversationText.Text = conversationTextString.ReplacerCapitalize();
+
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(ConversationText?.Text)
+                });
+
             return ConversationText;
         }
 
@@ -1174,10 +986,14 @@ namespace UD_FleshGolems
         public static string ReplaceAt(this string String, char Char, int Pos)
         {
             if (String.IsNullOrEmpty())
-                throw new ArgumentNullException(nameof(String), "cannot be null or empty");
+                throw new ArgumentNullException(
+                    paramName: nameof(String),
+                    message: "cannot be null or empty");
 
             if (Pos < 0 || Pos >= String.Length)
-                throw new ArgumentOutOfRangeException(nameof(Pos), "must be less than length of " + nameof(String) + " and greater than or equal to 0");
+                throw new ArgumentOutOfRangeException(
+                    paramName: nameof(Pos),
+                    message: "must be less than length of " + nameof(String) + " and greater than or equal to 0");
 
             string preString = Pos >= 0 ? String[..Pos] : null;
             string replaceChar = Char != default ? Char.ToString() : "";
@@ -1446,56 +1262,6 @@ namespace UD_FleshGolems
         public static bool KnowsEntityKilledThem(this GameObject Corpse, GameObject Entity)
             => Corpse.KnowsEntityKilledThem(Entity, out _);
 
-        /// <summary>
-        /// Sets or unsets an int compatible flag on an enum.
-        /// </summary>
-        /// <typeparam name="T">The enum type.</typeparam>
-        /// <param name="Current">The current enum value.</param>
-        /// <param name="Flag">The flag to set/unset (supports combined flags).</param>
-        /// <param name="Set">True to set the flag; false to unset.</param>
-        /// <returns>The original enum with the flag set/unset.</returns>
-        public static T SetFlag<T>(this T Current, T Flag, bool Set)
-            where T : struct, Enum
-        {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg("T", typeof(T)),
-                    Debug.Arg(nameof(Current), Current.ToString()),
-                });
-
-            // Convert current and flag to their underlying type values  
-            int currentInt = (int)Convert.ChangeType(Current, typeof(int));
-            int flagInt = (int)Convert.ChangeType(Flag, typeof(int));
-
-            // Perform bitwise operation  
-            object resultInt;
-            if (Set)
-            {
-                // Set flag: current | flag  
-                resultInt = currentInt | flagInt;
-            }
-            else
-            {
-                // Unset flag: current & ~flag
-                resultInt = currentInt & ~flagInt;
-            }
-
-            // Convert back to enum type  
-            return (T)Enum.ToObject(typeof(T), resultInt);
-        }
-
-        public static bool HasAnyFlag<T>(this T flags, params T[] flagList)
-            where T : struct, Enum
-            => !flagList.IsNullOrEmpty()
-            && flagList.Any(f => flags.HasFlag(f));
-
-        public static bool HasEachFlag<T>(this T flags, params T[] flagList)
-            where T : struct, Enum
-            => !flagList.IsNullOrEmpty()
-            && flagList.All(f => flags.HasFlag(f));
-
         public static bool IsNameOfGameObjectBlueprint(this string BlueprintName)
             => !BlueprintName.IsNullOrEmpty()
             && GameObjectFactory.Factory.HasBlueprint(BlueprintName);
@@ -1622,23 +1388,19 @@ namespace UD_FleshGolems
 
             Dictionary<string, string> attributes = new();
             if (ConversationText.Attributes != null)
-            {
                 attributes = new(ConversationText.Attributes);
-            }
+
             Dictionary<string, string> otherAttributes = new();
             if (OtherConversationText.Attributes != null)
-            {
                 otherAttributes = new(OtherConversationText.Attributes);
-            }
 
             foreach ((string key, string value) in attributes)
             {
                 string newValue = value;
                 if (key.EqualsAnyNoCase(AttributesToConcatenate?.ToArray() ?? new string[0])
                     && otherAttributes.TryGetValue(key, out string otherValue))
-                {
                     newValue += "," + otherValue;
-                }
+
                 otherAttributes[key] = newValue;
             }
 
@@ -1706,10 +1468,6 @@ namespace UD_FleshGolems
             => Context.Capitalize ? Output?.CapitalizeEx() : Output;
 
         public static bool Fail(this GameObject Object, string Message, bool Silent)
-        {
-            if (!Silent)
-                return Object.Fail(Message);
-            return false;
-        }
+            => !Silent && Object.Fail(Message);
     }
 }
