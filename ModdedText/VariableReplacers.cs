@@ -197,7 +197,7 @@ namespace UD_FleshGolems.ModdedText
             ParseDeathMemoryContextParameters(Context, out string article, out string afterArticleAdjectives);
             string output = article + afterArticleAdjectives + Result;
             return Context.Capitalize
-                ? output?.CapitalizeExcept()
+                ? output?.CapitalizeEx()
                 : output;
         }
 
@@ -331,7 +331,7 @@ namespace UD_FleshGolems.ModdedText
         public static string BodyPart(DelegateContext Context)
             => Context.Target
                 ?.Body
-                ?.LoopPart(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.CapitalizeExcept() : null)
+                ?.LoopPart(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.CapitalizeEx() : null)
                 ?.GetRandomElementCosmetic()
                 ?.Description
                 ?.ContextCapitalize(Context);
@@ -500,7 +500,7 @@ namespace UD_FleshGolems.ModdedText
             if (Context.Value.ToString() is string contextValue)
             {
                 Context.Value.Clear();
-                Context.Value.Append(contextValue.CapitalizeExcept());
+                Context.Value.Append(contextValue.CapitalizeEx());
             }
         }
 

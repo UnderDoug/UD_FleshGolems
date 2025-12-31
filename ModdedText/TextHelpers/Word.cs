@@ -95,7 +95,7 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                 ?.Strip()
                 ?.Aggregate(
                     seed: "",
-                    func: (a, n) => a + (n.IsLetterAndNotException() ? n : null)) is string strippedWord
+                    func: (a, n) => a + (n.IsLetterAndNotException(Utils.CapitalizationExceptions) ? n : null)) is string strippedWord
             && strippedWord[0].ToString() == strippedWord[0].ToString().ToUpper();
 
         public readonly string LettersOnly()
@@ -111,8 +111,8 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
 
         public readonly Word MatchCapitalization(string Word)
             => Word.IsCapitalized()
-            ? ReplaceWord(this, Text.CapitalizeExcept())
-            : ReplaceWord(this, Text.Uncapitalize());
+            ? ReplaceWord(this, Text.CapitalizeEx())
+            : ReplaceWord(this, Text.UncapitalizeEx());
 
         public readonly Word Replace(string OldValue, string NewValue)
             => ReplaceWord(this, Text?.Replace(OldValue, NewValue));

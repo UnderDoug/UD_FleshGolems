@@ -300,7 +300,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             }
             if (Corpse?.GetPropertyOrTag(KILLER_PROPTAG) is string killerOverridePropTag)
             {
-                killerOverride = killerOverridePropTag.ToLower().CapitalizeExcept() switch
+                killerOverride = killerOverridePropTag.ToLower().CapitalizeEx() switch
                 {
                     "3" or
                     "True" or
@@ -316,7 +316,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     "False" or
                     _ => KillerMemory.Amnesia,
                 };
-                Debug.CheckYeh(KILLER_PROPTAG, killerOverridePropTag.ToLower().CapitalizeExcept(), indent[1]);
+                Debug.CheckYeh(KILLER_PROPTAG, killerOverridePropTag.ToLower().CapitalizeEx(), indent[1]);
             }
             if (Corpse?.GetPropertyOrTag(METHOD_PROPTAG) is string methodOverridePropTag)
             {

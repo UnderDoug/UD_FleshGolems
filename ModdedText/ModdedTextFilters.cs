@@ -60,9 +60,6 @@ namespace UD_FleshGolems.ModdedText
                 "to", new() { DeleteString, }
             },
             {
-                "ing", new() { "ing", DeleteString, DeleteString, }
-            },
-            {
                 "can't", NotsOrNo
             },
             {
@@ -100,6 +97,9 @@ namespace UD_FleshGolems.ModdedText
             },
             {
                 "th", new() { "d", "y", DeleteString, }
+            },
+            {
+                "ing", StringAndNDeleteString("ing", 2)
             },
             {
                 "ee", new() { "e- yi yi -", "ee- yi! -", "i", }
@@ -146,6 +146,18 @@ namespace UD_FleshGolems.ModdedText
             "{{emote|*snap-snap*}}",
         };
 
+        public static List<string> StringAndNDeleteString(string String, int N)
+        {
+            List<string> output = new();
+            if (!String.IsNullOrEmpty())
+                output.Add(String);
+
+            for (int i = 0; i < N; i++)
+                output.Add(DeleteString);
+
+            return output;
+        }
+
         public static bool IsCapitalized(this string Word)
             => Word
                 ?.Strip()
@@ -163,8 +175,8 @@ namespace UD_FleshGolems.ModdedText
 
         public static string MatchCapitalization(this string Replacement, string Word)
             => Word.IsCapitalized()
-            ? Replacement.CapitalizeExcept()
-            : Replacement.Uncapitalize();
+            ? Replacement.CapitalizeEx()
+            : Replacement.UncapitalizeEx();
 
         private static string CreateSentence(string Accumulator, Word Next)
             => Utils.CreateSentence(Accumulator, Next.ToString());
@@ -210,11 +222,17 @@ namespace UD_FleshGolems.ModdedText
                                 {
                                     wordWithoutPunctuation = wordWithoutPunctuation.Uncapitalize();
                                 }
+
+                                string safeReplacement = replacement.MatchCapitalization(wordWithoutPunctuation);
+                                if (replacement.EqualsAny(DeleteString, NoSpace))
+                                    safeReplacement = replacement;
+
                                 words[i] = words[i].Replace(
                                     OldValue: originalWordWithoutPunctuation,
-                                    NewValue: replacement.MatchCapitalization(wordWithoutPunctuation));
+                                    NewValue: safeReplacement);
+
                                 //stop = true;
-                                string debugReplaceString = replacement + " (" + replacement.MatchCapitalization(wordWithoutPunctuation) + ")";
+                                string debugReplaceString = replacement + " (" + safeReplacement + ")";
                                 Debug.CheckYeh(word.ToString() + "|" + key + ": " + debugReplaceString, Indent: indent[2]);
                                 Debug.Log(nameof(originalWordWithoutPunctuation), originalWordWithoutPunctuation, Indent: indent[3]);
                                 Debug.Log(nameof(wordWithoutPunctuation), wordWithoutPunctuation, Indent: indent[3]);
@@ -241,17 +259,22 @@ namespace UD_FleshGolems.ModdedText
                             if (values.GetRandomElementCosmetic() is string replacement)
                             {
                                 Word? newWord = word.ReplaceWord(null);
-                                for (int j = 0; j < word.Length - 1; j++)
+                                for (int j = 0; j < word.Length; j++)
                                 {
+                                    if (j == word.Length)
+                                        newWord = word.ReplaceWord(newWord?.Text + word[j]);
+
                                     int k = j + key.Length;
                                     if (k < word.Length
                                         && word[j..k].EqualsNoCase(key)
                                         && Stat.RollCached("1d1") == 1)
                                     {
-                                        newWord = words[i].ReplaceWord(newWord?.Text + replacement);
-                                        // words[i] = words[i].ReplaceWord(word[..j] + replacement + word[k..]);
-                                        // stop = true;
-                                        // break;
+                                        string safeReplacement = replacement.MatchCapitalization(word[j..k]);
+                                        if (replacement.EqualsAny(DeleteString, NoSpace))
+                                            safeReplacement = replacement;
+
+                                        newWord = words[i].ReplaceWord(newWord?.Text + safeReplacement);
+                                        j += key.Length - 1;
                                     }
                                     else
                                     {

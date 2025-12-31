@@ -1150,9 +1150,10 @@ namespace UD_FleshGolems
             return ConversationText;
         }
 
-        public static bool IsLetterAndNotException(this char Char)
+        public static bool IsLetterAndNotException(this char Char, params char[] Exceptions)
             => char.IsLetter(Char)
-            && !Char.EqualsAny(CapitalizationExceptions);
+            && (Exceptions.IsNullOrEmpty()
+                || !Char.EqualsAny(Exceptions));
 
         public static bool IsUpper(this string String)
             => !String.IsNullOrEmpty()
@@ -1170,6 +1171,22 @@ namespace UD_FleshGolems
             => Char != default
             && Char.ToString().IsLower();
 
+        public static string ReplaceAt(this string String, char Char, int Pos)
+        {
+            if (String.IsNullOrEmpty())
+                throw new ArgumentNullException(nameof(String), "cannot be null or empty");
+
+            if (Pos < 0 || Pos >= String.Length)
+                throw new ArgumentOutOfRangeException(nameof(Pos), "must be less than length of " + nameof(String) + " and greater than or equal to 0");
+
+            string preString = Pos >= 0 ? String[..Pos] : null;
+            string replaceChar = Char != default ? Char.ToString() : "";
+            string postString = String.Length > Pos ? String[(Pos + 1)..] : null;
+
+            return preString + replaceChar + postString;
+        }
+
+
         public static bool TryCapitalize(this char Char, out char CapChar)
         {
             CapChar = default;
@@ -1186,16 +1203,14 @@ namespace UD_FleshGolems
         {
             for (int i = 0; i < (Text?.Length ?? 0); i++)
             {
-                if (!Text[i].IsLetterAndNotException())
+                if (!Text[i].IsLetterAndNotException(Exceptions))
                     continue;
 
                 if (Text[i].IsUpper())
                     break;
 
                 if (Text[i].TryCapitalize(out char capChar))
-                    return (i >= 0 ? Text[..i] : null) +
-                        capChar +
-                        (Text.Length > i ? Text[(i + 1)..] : null);
+                    return Text.ReplaceAt(capChar, i);
             }
             return Text;
         }
@@ -1218,16 +1233,14 @@ namespace UD_FleshGolems
         {
             for (int i = 0; i < (Text?.Length ?? 0); i++)
             {
-                if (!Text[i].IsLetterAndNotException())
+                if (!Text[i].IsLetterAndNotException(Exceptions))
                     continue;
 
                 if (Text[i].IsLower())
                     break;
 
                 if (Text[i].TryUncapitalize(out char uncapChar))
-                    return (i >= 0 ? Text[..i] : null) +
-                        uncapChar +
-                        (Text.Length > i ? Text[(i + 1)..] : null);
+                    return Text.ReplaceAt(uncapChar, i);
             }
             return Text;
         }
@@ -1292,10 +1305,10 @@ namespace UD_FleshGolems
                 }
                 String = compiledWords
                         ?.Aggregate("", (a, n) => a + (!a.IsNullOrEmpty() ? "\n" : null) + n)
-                        ?.CapitalizeExcept()
+                        ?.CapitalizeEx()
                     ?? String;
             }
-            return String?.CapitalizeExcept();
+            return String?.CapitalizeEx();
         }
 
         public static bool TryGetIndexOf(this string Text, string Search, out int Index, bool EndOfSearch = true)
@@ -1690,7 +1703,7 @@ namespace UD_FleshGolems
             => CharList.Aggregate("", (a, n) => a += n);
 
         public static string ContextCapitalize(this string Output, TextDelegateContext Context)
-            => Context.Capitalize ? Output?.CapitalizeExcept() : Output;
+            => Context.Capitalize ? Output?.CapitalizeEx() : Output;
 
         public static bool Fail(this GameObject Object, string Message, bool Silent)
         {
