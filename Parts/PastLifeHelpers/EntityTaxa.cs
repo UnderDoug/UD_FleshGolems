@@ -69,17 +69,39 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
 
         public bool RestoreTaxa(GameObject Entity, bool RestoreNull = false, bool OverrideValues = false)
         {
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(Entity?.DebugName ?? ("no " + nameof(Entity))),
+                    Debug.Arg(nameof(RestoreNull), RestoreNull),
+                    Debug.Arg(nameof(OverrideValues), OverrideValues),
+                });
+
             bool any = false;
             foreach ((string label, string value) in this)
             {
-                if ((RestoreNull 
-                        || value != null)
-                    && (OverrideValues
-                        || Entity.GetStringProperty(label) != null))
+                if (label == nameof(Blueprint))
+                    continue;
+
+                bool restoreNullOrIsNotNull = RestoreNull
+                    || value != null;
+
+                bool overrideValuesOrExistingValueNull = OverrideValues
+                    || Entity.GetStringProperty(label) == null;
+
+                if (restoreNullOrIsNotNull
+                    && overrideValuesOrExistingValueNull)
                 {
                     Entity.SetStringProperty(label, value);
                     any = true;
                 }
+                Debug.YehNah(
+                    Message: "[" + label + "," + Entity.GetStringProperty(label) + "->" + value + "]",
+                    Good: restoreNullOrIsNotNull && overrideValuesOrExistingValueNull,
+                    Indent: indent[1]);
+                Debug.YehNah(nameof(restoreNullOrIsNotNull), restoreNullOrIsNotNull, indent[2]);
+                Debug.YehNah(nameof(overrideValuesOrExistingValueNull), overrideValuesOrExistingValueNull, indent[2]);
             }
             return any;
         }
@@ -90,6 +112,22 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
                 if (Filter == null || Filter(entry)
                     && !entry.Key.EqualsAny(nameof(Blueprint), nameof(Subtype), nameof(Genotype), nameof(Species)))
                     yield return entry;
+        }
+
+        public string DebugLog()
+        {
+            string title = GetType().ToString();
+            UnityEngine.Debug.Log(title);
+            string output = "";
+            foreach ((string taxa, string value) in this)
+            {
+                string line = taxa + ": " + value;
+                UnityEngine.Debug.Log(line);
+                if (!output.IsNullOrEmpty())
+                    output += "\n";
+                output += line;
+            }
+            return title + "\n" + output;
         }
     }
 }

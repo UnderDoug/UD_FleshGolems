@@ -63,10 +63,7 @@ namespace XRL.World.WorldBuilders
                 return;
             }
 
-            WorldCreationProgress.StepProgress("Maddening science...");
-
-            Initializers.CacheSomeCorpses();
-            
+            WorldCreationProgress.StepProgress("Maddening science...");            
             
             if (NecromancySystem?.TheMadMonger is not GameObject theMadMonger)
             {

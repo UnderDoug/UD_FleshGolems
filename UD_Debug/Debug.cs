@@ -46,21 +46,14 @@ namespace UD_FleshGolems.Logging
                 try
                 {
                     if (!DoDebugSetting)
-                    {
                         return false;
-                    }
+
                     if (TryGetCallingTypeAndMethod(out _, out MethodBase callingMethod)
                         && GetRegistry() is List<MethodRegistryEntry> registry
-                        && registry.TryGetValue(callingMethod, out bool registryMethodValue))
-                    {
-                        if (!registryMethodValue)
-                        {
-                            if (!DebugEnableAllLogging)
-                            {
-                                return false;
-                            }
-                        }
-                    }
+                        && registry.TryGetValue(callingMethod, out bool registryMethodValue)
+                        && !registryMethodValue
+                        && !DebugEnableAllLogging)
+                        return false;
                 }
                 catch (Exception x)
                 {
@@ -73,7 +66,9 @@ namespace UD_FleshGolems.Logging
         [ModSensitiveStaticCache(CreateEmptyInstance = false)]
         [GameBasedStaticCache(ClearInstance = false)]
         private static List<MethodRegistryEntry> _DoDebugRegistry = null;
+
         public static List<MethodRegistryEntry> DoDebugRegistry => _DoDebugRegistry ??= GetRegistry();
+
         public static void Register(
             Type Class,
             string MethodName,
@@ -81,6 +76,7 @@ namespace UD_FleshGolems.Logging
             List<MethodRegistryEntry> Registry,
             ref List<MethodRegistryEntry> ReturnRegistry)
             => Register(Class?.GetMethod(MethodName), Value, Registry, ref ReturnRegistry);
+
         public static void Register(
             MethodBase MethodBase,
             bool Value,
@@ -93,28 +89,21 @@ namespace UD_FleshGolems.Logging
             ReturnRegistry = Registry;
         }
         public static void Register(this List<MethodRegistryEntry> Registry, Type Class, string MethodName, bool Value)
-        {
-            Register(Class, MethodName, Value, Registry, ref _DoDebugRegistry);
-        }
+            => Register(Class, MethodName, Value, Registry, ref _DoDebugRegistry);
+
         public static void Register(this List<MethodRegistryEntry> Registry, MethodBase MethodBase, bool Value)
-        {
-            Register(MethodBase, Value, Registry, ref _DoDebugRegistry);
-        }
+            => Register(MethodBase, Value, Registry, ref _DoDebugRegistry);
+
         public static void Register(this List<MethodRegistryEntry> Registry, string MethodName, bool Value)
         {
             TryGetCallingTypeAndMethod(out Type CallingType, out _);
-            foreach (MethodBase methodBase in CallingType.GetMethods())
-            {
+            foreach (MethodBase methodBase in CallingType.GetMethods() ?? new MethodInfo[0])
                 if (methodBase.Name == MethodName)
-                {
                     Register(methodBase, Value, Registry, ref _DoDebugRegistry);
-                }
-            }
         }
         public static void Register(this List<MethodRegistryEntry> Registry, MethodRegistryEntry RegisterEntry)
-        {
-            Register(RegisterEntry.GetMethod(), RegisterEntry.GetValue(), Registry, ref _DoDebugRegistry);
-        }
+            => Register(RegisterEntry.GetMethod(), RegisterEntry.GetValue(), Registry, ref _DoDebugRegistry);
+
         public static List<MethodRegistryEntry> GetRegistry()
         {
             _DoDebugRegistry ??= new();
@@ -124,11 +113,17 @@ namespace UD_FleshGolems.Logging
             }
             try
             {
-                List<MethodInfo> debugRegistryMethods = ModManager.GetMethodsWithAttribute(typeof(UD_FleshGolems_DebugRegistryAttribute));
-                foreach (MethodInfo debugRegistryMethod in debugRegistryMethods)
-                {
+                List<MethodInfo> debugRegistryMethods = ModManager.GetMethodsWithAttribute(typeof(UD_FleshGolems_DebugRegistryAttribute))
+                    ?.Where(m 
+                        => m != null
+                        && m.IsStatic 
+                        && m.ReturnType.EqualsAny(typeof(void), typeof(List<MethodRegistryEntry>))
+                        && m.GetParameters() is ParameterInfo[] parameters
+                        && parameters[0].GetType() == typeof(List<MethodRegistryEntry>))
+                    ?.ToList();
+
+                foreach (MethodInfo debugRegistryMethod in debugRegistryMethods ?? new())
                     debugRegistryMethod.Invoke(null, new object[] { _DoDebugRegistry });
-                }
             }
             catch (Exception x)
             {
@@ -149,18 +144,13 @@ namespace UD_FleshGolems.Logging
         public static bool GetDoDebug(string CallingMethod = null)
         {
             if (CallingMethod.IsNullOrEmpty())
-            {
                 return DoDebug;
-            }
+
             if (GetRegistry() is List<MethodRegistryEntry> doDebugRegistry
                 && !doDebugRegistry.Any(m => m.GetMethod().Name == CallingMethod))
-            {
                 return DoDebugSetting;
-            }
-            else
-            {
-                return DoDebug;
-            }
+
+            return DoDebug;
         }
 
         [ModSensitiveStaticCache( CreateEmptyInstance = false )]
@@ -401,7 +391,6 @@ namespace UD_FleshGolems.Logging
                 output += " " + MessageAfter;
             }
             return Log(CallingMethod + output, Indent, CallingMethod);
-            // return Log(GetCallingMethod() + output, Indent);
         }
         public static Indent LogMethod(
             Indent Indent = null,

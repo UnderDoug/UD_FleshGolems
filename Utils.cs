@@ -51,6 +51,7 @@ namespace UD_FleshGolems
 
         private static EntityTaxa PlayerTaxa = null;
 
+        private static Dictionary<string, int> PlayerStartingStats = null;
 
         public static List<char> CapitalizingPunctuation = new()
         {
@@ -129,6 +130,42 @@ namespace UD_FleshGolems
             return default;
         }
 
+        public static T GetEmbarkBuilderModule<T>()
+            where T : AbstractEmbarkBuilderModule
+        {
+            string activeModulesString = nameof(EmbarkBuilderConfiguration) + "." + nameof(EmbarkBuilderConfiguration.activeModules);
+            if (EmbarkBuilderConfiguration.activeModules.IsNullOrEmpty())
+                throw new Exception(activeModulesString + " null or empty");
+
+            foreach (AbstractEmbarkBuilderModule activeModule in EmbarkBuilderConfiguration.activeModules)
+                if (activeModule.type == typeof(T).Name
+                    && activeModule is T desiredModule)
+                    return desiredModule;
+
+            throw new Exception(typeof(T).Name + " not in " + activeModulesString);
+        }
+        public static bool TryGetEmbarkBuilderModule<T>(out T EmbarkBuilderModule)
+            where T : AbstractEmbarkBuilderModule
+        {
+            try
+            {
+                EmbarkBuilderModule = GetEmbarkBuilderModule<T>();
+            }
+            catch (Exception x)
+            {
+                MetricsManager.LogModError(ThisMod, x);
+                EmbarkBuilderModule = null;
+                return false;
+            }
+            return true;
+        }
+
+        public static Dictionary<string, int> GetPlayerEmbarkStats()
+            => PlayerStartingStats.IsNullOrEmpty()
+                && TryGetEmbarkBuilderModule(out QudAttributesModule attributesModules)
+            ? PlayerStartingStats = attributesModules.GetFinalStats(attributesModules.builder)
+            : PlayerStartingStats;
+        
         public static EntityTaxa GetPlayerTaxa()
         {
             using Indent indent = new(1);
@@ -146,67 +183,58 @@ namespace UD_FleshGolems
             }
 
             if (PlayerTaxa == null 
-                && !EmbarkBuilderConfiguration.activeModules.IsNullOrEmpty())
+                && TryGetEmbarkBuilderModule(out QudSpecificCharacterInitModule characterInit))
             {
-                foreach (AbstractEmbarkBuilderModule activeModule in EmbarkBuilderConfiguration.activeModules)
+                string blueprint = characterInit
+                        ?.builder
+                        ?.GetModule<QudGenotypeModule>()
+                        ?.data
+                        ?.Entry
+                        ?.BodyObject
+                    ?? characterInit
+                        ?.builder
+                        ?.GetModule<QudSubtypeModule>()
+                        ?.data
+                        ?.Entry
+                        ?.BodyObject
+                    ?? "Humanoid";
+
+                blueprint = characterInit
+                    ?.builder
+                    ?.info
+                    ?.fireBootEvent(QudGameBootModule.BOOTEVENT_BOOTPLAYEROBJECTBLUEPRINT, The.Game, blueprint);
+
+                if (!blueprint.IsNullOrEmpty())
                 {
-                    if (activeModule.type == nameof(QudSpecificCharacterInitModule))
-                    {
-                        if (activeModule is QudSpecificCharacterInitModule characterInit)
+                    PlayerTaxa ??= new();
+                    PlayerTaxa.Blueprint = blueprint;
+
+                    PlayerTaxa.Subtype = characterInit
+                            ?.builder
+                            ?.GetModule<QudSubtypeModule>()
+                            ?.data
+                            ?.Entry
+                            ?.Name;
+
+                    PlayerTaxa.Genotype = characterInit
+                            ?.builder
+                            ?.GetModule<QudGenotypeModule>()
+                            ?.data
+                            ?.Entry
+                            ?.Name;
+
+                    PlayerTaxa.Species = PlayerTaxa.Blueprint?.GetGameObjectBlueprint()?.GetPropertyOrTag(nameof(PlayerTaxa.Species));
+
+                    Debug.LogMethod(indent,
+                        ArgPairs: new Debug.ArgPair[]
                         {
-                            string blueprint = characterInit
-                                    ?.builder
-                                    ?.GetModule<QudGenotypeModule>()
-                                    ?.data
-                                    ?.Entry
-                                    ?.BodyObject
-                                ?? characterInit
-                                    ?.builder
-                                    ?.GetModule<QudSubtypeModule>()
-                                    ?.data
-                                    ?.Entry
-                                    ?.BodyObject
-                                ?? "Humanoid";
-
-                            blueprint = characterInit
-                                ?.builder
-                                ?.info
-                                ?.fireBootEvent(QudGameBootModule.BOOTEVENT_BOOTPLAYEROBJECTBLUEPRINT, The.Game, blueprint);
-
-                            if (!blueprint.IsNullOrEmpty())
-                            {
-                                PlayerTaxa ??= new();
-                                PlayerTaxa.Blueprint = blueprint;
-
-                                PlayerTaxa.Subtype = characterInit
-                                        ?.builder
-                                        ?.GetModule<QudSubtypeModule>()
-                                        ?.data
-                                        ?.Entry
-                                        ?.Name;
-
-                                PlayerTaxa.Genotype = characterInit
-                                        ?.builder
-                                        ?.GetModule<QudGenotypeModule>()
-                                        ?.data
-                                        ?.Entry
-                                        ?.Name;
-
-                                PlayerTaxa.Species = PlayerTaxa.Blueprint?.GetGameObjectBlueprint()?.GetPropertyOrTag(nameof(PlayerTaxa.Species));
-
-                                Debug.LogMethod(indent,
-                                    ArgPairs: new Debug.ArgPair[]
-                                    {
-                                        Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
-                                        Debug.Arg(nameof(The.Player), The.Player != null),
-                                        Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
-                                    });
-                            }
-                            
-                            return PlayerTaxa;
-                        }
-                    }
+                            Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
+                            Debug.Arg(nameof(The.Player), The.Player != null),
+                            Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
+                        });
                 }
+                            
+                return PlayerTaxa;
             }
 
             if (The.Player != null)

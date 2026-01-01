@@ -30,6 +30,7 @@ using UD_FleshGolems.Logging;
 using UD_FleshGolems.Capabilities;
 using UD_FleshGolems.Capabilities.Necromancy;
 using UD_FleshGolems.Parts.VengeanceHelpers;
+using UD_FleshGolems.Parts.PastLifeHelpers;
 
 namespace XRL.World.ObjectBuilders
 {
@@ -645,22 +646,25 @@ namespace XRL.World.ObjectBuilders
                 return false;
             }
 
+            if (!ForImmediateReanimation)
+            {
+                Debug.Log(nameof(ForImmediateReanimation) + " is " + false, Indent: indent[1]);
+                return true;
+            }
+
             Corpse.RequireAbilities();
 
             if (Entity.IsPlayer() || Entity.Blueprint.IsPlayerBlueprint())
             {
                 Corpse.SetIntProperty("UD_FleshGolems_SkipLevelsOnReanimate", 1);
-            }
-
-            if (!ForImmediateReanimation)
-            {
-                return true;
+                Debug.Log("UD_FleshGolems_SkipLevelsOnReanimate set", 1, Indent: indent[1]);
             }
 
             if (!Corpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper)
                 || !reanimationHelper.Animate(out Corpse))
             {
-                Debug.Log(nameof(UD_FleshGolems_CorpseReanimationHelper) + " missing or failed to " + nameof(reanimationHelper.Animate), Indent: indent[1]);
+                Debug.Log(nameof(UD_FleshGolems_CorpseReanimationHelper) + " missing or failed to " + nameof(reanimationHelper.Animate),
+                    Indent: indent[1]);
                 return false;
             }
 
@@ -679,10 +683,21 @@ namespace XRL.World.ObjectBuilders
                     InitializeDeathDetailsThenFakeDeath(Entity, Corpse, DeathEvent);
                 }
 
+                Debug.Log(nameof(ReplaceInContextEvent) + "." + nameof(ReplaceInContextEvent.Send), Indent: indent[1]);
                 ReplaceInContextEvent.Send(Entity, Corpse);
+
+                Debug.Log(nameof(The.Player) + " " + nameof(EntityTaxa), Indent: indent[1]);
+                if (Utils.GetPlayerTaxa() is EntityTaxa playerTaxa)
+                {
+                    Debug.Log(nameof(playerTaxa.Blueprint), playerTaxa.Blueprint, Indent: indent[2]);
+                    Debug.Log(nameof(playerTaxa.Subtype), playerTaxa.Subtype, Indent: indent[2]);
+                    Debug.Log(nameof(playerTaxa.Genotype), playerTaxa.Genotype, Indent: indent[2]);
+                    Debug.Log(nameof(playerTaxa.Species), playerTaxa.Species, Indent: indent[2]);
+                }
 
                 if (Entity.IsPlayer() || Entity.Blueprint.IsPlayerBlueprint())
                 {
+                    Debug.Log(nameof(The.Player) + "." + nameof(The.Game.Player.SetBody), Indent: indent[1]);
                     The.Game.Player.SetBody(Corpse);
 
                     if (Corpse.TryGetPart(out UD_FleshGolems_ReanimatedCorpse reanimatedCorpsePart))
@@ -706,6 +721,7 @@ namespace XRL.World.ObjectBuilders
                         }
                     }
 
+                    Debug.YehNah(nameof(Entity) + ": OriginalPlayerBody", Entity.HasIntProperty("OriginalPlayerBody"), Indent: indent[1]);
                     if (Entity.HasIntProperty("OriginalPlayerBody"))
                     {
                         Corpse.SetStringProperty("OriginalPlayerBody", "1");
@@ -717,6 +733,15 @@ namespace XRL.World.ObjectBuilders
                     if (Corpse.TryGetPart(out UD_FleshGolems_PastLife pastLife))
                     {
                         pastLife.AlignWithPreviouslySentientBeings();
+
+                        Debug.Log(nameof(pastLife) + "." + nameof(pastLife.EntityTaxa), Indent: indent[1]);
+                        if (pastLife.EntityTaxa is EntityTaxa pastLifeTaxa)
+                        {
+                            Debug.Log(nameof(pastLifeTaxa.Blueprint), pastLifeTaxa.Blueprint, Indent: indent[2]);
+                            Debug.Log(nameof(pastLifeTaxa.Subtype), pastLifeTaxa.Subtype, Indent: indent[2]);
+                            Debug.Log(nameof(pastLifeTaxa.Genotype), pastLifeTaxa.Genotype, Indent: indent[2]);
+                            Debug.Log(nameof(pastLifeTaxa.Species), pastLifeTaxa.Species, Indent: indent[2]);
+                        }
                     }
                 }
 

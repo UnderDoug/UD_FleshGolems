@@ -363,7 +363,8 @@ namespace XRL.World.Parts
                         BrainInAJar._Property = new(PastLife._Property);
                         BrainInAJar._IntProperty = new(PastLife._IntProperty);
 
-                        if (PastLife.IsPlayer())
+                        if (PastLife.IsPlayer()
+                            || PastLife.HasPlayerBlueprint())
                         {
                             BrainInAJar.SetStringProperty("UD_FleshGolems_WasPlayer", "Yep, I used to be the player!");
                         }
@@ -592,6 +593,17 @@ namespace XRL.World.Parts
                                 int statBaseValue = newStat.BaseValue;
                                 string statsValue = (newStat.sValue ?? "no sValue");
                                 Debug.CheckYeh(statName, statValue + "/" + statBaseValue + " | " + statsValue, indent[3]);
+                            }
+                            if (PastLife.IsPlayer()
+                                || PastLife.HasPlayerBlueprint())
+                            {
+                                Debug.CheckYeh("Player " + nameof(PastLife.Statistics), Indent: indent[2]);
+                                if (GetPlayerEmbarkStats() is Dictionary<string, int> playerStats)
+                                    foreach ((string statName, int baseValue) in playerStats)
+                                    {
+                                        Debug.Log(statName, baseValue, Indent: indent[3]);
+                                        BrainInAJar.GetStat(statName).BaseValue = baseValue;
+                                    }
                             }
                         }
                         else
@@ -1699,24 +1711,26 @@ namespace XRL.World.Parts
                     Debug.Arg(nameof(PastLife.Genotype), PastLife?.Genotype ?? NULL),
                     Debug.Arg(nameof(PastLife.Subtype), PastLife?.Subtype ?? NULL),
                 });
-            if (FrankenCorpse == null || PastLife == null)
-            {
+
+            if (FrankenCorpse == null
+                || PastLife == null)
                 return false;
-            }
+
+            if (PastLife.EntityTaxa != null
+                && PastLife.EntityTaxa.RestoreTaxa(FrankenCorpse))
+                return true;
+
             if (PastLife.Species is string pastSpecies)
-            {
                 FrankenCorpse.SetSpecies(pastSpecies);
-            }
+
             if (PastLife.Genotype is string pastGenotype
                 && FrankenCorpse.GetGenotype() == null)
-            {
                 FrankenCorpse.SetGenotype(pastGenotype);
-            }
+
             if (PastLife.Subtype is string pastSubtype
                 && FrankenCorpse.GetSubtype() == null)
-            {
                 FrankenCorpse.SetSubtype(pastSubtype);
-            }
+
             return true;
         }
         public bool RestoreTaxonomy()

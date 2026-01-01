@@ -1407,11 +1407,10 @@ namespace XRL.World.Parts
                         && PastLife.Tags.ContainsKey("ExcludeFromDynamicEncounters");
 
                     Debug.Log("Adding Levels and XP...", Indent: indent[2]);
-                    if (frankenCorpse.TryGetPart(out Leveler frankenLeveler))
+                    if (frankenCorpse.TryGetPart(out Leveler frankenLeveler)
+                        && int.TryParse(frankenCorpse.GetPropertyOrTag("UD_FleshGolems_SkipLevelsOnReanimate", "0"), out int skipLevelsOnReanimate)
+                        && skipLevelsOnReanimate < 1)
                     {
-                        if (int.TryParse(frankenCorpse.GetPropertyOrTag("UD_FleshGolems_SkipLevelsOnReanimate", "0"), out int SkipLevelsOnReanimate)
-                            && SkipLevelsOnReanimate < 1)
-                        {
                             Debug.CheckYeh(nameof(frankenLeveler.LevelUp), indent[3]);
                             frankenLeveler?.LevelUp();
                             if (Stat.RollCached("1d2") == 1)
@@ -1419,7 +1418,6 @@ namespace XRL.World.Parts
                                 Debug.CheckYeh(nameof(frankenLeveler.LevelUp) + " again", indent[3]);
                                 frankenLeveler?.LevelUp();
                             }
-                        }
                         int floorXP = Leveler.GetXPForLevel(frankenCorpse.Level);
                         int ceilingXP = Leveler.GetXPForLevel(frankenCorpse.Level + 1);
                         frankenCorpse.GetStat("XP").BaseValue = Stat.RandomCosmetic(floorXP, ceilingXP);

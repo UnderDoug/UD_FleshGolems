@@ -328,13 +328,39 @@ namespace UD_FleshGolems.ModdedText
         }
 
         [VariableObjectReplacer("bodyPart", Default = "body")]
-        public static string BodyPart(DelegateContext Context)
+        public static string UD_Target_BodyPart(DelegateContext Context)
+        {
+            string bodyPartType = !Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.CapitalizeEx() : null;
+            string output = Context.Target
+                ?.Body
+                ?.LoopPart(bodyPartType)
+                ?.GetRandomElementCosmetic()
+                ?.Description;
+
+            output = output.ContextCapitalize(Context);
+
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(Context.Target), Context.Target?.DebugName ?? "null"),
+                    Debug.Arg(nameof(bodyPartType), bodyPartType ?? "null"),
+                    Debug.Arg(nameof(output), output ?? "null"),
+                });
+            if (!Context.Parameters.IsNullOrEmpty())
+                foreach (string param in Context.Parameters)
+                    Debug.Log(param, Indent: indent[1]);
+
+            return output;
+        }
+        /*
             => Context.Target
                 ?.Body
                 ?.LoopPart(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.CapitalizeEx() : null)
                 ?.GetRandomElementCosmetic()
                 ?.Description
                 ?.ContextCapitalize(Context);
+        */
 
         [VariableObjectReplacer]
         public static string UD_xTagSingle(DelegateContext Context)

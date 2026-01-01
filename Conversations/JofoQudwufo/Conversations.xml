@@ -102,6 +102,12 @@
       </text>
     </start>
     
+    <!-- Merges/overrides -->
+    <node ID="HowIDied" Load="Merge">
+      <part Name="UD_FleshGolems_ModdedTextFilter" Filters="snapify" />
+    </node>
+    
+    <!-- Branching/sequential nodes -->
     <node ID="ReactWhoMadMonger" Inherits="AlwaysHaveChoices">
       <text>
         Rarp, fraf! Yoo not heer-raf {{emote|*sputter*}}-uh Mad 'Monger!? Ra-{{emote|*hack*}} rah Mad... {{emote|*wheeze*}}... 'Monger mabe... er... Raff...

@@ -16,15 +16,29 @@ using XRL.Rules;
 
 using UD_FleshGolems.Logging;
 using UD_FleshGolems.Parts.VengeanceHelpers;
+using UD_FleshGolems.ModdedText.TextHelpers;
+using UD_FleshGolems.Attributes;
 using Debug = UD_FleshGolems.Logging.Debug;
 
 using static UD_FleshGolems.Const;
-using UD_FleshGolems.ModdedText.TextHelpers;
+using System.Reflection;
 
 namespace UD_FleshGolems.ModdedText
 {
+    [Has_UD_FleshGolems_ModdedTextFilter]
+    [HasModSensitiveStaticCache]
+    [HasGameBasedStaticCache]
     public static class ModdedTextFilters
     {
+        public enum ReplacementLocation
+        {
+            None,
+            Whole,
+            Start,
+            Middle,
+            End,
+            Any,
+        }
         public struct RandomStringReplacement
         {
             public string Key;
@@ -46,6 +60,51 @@ namespace UD_FleshGolems.ModdedText
                 WeightedEntries = this.WeightedEntries;
             }
         }
+
+        [ModSensitiveStaticCache(createEmptyInstance: false)]
+        [GameBasedStaticCache(ClearInstance: true)]
+        private static Dictionary<string, MethodInfo> _TextFilterEntries;
+        public static Dictionary<string, MethodInfo> TextFilterEntries
+        {
+            get
+            {
+                if (_TextFilterEntries.IsNullOrEmpty())
+                {
+                    bool returnsString(MethodInfo MethodInfo)
+                        => MethodInfo?.ReturnType == typeof(string);
+
+                    bool firstParameterIsString(MethodInfo MethodInfo)
+                        => MethodInfo?.GetParameters() is ParameterInfo[] parameters
+                        && parameters.Length > 0
+                        && parameters[0].ParameterType == typeof(string);
+
+                    List<MethodInfo> textFilterMethods = ModManager.GetMethodsWithAttribute(
+                        AttributeType: typeof(UD_FleshGolems_ModdedTextFilterAttribute),
+                        ClassFilterType: typeof(Has_UD_FleshGolems_ModdedTextFilterAttribute),
+                        Cache: false)
+                            ?.Where(returnsString)
+                            ?.Where(firstParameterIsString)
+                            ?.ToList()
+                        ?? new();
+
+                    foreach (MethodInfo textFilterMethod in textFilterMethods)
+                    {
+                        _TextFilterEntries ??= new();
+
+                        if (textFilterMethod?.GetCustomAttribute<UD_FleshGolems_ModdedTextFilterAttribute>() is var textFilterAttribute
+                            && (!_TextFilterEntries.ContainsKey(textFilterAttribute.Key) 
+                                || textFilterAttribute.Override))
+                                _TextFilterEntries[textFilterAttribute.Key] = textFilterMethod;
+
+                        if (textFilterMethod?.Name is string key
+                            && !_TextFilterEntries.ContainsKey(key))
+                            _TextFilterEntries[key] = textFilterMethod;
+                    }
+                }
+                return _TextFilterEntries;
+            }
+        }
+
         public static string DeleteString => "##DELETE";
         public static string NoSpaceBefore => "##NoSpace";
         public static string NoSpaceAfter => "NoSpace##";
@@ -57,8 +116,8 @@ namespace UD_FleshGolems.ModdedText
         };
         public static Dictionary<string, int> NotOrNo => new()
         {
-            { "not", 2 },
-            { "no", 1 },
+            { "%not%", 2 },
+            { "%no%", 1 },
         };
         public static List<RandomStringReplacement> SnapifyWordReplacements => new()
         {
@@ -67,7 +126,7 @@ namespace UD_FleshGolems.ModdedText
                 ChanceOneIn: 1, 
                 WeightedEntries: new()
                 { 
-                    { "me", 1 },
+                    { "%me%", 1 },
                 }),
             new(
                 Key: "am",
@@ -95,9 +154,10 @@ namespace UD_FleshGolems.ModdedText
                 ChanceOneIn: 1,
                 WeightedEntries: new()
                 {
-                    { "tha", 1 },
-                    { "da", 1 },
-                    { DeleteString, 2 },
+                    { "%tha%", 2 },
+                    { "%da%", 2 },
+                    { "%deh%", 1 },
+                    { DeleteString, 4 },
                 }),
             new(
                 Key: "a",
@@ -112,6 +172,15 @@ namespace UD_FleshGolems.ModdedText
                 WeightedEntries: new()
                 {
                     { DeleteString, 1 },
+                }),
+            new(
+                Key: "and",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "%an'%", 2 },
+                    { "%'n'%", 3 },
+                    { "%en'%", 1 },
                 }),
             new(
                 Key: "to",
@@ -148,35 +217,189 @@ namespace UD_FleshGolems.ModdedText
         public static List<RandomStringReplacement> SnapifyPartialReplacements => new()
         {
             new(
+                Key: "y",
+                ChanceOneIn: 3,
+                WeightedEntries: new()
+                {
+                    { "yipp-yi", 1 },
+                    { "-yi-yi", 2 },
+                }),
+            new(
+                Key: "ee",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "e-yi-", 1 },
+                    { "ee-yi!-", 1 },
+                    { "i", 3 },
+                }),
+            new(
+                Key: "ve",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "b", 2 },
+                    { "be", 1 },
+                }),
+            new(
+                Key: "v",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "b", 1 },
+                }),
+            new(
+                Key: "dr",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "d", 1 },
+                }),
+            new(
+                Key: "oul",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "ul", 1 },
+                    { "u", 3 },
+                    { "oo", 2 },
+                }),
+            new(
+                Key: "ou",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "ow", 3 },
+                    { "-awoo!-", 1 },
+                }),
+            new(
+                Key: "oo",
+                ChanceOneIn: 2,
+                WeightedEntries: new()
+                {
+                    { "u", 1 },
+                }),
+            new(
+                Key: "ph",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "ff", 1 },
+                    { "f", 1 },
+                }),
+            new(
+                Key: "ea",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "i", 1 },
+                    { "e", 1 },
+                }),
+            new(
+                Key: "sc",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "s", 1 },
+                }),
+        };
+        public static List<RandomStringReplacement> SnapifyStartReplacements => new()
+        {
+            new(
+                Key: "ar",
+                ChanceOneIn: 3,
+                WeightedEntries: new()
+                {
+                    { "arf-ar", 2 },
+                    { "a-{{emote|*snap*}}-ar", 1 },
+                }),
+            new(
+                Key: "ra",
+                ChanceOneIn: 3,
+                WeightedEntries: new()
+                {
+                    { "raf-ra", 2 },
+                    { "ra-{{emote|*snap*}}-ra", 1 },
+                }),
+            new(
+                Key: "re",
+                ChanceOneIn: 3,
+                WeightedEntries: new()
+                {
+                    { "reh-re", 1 },
+                }),
+            new(
+                Key: "ru",
+                ChanceOneIn: 3,
+                WeightedEntries: new()
+                {
+                    { "ruh-ru", 2 },
+                    { "ru-{{emote|*snap*}}-ru", 1 },
+                }),
+            new(
+                Key: "y",
+                ChanceOneIn: 3,
+                WeightedEntries: new()
+                {
+                    { "yipp-yi", 1 },
+                }),
+            new(
+                Key: "th",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "d", 2 },
+                    { "y", 2 },
+                    { DeleteString, 1 },
+                }),
+            new(
+                Key: "ou",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "ow", 1 },
+                }),
+            new(
+                Key: "he",
+                ChanceOneIn: 3,
+                WeightedEntries: new()
+                {
+                    { "he-yeye-", 1 },
+                    { "heheHE-", 1 },
+                }),
+        };
+        public static List<RandomStringReplacement> SnapifyEndReplacements => new()
+        {
+            new(
                 Key: "ar",
                 ChanceOneIn: 2,
                 WeightedEntries: new()
                 {
-                    { "arf- ar", 2 },
-                    { "a-{{emote|*snap*}} -ar", 1 },
+                    { "arf-ar", 2 },
+                    { "a-{{emote|*snap*}}-ar", 1 },
                 }),
             new(
                 Key: "ra",
-                ChanceOneIn: 2,
+                ChanceOneIn: 4,
                 WeightedEntries: new()
                 {
                     { "raf-ra", 2 },
-                    { "ra-{{emote|*snap*}} -ra", 1 },
+                    { "ra-{{emote|*snap*}}-ra", 1 },
                 }),
             new(
                 Key: "re",
-                ChanceOneIn: 2,
+                ChanceOneIn: 4,
                 WeightedEntries: new()
                 {
-                    { "reh- re", 1 },
+                    { "reh-re", 1 },
                 }),
             new(
                 Key: "ru",
-                ChanceOneIn: 2,
+                ChanceOneIn: 4,
                 WeightedEntries: new()
                 {
                     { "ruh- ru", 2 },
-                    { "ru-{{emote|*snap*}} -ru", 1 },
+                    { "ru-{{emote|*snap*}}-ru", 1 },
                 }),
             new(
                 Key: "y",
@@ -228,8 +451,9 @@ namespace UD_FleshGolems.ModdedText
                 ChanceOneIn: 1,
                 WeightedEntries: new()
                 {
-                    { "ed", 3 },
-                    { "eded", 1 },
+                    { "%ed%", 3 },
+                    { "%eded%", 1 },
+                    { DeleteString, 2 },
                 }),
             new(
                 Key: "dr",
@@ -256,6 +480,13 @@ namespace UD_FleshGolems.ModdedText
                     { "-awoo!-", 1 },
                 }),
             new(
+                Key: "oo",
+                ChanceOneIn: 2,
+                WeightedEntries: new()
+                {
+                    { "u", 1 },
+                }),
+            new(
                 Key: "he",
                 ChanceOneIn: 3,
                 WeightedEntries: new()
@@ -279,14 +510,25 @@ namespace UD_FleshGolems.ModdedText
                     { "i", 1 },
                     { "e", 1 },
                 }),
+            new(
+                Key: "sc",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "s", 1 },
+                }),
         };
         public static Dictionary<List<char>, int> SnapifySwaps => new()
         {
             { new() { 'p', 'b', 'd', }, 1 },
-            { new() { 'k', 'g', }, 3 },
+            { new() { 'b', 'd', }, 3 },
+            { new() { 'd', 'b', }, 3 },
+            { new() { 'k', 'g', }, 2 },
+            { new() { 'g', 'k', }, 5 },
             // { new() { 'y', 'h', }, 3 },
-            { new() { 'd', 't', }, 1 },
+            // { new() { 'd', 't', }, 1 },
             { new() { 'n', 'm', }, 1 },
+            { new() { 'm', 'n', }, 2 },
         };
         public static Dictionary<string, int> SnapifyAdditions => new()
         {
@@ -423,7 +665,11 @@ namespace UD_FleshGolems.ModdedText
             return Word;
         }
 
-        public static Word PerformSnapifyPartialReplacements(ref Word Word, out bool Stop)
+        public static Word PerformSnapifyPartialReplacements(
+            List<RandomStringReplacement> ReplacementsList,
+            ref Word Word,
+            out bool Stop,
+            ReplacementLocation ReplacementLocation = ReplacementLocation.Any)
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
@@ -437,6 +683,9 @@ namespace UD_FleshGolems.ModdedText
 
             Stop = false;
 
+            if (Word.IsGuarded())
+                return Word;
+
             foreach ((string key, int chanceOneIn, Dictionary<string, int> replacements) in SnapifyPartialReplacements)
             {
                 Word newWord = Word.CopyWithoutText();
@@ -449,7 +698,6 @@ namespace UD_FleshGolems.ModdedText
                     if (1.ChanceIn(chanceOneIn)
                         && k < Word.Length
                         && Word[j..k].EqualsNoCase(key)
-                        && Stat.RollCached("1d2") == 1
                         && replacements.GetWeightedRandom() is string replacement)
                     {
                         string safeReplacement = replacement.MatchCapitalization(Word[j..k]);
@@ -465,7 +713,8 @@ namespace UD_FleshGolems.ModdedText
                         newWord = Word.ReplaceWord(newWord.Text + Word[j]);
                     }
                 }
-                Debug.Log((Word.Text ?? "no text") + " -> " + (newWord.Text ?? "no text"), Indent: indent[1]);
+                if (Word.Text != newWord.Text)
+                    Debug.Log((Word.Text ?? "no text") + " -> " + (newWord.Text ?? "no text"), Indent: indent[1]);
                 Word = newWord;
             }
             return Word;
@@ -483,8 +732,15 @@ namespace UD_FleshGolems.ModdedText
 
             Stop = false;
 
+            if (Word.IsGuarded())
+                return Word;
+
             foreach ((List<char> swaps, int odds) in SnapifySwaps)
             {
+                char key = swaps[0];
+                List<char> values = new(swaps);
+                values.RemoveAt(0);
+
                 int maxIndex = Word.Length - 1;
                 string replacementWord = "";
                 bool didSwap = false;
@@ -493,9 +749,9 @@ namespace UD_FleshGolems.ModdedText
                 {
                     if (j != maxIndex)
                     {
-                        if (swaps.Contains(Word[j])
+                        if (key == Word[j]
                             && Word[j] is char currentChar
-                            && swaps.GetRandomElementCosmeticExcluding(c => c == currentChar) is char swapChar)
+                            && values.GetRandomElementCosmeticExcluding(c => c == currentChar) is char swapChar)
                         {
                             bool currentMatchesPreviousChar = j > 0 && Word[j - 1] == currentChar;
                             bool currentMatchesNextChar = j < maxIndex && Word[j + 1] == currentChar;
@@ -553,10 +809,11 @@ namespace UD_FleshGolems.ModdedText
 
             for (i = wordsCount - 1; i >= 0; i--)
             {
-                if (Stat.RollCached("1d15") == 1)
+                if (1.ChanceIn(20))
                 {
                     Words.Insert(i, Words[i]);
                     Debug.CheckYeh(nameof(i) + ": " + i + " \"" + Words[i] + "\"", Indent: indent[1]);
+                    i -= Stat.RandomCosmetic(2, 4);
                 }
                 else
                 {
@@ -566,11 +823,12 @@ namespace UD_FleshGolems.ModdedText
             return Words;
         }
 
-        public static string GetSnapifyAddition(Dictionary<string, int> SnapifyAdditions, Func<KeyValuePair<string, int>, bool> Filter)
+        public static string GetFilterAddition(Dictionary<string, int> SnapifyAdditions, Func<KeyValuePair<string, int>, bool> Filter)
             => SnapifyAdditions
                 ?.Where(Filter)
                 ?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
                 ?.GetWeightedRandom();
+
         public static List<Word> PerformSnapifyAdditions(ref List<Word> Words)
         {
             using Indent indent = new(1);
@@ -598,11 +856,11 @@ namespace UD_FleshGolems.ModdedText
 
             for (i = wordsCount - 1; i >= 0; i--)
             {
-                if (Stat.RollCached("1d8") == 1
-                    && GetSnapifyAddition(SnapifyAdditions, EligibleAddition) is string snapifyAddition)
+                if (1.ChanceIn(8)
+                    && GetFilterAddition(SnapifyAdditions, EligibleAddition) is string snapifyAddition)
                 {
-                    if (Stat.RollCached("1d12") == 1
-                        && GetSnapifyAddition(SnapifyAdditions, EligibleAddition) is string snapifyAdditionalAddition)
+                    if (1.ChanceIn(16)
+                        && GetFilterAddition(SnapifyAdditions, EligibleAddition) is string snapifyAdditionalAddition)
                     {
                         Words.Insert(i, new(snapifyAdditionalAddition));
                         Debug.CheckYeh(nameof(i) + ": " + i + " \"" + snapifyAdditionalAddition + "\"", Indent: indent[1]);
@@ -637,7 +895,7 @@ namespace UD_FleshGolems.ModdedText
                 string[] noSpaceBeforeSplit = Phrase.Split(NoSpaceBefore);
                 int indices = noSpaceBeforeSplit[0]?.Length ?? 0;
 
-                for (int i = 1; i < noSpaceBeforeSplit.Length - 1; i++)
+                for (int i = 0; i < noSpaceBeforeSplit.Length - 1; i++)
                 {
                     int currentLength = noSpaceBeforeSplit[i]?.Length ?? 0;
                     indices += currentLength;
@@ -658,7 +916,7 @@ namespace UD_FleshGolems.ModdedText
                 string[] noSpaceAfterSplit = Phrase.Split(NoSpaceAfter);
                 int indices = noSpaceAfterSplit[0]?.Length ?? 0;
 
-                for (int i = 1; i < noSpaceAfterSplit.Length - 1; i++)
+                for (int i = 1; i < noSpaceAfterSplit.Length; i++)
                 {
                     int currentLength = noSpaceAfterSplit[i]?.Length ?? 0;
                     indices += currentLength;
@@ -677,6 +935,18 @@ namespace UD_FleshGolems.ModdedText
             return true;
         }
 
+        public static List<Word> UnguardWords(ref List<Word> Words)
+        {
+            Words ??= new();
+            for (int i = 0; i < Words.Count; i++)
+            {
+                Words[i] = Words[i].Unguard();
+                Words[i].DebugLog();
+            }
+            return Words;
+        }
+
+        [UD_FleshGolems_ModdedTextFilter(Key = "snapify")]
         public static string Snapify(string Phrase)
         {
             using Indent indent = new(1);
@@ -703,7 +973,7 @@ namespace UD_FleshGolems.ModdedText
                         if (stop)
                             continue;
 
-                        words[i] = PerformSnapifyPartialReplacements(ref word, out stop);
+                        words[i] = PerformSnapifyPartialReplacements(SnapifyPartialReplacements, ref word, out stop, ReplacementLocation.Middle);
 
                         if (stop)
                             continue;
@@ -715,7 +985,8 @@ namespace UD_FleshGolems.ModdedText
                     }
                 }
 
-                if (!PerformSnapifyAdditions(ref words).IsNullOrEmpty()
+                if (!UnguardWords(ref words).IsNullOrEmpty()
+                    && !PerformSnapifyAdditions(ref words).IsNullOrEmpty()
                     && !PerformSnapifyReduplications(ref words).IsNullOrEmpty())
                 {
                     Phrase = words

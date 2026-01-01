@@ -594,9 +594,10 @@ namespace XRL.World.Conversations.Parts
         }
 
         private static string GetJoiner(int Iteration)
-                => Iteration % 2 == 0
-                ? "\n\n"
-                : " ";
+            => Iteration % 2 == 0
+            ? "\n\n"
+            : " ";
+
         private static ConversationText MergeAccumulatedTextWithNextText(
             ConversationText Accumulate,
             ConversationText Next,

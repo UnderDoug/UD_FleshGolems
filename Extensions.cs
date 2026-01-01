@@ -43,11 +43,15 @@ namespace UD_FleshGolems
         [UD_FleshGolems_DebugRegistry]
         public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
         {
-            if (typeof(Extensions).GetMethod(nameof(GetWeightedRandom)) is MethodBase getWeightedRandom)
-                Registry.Register(getWeightedRandom, true);
+            Dictionary<string, bool> multiMethodRegistrations = new()
+            {
+                { nameof(GetWeightedRandom), false },
+                { nameof(GetWeightedSeededRandom), false },
+            };
 
-            if (typeof(Extensions).GetMethod(nameof(GetWeightedSeededRandom)) is MethodBase getWeightedSeededRandom)
-                Registry.Register(getWeightedSeededRandom, true);
+            foreach (MethodBase extensionMethod in typeof(UD_FleshGolems.Extensions).GetMethods() ?? new MethodBase[0])
+                if (multiMethodRegistrations.ContainsKey(extensionMethod.Name))
+                    Registry.Register(extensionMethod, multiMethodRegistrations[extensionMethod.Name]);
 
             return Registry;
         }
@@ -642,8 +646,6 @@ namespace UD_FleshGolems
 
         public static T GetWeightedSeededRandom<T>(this Dictionary<T, int> WeightedList, string Seed, bool Include0Weight = true)
         {
-            using Indent indent = new();
-
             int maxWeight = 0;
             List<T> tickets = new(WeightedList.Keys);
             foreach (T ticket in tickets)
@@ -663,7 +665,9 @@ namespace UD_FleshGolems
                 Seed = ThisMod.Manifest.ID + "::" + nameof(GetWeightedSeededRandom) + "::" + Seed;
                 rolledAmount = Stat.GetSeededRandomGenerator(Seed).Next(0, maxWeight);
             }
-            Debug.LogMethod(indent[1],
+
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
                 ArgPairs: new Debug.ArgPair[]
                 {
                     Debug.Arg(nameof(Seed), Seed ?? NULL),
@@ -951,13 +955,6 @@ namespace UD_FleshGolems
         {
             if (ConversationText?.Text is string conversationTextString)
                 ConversationText.Text = conversationTextString.ReplacerCapitalize();
-
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(ConversationText?.Text)
-                });
 
             return ConversationText;
         }

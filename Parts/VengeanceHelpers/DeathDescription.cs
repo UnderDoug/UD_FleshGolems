@@ -548,8 +548,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string spaceBefore = PrependSpace ? " " : null;
             string spaceAfter = AppendSpace ? " " : null;
             string article = GetArticle(method, ForceNoMethodArticle, AppendSpace);
-            if (article != null)
-                spaceAfter = null;
             return spaceBefore + WithUsing(Killer) + spaceAfter + article;
         }
 
@@ -630,8 +628,9 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             string Killer = null,
             bool? With = null,
             string Method = null,
-            bool ForceNoMethodArticle = false)
-            => GetWith(Killer ?? this.Killer, With, Method, ForceNoMethodArticle) + GetMethod(Method);
+            bool ForceNoMethodArticle = false,
+            bool PrependSpace = true)
+            => GetWith(Killer ?? this.Killer, With, Method, ForceNoMethodArticle, PrependSpace, true) + GetMethod(Method);
 
         public string KilledWithMethod(
             string Adverb = null,

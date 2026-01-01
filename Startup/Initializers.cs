@@ -55,7 +55,7 @@ namespace UD_FleshGolems.Startup
             UnityEngine.Debug.Log(
                 nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " + 
                 nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
-            CacheSomeCorpses();
+
             CacheSomeEnumValueDictionaries();
         }
 
@@ -72,7 +72,7 @@ namespace UD_FleshGolems.Startup
             UnityEngine.Debug.Log(
                 nameof(Startup) + "." + nameof(GameBasedCacheInit) + ", " +
                 nameof(PlayerBlueprint) + ": " + PlayerBlueprint ?? NULL);
-            CacheSomeCorpses();
+
             CacheSomeEnumValueDictionaries();
         }
 
@@ -89,41 +89,6 @@ namespace UD_FleshGolems.Startup
         public static void SetLoadingStatusCaching()
         {
             Loading.SetLoadingStatus("Loading Corpses" + GetPeriods(CachingPeriods, out CachingPeriods));
-        }
-        public static void CacheSomeCorpses()
-        {
-            if (!CachedCorpses)
-            {
-                /*
-                Loading.SetLoadingStatus("Caching Corpses");
-                Debug.GetIndents(out Indents indent);
-                Debug.Log(Debug.GetCallingTypeAndMethod(true), "Started!", indent[1]);
-
-                Debug.Log(nameof(PastLife.GetCorpseBlueprints) + "...", indent[2]);
-                List<GameObjectBlueprint> corpseBlueprints = PastLife.GetCorpseBlueprints(ForCache: true);
-
-                CachingPeriods = 1;
-
-                Debug.Log(nameof(PastLife.GetCorpseCountsAsBlueprints) + "...", indent[2]);
-                foreach (GameObjectBlueprint corpseBlueprint in corpseBlueprints)
-                {
-                    PastLife.GetCorpseCountsAsBlueprints(corpseBlueprint, false, ForCache: true);
-                }
-
-                Debug.Log(nameof(PastLife.GetEntitiesWithCorpseBlueprints) + "...", indent[2]);
-                PastLife.GetEntitiesWithCorpseBlueprints(ForCache: true);
-
-                Debug.Log(nameof(PastLife.GetProcessableCorpsesAndTheirProducts) + "...", indent[2]);
-                PastLife.GetProcessableCorpsesAndTheirProducts(ExcludeEmpty: false, ForCache: true);
-
-                Debug.Log(Debug.GetCallingTypeAndMethod(true), "Finished!", indent[1]);
-
-                Loading.SetLoadingStatus("Caching Corpses Finished!");
-
-                Debug.DiscardIndent();
-                CachedCorpses = true;
-                */
-            }
         }
 
         public static Dictionary<string, T> RequireCachedEnumValueDictionary<T>()
@@ -167,6 +132,13 @@ namespace UD_FleshGolems.Startup
         // Called once when the player is generated (a fair bit after they're created.
         public void mutate(GameObject player)
         {
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(player), player?.DebugName ?? "null"),
+                    Debug.Arg(nameof(Extensions.IsCorpse), player?.GetBlueprint()?.IsCorpse() ?? false),
+                });
             if (DebugEnableTestKit)
             {
                 Mutations playerMutations = player.RequirePart<Mutations>();

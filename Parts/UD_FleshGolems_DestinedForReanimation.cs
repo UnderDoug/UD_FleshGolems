@@ -32,6 +32,7 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_DestinedForReanimation : IScribedPart, IReanimateEventHandler
     {
+        public static int AccidentalChanceOneIn = 3;
         // Keys list lifted from books' https://codeberg.org/librarianmage/EloquentDeath
         // which you should check out for being awesome.
         public static Dictionary<string, List<DeathDescription>> DeathCategoryDeathDescriptions => new()
@@ -479,7 +480,11 @@ namespace XRL.World.Parts
             return FakeDeath(null);
         }
 
-        public static void RandomDeathDescriptionAndAccidental(GameObject For, out DeathDescription DeathDescription, out bool Accidental, Predicate<DeathDescription> Filter = null)
+        public static void RandomDeathDescriptionAndAccidental(
+            GameObject For,
+            out DeathDescription DeathDescription,
+            out bool Accidental,
+            Predicate<DeathDescription> Filter = null)
         {
             DeathDescription = DeathCategoryDeathDescriptions
                 ?.Aggregate(
@@ -503,7 +508,7 @@ namespace XRL.World.Parts
                     ?.ToString();
             }
 
-            Accidental = Stat.RollCached("1d3") == 1;
+            Accidental = Stat.RollCached("1d" + AccidentalChanceOneIn) == 1;
         }
 
         public static DeathDescription ProduceRandomDeathDescriptionWithComponents(
