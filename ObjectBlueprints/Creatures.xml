@@ -610,21 +610,25 @@
     <part Name="Render" DisplayName="molars" Tile="Creatures/natural-weapon-bite.bmp" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <object Name="UD_FleshGolems Ragged Face Axe" Inherits="UD_FleshGolems Ragged Axe">
     <part Name="Render" DisplayName="trines" Tile="Creatures/natural-weapon-bite.bmp" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <object Name="UD_FleshGolems Ragged Face LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
     <part Name="Render" DisplayName="tusks" Tile="items/sw_horns2.bmp" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <object Name="UD_FleshGolems Ragged Face ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
     <part Name="Render" DisplayName="fangs" Tile="Items/girshling_fangs.bmp" />
     <part Name="MeleeWeapon" Slot="Face" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <!-- Flesh Golem natural weapons - head -->
   <object Name="UD_FleshGolems Ragged Head Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
@@ -665,42 +669,50 @@
     <part Name="Render" DisplayName="discs" Tile="Creatures/natural-weapon-knob.bmp" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <object Name="UD_FleshGolems Ragged Arm Axe" Inherits="UD_FleshGolems Ragged Axe">
     <part Name="Render" DisplayName="ridges" Tile="Creatures/natural-weapon-thorns.bmp" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <object Name="UD_FleshGolems Ragged Arm LongBlade" Inherits="UD_FleshGolems Ragged LongBlades">
     <part Name="Render" DisplayName="scales" Tile="Creatures/natural-weapon-thorns.bmp" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <object Name="UD_FleshGolems Ragged Arm ShortBlade" Inherits="UD_FleshGolems Ragged ShortBlades">
     <part Name="Render" DisplayName="thorns" Tile="Creatures/natural-weapon-thorns.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Arm" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <!-- Flesh Golem natural weapons - body -->
   <object Name="UD_FleshGolems Ragged Body Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
     <part Name="Render" DisplayName="bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <object Name="UD_FleshGolems Ragged Body Axe" Inherits="UD_FleshGolems Ragged Axe">
     <part Name="Render" DisplayName="ridged bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <object Name="UD_FleshGolems Ragged Body LongBlades" Inherits="UD_FleshGolems Ragged LongBlades">
     <part Name="Render" DisplayName="bladed bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <object Name="UD_FleshGolems Ragged Body ShortBlades" Inherits="UD_FleshGolems Ragged ShortBlades">
     <part Name="Render" DisplayName="pointed bands" Tile="Creatures/natural-weapon-bands.bmp" ColorString="&amp;r" />
     <part Name="MeleeWeapon" Slot="Body" />
     <tag Name="Gender" Value="plural" />
+    <xtagGrammar iArticle="some" />
   </object>
   <!-- Flesh Golem natural weapons - tail -->
   <object Name="UD_FleshGolems Ragged Tail Cudgel" Inherits="UD_FleshGolems Ragged Cudgel">
