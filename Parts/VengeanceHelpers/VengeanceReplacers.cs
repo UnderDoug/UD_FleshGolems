@@ -291,6 +291,20 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         [VariableObjectReplacer("death.with.a.method")]
         public static string TargetDeath_With_A_Method(DelegateContext Context)
+            => ContextCapitalize(
+                Context: Context,
+                Output: Context.Target
+                        ?.GetDeathDescription()
+                        ?.GetWith(
+                            Killer: "",
+                            With: true,
+                            ForceNoMethodArticle: true,
+                            PrependSpace: false)
+                    + Context.Target
+                        ?.GetDeathDetails()
+                        ?.Method(WithIndefiniteArticle: true));
+
+        /*
         {
             string with = Context.Target
                         ?.GetDeathDescription()
@@ -321,20 +335,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 Context: Context,
                 Output: with + aMethod);
         }
-            
-        /*
-            => ContextCapitalize(
-                Context: Context,
-                Output: Context.Target
-                        ?.GetDeathDescription()
-                        ?.GetWith(
-                            Killer: "",
-                            With: true,
-                            ForceNoMethodArticle: true,
-                            PrependSpace: false) 
-                    + Context.Target
-                        ?.GetDeathDetails()
-                        ?.Method(WithIndefiniteArticle: true));
         */
 
         // parameter0: adverb.

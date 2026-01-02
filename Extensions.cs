@@ -60,7 +60,7 @@ namespace UD_FleshGolems
             => !DebugRegistry.IsNullOrEmpty()
             && MethodBase is not null
             && DebugRegistry.Any(mb => mb.Equals(MethodBase));
-
+        
         public static bool GetValue(this ICollection<MethodRegistryEntry> DebugRegistry, MethodBase MethodBase)
         {
             foreach ((MethodBase methodBase, bool value) in DebugRegistry)
@@ -667,14 +667,17 @@ namespace UD_FleshGolems
                 rolledAmount = Stat.GetSeededRandomGenerator(Seed).Next(0, maxWeight);
             }
 
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
+            if (Seed != null)
+            {
+                using Indent indent = new(1);
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
                     Debug.Arg(nameof(Seed), Seed ?? NULL),
                     Debug.Arg(nameof(rolledAmount), rolledAmount),
                     Debug.Arg(nameof(maxWeight), maxWeight)
-                });
+                    });
+            }
 
             int cumulativeWeight = 0;
             foreach ((T ticket, int weight) in WeightedList)
@@ -740,7 +743,11 @@ namespace UD_FleshGolems
             : Text;
 
         public static string Remove(this string Text, string String)
-            => Text.Replace(String, "");
+            => Text != null
+                && String != null
+                && Text.Contains(String)
+            ? Text.Replace(String, "")
+            : Text;
 
         public static string RemoveAll(this string Text, params string[] Items)
             => Items?.Aggregate(Text, (a, n) => a?.Remove(n))
@@ -1471,5 +1478,53 @@ namespace UD_FleshGolems
         public static int GetLength(Range Range)
             => Range.End.Value - Range.Start.Value;
 
+        public static IEnumerable<string> SubstringsOfLength(this string String, int Length)
+        {
+            if (String.IsNullOrEmpty()
+                || String.Length < Length)
+                yield break;
+
+            for (int i = Length - 1; i < String.Length - Length; i++)
+                yield return String[i..(i + Length)];
+        }
+
+        public static bool ContainsNoCase(this string Text, string Value)
+            => !Text.IsNullOrEmpty()
+            && !Value.IsNullOrEmpty()
+            && Text.SubstringsOfLength(Value.Length) is string[] substrings
+            && Value.EqualsAnyNoCase(substrings);
+
+        public static bool TryGetFirstStartsWith(
+            this string Text,
+            out string StartsWith,
+            bool SortLongestFirst = false,
+            params string[] Args)
+        {
+            StartsWith = null;
+            if (Text.IsNullOrEmpty())
+                return false;
+
+            if (Args.IsNullOrEmpty())
+                return false;
+
+            List<string> argsList = new(Args);
+            if (SortLongestFirst)
+            {
+                argsList = argsList
+                    ?.Where(s => !s.IsNullOrEmpty())
+                    ?.ToList();
+
+                argsList?.Sort((first, second) => first.Length.CompareTo(second.Length));
+            }
+
+            foreach (string arg in argsList)
+                if (Text.StartsWith(arg))
+                {
+                    StartsWith = arg;
+                    return true;
+                }
+
+            return false;
+        }
     }
 }

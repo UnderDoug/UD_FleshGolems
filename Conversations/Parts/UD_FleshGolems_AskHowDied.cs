@@ -94,6 +94,7 @@ namespace XRL.World.Conversations.Parts
 
         public UD_FleshGolems_AskHowDied()
         {
+            Priority = 1;
             CompleteTexts = new();
             KnowsPlayerKilledThem = false;
             KilledByPlayerTexts = new();

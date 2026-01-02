@@ -83,9 +83,16 @@ namespace UD_FleshGolems.Logging
             List<MethodRegistryEntry> Registry,
             ref List<MethodRegistryEntry> ReturnRegistry)
         {
+            string thisMethodName = nameof(Debug) + "." + nameof(Register);
+            if (MethodBase == null)
+                MetricsManager.LogModWarning(
+                    mod: ThisMod,
+                    Message: thisMethodName + " passed null " + nameof(MethodBase));
+
             string declaringType = MethodBase?.DeclaringType?.Name;
-            UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(Register) + "(" + declaringType + "." + MethodBase?.Name + ": " + Value + ")");
+            UnityEngine.Debug.Log(thisMethodName + "(" + declaringType + "." + MethodBase?.Name + ": " + Value + ")");
             Registry.Add(new(MethodBase, Value));
+
             ReturnRegistry = Registry;
         }
         public static void Register(this List<MethodRegistryEntry> Registry, Type Class, string MethodName, bool Value)
@@ -96,10 +103,24 @@ namespace UD_FleshGolems.Logging
 
         public static void Register(this List<MethodRegistryEntry> Registry, string MethodName, bool Value)
         {
-            TryGetCallingTypeAndMethod(out Type CallingType, out _);
-            foreach (MethodBase methodBase in CallingType.GetMethods() ?? new MethodInfo[0])
-                if (methodBase.Name == MethodName)
-                    Register(methodBase, Value, Registry, ref _DoDebugRegistry);
+            string thisMethodName = nameof(Debug) + "." + nameof(Register);
+            if (TryGetCallingTypeAndMethod(out Type callingType, out MethodBase callingMethod))
+            {
+                bool any = false;
+                foreach (MethodBase methodBase in callingType.GetMethods() ?? new MethodInfo[0])
+                    if (methodBase.Name == MethodName)
+                    {
+                        any = true;
+                        Register(methodBase, Value, Registry, ref _DoDebugRegistry);
+                    }
+                if (!any)
+                    MetricsManager.LogModWarning(
+                        mod: ModManager.GetMod(callingType.Assembly),
+                        Message: CallerSignatureString(callingType, callingMethod) + 
+                            " failed to register any methods called " + MethodName + " with " + thisMethodName);
+            }
+            else
+                MetricsManager.LogModWarning(ThisMod, thisMethodName + " couldn't get " + nameof(callingType));
         }
         public static void Register(this List<MethodRegistryEntry> Registry, MethodRegistryEntry RegisterEntry)
             => Register(RegisterEntry.GetMethod(), RegisterEntry.GetValue(), Registry, ref _DoDebugRegistry);
@@ -114,15 +135,23 @@ namespace UD_FleshGolems.Logging
             try
             {
                 List<MethodInfo> debugRegistryMethods = ModManager.GetMethodsWithAttribute(typeof(UD_FleshGolems_DebugRegistryAttribute))
-                    ?.Where(m 
-                        => m != null
-                        && m.IsStatic 
-                        && m.ReturnType.EqualsAny(typeof(void), typeof(List<MethodRegistryEntry>))
-                        && m.GetParameters() is ParameterInfo[] parameters
-                        && parameters[0].GetType() == typeof(List<MethodRegistryEntry>))
-                    ?.ToList();
+                        /*
+                        ?.Where(m 
+                            => m != null
+                            && m.IsStatic 
+                            && m.ReturnType.EqualsAny(typeof(void), typeof(List<MethodRegistryEntry>))
+                            && m.GetParameters() is ParameterInfo[] parameters
+                            && parameters[0].GetType() == typeof(List<MethodRegistryEntry>))
+                        ?.ToList();
+                        */
+                    ?? new();
+                if (debugRegistryMethods.IsNullOrEmpty())
+                    MetricsManager.LogModError(
+                        mod: ThisMod,
+                        Message: nameof(Debug) + "." + nameof(GetRegistry) + " failed to retrieve any " + 
+                            nameof(UD_FleshGolems_DebugRegistryAttribute) + " decorated methods");
 
-                foreach (MethodInfo debugRegistryMethod in debugRegistryMethods ?? new())
+                foreach (MethodInfo debugRegistryMethod in debugRegistryMethods)
                     debugRegistryMethod.Invoke(null, new object[] { _DoDebugRegistry });
             }
             catch (Exception x)
@@ -134,12 +163,22 @@ namespace UD_FleshGolems.Logging
             return _DoDebugRegistry;
         }
 
+        public static void LogRegistry()
+        {
+            UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(LogRegistry));
+            if (_GotRegistry)
+            {
+                foreach (MethodRegistryEntry methodEntry in DoDebugRegistry ?? new())
+                    UnityEngine.Debug.Log(methodEntry.ToString());
+            }
+            else
+                UnityEngine.Debug.Log("registry not cached yet");
+        }
+
         [ModSensitiveCacheInit]
         [GameBasedCacheInit]
         public static void CacheDoDebugRegistry()
-        {
-            GetRegistry();
-        }
+            => GetRegistry();
 
         public static bool GetDoDebug(string CallingMethod = null)
         {
@@ -206,9 +245,8 @@ namespace UD_FleshGolems.Logging
             {
                 string declaringTypeName = declaringType.Name;
                 if (TrimModPrefix)
-                {
                     declaringTypeName = declaringTypeName.Replace(ThisMod.ID + "_", "");
-                }
+
                 return declaringTypeName + "." + methodBase.Name + (AppendSpace ? " " : "");
             }
             return null;
@@ -234,7 +272,7 @@ namespace UD_FleshGolems.Logging
                     typeof(UD_FleshGolems.Logging.Indent),
                 };
                 StackTrace stackTrace = new();
-                for (int i = 0; i < 8 && stackTrace?.GetFrame(i) is StackFrame stackFrameI; i++)
+                for (int i = 0; i < 12 && stackTrace?.GetFrame(i) is StackFrame stackFrameI; i++)
                 {
                     if (stackFrameI?.GetMethod() is MethodBase methodBase
                         && methodBase.DeclaringType is Type declaringType
@@ -322,6 +360,7 @@ namespace UD_FleshGolems.Logging
             public static bool operator !=(ArgPair Operand1, ArgPair Operand2)
                 => !(Operand1 == Operand2);
         }
+
         public static ArgPair Arg(string Name, object Value)
             => new(Name, Value);
 

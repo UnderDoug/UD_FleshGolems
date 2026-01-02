@@ -36,7 +36,6 @@ namespace XRL.World.Conversations.Parts
 
         public UD_FleshGolems_ModdedTextFilter()
         {
-            Priority = 1;
             Filters = null;
         }
 
@@ -59,21 +58,24 @@ namespace XRL.World.Conversations.Parts
                     Debug.Arg(nameof(PrepareTextLateEvent)),
                     Debug.Arg(nameof(Filters), Filters ?? "empty"),
                 });
+
             if (!FiltersList.IsNullOrEmpty()
                 && E.Text is string text
                 && !text.IsNullOrEmpty()
-                && ModdedTextFilters.TextFilterEntries
-                    ?.Aggregate(
-                        seed: new List<MethodInfo>(),
-                        func: delegate (List<MethodInfo> a, KeyValuePair<string, MethodInfo> n)
-                        {
-                            if (FiltersList.Contains(n.Key))
-                                a.Add(n.Value);
-                            return a;
-                        }) is List<MethodInfo> moddedTextFilterMethods)
+                && !ModdedTextFilters.TextFilterEntries.IsNullOrEmpty())
             {
-                foreach (MethodInfo moddedTextFilterMethod in moddedTextFilterMethods)
-                    E.Text = moddedTextFilterMethod.Invoke(null, new object[] { E.Text }) as string;
+                foreach (string filter in FiltersList)
+                {
+                    if (ModdedTextFilters.TextFilterEntries.ContainsKey(filter))
+                        E.Text = ModdedTextFilters.TextFilterEntries[filter].Invoke(null, new object[] { E.Text }) as string;
+                    else
+                        MetricsManager.LogModWarning(
+                            mod: ThisMod,
+                            Message: ParentElement.PathID + "." + nameof(UD_FleshGolems_ModdedTextFilter) + 
+                                " failed to find " + nameof(ModdedTextFilters) + " " +
+                                filter + " in " + nameof(ModdedTextFilters.TextFilterEntries));
+                }
+                E.Text = E.Text?.CapitalizeSentences(ExcludeElipses: true);
             }
             return base.HandleEvent(E);
         }

@@ -4,24 +4,30 @@ using System.Linq;
 using System.Text;
 
 using UD_FleshGolems.Logging;
+using UD_FleshGolems;
 using UD_FleshGolems.ModdedText;
 
 namespace UD_FleshGolems.ModdedText.TextHelpers
 {
     public class Word
     {
+        public static bool UseWordComponents => false;
+
         private enum TextType : int
         {
             None,
             ShaderOpen,
             ShaderText,
             Text,
+            Punctuation,
             ShaderClose,
             Replacer,
         }
 
         private class TextComponentData
         {
+            public static TextComponentData Empty => new(TextType.None, 0, 0, 0);
+
             public TextType Type;
 
             public Index Pos;
@@ -74,6 +80,9 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
             public TextComponentData(TextComponentData Source)
                 : this(Source.Type, Source.Pos, Source.Range)
             { }
+
+            public override string ToString()
+                => Type + "|[" + Pos + "][" + Range.ToString() + "]";
         }
 
         private class TextComponent
@@ -112,6 +121,21 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                 Value = this.Value;
             }
 
+            public override string ToString()
+                => ToString(false);
+
+            public string ToString(bool IncludeData)
+                => !IncludeData
+                ? Value
+                : (Data ?? TextComponentData.Empty).ToString() + " " + Value;
+
+            public TextComponent UpdateDataRangeEnd()
+            {
+                if (Data != null)
+                    Data.End = new(Data.Start.Value + Value?.Length ?? 0);
+                return this;
+            }
+
             public static explicit operator KeyValuePair<TextComponentData, string>(TextComponent TextComponent)
                 => new(TextComponent.Data, TextComponent.Value);
 
@@ -123,17 +147,32 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
 
         private readonly bool Open;
         private readonly string Shader;
+
+        private string _Text;
         public string Text
         {
-            get => TextComponents?.Aggregate("", (a, n) => a + n);
+            get => !UseWordComponents ? _Text : TextComponents?.Aggregate("", (a, n) => a + n.Value);
             set
             {
-                TextComponentsFromText(value);
+                _Text = value;
+                if (value != null)
+                    TextComponentsFromText(value);
+                else
+                    TextComponents = null;
             }
         }
         private readonly bool Close;
 
         private List<TextComponent> TextComponents;
+
+        private string StrippedText
+            => TextComponents
+                ?.Aggregate(
+                    seed: (string)null,
+                    func: (a, n) 
+                        => n.Type == TextType.Text 
+                        ? a + n.Value
+                        : a);
 
         public int Length => Text?.Length ?? 0;
 
@@ -152,37 +191,37 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                   Text: null,
                   Close: Text?.EndsWith("}}"))
         {
-            this.Text = Text;
-            if (this.Text != null)
+            string text = Text;
+            if (text != null)
             {
-                if (this.Text.StartsWith("{{"))
+                if (text.StartsWith("{{"))
                 {
-                    this.Text = this.Text[2..];
+                    text = text[2..];
                 }
-                if (this.Text.EndsWith("}}"))
+                if (text.EndsWith("}}"))
                 {
-                    this.Text = this.Text[..^2];
+                    text = text[..^2];
                 }
-                if (!this.Text.IsNullOrEmpty())
+                if (!text.IsNullOrEmpty())
                 {
-                    if (this.Text.TryGetIndexOf("|", out int pipeBefore, EndOfSearch: false)
+                    if (text.TryGetIndexOf("|", out int pipeBefore, EndOfSearch: false)
                         && pipeBefore + 1 is int pipeAfter)
                     {
-                        if (!this.Text.TryGetIndexOf("=", out int replacerStart, EndOfSearch: false)
+                        if (!text.TryGetIndexOf("=", out int replacerStart, EndOfSearch: false)
                             || replacerStart > pipeBefore)
                         {
-                            Shader = this.Text[..pipeBefore];
-                            this.Text = this.Text[pipeAfter..];
+                            Shader = text[..pipeBefore];
+                            this.Text = text[pipeAfter..];
                         }
                     }
                     else
                     if (Open)
                     {
-                        Shader = this.Text;
-                        this.Text = null;
+                        Shader = text;
                     }
                     else
                     {
+                        this.Text = text;
                     }
                 }
             }
@@ -192,31 +231,105 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
 
         public string this[Range Range] => Text[Range];
 
+        private static void ProcessNewComponent(
+            ref List<TextComponent> TextComponents,
+            ref TextComponent NewComponent,
+            ref TextType CurrentTextType)
+        {
+            TextComponent newComponent = new(NewComponent);
+            newComponent?.UpdateDataRangeEnd();
+
+            TextComponents ??= new();
+            TextComponents.Add(newComponent);
+
+            CurrentTextType = TextType.None;
+
+            NewComponent = new TextComponent(
+                Data: new TextComponentData(
+                    Type: CurrentTextType,
+                    Pos: TextComponents.Count,
+                    Start: newComponent.Data.End.Value + 1,
+                    End: null),
+                Value: null);
+
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(newComponent), newComponent.ToString(true)),
+                });
+        }
+        private static void PrepareForLoop(
+            ref char? PrevChar,
+            ref char? CurrentChar,
+            ref char? NextChar)
+        {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(PrevChar), PrevChar?.ToString() ?? "default"),
+                    Debug.Arg(nameof(CurrentChar), CurrentChar?.ToString() ?? "default"),
+                    Debug.Arg(nameof(NextChar), NextChar?.ToString() ?? "default"),
+                });
+
+            char? currentChar = CurrentChar;
+
+            CurrentChar = null;
+            PrevChar = currentChar;
+            NextChar = null;
+        }
         private void TextComponentsFromText(string Text)
         {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(Text), Text ?? "null"),
+                });
+
+            if (Text == null)
+                return;
+
             TextComponents ??= new();
             TextComponent newComponent = new(new TextComponentData(TextType.None, 0, 0, null));
-            TextType currentTextType = TextType.None;
-            char? currentChar = default;
-            char? prevChar = default;
-            static void PrepareForLoop(ref char? CurrentChar, ref char? PrevChar, ref TextType CurrentTextType, bool ClearTextType = false)
-            {
-                if (ClearTextType)
-                    CurrentTextType = TextType.None;
 
-                PrevChar = CurrentChar.Value;
-                CurrentChar = null;
-            }
+            TextType currentTextType = TextType.None;
+            char? prevChar = default;
+            char? currentChar = default;
+            char? nextChar = default;
+
             for (int i = 0; i < Text.Length; i++)
             {
                 currentChar ??= Text[i];
+                nextChar ??= i < (Text.Length - 1) ? Text[i + 1] : null;
+
+                Debug.LogArgs(
+                    MessageBefore: i + " | ",
+                    MessageAfter: null,
+                    Indent: indent[1],
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(prevChar), prevChar?.ToString() ?? "default"),
+                        Debug.Arg(nameof(currentChar), currentChar?.ToString() ?? "default"),
+                        Debug.Arg(nameof(nextChar), nextChar?.ToString() ?? "default"),
+                        Debug.Arg(nameof(TextType) + "." + currentTextType.ToString()),
+                    });
+
+                if (currentTextType == TextType.Text
+                    && currentChar?.ToString() + nextChar?.ToString() is string upcomingSubstring
+                    && upcomingSubstring.EqualsAny("{{", "}}", "="))
+                {
+                    ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
+                }
+
                 newComponent.Value += currentChar;
 
                 if (currentChar == '='
                     && currentTextType == TextType.Replacer)
                 {
-                    TextComponents.Add(newComponent);
-                    PrepareForLoop(ref currentChar, ref prevChar, ref currentTextType, ClearTextType: true);
+                    ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
+                    PrepareForLoop(ref prevChar, ref currentChar, ref nextChar);
                     continue;
                 }
                 else
@@ -231,8 +344,8 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                     if (prevChar == '{'
                         || currentTextType == TextType.ShaderOpen)
                     {
-                        TextComponents.Add(newComponent);
-                        PrepareForLoop(ref currentChar, ref prevChar, ref currentTextType, ClearTextType: true);
+                        ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
+                        PrepareForLoop(ref prevChar, ref currentChar, ref nextChar);
                         continue;
                     }
                     newComponent.Type = currentTextType = TextType.ShaderOpen;
@@ -246,8 +359,8 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                     if (prevChar == '}'
                         || currentTextType == TextType.ShaderClose)
                     {
-                        TextComponents.Add(newComponent);
-                        PrepareForLoop(ref currentChar, ref prevChar, ref currentTextType, ClearTextType: true);
+                        ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
+                        PrepareForLoop(ref prevChar, ref currentChar, ref nextChar);
                         continue;
                     }
                     newComponent.Type = currentTextType = TextType.ShaderClose;
@@ -259,8 +372,8 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                 if (currentChar == '|'
                     && currentTextType == TextType.ShaderText)
                 {
-                    TextComponents.Add(newComponent);
-                    PrepareForLoop(ref currentChar, ref prevChar, ref currentTextType, ClearTextType: true);
+                    ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
+                    PrepareForLoop(ref prevChar, ref currentChar, ref nextChar);
                     continue;
                 }
 
@@ -269,10 +382,29 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                     newComponent.Type = currentTextType = TextType.Text;
 
                 if (i >= Text.Length)
-                    TextComponents.Add(newComponent);
+                    ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
 
-                PrepareForLoop(ref currentChar, ref prevChar, ref currentTextType);
+                if (currentTextType == TextType.None)
+                {
+                    if (currentChar != null
+                        && !currentChar.GetValueOrDefault().IsLetterAndNotException())
+                    {
+                        currentTextType = newComponent.Type = TextType.Punctuation;
+                        ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
+                        PrepareForLoop(ref prevChar, ref currentChar, ref nextChar);
+                        continue;
+                    }
+                    else
+                        currentTextType = newComponent.Type = TextType.Text;
+                }
+
+                PrepareForLoop(ref prevChar, ref currentChar, ref nextChar);
             }
+        }
+
+        public void SyncComponents()
+        {
+            // write code to propagate changes to TextComponents list's Data pos/start/end.
         }
 
         public override string ToString()
@@ -374,6 +506,13 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                 yield return @char;
         }
 
+        public IEnumerable<string> SubstringsOfLength(int Length)
+            => Text?.SubstringsOfLength(Length);
+
+        public bool ContainsNoCase(string Value)
+            => !Text.IsNullOrEmpty()
+            && Text.ContainsNoCase(Value);
+
         public Word Guard()
             => !IsGuarded()
             ? ReplaceWord("%" + Text + "%")
@@ -382,15 +521,21 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
         public bool IsGuarded()
         {
             using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(Text),
-                });
+            
 
             if (Text == null
                 || Text.Length < 2)
+            {
+                Debug.LogArgs(
+                    MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                    MessageAfter: ")",
+                    Indent: indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(Text),
+                    });
                 return false;
+            }
 
             int i;
             for (i = 0; i < Text.Length; i++)
@@ -398,12 +543,30 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                     break;
 
             if (i % 2 == 0)
+            {
+                Debug.LogArgs(
+                    MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                    MessageAfter: ")",
+                    Indent: indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(Text),
+                    });
                 return false;
+            }
 
             for (i = Text.Length - 1; i >= 0; i--)
                 if (Text[i] != '%')
                     return (Text.Length - 1) - i % 2 == 1;
 
+            Debug.LogArgs(
+                MessageBefore: true.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                MessageAfter: ")",
+                Indent: indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(Text),
+                });
             return false;
         }
 

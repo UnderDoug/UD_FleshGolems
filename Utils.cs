@@ -153,7 +153,7 @@ namespace UD_FleshGolems
             }
             catch (Exception x)
             {
-                MetricsManager.LogModError(ThisMod, x);
+                MetricsManager.LogModWarning(ThisMod, x);
                 EmbarkBuilderModule = null;
                 return false;
             }
@@ -269,6 +269,23 @@ namespace UD_FleshGolems
         public static string GetPlayerBlueprint()
             => The.Player?.Blueprint
             ?? GetPlayerTaxa()?.Blueprint;
+
+        public static string CallerString(Type CallingType, MethodBase CallingMethod)
+            => CallingType.Name + "." + CallingMethod.Name;
+
+        public static string CallerSignatureString(Type CallingType, MethodBase CallingMethod)
+            => CallerString(CallingType, CallingMethod) + 
+            "(" +
+            CallingMethod
+                ?.GetParameters()
+                ?.Aggregate("", delegate (string a, ParameterInfo n)
+                {
+                    string paramType = n?.ParameterType?.Name ?? "null??";
+                    return !a.IsNullOrEmpty() 
+                        ? a + ", " + paramType
+                        : a + paramType;
+                }) +
+            ")";
 
         public static string AppendTick(string String, bool AppendSpace = true)
             => String + "[" + TICK + "]" + (AppendSpace ? " " : "");
