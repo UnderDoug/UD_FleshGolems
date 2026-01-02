@@ -35,6 +35,7 @@ using TextDelegateContext = XRL.World.Text.Delegates.DelegateContext;
 using XRL.World.Conversations.Parts;
 using System.Text.RegularExpressions;
 using UD_FleshGolems.ModdedText.TextHelpers;
+using Range = System.Range;
 
 namespace UD_FleshGolems
 {
@@ -1466,5 +1467,9 @@ namespace UD_FleshGolems
 
         public static bool Fail(this GameObject Object, string Message, bool Silent)
             => !Silent && Object.Fail(Message);
+
+        public static int GetLength(Range Range)
+            => Range.End.Value - Range.Start.Value;
+
     }
 }

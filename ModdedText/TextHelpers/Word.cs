@@ -8,7 +8,7 @@ using UD_FleshGolems.ModdedText;
 
 namespace UD_FleshGolems.ModdedText.TextHelpers
 {
-    public struct Word
+    public class Word
     {
         private enum TextType : int
         {
@@ -20,32 +20,102 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
             Replacer,
         }
 
-        private struct TextComponent
+        private class TextComponentData
         {
-            public TextType TextType;
+            public TextType Type;
+
+            public Index Pos;
+            public Index Start;
+            public Index End;
+
+            public Range? Range
+            {
+                get => new(Start, End);
+                set
+                {
+                    if (value != null)
+                    {
+                        Start = (value?.Start).GetValueOrDefault();
+                        End = (value?.End).GetValueOrDefault();
+                    }
+                    else
+                    {
+                        Start = default;
+                        End = default;
+                    }
+                }
+            }
+
+            public TextComponentData()
+            {
+                Type = TextType.None;
+                Pos = default;
+                Start = default;
+                End = default;
+            }
+            public TextComponentData(TextType Type, Index Pos, Index Start, Index? End)
+                : this()
+            {
+                this.Type = Type;
+                this.Pos = Pos;
+                this.Start = Start;
+                if (End != null)
+                    this.End = End.GetValueOrDefault();
+            }
+            public TextComponentData(TextType Type, int Pos, int Start, int End)
+                : this(Type, new Index(Pos), new Index(Start), new Index(End))
+            { }
+            public TextComponentData(TextType Type, Index Pos, Range? Range)
+                : this(Type, Pos, (Range?.Start).GetValueOrDefault(), (Range?.End).GetValueOrDefault())
+            { }
+            public TextComponentData(TextType Type, int Pos, Range? Range)
+                : this(Type, new Index(Pos), Range)
+            { }
+            public TextComponentData(TextComponentData Source)
+                : this(Source.Type, Source.Pos, Source.Range)
+            { }
+        }
+
+        private class TextComponent
+        {
+            public TextComponentData Data;
             public string Value;
 
-            public TextComponent(TextType TextType, string Value = null)
+            public TextType Type
             {
-                this.TextType = TextType;
+                get => Data != null ? Data.Type : TextType.None;
+                set
+                {
+                    if (Data != null)
+                        Data.Type = value;
+                }
+            }
+
+            public TextComponent()
+            {
+                Value = null;
+                Data = null;
+            }
+            public TextComponent(TextComponentData Data, string Value = null)
+                : this()
+            {
+                this.Data = Data;
                 this.Value = Value;
             }
-
             public TextComponent(TextComponent Source)
-                : this(Source.TextType, Source.Value)
-            {
-            }
+                : this(Source.Data, Source.Value)
+            { }
 
-            public readonly void Deconstruct(out TextType TextType, out string Value)
+            public void Deconstruct(out TextComponentData Data, out string Value)
             {
-                TextType = this.TextType;
+                Data = this.Data;
                 Value = this.Value;
             }
 
-            public static explicit operator KeyValuePair<TextType, string>(TextComponent TextComponent)
-                => new(TextComponent.TextType, TextComponent.Value);
+            public static explicit operator KeyValuePair<TextComponentData, string>(TextComponent TextComponent)
+                => new(TextComponent.Data, TextComponent.Value);
 
-            public static explicit operator TextComponent(KeyValuePair<TextType, string>  KVP)
+            public static explicit operator TextComponent(KeyValuePair<TextComponentData, string> KVP)
                 => new(KVP.Key, KVP.Value);
         }
 
@@ -55,7 +125,7 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
         private readonly string Shader;
         public string Text
         {
-            readonly get => TextComponents?.Aggregate("", (a, n) => a + n);
+            get => TextComponents?.Aggregate("", (a, n) => a + n);
             set
             {
                 TextComponentsFromText(value);
@@ -65,7 +135,7 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
 
         private List<TextComponent> TextComponents;
 
-        public readonly int Length => Text?.Length ?? 0;
+        public int Length => Text?.Length ?? 0;
 
         private Word(bool? Open, string Shader, string Text, bool? Close)
         {
@@ -118,14 +188,14 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
             }
         }
 
-        public readonly char this[int Index] => Text[Index];
+        public char this[int Index] => Text[Index];
 
-        public readonly string this[Range Range] => Text[Range];
+        public string this[Range Range] => Text[Range];
 
         private void TextComponentsFromText(string Text)
         {
             TextComponents ??= new();
-            TextComponent newComponent = new(TextType.None);
+            TextComponent newComponent = new(new TextComponentData(TextType.None, 0, 0, null));
             TextType currentTextType = TextType.None;
             char? currentChar = default;
             char? prevChar = default;
@@ -165,11 +235,11 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                         PrepareForLoop(ref currentChar, ref prevChar, ref currentTextType, ClearTextType: true);
                         continue;
                     }
-                    newComponent.TextType = currentTextType = TextType.ShaderOpen;
+                    newComponent.Type = currentTextType = TextType.ShaderOpen;
                 }
                 else
                 if (prevChar == '{')
-                    newComponent.TextType = currentTextType = TextType.ShaderText;
+                    newComponent.Type = currentTextType = TextType.ShaderText;
 
                 if (currentChar == '}')
                 {
@@ -180,11 +250,11 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                         PrepareForLoop(ref currentChar, ref prevChar, ref currentTextType, ClearTextType: true);
                         continue;
                     }
-                    newComponent.TextType = currentTextType = TextType.ShaderClose;
+                    newComponent.Type = currentTextType = TextType.ShaderClose;
                 }
                 else
                 if (prevChar == '}')
-                    newComponent.TextType = currentTextType = TextType.Text;
+                    newComponent.Type = currentTextType = TextType.Text;
 
                 if (currentChar == '|'
                     && currentTextType == TextType.ShaderText)
@@ -196,7 +266,7 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
 
                 if (prevChar == '|'
                     && currentTextType != TextType.Replacer)
-                    newComponent.TextType = currentTextType = TextType.Text;
+                    newComponent.Type = currentTextType = TextType.Text;
 
                 if (i >= Text.Length)
                     TextComponents.Add(newComponent);
@@ -205,39 +275,39 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
             }
         }
 
-        public override readonly string ToString()
+        public override string ToString()
             => GetOpenString()
             + GetShaderString()
             + GetTextString()
             + GetCloseString();
 
-        private readonly string GetOpenString()
+        private string GetOpenString()
             => Open ? "{{" : null;
 
-        private readonly string GetShaderString()
+        private string GetShaderString()
             => !Shader.IsNullOrEmpty() ? Shader + "|" : null;
 
-        private readonly string GetTextString()
+        private string GetTextString()
             => IsGuarded() ? Text[1..^1] : Text;
-        private readonly string GetCloseString()
+        private string GetCloseString()
             => Open ? "}}" : null;
 
-        public static Word ReplaceWord(Word? Word, string Text)
+        public static Word ReplaceWord(Word Word, string Text)
             => new(Word?.Open, Word?.Shader, Text, Word?.Close);
 
-        public readonly Word ReplaceWord(string Text)
+        public Word ReplaceWord(string Text)
             => ReplaceWord(this, Text);
 
-        public readonly Word CopyWithoutText()
+        public Word CopyWithoutText()
             => ReplaceWord(this, null);
 
-        public readonly Word Capitalize()
+        public Word Capitalize()
             => ReplaceWord(Text.CapitalizeEx());
 
-        public readonly Word Uncapitalize()
+        public Word Uncapitalize()
             => ReplaceWord(Text.UncapitalizeEx());
 
-        public readonly bool IsCapitalized()
+        public bool IsCapitalized()
             => Text
                 ?.Strip()
                 ?.Aggregate(
@@ -245,57 +315,57 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                     func: (a, n) => a + (n.IsLetterAndNotException(Utils.CapitalizationExceptions) ? n : null)) is string strippedWord
             && strippedWord[0].ToString() == strippedWord[0].ToString().ToUpper();
 
-        public readonly string LettersOnly()
+        public string LettersOnly()
         => Text
             ?.Strip()
             ?.Aggregate(
                 seed: "",
                 func: (a, n) => a + (char.IsLetter(n) ? n : null));
 
-        public readonly bool ImpliesCapitalization(bool ExcludeElipses = false)
+        public bool ImpliesCapitalization(bool ExcludeElipses = false)
             => Text.IsNullOrEmpty()
             || Text.EndsInCapitalizingPunctuation(ExcludeElipses);
 
-        public readonly Word MatchCapitalization(string Word)
+        public Word MatchCapitalization(string Word)
             => Word.IsCapitalized()
             ? ReplaceWord(this, Text.CapitalizeEx())
             : ReplaceWord(this, Text.UncapitalizeEx());
 
-        public readonly Word Replace(string OldValue, string NewValue)
+        public Word Replace(string OldValue, string NewValue)
             => ReplaceWord(this, Text?.Replace(OldValue, NewValue));
 
-        public readonly Word ReplaceNoCase(string OldValue, string NewValue)
+        public Word ReplaceNoCase(string OldValue, string NewValue)
             => ReplaceWord(this, Text?.ReplaceNoCase(OldValue, NewValue));
 
-        public readonly bool Contains(string String)
+        public bool Contains(string String)
             => !Text.IsNullOrEmpty()
             && Text.Contains(String);
 
-        public readonly bool StartsWith(string String)
+        public bool StartsWith(string String)
             => !Text.IsNullOrEmpty()
             && Text.StartsWith(String);
 
-        public readonly bool EndsWith(string String)
+        public bool EndsWith(string String)
             => !Text.IsNullOrEmpty()
             && Text.EndsWith(String);
 
-        public readonly bool TextEquals(string String)
+        public bool TextEquals(string String)
             => !Text.IsNullOrEmpty()
             && Text.Equals(String);
 
-        public readonly bool TextEqualsNoCase(string String)
+        public bool TextEqualsNoCase(string String)
             => !Text.IsNullOrEmpty()
             && Text.EqualsNoCase(String);
 
-        public readonly bool Any(Func<char, bool> predicate)
+        public bool Any(Func<char, bool> predicate)
             => !Text.IsNullOrEmpty()
             && Text.Any(predicate);
 
-        public readonly bool All(Func<char, bool> predicate)
+        public bool All(Func<char, bool> predicate)
             => !Text.IsNullOrEmpty()
             && Text.All(predicate);
 
-        public readonly IEnumerable<char> EnumerateText()
+        public IEnumerable<char> EnumerateText()
         {
             if (Text.IsNullOrEmpty())
                 yield break;
@@ -304,12 +374,12 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                 yield return @char;
         }
 
-        public readonly Word Guard()
+        public Word Guard()
             => !IsGuarded()
             ? ReplaceWord("%" + Text + "%")
             : this;
 
-        public readonly bool IsGuarded()
+        public bool IsGuarded()
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
@@ -337,12 +407,12 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
             return false;
         }
 
-        public readonly Word Unguard()
+        public Word Unguard()
             => IsGuarded()
             ? ReplaceWord(Text[1..^1])
             : this;
 
-        public readonly void DebugLog()
+        public void DebugLog()
         {
             using Indent indent = new(1);
             Debug.LogCaller(indent,
@@ -350,8 +420,8 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                 {
                     Debug.Arg(ToString()),
                 });
-            foreach ((TextType textType, string value) in TextComponents ?? new())
-                Debug.Log(textType.ToString(), value, Indent: indent[1]);
+            foreach ((TextComponentData data, string value) in TextComponents ?? new())
+                Debug.Log((data?.Type ?? TextType.None).ToString(), value, Indent: indent[1]);
         }
     }
 }
