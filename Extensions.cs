@@ -1135,15 +1135,39 @@ namespace UD_FleshGolems
         public static bool TryGetIndexOf(this string Text, string Search, out int Index, bool EndOfSearch = true)
             => !((Index = Text.IndexOf(Search) + (EndOfSearch ? Search?.Length ?? 0 : 0)) < 0);
 
-        public static string ReplaceFirst(this string text, string search, string replace)
+        public static string ReplaceFirst(this string Text, string Search, string Replace)
         {
-            int pos = text.IndexOf(search);
-            int postPos = pos + search.Length;
+            int pos = Text.IndexOf(Search);
             if (pos < 0)
-            {
-                return text;
-            }
-            return text[..pos] + replace + text[postPos..];
+                return Text;
+
+            int postPos = pos + Search.Length;
+            string textAfter = null;
+
+            if (postPos < Search.Length)
+                textAfter = Text[postPos..];
+
+            return Text[..pos] + Replace + textAfter;
+            
+        }
+
+        public static string ReplaceLast(this string Text, string Search, string Replace)
+        {
+            string haystack = Text;
+            int pos;
+            while (haystack.TryGetIndexOf(Search, out pos, false))
+                haystack = haystack[pos..];
+
+            if (pos < 0)
+                return Text;
+
+            int postPos = pos + Search.Length;
+            string textAfter = null;
+
+            if (postPos < Search.Length)
+                textAfter = Text[postPos..];
+
+            return Text[..pos] + Replace + textAfter;
         }
 
         public static bool WasKilledByEntity(this GameObject Corpse, GameObject Entity, out UD_FleshGolems_DeathDetails DeathDetails)
@@ -1517,12 +1541,25 @@ namespace UD_FleshGolems
                 argsList?.Sort((first, second) => first.Length.CompareTo(second.Length));
             }
 
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(StartsWith),
+                    Debug.Arg(nameof(Text), Text),
+                    Debug.Arg(nameof(SortLongestFirst), SortLongestFirst),
+                    Debug.Arg(nameof(Args) + "." + nameof(Args.Length), Args?.Length ?? 0),
+                });
+
             foreach (string arg in argsList)
+            {
+                Debug.YehNah(arg, Good: Text.StartsWith(arg), Indent: indent[1]);
                 if (Text.StartsWith(arg))
                 {
                     StartsWith = arg;
                     return true;
                 }
+            }
 
             return false;
         }

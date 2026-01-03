@@ -281,6 +281,9 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
         }
         private void TextComponentsFromText(string Text)
         {
+            if (!UseWordComponents)
+                return;
+
             using Indent indent = new(1);
             Debug.LogMethod(indent,
                 ArgPairs: new Debug.ArgPair[]
@@ -316,11 +319,15 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                         Debug.Arg(nameof(TextType) + "." + currentTextType.ToString()),
                     });
 
-                if (currentTextType == TextType.Text
-                    && currentChar?.ToString() + nextChar?.ToString() is string upcomingSubstring
-                    && upcomingSubstring.EqualsAny("{{", "}}", "="))
+                if (currentTextType == TextType.Text)
                 {
-                    ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
+                    if (currentChar?.ToString() + nextChar?.ToString() is string upcomingSubstring
+                        && upcomingSubstring.EqualsAny("{{", "}}"))
+                        ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
+
+                    if (currentChar != null
+                        && !currentChar.GetValueOrDefault().IsLetterAndNotException(Utils.CapitalizationExceptions))
+                        ProcessNewComponent(ref TextComponents, ref newComponent, ref currentTextType);
                 }
 
                 newComponent.Value += currentChar;
@@ -419,8 +426,9 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
         private string GetShaderString()
             => !Shader.IsNullOrEmpty() ? Shader + "|" : null;
 
-        private string GetTextString()
-            => IsGuarded() ? Text[1..^1] : Text;
+        private string GetTextString(bool DebugSilent = true)
+            => IsGuarded(DebugSilent: DebugSilent) ? Text[1..^1] : Text;
+
         private string GetCloseString()
             => Open ? "}}" : null;
 
@@ -447,12 +455,17 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                     func: (a, n) => a + (n.IsLetterAndNotException(Utils.CapitalizationExceptions) ? n : null)) is string strippedWord
             && strippedWord[0].ToString() == strippedWord[0].ToString().ToUpper();
 
-        public string LettersOnly()
+        private static bool IsLetterOrWhitelisted(char Char, params char[] Whitelist)
+            => char.IsLetter(Char)
+            || (!Whitelist.IsNullOrEmpty()
+                && Char.EqualsAny(Whitelist));
+
+        public string LettersOnly(params char[] Whitelist)
         => Text
             ?.Strip()
             ?.Aggregate(
                 seed: "",
-                func: (a, n) => a + (char.IsLetter(n) ? n : null));
+                func: (a, n) => a + (IsLetterOrWhitelisted(n, Whitelist) ? n : null));
 
         public bool ImpliesCapitalization(bool ExcludeElipses = false)
             => Text.IsNullOrEmpty()
@@ -514,26 +527,26 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
             && Text.ContainsNoCase(Value);
 
         public Word Guard()
-            => !IsGuarded()
+            => !IsGuarded(DebugSilent: true)
             ? ReplaceWord("%" + Text + "%")
             : this;
 
-        public bool IsGuarded()
+        public bool IsGuarded(bool DebugSilent = false)
         {
             using Indent indent = new(1);
             
-
             if (Text == null
                 || Text.Length < 2)
             {
-                Debug.LogArgs(
-                    MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
-                    MessageAfter: ")",
-                    Indent: indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(Text),
-                    });
+                if (!DebugSilent)
+                    Debug.LogArgs(
+                        MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                        MessageAfter: ")",
+                        Indent: indent,
+                        ArgPairs: new Debug.ArgPair[]
+                        {
+                            Debug.Arg(Text),
+                        });
                 return false;
             }
 
@@ -544,14 +557,15 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
 
             if (i % 2 == 0)
             {
-                Debug.LogArgs(
-                    MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
-                    MessageAfter: ")",
-                    Indent: indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(Text),
-                    });
+                if (!DebugSilent)
+                    Debug.LogArgs(
+                        MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                        MessageAfter: ")",
+                        Indent: indent,
+                        ArgPairs: new Debug.ArgPair[]
+                        {
+                            Debug.Arg(Text),
+                        });
                 return false;
             }
 
@@ -559,19 +573,20 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                 if (Text[i] != '%')
                     return (Text.Length - 1) - i % 2 == 1;
 
-            Debug.LogArgs(
-                MessageBefore: true.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
-                MessageAfter: ")",
-                Indent: indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(Text),
-                });
+            if (!DebugSilent)
+                Debug.LogArgs(
+                    MessageBefore: true.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                    MessageAfter: ")",
+                    Indent: indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(Text),
+                    });
             return false;
         }
 
         public Word Unguard()
-            => IsGuarded()
+            => IsGuarded(DebugSilent: true)
             ? ReplaceWord(Text[1..^1])
             : this;
 
