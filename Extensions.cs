@@ -48,6 +48,7 @@ namespace UD_FleshGolems
             {
                 { nameof(GetWeightedRandom), false },
                 { nameof(GetWeightedSeededRandom), false },
+                { nameof(TryGetFirstStartsWith), false },
             };
 
             foreach (MethodBase extensionMethod in typeof(UD_FleshGolems.Extensions).GetMethods() ?? new MethodBase[0])

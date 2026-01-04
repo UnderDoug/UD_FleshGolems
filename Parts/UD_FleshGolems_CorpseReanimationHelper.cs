@@ -507,7 +507,7 @@ namespace XRL.World.Parts
                     capOverridden = true;
                 }
                 string alredyHaveString = alreadyHaveMutation ? " - had already" : " added";
-                string capOverrideString = capOverridden ? (" (capOverride: " + baseMutation.Level + ")") : null ;
+                string capOverrideString = capOverridden ? (" (capOverride: " + baseMutation.Level + ")") : null;
                 Debug.CheckYeh(sourceMutationBlueprint.Name + alredyHaveString + capOverridden, indent[1]);
                 any = true;
             }
@@ -850,8 +850,8 @@ namespace XRL.World.Parts
                 if (Lookup.ToList() is not List<string> valueList
                     || valueList.IsNullOrEmpty())
                     Debug.MetricsManager_LogCallingModError(
-                        nameof(ParseTileMappings) + " passed invalid " + 
-                        nameof(Lookup) + " for " + 
+                        nameof(ParseTileMappings) + " passed invalid " +
+                        nameof(Lookup) + " for " +
                         nameof(TileMappingKeyword) + "." + Keyword + ": " + Lookup);
                 else
                     TileList.AddRange(valueList);
@@ -872,10 +872,11 @@ namespace XRL.World.Parts
                     && !(parameterString = tagName?.Replace(alternateTileTag, "")).IsNullOrEmpty())
                 {
                     if (parameterString.Contains(":"))
+                    {
                         tileMappingParameters = parameterString.Split(":").ToList();
                         parameterString = tileMappingParameters[^1];
                         tileMappingParameters.Remove(parameterString);
-
+                    }
                     tileMappingExists = TileMappingTagExistsAndContainsLookup(
                         ParameterString: parameterString,
                         Parameters: out tagParameterList,

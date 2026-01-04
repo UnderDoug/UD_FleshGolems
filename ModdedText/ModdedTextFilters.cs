@@ -30,6 +30,23 @@ namespace UD_FleshGolems.ModdedText
     [HasGameBasedStaticCache]
     public static class ModdedTextFilters
     {
+        [UD_FleshGolems_DebugRegistry]
+        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
+        {
+            Dictionary<string, bool> multiMethodRegistrations = new()
+            {
+                { nameof(CheckCanBeReplaced), false },
+                { nameof(CheckCanStartBeReplaced), false },
+                { nameof(CheckCanEndBeReplaced), false },
+            };
+
+            foreach (MethodBase extensionMethod in typeof(UD_FleshGolems.Extensions).GetMethods() ?? new MethodBase[0])
+                if (multiMethodRegistrations.ContainsKey(extensionMethod.Name))
+                    Registry.Register(extensionMethod, multiMethodRegistrations[extensionMethod.Name]);
+
+            return Registry;
+        }
+
         public enum ReplacementLocation
         {
             None,
@@ -760,6 +777,10 @@ namespace UD_FleshGolems.ModdedText
                 return false;
 
             OriginalStartText = WordWithoutPunctuation[..(Key.Length - 1)];
+
+            Debug.Log(nameof(OriginalStartText), OriginalStartText, Indent: indent[1]);
+            Debug.Log(nameof(WordWithoutPunctuation), WordWithoutPunctuation, Indent: indent[1]);
+            Debug.YehNah("Match", Good: OriginalStartText.EqualsNoCase(Key), Indent: indent[0]);
             return OriginalStartText.EqualsNoCase(Key);
         }
         private static bool CheckCanEndBeReplaced(
@@ -785,6 +806,10 @@ namespace UD_FleshGolems.ModdedText
 
             EndKeyStartIndex = Key.Length - 1;
             OriginalEndText = WordWithoutPunctuation[^EndKeyStartIndex..];
+
+            Debug.Log(nameof(OriginalEndText), OriginalEndText, Indent: indent[1]);
+            Debug.Log(nameof(WordWithoutPunctuation), WordWithoutPunctuation, Indent: indent[1]);
+            Debug.YehNah("Match", Good: OriginalEndText.EqualsNoCase(Key), Indent: indent[0]);
             return OriginalEndText.EqualsNoCase(Key);
         }
         public static Word PerformSnapifyPartialReplacements(
@@ -863,9 +888,11 @@ namespace UD_FleshGolems.ModdedText
                             if (wholeReplacement.EqualsAny(ProtectedStrings))
                                 safeReplacement = wholeReplacement;
 
-                            Word = Word.Replace(
+                            newWord = Word.Replace(
                                 OldValue: originalWordWithoutPunctuation,
                                 NewValue: safeReplacement);
+
+                            Debug.CheckYeh(nameof(newWord), newWord.Text, Indent: indent[1]);
 
                             abort = true;
                         }
@@ -881,13 +908,14 @@ namespace UD_FleshGolems.ModdedText
                                 WordWithoutPunctuation: out string startWordWithoutPunctuation,
                                 OriginalStartText: out string originalStartText)
                             && replacements.GetWeightedRandom() is string startReplacement
-                            && startReplacement.MatchCapitalization(startWordWithoutPunctuation) is string capMatchedStartReplacement)
+                            && startReplacement.MatchCapitalization(originalStartText) is string capMatchedStartReplacement)
                         {
                             string safeReplacement = capMatchedStartReplacement;
                             if (startReplacement.EqualsAny(ProtectedStrings))
                                 safeReplacement = startReplacement;
 
-                            newWord = Word.ReplaceWord(Word.Text.ReplaceFirst(startWordWithoutPunctuation, safeReplacement));
+                            newWord = Word.ReplaceWord(Word.Text.ReplaceFirst(originalStartText, safeReplacement));
+                            Debug.CheckYeh(nameof(newWord), newWord.Text, Indent: indent[1]);
                             // newWord = Word.ReplaceWord(safeReplacement + Word[key.Length..]);
                         }
                         else
@@ -903,13 +931,14 @@ namespace UD_FleshGolems.ModdedText
                                 OriginalEndText: out string originalEndText,
                                 EndKeyStartIndex: out int endKeyStartIndex)
                             && replacements.GetWeightedRandom() is string endReplacement
-                            && endReplacement.MatchCapitalization(endWordWithoutPunctuation) is string capMatchedEndReplacement)
+                            && endReplacement.MatchCapitalization(originalEndText) is string capMatchedEndReplacement)
                         {
                             string safeReplacement = capMatchedEndReplacement;
                             if (endReplacement.EqualsAny(ProtectedStrings))
                                 safeReplacement = endReplacement;
 
-                            newWord = Word.ReplaceWord(Word.Text.ReplaceLast(endWordWithoutPunctuation, safeReplacement));
+                            newWord = Word.ReplaceWord(Word.Text.ReplaceLast(originalEndText, safeReplacement));
+                            Debug.CheckYeh(nameof(newWord), newWord.Text, Indent: indent[1]);
                             // newWord = Word.ReplaceWord(Word[..^endKeyStartIndex] + safeReplacement);
                         }
                         else
@@ -1003,6 +1032,9 @@ namespace UD_FleshGolems.ModdedText
         {
             PreviousSwap = default;
             DidSwap = false;
+
+            using Indent indent = new(1);
+            Debug.CheckNah(nameof(ClearSwap), indent);
         }
 
         public static Word PerformSnapifySwaps(ref Word Word, out bool Stop)
@@ -1027,14 +1059,17 @@ namespace UD_FleshGolems.ModdedText
                 values.RemoveAt(0);
 
                 int maxIndex = Word.Length - 1;
-                string replacementWord = "";
+                string replacementWord = null;
                 bool didSwap = false;
                 char previousSwap = default;
 
                 bool guarded = false;
 
+                Debug.Log(nameof(key), key + " (" + values?.Aggregate("", (a, n) => a + (a.IsNullOrEmpty() ? "," : null) + n) + ")", Indent: indent[1]);
+
                 for (int i = 0; i < Word.Length; i++)
                 {
+                    Debug.Log(i + "|" + (replacementWord ?? "null"), Word[i], Indent: indent[2]);
                     if (Word[i] is char currentChar)
                     {
                         if (i == maxIndex)
@@ -1044,10 +1079,20 @@ namespace UD_FleshGolems.ModdedText
                             break;
                         }
 
+                        if (currentChar == '%')
+                            guarded = !guarded;
+
+                        if (guarded)
+                        {
+                            replacementWord += currentChar;
+                            ClearSwap(ref previousSwap, ref didSwap);
+                            continue;
+                        }
+
                         if (Word[i..].TryGetFirstStartsWith(
-                        out string startsWith,
-                        SortLongestFirst: true,
-                        Args: ProtectedStrings))
+                            out string startsWith,
+                            SortLongestFirst: true,
+                            Args: ProtectedStrings))
                         {
                             replacementWord += startsWith;
                             i += startsWith.Length;
@@ -1055,10 +1100,7 @@ namespace UD_FleshGolems.ModdedText
                             continue;
                         }
 
-                        if (currentChar == '%')
-                            guarded = !guarded;
-
-                        if (guarded)
+                        if (!currentChar.IsLetterAndNotException(Utils.CapitalizationExceptions))
                         {
                             replacementWord += currentChar;
                             ClearSwap(ref previousSwap, ref didSwap);
@@ -1072,34 +1114,32 @@ namespace UD_FleshGolems.ModdedText
                         }
 
                         if (currentChar.ToString().EqualsNoCase(key)
-                            && values.GetRandomElementCosmetic() is char swapChar)
+                            && values.GetRandomElementCosmetic() is char swapChar
+                            && Stat.RollCached("1d" + odds) == 1)
                         {
                             bool currentMatchesPreviousChar = i > 0 && Word[i - 1] == currentChar;
                             bool currentMatchesNextChar = i < maxIndex && Word[i + 1] == currentChar;
                             bool swapMatchesPreviousChar = i > 0 && Word[i - 1] == swapChar;
                             bool swapMatchesNextChar = i < maxIndex && Word[i + 1] == swapChar;
 
-                            if (Stat.RollCached("1d" + odds) == 1)
-                            {
-                                if (currentMatchesNextChar || swapMatchesNextChar)
-                                    i++;
+                            if (currentMatchesNextChar || swapMatchesNextChar)
+                                i++;
 
-                                if (didSwap
-                                    && (currentMatchesPreviousChar
-                                        || swapMatchesPreviousChar))
-                                {
-                                    ClearSwap(ref previousSwap, ref didSwap);
-                                    continue;
-                                }
-                                Debug.CheckYeh(nameof(swapChar), currentChar + " -> " + swapChar, indent[1]);
-                                replacementWord += swapChar.ToString().MatchCapitalization(currentChar.ToString());
-                                previousSwap = swapChar;
-                                didSwap = true;
+                            if (didSwap
+                                && (currentMatchesPreviousChar
+                                    || swapMatchesPreviousChar))
+                            {
+                                ClearSwap(ref previousSwap, ref didSwap);
                                 continue;
                             }
+                            Debug.CheckYeh(nameof(swapChar), currentChar + " -> " + swapChar, indent[2]);
+                            replacementWord += swapChar.ToString().MatchCapitalization(currentChar.ToString());
+                            previousSwap = swapChar;
+                            didSwap = true;
+                            continue;
                         }
-                        ClearSwap(ref previousSwap, ref didSwap);
                         replacementWord += currentChar;
+                        ClearSwap(ref previousSwap, ref didSwap);
                     }
                 }
                 Word = Word.ReplaceWord(replacementWord);
@@ -1176,11 +1216,13 @@ namespace UD_FleshGolems.ModdedText
                     if (1.ChanceIn(16)
                         && GetFilterAddition(SnapifyAdditions, EligibleAddition) is string snapifyAdditionalAddition)
                     {
-                        Words.Insert(i, new(snapifyAdditionalAddition));
-                        Debug.CheckYeh(nameof(i) + ": " + i + " \"" + snapifyAdditionalAddition + "\"", Indent: indent[1]);
+                        Word additionalWordAddition = new(snapifyAdditionalAddition);
+                        Words.Insert(i, additionalWordAddition);
+                        Debug.CheckYeh(nameof(i) + ": " + i + " \"" + additionalWordAddition.ToString() + "\"", Indent: indent[1]);
                     }
-                    Words.Insert(i, new(snapifyAddition));
-                    Debug.CheckYeh(nameof(i) + ": " + i + " \"" + snapifyAddition + "\"", Indent: indent[1]);
+                    Word wordAddition = new(snapifyAddition);
+                    Words.Insert(i, wordAddition);
+                    Debug.CheckYeh(nameof(i) + ": " + i + " \"" + wordAddition.ToString() + "\"", Indent: indent[1]);
                 }
                 else
                 {
@@ -1271,7 +1313,7 @@ namespace UD_FleshGolems.ModdedText
                     if (indexOfSpace >= 0
                         || (currentLength == 1
                             && currentSegment == " "))
-                        Debug.CheckYeh("removed at " + indices + Math.Max(0, indexOfSpace), Indent: indent[2]);
+                        Debug.CheckYeh("removed at " + (indices + Math.Max(0, indexOfSpace)), Indent: indent[2]);
 
                     Debug.CheckYeh("removed between " + indices + " and " + (indices + NoSpaceAfter.Length), Indent: indent[2]);
                 }

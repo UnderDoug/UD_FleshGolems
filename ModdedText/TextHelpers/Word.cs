@@ -430,7 +430,7 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
             => IsGuarded(DebugSilent: DebugSilent) ? Text[1..^1] : Text;
 
         private string GetCloseString()
-            => Open ? "}}" : null;
+            => Close ? "}}" : null;
 
         public static Word ReplaceWord(Word Word, string Text)
             => new(Word?.Open, Word?.Shader, Text, Word?.Close);
@@ -571,17 +571,29 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
 
             for (i = Text.Length - 1; i >= 0; i--)
                 if (Text[i] != '%')
-                    return (Text.Length - 1) - i % 2 == 1;
+                {
+                    if (!DebugSilent)
+                        Debug.LogArgs(
+                            MessageBefore: true.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                            MessageAfter: ")",
+                            Indent: indent,
+                            ArgPairs: new Debug.ArgPair[]
+                            {
+                                Debug.Arg(Text),
+                            });
+                    return Text.Length - i % 2 == 1;
+                }
 
             if (!DebugSilent)
                 Debug.LogArgs(
-                    MessageBefore: true.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                    MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
                     MessageAfter: ")",
                     Indent: indent,
                     ArgPairs: new Debug.ArgPair[]
                     {
                         Debug.Arg(Text),
                     });
+
             return false;
         }
 
