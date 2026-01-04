@@ -125,7 +125,7 @@ namespace XRL.World.Parts
 
         public GameObject Reanimator;
 
-        private List<int> FailedToRegisterEvents;
+        private readonly List<int> FailedToRegisterEvents;
 
         [SerializeField]
         private string CorpseTile;
