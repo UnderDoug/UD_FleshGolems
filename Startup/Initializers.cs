@@ -31,11 +31,32 @@ namespace UD_FleshGolems.Startup
         [ModSensitiveStaticCache]
         public static bool CachedCorpses = false;
 
-        [GameBasedStaticCache( CreateInstance = false )]
+        [GameBasedStaticCache(CreateInstance = false)]
         [ModSensitiveStaticCache]
         public static string _PlayerBlueprint = null;
 
         public static string PlayerBlueprint => _PlayerBlueprint ??= Utils.GetPlayerBlueprint();
+
+        [GameBasedStaticCache(CreateInstance = false)]
+        [ModSensitiveStaticCache]
+        public static string _PlayerID = null;
+
+        public static string PlayerID
+        {
+            get => _PlayerID = The.Player?.ID ?? _PlayerID;
+            set
+            {
+                if (int.TryParse(value, out int intValue))
+                {
+                    _PlayerID = intValue.ToString();
+                    if (The.Player != null)
+                    {
+                        The.Player.ID = _PlayerID;
+                        The.Player.BaseID = intValue;
+                    }
+                }
+            }
+        }
 
         // Start-up calls in order that they happen.
 
@@ -132,13 +153,6 @@ namespace UD_FleshGolems.Startup
         // Called once when the player is generated (a fair bit after they're created.
         public void mutate(GameObject player)
         {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(player), player?.DebugName ?? "null"),
-                    Debug.Arg(nameof(Extensions.IsCorpse), player?.GetBlueprint()?.IsCorpse() ?? false),
-                });
             if (DebugEnableTestKit)
             {
                 Mutations playerMutations = player.RequirePart<Mutations>();

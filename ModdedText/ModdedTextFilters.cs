@@ -22,6 +22,7 @@ using Debug = UD_FleshGolems.Logging.Debug;
 
 using static UD_FleshGolems.Const;
 using System.Reflection;
+using System.Diagnostics;
 
 namespace UD_FleshGolems.ModdedText
 {
@@ -40,7 +41,7 @@ namespace UD_FleshGolems.ModdedText
                 { nameof(CheckCanEndBeReplaced), false },
             };
 
-            foreach (MethodBase extensionMethod in typeof(UD_FleshGolems.Extensions).GetMethods() ?? new MethodBase[0])
+            foreach (MethodBase extensionMethod in typeof(UD_FleshGolems.ModdedText.ModdedTextFilters).GetMethods() ?? new MethodBase[0])
                 if (multiMethodRegistrations.ContainsKey(extensionMethod.Name))
                     Registry.Register(extensionMethod, multiMethodRegistrations[extensionMethod.Name]);
 
@@ -160,6 +161,14 @@ namespace UD_FleshGolems.ModdedText
                     { "%me%", 1 },
                 }),
             new(
+                Key: "I'm",
+                ChanceOneIn: 1, 
+                WeightedEntries: new()
+                { 
+                    { "%me%", 3 },
+                    { "%is%", 1 },
+                }),
+            new(
                 Key: "am",
                 ChanceOneIn: 1, 
                 WeightedEntries: IsOrDelete),
@@ -219,6 +228,23 @@ namespace UD_FleshGolems.ModdedText
                 WeightedEntries: new()
                 {
                     { DeleteString, 1 },
+                }),
+            new(
+                Key: "what",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "%wat%", 4 },
+                    { "%wot%", 3 },
+                    { "%wha'%", 1 },
+                    { "%wa'%", 2 },
+                }),
+            new(
+                Key: "when",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "%wen%", 1 },
                 }),
             new(
                 Key: "can't",
@@ -333,6 +359,14 @@ namespace UD_FleshGolems.ModdedText
                 {
                     { "s", 1 },
                 }),
+            new(
+                Key: "ere",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "eer", 1 },
+                    { "ir", 1 },
+                }),
         };
         public static List<RandomStringReplacement> SnapifyStartReplacements => new()
         {
@@ -397,6 +431,13 @@ namespace UD_FleshGolems.ModdedText
                 {
                     { "he-yeye-", 1 },
                     { "heheHE-", 1 },
+                }),
+            new(
+                Key: "wh",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "w", 1 },
                 }),
         };
         public static List<RandomStringReplacement> SnapifyEndReplacements => new()
@@ -556,6 +597,14 @@ namespace UD_FleshGolems.ModdedText
                     { "f", 3 },
                     { "ff", 1 },
                 }),
+            new(
+                Key: "ere",
+                ChanceOneIn: 1,
+                WeightedEntries: new()
+                {
+                    { "eer", 1 },
+                    { "ir", 1 },
+                }),
         };
         public static Dictionary<List<char>, int> SnapifySwaps => new()
         {
@@ -596,7 +645,7 @@ namespace UD_FleshGolems.ModdedText
             { "{{emote|*snap-snap*}}", 3 },
             { NoSpaceBefore + "... uh...", 3 },
             { NoSpaceBefore + "... hmm...", 3 },
-            { NoSpaceBefore + "...er...", 3 },
+            { NoSpaceBefore + "... er...", 3 },
             { "uh...", 6 },
             { "hmm...", 6 },
             { "er...", 6 },
@@ -699,9 +748,7 @@ namespace UD_FleshGolems.ModdedText
 
                     //stop = true;
                     string debugReplaceString = replacement + " (" + safeReplacement + ")";
-                    Debug.CheckYeh(Word.ToString() + "|" + key + ": " + debugReplaceString, Indent: indent[1]);
-                    Debug.Log(nameof(originalWordWithoutPunctuation), originalWordWithoutPunctuation, Indent: indent[2]);
-                    Debug.Log(nameof(wordWithoutPunctuation), wordWithoutPunctuation, Indent: indent[2]);
+                    Debug.CheckYeh(originalWordWithoutPunctuation + "|" + key + ": " + debugReplaceString, Indent: indent[1]);
                     break;
                 }
                 else
@@ -712,7 +759,7 @@ namespace UD_FleshGolems.ModdedText
             return Word;
         }
 
-        private static bool CheckCanBeReplaced(
+        public static bool CheckCanBeReplaced(
             Word Word,
             string Key,
             out string WordWithoutPunctuation,
@@ -757,7 +804,7 @@ namespace UD_FleshGolems.ModdedText
             Debug.CheckYeh(nameof(CheckCanBeReplaced), indent[0]);
             return true;
         }
-        private static bool CheckCanStartBeReplaced(
+        public static bool CheckCanStartBeReplaced(
             Word Word,
             string Key,
             out string WordWithoutPunctuation,
@@ -783,7 +830,7 @@ namespace UD_FleshGolems.ModdedText
             Debug.YehNah("Match", Good: OriginalStartText.EqualsNoCase(Key), Indent: indent[0]);
             return OriginalStartText.EqualsNoCase(Key);
         }
-        private static bool CheckCanEndBeReplaced(
+        public static bool CheckCanEndBeReplaced(
             Word Word,
             string Key,
             out string WordWithoutPunctuation,
@@ -950,8 +997,11 @@ namespace UD_FleshGolems.ModdedText
                             && Word.Length > key.Length
                             && Word[1..^1].ContainsNoCase(key))
                         {
+                            if (Word.Length > 0)
+                                newWord = Word.ReplaceWord(Word[0].ToString());
                             loopStart = 1;
                             loopLength = Word.Length - 1;
+                            Debug.CheckYeh(ReplacementLocation.Middle.ToString(), "[" + loopStart + ".." + loopLength + "]", Indent: indent[1]);
                         }
                         else
                             newWord = Word;
@@ -962,6 +1012,7 @@ namespace UD_FleshGolems.ModdedText
                         {
                             loopStart = 0;
                             loopLength = Word.Length;
+                            Debug.CheckYeh(ReplacementLocation.Any.ToString(), "[" + loopStart + ".." + loopLength + "]", Indent: indent[1]);
                         }
                         else
                             newWord = Word;
@@ -969,17 +1020,23 @@ namespace UD_FleshGolems.ModdedText
 
                     case ReplacementLocation.None:
                     default:
-                            newWord = Word;
+                        Debug.CheckNah(ReplacementLocation.None.ToString(), Indent: indent[1]);
+                        newWord = Word;
                         break;
                 }
                 bool guarded = loopStart > 0 && Word[0] == '%';
                 for (int j = loopStart; j < loopLength; j++)
                 {
+                    Debug.Log(j.ToString(), newWord.Text + "+" + Word[j], Indent: indent[2]);
+
                     if (Word[j] == '%')
                         guarded = !guarded;
 
                     if (guarded)
+                    {
                         newWord = Word.ReplaceWord(newWord.Text + Word[j]);
+                        continue;
+                    }
 
                     if (Word[j..].TryGetFirstStartsWith(
                         out string startsWith,
@@ -1049,12 +1106,20 @@ namespace UD_FleshGolems.ModdedText
 
             Stop = false;
 
+            if (Word.Text.IsNullOrEmpty())
+                return Word;
+
             if (Word.IsGuarded())
+                return Word;
+
+            if (Word.Text?.RemoveAllNoCase(ProtectedStrings) is string wordWithOutProtectedStrings
+                && wordWithOutProtectedStrings.All(c => !c.IsLetterAndNotException(Utils.CapitalizationExceptions)))
                 return Word;
 
             foreach ((List<char> swaps, int odds) in SnapifySwaps)
             {
                 string key = swaps[0].ToString();
+
                 List<char> values = new(swaps);
                 values.RemoveAt(0);
 
@@ -1065,14 +1130,24 @@ namespace UD_FleshGolems.ModdedText
 
                 bool guarded = false;
 
-                Debug.Log(nameof(key), key + " (" + values?.Aggregate("", (a, n) => a + (a.IsNullOrEmpty() ? "," : null) + n) + ")", Indent: indent[1]);
+
+                if (!Word.Contains(key))
+                {
+                    Debug.CheckNah(key + " not present in " + Word.Text, indent[1]);
+                    continue;
+                }
+                else
+                    Debug.CheckYeh(
+                        Message: nameof(key),
+                        Value: key + " (" + values?.Aggregate("", (a, n) => a + (!a.IsNullOrEmpty() ? "," : null) + n) + ")",
+                        Indent: indent[1]);
 
                 for (int i = 0; i < Word.Length; i++)
                 {
                     Debug.Log(i + "|" + (replacementWord ?? "null"), Word[i], Indent: indent[2]);
                     if (Word[i] is char currentChar)
                     {
-                        if (i == maxIndex)
+                        if (i > maxIndex)
                         {
                             ClearSwap(ref previousSwap, ref didSwap);
                             replacementWord += currentChar;
@@ -1161,18 +1236,32 @@ namespace UD_FleshGolems.ModdedText
 
             for (i = wordsCount - 1; i >= 0; i--)
             {
+                if (Words[i].Text.EqualsAnyNoCase(ProtectedStrings))
+                    continue;
+
                 if (1.ChanceIn(20))
                 {
                     Words.Insert(i, Words[i]);
                     if (1.ChanceIn(2))
-                        Words[i] = Words[i].ReplaceWord(Words[i].Text + "-" + NoSpaceAfter);
+                    {
+                        string replacementString = Words[i].Text;
+                        string endsWith = null;
+                        while (!replacementString.IsNullOrEmpty()
+                            && (!replacementString[^1].IsLetterAndNotException(Utils.CapitalizationExceptions)
+                                || replacementString[^1] != '%'
+                                || replacementString.TryGetFirstEndsWith(out endsWith, true, ProtectedStrings)))
+                            if (!endsWith.IsNullOrEmpty())
+                                replacementString = replacementString[..^endsWith.Length];
+                            else
+                                replacementString = replacementString[..^1];
+
+                        Words[i] = Words[i].ReplaceWord(replacementString + "-" + NoSpaceAfter);
+                    }
                     Debug.CheckYeh(nameof(i) + ": " + i + " \"" + Words[i] + "\"", Indent: indent[1]);
                     i -= Stat.RandomCosmetic(3, 5);
                 }
                 else
-                {
                     Debug.CheckNah(nameof(i) + ": " + i, Indent: indent[1]);
-                }
             }
             return Words;
         }
@@ -1194,6 +1283,10 @@ namespace UD_FleshGolems.ModdedText
                 });
 
             int wordsCount = Words.Count;
+
+            if (wordsCount <= 1)
+                return Words;
+
             int i;
 
             static bool NotFirstOrNotStartWithNoSpace(int Index, string Addition)
@@ -1232,15 +1325,63 @@ namespace UD_FleshGolems.ModdedText
             return Words;
         }
 
+        public static string TrimNoSpaceFromSegment(
+            ref string CurrentSegment,
+            ref int Indices,
+            string BeingTrimmed,
+            int SnippetLength = 10)
+        {
+            using Indent indent = new(1);
+            Debug.Log(nameof(CurrentSegment), CurrentSegment, Indent: indent);
+
+            int currentLength = CurrentSegment?.Length ?? 0;
+            Indices += currentLength;
+            int indexOfSpace = -1;
+            for (int j = 1; j < currentLength; j++)
+            {
+                Index index = BeingTrimmed == NoSpaceBefore ? ^j : j;
+
+                if (CurrentSegment[index] == ' ')
+                {
+                    indexOfSpace = j;
+                    break;
+                }
+                if (CurrentSegment[index].IsLetterAndNotException(Utils.CapitalizationExceptions))
+                    break;
+            }
+
+            string segmentForSnippet = CurrentSegment;
+
+            if (indexOfSpace >= 0)
+                CurrentSegment = CurrentSegment.Remove(indexOfSpace, 1);
+
+            if (currentLength == 1
+                && CurrentSegment == " ")
+                CurrentSegment = "";
+
+            if (indexOfSpace >= 0
+                || (currentLength == 1
+                    && CurrentSegment == " "))
+                Debug.CheckYeh("removed at " + (Indices + Math.Max(0, indexOfSpace)), Indent: indent[1]);
+
+            if (indexOfSpace >= 0)
+            {
+                int halfSnippetLength = SnippetLength / 2;
+                int snippetStart = Math.Max(0, indexOfSpace - halfSnippetLength);
+                int snippetEnd = Math.Min(indexOfSpace + (SnippetLength - Math.Min(halfSnippetLength, snippetStart)), currentLength - 1);
+                string snippetBefore = "{" + CurrentSegment[snippetStart..indexOfSpace];
+                string snippetAfter = CurrentSegment[indexOfSpace..snippetEnd] + "}";
+                Debug.Log("Snippet", snippetBefore + "_" + snippetAfter, Indent: indent[3]);
+            }
+
+            Debug.CheckYeh("removed between " + Indices + " and " + (Indices + BeingTrimmed.Length), Indent: indent[1]);
+            
+            return CurrentSegment;
+        }
+        
         public static bool TrimNoSpaceString(ref string Phrase)
         {
             using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(Phrase), Phrase?.Length ?? 0),
-                    Debug.Arg(nameof(NoSpaceBefore), NoSpaceBefore),
-                });
 
             if (!Phrase.Contains(NoSpaceBefore)
                 && !Phrase.Contains(NoSpaceAfter))
@@ -1248,75 +1389,37 @@ namespace UD_FleshGolems.ModdedText
 
             if (Phrase.Contains(NoSpaceBefore))
             {
+                Debug.LogMethod(indent[0],
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                    Debug.Arg(nameof(Phrase), Phrase?.Length ?? 0),
+                    Debug.Arg(nameof(NoSpaceBefore), NoSpaceBefore),
+                    });
+
                 string[] noSpaceBeforeSplit = Phrase.Split(NoSpaceBefore);
                 int indices = noSpaceBeforeSplit[0]?.Length ?? 0;
 
-                for (int i = 0; i < noSpaceBeforeSplit.Length - 1; i++)
-                {
-                    string currentSegment = noSpaceBeforeSplit[i];
-                    int currentLength = currentSegment?.Length ?? 0;
-                    indices += currentLength;
-                    int indexOfSpace = -1;
-                    for (int j = currentLength - 1; j >= 0; j--)
-                    {
-                        if (currentSegment[j] == ' ')
-                        {
-                            indexOfSpace = j;
-                            break;
-                        }
-                        if (currentSegment[j].IsLetterAndNotException(Utils.CapitalizationExceptions))
-                            break;
-                    }
-                    if (indexOfSpace >= 0)
-                        noSpaceBeforeSplit[i].Remove(indexOfSpace, 1);
-                    if (currentLength == 1
-                        && currentSegment == " ")
-                        noSpaceBeforeSplit[i] = "";
+                for (int i = 1; i < noSpaceBeforeSplit.Length; i++)
+                    TrimNoSpaceFromSegment(ref noSpaceBeforeSplit[i], ref indices, NoSpaceBefore);
 
-                    if (indexOfSpace >= 0
-                        || (currentLength == 1
-                            && currentSegment == " "))
-                        Debug.CheckYeh("removed at " + indices + Math.Max(0, indexOfSpace), Indent: indent[2]);
-
-                    Debug.CheckYeh("removed between " + indices + " and " + (indices + NoSpaceBefore.Length), Indent: indent[2]);
-                }
                 Phrase = noSpaceBeforeSplit.Aggregate("", (a, n) => a + n);
             }
             
             if (Phrase.Contains(NoSpaceAfter))
             {
+                Debug.LogMethod(indent[0],
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                    Debug.Arg(nameof(Phrase), Phrase?.Length ?? 0),
+                    Debug.Arg(nameof(NoSpaceAfter), NoSpaceAfter),
+                    });
+
                 string[] noSpaceAfterSplit = Phrase.Split(NoSpaceAfter);
                 int indices = noSpaceAfterSplit[0]?.Length ?? 0;
 
-                for (int i = 1; i < noSpaceAfterSplit.Length; i++)
-                {
-                    string currentSegment = noSpaceAfterSplit[i];
-                    int currentLength = currentSegment?.Length ?? 0;
-                    indices += currentLength;
-                    int indexOfSpace = -1;
-                    for (int j = 0; j < currentLength; j++)
-                    {
-                        if (currentSegment[j] == ' ')
-                        {
-                            indexOfSpace = j;
-                            break;
-                        }
-                        if (currentSegment[j].IsLetterAndNotException(Utils.CapitalizationExceptions))
-                            break;
-                    }
-                    if (indexOfSpace >= 0)
-                        noSpaceAfterSplit[i].Remove(indexOfSpace, 1);
-                    if (currentLength == 1
-                        && currentSegment == " ")
-                        noSpaceAfterSplit[i] = "";
+                for (int i = 0; i < noSpaceAfterSplit.Length - 1; i++)
+                    TrimNoSpaceFromSegment(ref noSpaceAfterSplit[i], ref indices, NoSpaceAfter);
 
-                    if (indexOfSpace >= 0
-                        || (currentLength == 1
-                            && currentSegment == " "))
-                        Debug.CheckYeh("removed at " + (indices + Math.Max(0, indexOfSpace)), Indent: indent[2]);
-
-                    Debug.CheckYeh("removed between " + indices + " and " + (indices + NoSpaceAfter.Length), Indent: indent[2]);
-                }
                 Phrase = noSpaceAfterSplit.Aggregate("", (a, n) => a + n);
             }
 
@@ -1339,6 +1442,9 @@ namespace UD_FleshGolems.ModdedText
         [UD_FleshGolems_ModdedTextFilter(Key = "snapify")]
         public static string Snapify(string Phrase)
         {
+            Stopwatch sw = new();
+            sw.Start();
+
             using Indent indent = new(1);
             Debug.LogMethod(indent,
                 ArgPairs: new Debug.ArgPair[]
@@ -1419,9 +1525,8 @@ namespace UD_FleshGolems.ModdedText
                                 ?? "";
 
                             if (TrimNoSpaceString(ref processedLine))
-                            {
-                                Debug.CheckYeh("", Indent: indent[2]);
-                            }
+                                Debug.CheckYeh("Trimmed NoSpace Strings", Indent: indent[2]);
+
                             processedLines.Add(processedLine);
                         }
                     }
@@ -1441,7 +1546,31 @@ namespace UD_FleshGolems.ModdedText
                         ?? "";
                 }
             }
-            return Phrase.RemoveAll("%");
+
+            string output = Phrase.RemoveAll("%");
+
+            sw.Stop();
+            TimeSpan duration = sw.Elapsed;
+            string durationUnit = "minute";
+            double durationValue = duration.TotalMinutes;
+            if (duration.TotalMinutes < 1)
+            {
+                durationUnit = "second";
+                durationValue = duration.TotalSeconds;
+            }
+            if (duration.TotalSeconds < 1)
+            {
+                durationUnit = "millisecond";
+                durationValue = duration.TotalMilliseconds;
+            }
+            if (duration.TotalMilliseconds < 1)
+            {
+                durationUnit = "microsecond";
+                durationValue = duration.TotalMilliseconds / 1000;
+            }
+            Debug.Log(Debug.GetCallingMethod() + " took " + durationValue.Things(durationUnit), Indent: indent[0]);
+
+            return output;
         }
         public static StringBuilder Snapify(this StringBuilder SB)
             => (SB != null

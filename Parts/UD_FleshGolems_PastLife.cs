@@ -122,7 +122,7 @@ namespace XRL.World.Parts
         public bool WasCorpse => (Blueprint?.IsCorpse()).GetValueOrDefault();
 
         public bool WasPlayer 
-            => (!Blueprint.IsNullOrEmpty() && Blueprint.IsPlayerBlueprint()) 
+            => (BrainInAJar != null && BrainInAJar.IsPlayerDuringWorldGen()) 
             || (BrainInAJar != null && BrainInAJar.HasPropertyOrTag("UD_FleshGolems_WasPlayer"));
 
         public int TimesReanimated;
@@ -364,7 +364,7 @@ namespace XRL.World.Parts
                         BrainInAJar._IntProperty = new(PastLife._IntProperty);
 
                         if (PastLife.IsPlayer()
-                            || PastLife.HasPlayerBlueprint())
+                            || PastLife.IsPlayerDuringWorldGen())
                         {
                             BrainInAJar.SetStringProperty("UD_FleshGolems_WasPlayer", "Yep, I used to be the player!");
                         }
@@ -595,7 +595,7 @@ namespace XRL.World.Parts
                                 Debug.CheckYeh(statName, statValue + "/" + statBaseValue + " | " + statsValue, indent[3]);
                             }
                             if (PastLife.IsPlayer()
-                                || PastLife.HasPlayerBlueprint())
+                                || PastLife.IsPlayerDuringWorldGen())
                             {
                                 Debug.CheckYeh("Player " + nameof(PastLife.Statistics), Indent: indent[2]);
                                 if (GetPlayerEmbarkStats() is Dictionary<string, int> playerStats)
@@ -1210,7 +1210,7 @@ namespace XRL.World.Parts
             if (Entity == null)
                 return IdentityType.None;
 
-            if (Entity.IsPlayer() || Entity.HasPlayerBlueprint())
+            if (Entity.IsPlayer() || Entity.IsPlayerDuringWorldGen())
                 return IdentityType.Player;
 
             if (Entity.IsLibrarian())
@@ -1511,7 +1511,7 @@ namespace XRL.World.Parts
         public static bool HasManagedConcreteIntrinsicSubpart(BodyPart BodyPart)
             => BodyPart.LoopSubparts().Any(IsManagedConcreteIntrinsic);
 
-        private static bool RoughlyCopyAdditionalLimbs(
+        public static bool RoughlyCopyAdditionalLimbs(
             Body DestinationBody,
             Body SourceBody,
             ref Dictionary<PseudoLimb, string> ExtraLimbs)

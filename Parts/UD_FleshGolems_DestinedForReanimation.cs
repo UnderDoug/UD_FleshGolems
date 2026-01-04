@@ -100,7 +100,7 @@ namespace XRL.World.Parts
                     new("electrocuted"),
                     new("electrocuted", Killed: "zapped to death"),
                     new("electrocuted", Were: false, Killed: "tried to dig through a wired wall", Killer: "", Method: ""),
-                    new("electrocuted", Were: false, Killed: "took a stun-rod to the =subject.bodyPart:face=", Killer: "", Method: ""),
+                    new("electrocuted", Were: false, Killed: "took a stun-rod to the =subject.bodyPart.NoCase:face=", Killer: "", Method: ""),
                     new("electrocuted", Killed: "struck by lightning", Killer: "", Method: ""),
                     new("electrocuted", Killed: "overloaded", With: false, Method: "electrical discharge"),
                     new("electrocuted", Were: false, Killed: "licked a nuclear cell", Killer: "", Method: ""),
@@ -192,8 +192,8 @@ namespace XRL.World.Parts
                     new("psychically extinguished", Killed: "sundered dead", Method: ""),
                     new("psychically extinguished", Killed: "mentally obliterated", Method: ""),
                     new("psychically extinguished", Were: false, Killed: "couldn't maintain a strong enough sense of self", Killer: "", Method: ""),
-                    new("psychically extinguished", Killed: "shown the bredth of the psychic sea", Method: ""),
-                    new("psychically extinguished", Killed: "shown the bredth of the psychic sea", Killer: "Ptoh", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "beheld the breadth of the psychic sea", Method: ""),
+                    new("psychically extinguished", Killed: "shown the breadth of the psychic sea", Killer: "Ptoh", Method: ""),
                     new("psychically extinguished", Were: false, Killed: "tried to understand things better left a mystery", Method: ""),
                     new("psychically extinguished", Were: false, Killed: "dared to challenge Ptoh and, well...", Killer: "", Method: ""),
                     new("psychically extinguished", Were: false, Killed: "risked the proximity of a darkling star", Killer: "", Method: ""),
@@ -206,7 +206,7 @@ namespace XRL.World.Parts
                 {
                     new("drained to extinction"),
                     new("drained to extinction", Killed: "absorbed"),
-                    new("drained to extinction", Were: false, Killed: "went =subject.bodyPart:head=-to-head with a leech", Killer: "", Method: ""),
+                    new("drained to extinction", Were: false, Killed: "went =subject.bodyPart.NoCase:head=-to-head with a leech", Killer: "", Method: ""),
                     new("drained to extinction", Killed: "drained of all vital essence", Method: ""),
                     new("drained to extinction", Killed: "syphoned to a husk"),
                     new("drained to extinction", Were: false, Killed: "didn't notice the stat-saps", Killer: "", Method: ""),
@@ -352,7 +352,7 @@ namespace XRL.World.Parts
                 deathIcon = deathIcons[deathCategory];
             }
 
-            if (DoFakeMessage && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
+            if (DoFakeMessage && (Dying.IsPlayer() || Dying.IsPlayerDuringWorldGen()))
             {
                 deathMessage = deathMessage
                     ?.StartReplace()
@@ -404,7 +404,7 @@ namespace XRL.World.Parts
             }
             if (DoJournal
                 && !deathReason.IsNullOrEmpty()
-                && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
+                && (Dying.IsPlayer() || Dying.IsPlayerDuringWorldGen()))
             {
                 // Died
                 JournalAPI.AddAccomplishment(
@@ -421,7 +421,7 @@ namespace XRL.World.Parts
             }
 
             if (DoAchievement
-                && (Dying.IsPlayer() || Dying.Blueprint.IsPlayerBlueprint()))
+                && (Dying.IsPlayer() || Dying.IsPlayerDuringWorldGen()))
             {
                 Achievement.DIE.Unlock();
             }
@@ -794,7 +794,7 @@ namespace XRL.World.Parts
                 || !PlayerWantsFakeDie
                 || HaveFakedDeath
                 || (!player.IsPlayer() 
-                    && !player.HasPlayerBlueprint()))
+                    && !player.IsPlayerDuringWorldGen()))
             {
                 return false;
             }
@@ -847,7 +847,7 @@ namespace XRL.World.Parts
                 if (USE_OLD_METHOD_FOR_PLAYER)
                 {
                     if (!entity.IsPlayer()
-                        && !entity.HasPlayerBlueprint())
+                        && !entity.IsPlayerDuringWorldGen())
                     {
                         reanimationHelper.Animate();
                         E.ReplacementObject = Corpse;
@@ -857,7 +857,7 @@ namespace XRL.World.Parts
                 else
                 {
                     if (entity.IsPlayer()
-                        || entity.HasPlayerBlueprint())
+                        || entity.IsPlayerDuringWorldGen())
                     {
                         Corpse.AddPart(this, Creation: true);
                         PlayerWantsFakeDie = true;
@@ -950,7 +950,7 @@ namespace XRL.World.Parts
                 && ParentObject is GameObject entity)
             {
                 if ((entity.IsPlayer() 
-                        || entity.HasPlayerBlueprint())
+                        || entity.IsPlayerDuringWorldGen())
                     && !HaveFakedDeath
                     && (Corpse != null 
                         || TryProduceCorpse(entity, out Corpse)))

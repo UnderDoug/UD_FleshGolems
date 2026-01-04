@@ -327,7 +327,7 @@ namespace UD_FleshGolems.ModdedText
             return output.ContextCapitalize(Context);
         }
 
-        [VariableObjectReplacer("bodyPart", Default = "body")]
+        [VariableObjectReplacer("bodyPart.NoCase", Default = "body")]
         public static string UD_Target_BodyPart(DelegateContext Context)
         {
             string bodyPartType = !Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.CapitalizeEx() : null;

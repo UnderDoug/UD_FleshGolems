@@ -64,7 +64,7 @@
 
       <text ID="KillerCreatureKnown" MemoryElement="KillerCreature" Known="true">
         <text>the type of creature that killed me was =subject.death.killer.creature=...</text>
-        <text>=subject.death.killer.creature=... that's what got me... {{emote|*slowly shakes =subject.bodypart:head=*}} ... =subject.death.killer.creature=...</text>
+        <text>=subject.death.killer.creature=... that's what got me... {{emote|*slowly shakes =subject.bodyPart.NoCase:head=*}} ... =subject.death.killer.creature=...</text>
         <text>would you believe it? =subject.death.killer.creature=, of all things... {{K|=subject.death.killer.creature=}}...</text>
         <text>look out the next time there's =subject.death.killer.creature= nearby... =subject.death.killer.creature='s what got me!</text>
       </text>

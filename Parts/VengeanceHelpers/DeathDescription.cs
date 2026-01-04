@@ -414,9 +414,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 SetMethod(GetMethodFromEvent(E.ThirdPersonReason));
 
             if (E.Weapon != null)
-            {
-                PluralMethod = E.Weapon.IsPlural;
-            }
+                PluralMethod = E.Weapon.IsPlural || E.Weapon.GetxTag("Grammar", "iArticle") == "some";
+
             return this;
         }
 

@@ -49,6 +49,7 @@ namespace UD_FleshGolems
                 { nameof(GetWeightedRandom), false },
                 { nameof(GetWeightedSeededRandom), false },
                 { nameof(TryGetFirstStartsWith), false },
+                { nameof(TryGetFirstEndsWith), false },
             };
 
             foreach (MethodBase extensionMethod in typeof(UD_FleshGolems.Extensions).GetMethods() ?? new MethodBase[0])
@@ -116,7 +117,22 @@ namespace UD_FleshGolems
             => Blueprint == Startup.Initializers.PlayerBlueprint;
 
         public static bool HasPlayerBlueprint(this GameObject Entity)
-            => Entity.Blueprint.IsPlayerBlueprint();
+        {
+            if (Entity.Blueprint.IsPlayerBlueprint())
+            {
+                Startup.Initializers.PlayerID ??= Entity.ID;
+                return true;
+            }
+            return false;
+        }
+
+        public static bool HasPlayerID(this GameObject Entity)
+            => Entity.ID == Startup.Initializers.PlayerID;
+
+        public static bool IsPlayerDuringWorldGen(this GameObject Entity)
+            => Entity.HasPlayerID()
+            || Entity.HasPlayerBlueprint()
+            || Entity.IsPlayer();
 
         public static string ToLiteral(this string String, bool Quotes = false)
         {
@@ -1139,6 +1155,7 @@ namespace UD_FleshGolems
         public static string ReplaceFirst(this string Text, string Search, string Replace)
         {
             int pos = Text.IndexOf(Search);
+
             if (pos < 0)
                 return Text;
 
@@ -1155,9 +1172,12 @@ namespace UD_FleshGolems
         public static string ReplaceLast(this string Text, string Search, string Replace)
         {
             string haystack = Text;
-            int pos;
-            while (haystack.TryGetIndexOf(Search, out pos, false))
-                haystack = haystack[pos..];
+            int pos = -1;
+            while (haystack.TryGetIndexOf(Search, out int foundIndex, false))
+            {
+                pos = foundIndex;
+                haystack = haystack[foundIndex..];
+            }
 
             if (pos < 0)
                 return Text;
@@ -1532,15 +1552,13 @@ namespace UD_FleshGolems
             if (Args.IsNullOrEmpty())
                 return false;
 
-            List<string> argsList = new(Args);
-            if (SortLongestFirst)
-            {
-                argsList = argsList
-                    ?.Where(s => !s.IsNullOrEmpty())
-                    ?.ToList();
+            List<string> argsList = new List<string>(Args)
+                ?.Where(s => !s.IsNullOrEmpty())
+                ?.ToList();
 
+            if (SortLongestFirst
+                && !argsList.IsNullOrEmpty())
                 argsList?.Sort((first, second) => first.Length.CompareTo(second.Length));
-            }
 
             using Indent indent = new(1);
             Debug.LogMethod(indent,
@@ -1558,6 +1576,49 @@ namespace UD_FleshGolems
                 if (Text.StartsWith(arg))
                 {
                     StartsWith = arg;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        public static bool TryGetFirstEndsWith(
+            this string Text,
+            out string EndsWith,
+            bool SortLongestFirst = false,
+            params string[] Args)
+        {
+            EndsWith = null;
+            if (Text.IsNullOrEmpty())
+                return false;
+
+            if (Args.IsNullOrEmpty())
+                return false;
+
+            List<string> argsList = new List<string>(Args)
+                ?.Where(s => !s.IsNullOrEmpty())
+                ?.ToList();
+
+            if (SortLongestFirst
+                && !argsList.IsNullOrEmpty())
+                argsList?.Sort((first, second) => first.Length.CompareTo(second.Length));
+
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(EndsWith),
+                    Debug.Arg(nameof(Text), Text),
+                    Debug.Arg(nameof(SortLongestFirst), SortLongestFirst),
+                    Debug.Arg(nameof(Args) + "." + nameof(Args.Length), Args?.Length ?? 0),
+                });
+
+            foreach (string arg in argsList)
+            {
+                Debug.YehNah(arg, Good: Text.StartsWith(arg), Indent: indent[1]);
+                if (Text.EndsWith(arg))
+                {
+                    EndsWith = arg;
                     return true;
                 }
             }

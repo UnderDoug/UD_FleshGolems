@@ -507,7 +507,7 @@ namespace XRL.World.ObjectBuilders
             Corpse = null;
             UD_FleshGolems_DestinedForReanimation destinedForReanimation = null;
             if (Entity.IsPlayer() 
-                || Entity.HasPlayerBlueprint())
+                || Entity.IsPlayerDuringWorldGen())
             {
                 destinedForReanimation = Entity.RequirePart<UD_FleshGolems_DestinedForReanimation>();
                 destinedForReanimation.PlayerWantsFakeDie = true;
@@ -639,7 +639,11 @@ namespace XRL.World.ObjectBuilders
                 return false;
             }
 
-            if (Corpse == null
+            Debug.Log(nameof(Entity) + "." + nameof(Entity.GetSubtype), Entity.GetSubtype(), Indent: indent[1]);
+            Debug.Log(nameof(Entity) + "." + nameof(Entity.GetGenotype), Entity.GetGenotype(), Indent: indent[1]);
+            Debug.Log(nameof(Entity) + "." + nameof(Entity.GetSpecies), Entity.GetSpecies(), Indent: indent[1]);
+
+            if ((Corpse == null || OverridePastLife)
                 && !TryProduceCorpse(Entity, out Corpse, ForImmediateReanimation, OverridePastLife))
             {
                 Debug.Log(nameof(Corpse) + " null and couldn't produce one", Indent: indent[1]);
@@ -654,7 +658,7 @@ namespace XRL.World.ObjectBuilders
 
             Corpse.RequireAbilities();
 
-            if (Entity.IsPlayer() || Entity.Blueprint.IsPlayerBlueprint())
+            if (Entity.IsPlayer() || Entity.IsPlayerDuringWorldGen())
             {
                 Corpse.SetIntProperty("UD_FleshGolems_SkipLevelsOnReanimate", 1);
                 Debug.Log("UD_FleshGolems_SkipLevelsOnReanimate set", 1, Indent: indent[1]);
@@ -695,7 +699,7 @@ namespace XRL.World.ObjectBuilders
                     Debug.Log(nameof(playerTaxa.Species), playerTaxa.Species, Indent: indent[2]);
                 }
 
-                if (Entity.IsPlayer() || Entity.Blueprint.IsPlayerBlueprint())
+                if (Entity.IsPlayer() || Entity.IsPlayerDuringWorldGen())
                 {
                     Debug.Log(nameof(The.Player) + "." + nameof(The.Game.Player.SetBody), Indent: indent[1]);
                     The.Game.Player.SetBody(Corpse);
@@ -727,6 +731,7 @@ namespace XRL.World.ObjectBuilders
                     if (Entity.IsOriginalPlayerBody())
                     {
                         Corpse.BaseID = 1;
+                        Corpse.SetStringProperty("id", null);
                         Corpse.InjectGeneID("OriginalPlayer");
                         Corpse.SetStringProperty("OriginalPlayerBody", "1");
                     }

@@ -90,7 +90,7 @@ namespace UD_FleshGolems.Logging
                     Message: thisMethodName + " passed null " + nameof(MethodBase));
 
             string declaringType = MethodBase?.DeclaringType?.Name;
-            UnityEngine.Debug.Log(thisMethodName + "(" + declaringType + "." + MethodBase?.Name + ": " + Value + ")");
+            UnityEngine.Debug.Log(thisMethodName + "(" + declaringType + "." + (MethodBase?.Name ?? "NO_METHOD") + ": " + Value + ")");
             Registry.Add(new(MethodBase, Value));
 
             ReturnRegistry = Registry;

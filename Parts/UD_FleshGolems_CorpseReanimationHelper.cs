@@ -41,6 +41,8 @@ using SerializeField = UnityEngine.SerializeField;
 
 namespace XRL.World.Parts
 {
+    [HasModSensitiveStaticCache]
+    [HasGameBasedStaticCache]
     [Serializable]
     public class UD_FleshGolems_CorpseReanimationHelper : IScribedPart, IReanimateEventHandler
     {
@@ -64,6 +66,46 @@ namespace XRL.World.Parts
                 Registry.Register(method, false);
             }
             return Registry;
+        }
+
+        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        private static Dictionary<string, string> _TileMappings;
+        public static Dictionary<string, string> TileMappings
+        {
+            get
+            {
+                if (_TileMappings.IsNullOrEmpty())
+                {
+                    bool debugDisableWorldGenLogging = Options.DebugDisableWorldGenLogging;
+                    Options.DebugDisableWorldGenLogging = false;
+                    using Indent indent = new(1);
+                    Debug.LogCaller(indent);
+                    _TileMappings = new();
+                    if (GameObjectFactory.Factory.GetBlueprintsInheritingFrom("UD_FleshGolems_BaseTileMappings", false) is var tileMappingBlueprints)
+                        foreach (GameObjectBlueprint tileMappingsBlueprint in tileMappingBlueprints)
+                        {
+                            Debug.Log(nameof(tileMappingsBlueprint), tileMappingsBlueprint, Indent: indent[1]);
+                            if (!tileMappingsBlueprint.Tags.IsNullOrEmpty())
+                                foreach ((string name, string value) in tileMappingsBlueprint.Tags)
+                                    if (name.StartsWith(REANIMATED_ALT_TILE_PROPTAG))
+                                    {
+                                        Debug.Log(nameof(tileMappingsBlueprint.Tags) + " " + name, value, Indent: indent[2]);
+                                        _TileMappings[name] = value;
+                                    }
+
+                            if (!tileMappingsBlueprint.Props.IsNullOrEmpty())
+                                foreach ((string name, string value) in tileMappingsBlueprint.Props)
+                                    if (name.StartsWith(REANIMATED_ALT_TILE_PROPTAG))
+                                    {
+                                        Debug.Log(nameof(tileMappingsBlueprint.Tags) + " " + name, value, Indent: indent[2]);
+                                        _TileMappings[name] = value;
+                                    }
+                        }
+                    Options.DebugDisableWorldGenLogging = debugDisableWorldGenLogging;
+                }
+                return _TileMappings;
+            }
         }
 
         private static Dictionary<string, TileMappingKeyword> _TileMappingKeywordValues;
@@ -443,7 +485,9 @@ namespace XRL.World.Parts
         public static bool AssignMutationsFromBlueprint(
             Mutations FrankenMutations,
             GameObjectBlueprint SourceBlueprint,
-            Predicate<BaseMutation> Exclude = null)
+            Predicate<BaseMutation> Exclude = null,
+            bool OverrideIfAlreadyHave = false,
+            bool ForceLevelToOne = false)
         {
             using Indent indent = new(1);
             Debug.LogMethod(indent,
@@ -495,16 +539,37 @@ namespace XRL.World.Parts
                 if (alreadyHaveMutation)
                 {
                     BaseMutation alreadyHaveBaseMutation = FrankenMutations.GetMutation(sourceMutationBlueprint.Name);
-                    int alreadyHaveLevel = alreadyHaveBaseMutation.BaseLevel;
-                    FrankenMutations.RemoveMutation(alreadyHaveBaseMutation, false);
-                    baseMutationToAdd.BaseLevel += alreadyHaveLevel;
+                    if (OverrideIfAlreadyHave)
+                    {
+                        FrankenMutations.RemoveMutation(alreadyHaveBaseMutation, false);
+                        if (!ForceLevelToOne)
+                            baseMutationToAdd.BaseLevel += alreadyHaveBaseMutation.BaseLevel;
+                        else
+                            baseMutationToAdd.BaseLevel = 1;
+                    }
+                    else
+                    {
+                        if (!ForceLevelToOne)
+                            alreadyHaveBaseMutation.BaseLevel += baseMutationToAdd.BaseLevel;
+                        else
+                            alreadyHaveBaseMutation.BaseLevel = 1;
+                        baseMutationToAdd = alreadyHaveBaseMutation;
+                    }
                 }
-                FrankenMutations.AddMutation(baseMutationToAdd, baseMutationToAdd.Level);
+                else
+                {
+                    FrankenMutations.AddMutation(baseMutationToAdd, baseMutationToAdd.Level);
+                }
                 bool capOverridden = false;
                 if (baseMutationToAdd.CapOverride == -1)
                 {
                     baseMutationToAdd.CapOverride = baseMutationToAdd.BaseLevel;
                     capOverridden = true;
+                }
+                if (ForceLevelToOne)
+                {
+                    baseMutationToAdd.CapOverride = -1;
+                    capOverridden = false;
                 }
                 string alredyHaveString = alreadyHaveMutation ? " - had already" : " added";
                 string capOverrideString = capOverridden ? (" (capOverride: " + baseMutation.Level + ")") : null;
@@ -858,11 +923,14 @@ namespace XRL.World.Parts
 
                 return true;
             }
-            if (GameObjectFactory.Factory.GetBlueprintIfExists("UD_FleshGolems_TileMappings") is not GameObjectBlueprint tileMappingsModel)
-                return false; // No Blueprint, so nothing to parse.
+            if (TileMappings.IsNullOrEmpty())
+            {
+                MetricsManager.LogModError(ThisMod, nameof(TileMappings) + " null or empty");
+                return false; // No TileMappings, so nothing to parse.
+            }
 
             bool any = false;
-            foreach ((string tagName, string tagValue) in tileMappingsModel.Tags)
+            foreach ((string tagName, string tagValue) in TileMappings)
             {
                 bool tileMappingExists = false;
                 List<string> tileMappingParameters = new();
@@ -1302,7 +1370,7 @@ namespace XRL.World.Parts
                     if (!sourceBlueprint.HasPart(nameof(Combat)))
                         frankenCorpse.RemovePart<Combat>(); // this makes clams continue to work like clams.
 
-                    AssignMutationsFromBlueprint(frankenMutations, sourceBlueprint);
+                    AssignMutationsFromBlueprint(frankenMutations, sourceBlueprint, null, !wasPlayer, wasPlayer);
 
                     AssignSkillsFromBlueprint(frankenSkills, sourceBlueprint);
 
@@ -1404,8 +1472,7 @@ namespace XRL.World.Parts
                             => !frankenMutations.HasMutation(BM)
                             && BM.GetMutationClass() == "GigantismPlus";
 
-                        // AssignStatsFromBlueprint(frankenCorpse, golemBodyBlueprint);
-                        AssignMutationsFromBlueprint(frankenMutations, golemBodyBlueprint, Exclude: giganticIfNotAlready);
+                        AssignMutationsFromBlueprint(frankenMutations, golemBodyBlueprint, Exclude: giganticIfNotAlready, !wasPlayer, wasPlayer);
                         AssignSkillsFromBlueprint(frankenSkills, golemBodyBlueprint);
                     }
 

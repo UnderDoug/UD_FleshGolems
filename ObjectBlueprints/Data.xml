@@ -20,10 +20,14 @@
   5. Golem: aligns with a specific type of golem.
   
   -->
-  <object Name="UD_FleshGolems_TileMappings" Inherits="DataBucket">
+  <object Name="UD_FleshGolems_BaseTileMappings" Inherits="DataBucket">
+    <tag Name="BaseObject" Value="*noinherit" />
+  </object>
+  <object Name="UD_FleshGolems_TileMappings" Inherits="UD_FleshGolems_BaseTileMappings">
     <!--tag Name="UD_FleshGolems_AlternateTileFor:Blueprint:Argyve" Value="FleshGolems/ud_flesh_golem_human.png" /-->
     <!--tag Name="UD_FleshGolems_AlternateTileFor:Species:human" Value="FleshGolems/ud_flesh_golem_human.png" /-->
-    <tag Name="UD_FleshGolems_AlternateTileFor:BLueprint:Rhinox" Value="FleshGolems/brothers_flesh_golem_rhinox.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Blueprint:Rhinox" Value="FleshGolems/brothers_flesh_golem_rhinox.png" />
+    <tag Name="UD_FleshGolems_AlternateTileFor:Blueprint:Mayor Nuntu" Value="FleshGolems/UD_flesh_golem_nuntu.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Taxon:Morphology:kraken" Value="FleshGolems/ud_flesh_golem_kraken.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Species:woodsprog" Value="FleshGolems/brothers_flesh_golem_woodsprog.png" />
     <tag Name="UD_FleshGolems_AlternateTileFor:Golem:Antelope" Value="FleshGolems/brothers_flesh_golem_antelope.png" />

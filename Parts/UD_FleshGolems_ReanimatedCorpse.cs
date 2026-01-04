@@ -546,7 +546,7 @@ namespace XRL.World.Parts
         {
             if (!IsRenderDisplayNameUpdated
                 && !ParentObject.IsPlayer()
-                && !ParentObject.HasPlayerBlueprint()
+                && !ParentObject.IsPlayerDuringWorldGen()
                 && ParentObject.BaseID != 1)
             {
                 IsRenderDisplayNameUpdated = true;
