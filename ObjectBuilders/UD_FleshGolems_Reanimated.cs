@@ -720,15 +720,18 @@ namespace XRL.World.ObjectBuilders
                             description._Short += "\n\n" + newDescription;
                         }
                     }
-
-                    Debug.YehNah(nameof(Entity) + ": OriginalPlayerBody", Entity.HasIntProperty("OriginalPlayerBody"), Indent: indent[1]);
-                    if (Entity.HasIntProperty("OriginalPlayerBody"))
-                    {
-                        Corpse.SetStringProperty("OriginalPlayerBody", "1");
-                        Corpse.InjectGeneID("OriginalPlayer");
-                    }
                     Corpse.Brain.Allegiance.Clear();
                     Corpse.Brain.Allegiance["Player"] = 100;
+
+                    Debug.YehNah(nameof(Entity) + ": OriginalPlayerBody", Entity.IsOriginalPlayerBody(), Indent: indent[1]);
+                    if (Entity.IsOriginalPlayerBody())
+                    {
+                        Corpse.BaseID = 1;
+                        Corpse.InjectGeneID("OriginalPlayer");
+                        Corpse.SetStringProperty("OriginalPlayerBody", "1");
+                    }
+
+                    Corpse.SetIntProperty("Renamed", 1);
 
                     if (Corpse.TryGetPart(out UD_FleshGolems_PastLife pastLife))
                     {
