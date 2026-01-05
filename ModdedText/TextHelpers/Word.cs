@@ -574,14 +574,14 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                 {
                     if (!DebugSilent)
                         Debug.LogArgs(
-                            MessageBefore: true.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                            MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
                             MessageAfter: ")",
                             Indent: indent,
                             ArgPairs: new Debug.ArgPair[]
                             {
                                 Debug.Arg(Text),
                             });
-                    return Text.Length - i % 2 == 1;
+                    return Text.Length - i % 2 == 0;
                 }
 
             if (!DebugSilent)
