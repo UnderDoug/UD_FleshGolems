@@ -533,60 +533,15 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
 
         public bool IsGuarded(bool DebugSilent = false)
         {
+            bool result = Text != null
+                && Text.Length > 1
+                && '%'.EqualsAll(Text[0], Text[^1]);
+
             using Indent indent = new(1);
-            
-            if (Text == null
-                || Text.Length < 2)
-            {
-                if (!DebugSilent)
-                    Debug.LogArgs(
-                        MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
-                        MessageAfter: ")",
-                        Indent: indent,
-                        ArgPairs: new Debug.ArgPair[]
-                        {
-                            Debug.Arg(Text),
-                        });
-                return false;
-            }
-
-            int i;
-            for (i = 0; i < Text.Length; i++)
-                if (Text[i] != '%')
-                    break;
-
-            if (i % 2 == 0)
-            {
-                if (!DebugSilent)
-                    Debug.LogArgs(
-                        MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
-                        MessageAfter: ")",
-                        Indent: indent,
-                        ArgPairs: new Debug.ArgPair[]
-                        {
-                            Debug.Arg(Text),
-                        });
-                return false;
-            }
-
-            for (i = Text.Length - 1; i >= 0; i--)
-                if (Text[i] != '%')
-                {
-                    if (!DebugSilent)
-                        Debug.LogArgs(
-                            MessageBefore: true.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
-                            MessageAfter: ")",
-                            Indent: indent,
-                            ArgPairs: new Debug.ArgPair[]
-                            {
-                                Debug.Arg(Text),
-                            });
-                    return Text.Length - i % 2 == 0; // rework this if you need to flip this 0 to 1, you've flipped it twice already.
-                }
 
             if (!DebugSilent)
                 Debug.LogArgs(
-                    MessageBefore: false.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
+                    MessageBefore: result.YehNah() + " " + Debug.GetCallingMethod(true) + "(",
                     MessageAfter: ")",
                     Indent: indent,
                     ArgPairs: new Debug.ArgPair[]
@@ -594,7 +549,7 @@ namespace UD_FleshGolems.ModdedText.TextHelpers
                         Debug.Arg(Text),
                     });
 
-            return false;
+            return result;
         }
 
         public Word Unguard()

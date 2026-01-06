@@ -2339,7 +2339,9 @@ namespace XRL.World.Parts
         [WishCommand("UD_FleshGolems debug PastLife")]
         public static void Debug_PastLife_WishHandler()
         {
-            Debug.SetSilenceLogging(true);
+            bool silenceLogging = Debug.SilenceLogging;
+            Debug.SilenceLogging = true;
+
             int startX = 40;
             int startY = 12;
             if (The.Player.CurrentCell is Cell playerCell)
@@ -2369,7 +2371,7 @@ namespace XRL.World.Parts
             {
                 Popup.Show("nothing selected to debug " + nameof(UD_FleshGolems_PastLife));
             }
-            Debug.SetSilenceLogging(false);
+            Debug.SilenceLogging = silenceLogging;
         }
     }
 }

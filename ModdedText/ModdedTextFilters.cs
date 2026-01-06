@@ -23,9 +23,12 @@ using Debug = UD_FleshGolems.Logging.Debug;
 using static UD_FleshGolems.Const;
 using System.Reflection;
 using System.Diagnostics;
+using XRL.Wish;
+using XRL.UI;
 
 namespace UD_FleshGolems.ModdedText
 {
+    [HasWishCommand]
     [Has_UD_FleshGolems_ModdedTextFilter]
     [HasModSensitiveStaticCache]
     [HasGameBasedStaticCache]
@@ -122,6 +125,8 @@ namespace UD_FleshGolems.ModdedText
                 return _TextFilterEntries;
             }
         }
+
+        public static string LastSnapifiedPhrase = null;
 
         public static string DeleteString => "##DELETE##";
         public static string NoSpaceBefore => "##NoSpace";
@@ -1060,8 +1065,9 @@ namespace UD_FleshGolems.ModdedText
                             safeReplacement = replacement;
 
                         newWord = Word.ReplaceWord(newWord.Text + safeReplacement);
-                        j += safeReplacement.Length;
-                    }
+                        j += safeReplacement.Length - key.Length;
+                        loopLength += safeReplacement.Length - key.Length;
+            }
                     else
                     {
                         newWord = Word.ReplaceWord(newWord.Text + Word[j]);
@@ -1181,7 +1187,7 @@ namespace UD_FleshGolems.ModdedText
                             continue;
                         }
 
-                        if (replacementWord.Length > 0
+                        if (!replacementWord.IsNullOrEmpty()
                             && replacementWord[^1] == '\\')
                         {
                             replacementWord += currentChar;
@@ -1229,6 +1235,9 @@ namespace UD_FleshGolems.ModdedText
             return Word;
         }
 
+        private static bool IsLetterOrGuard(this char Char)
+            => Char.IsLetterAndNotException(Utils.CapitalizationExceptions)
+            || Char == '%';
         public static List<Word> PerformSnapifyReduplications(ref List<Word> Words)
         {
             using Indent indent = new(1);
@@ -1245,12 +1254,12 @@ namespace UD_FleshGolems.ModdedText
             {
                 if (skip-- > 0)
                 {
-                    Debug.CheckNah(i.ToString(), "skipped", Indent: indent[1]);
+                    Debug.CheckNah(i.ToString() + " skipped", "\"" + Words[i] + "\"", Indent: indent[1]);
                     continue;
                 }
                 if (Words[i].Text.EqualsAnyNoCase(ProtectedStrings))
                 {
-                    Debug.CheckNah(i.ToString(), "protected", Indent: indent[1]);
+                    Debug.CheckNah(i.ToString() + " protected", "\"" + Words[i] + "\"", Indent: indent[1]);
                     continue;
                 }
 
@@ -1261,16 +1270,26 @@ namespace UD_FleshGolems.ModdedText
                     {
                         string replacementString = Words[i].Text;
                         string endsWith = null;
-                        while (!replacementString.IsNullOrEmpty()
-                            && (!replacementString[^1].IsLetterAndNotException(Utils.CapitalizationExceptions)
-                                || replacementString[^1] != '%'
-                                || replacementString.TryGetFirstEndsWith(out endsWith, true, ProtectedStrings)))
-                            if (!endsWith.IsNullOrEmpty())
-                                replacementString = replacementString[..^endsWith.Length];
-                            else
+                        while (!replacementString.IsNullOrEmpty())
+                        {
+                            if (IsLetterOrGuard(replacementString[^1]))
+                            {
                                 replacementString = replacementString[..^1];
+                                continue;
+                            }
 
-                        Words[i] = Words[i].ReplaceWord(replacementString + "-" + NoSpaceAfter);
+                            if (replacementString.TryGetFirstEndsWith(out endsWith, true, ProtectedStrings)
+                                && !endsWith.IsNullOrEmpty())
+                            {
+                                replacementString = replacementString[..^endsWith.Length];
+                                continue;
+                            }
+
+                            break;
+                        }
+
+                        if (!replacementString.IsNullOrEmpty())
+                            Words[i] = Words[i].ReplaceWord(replacementString + "-" + NoSpaceAfter);
                     }
                     Debug.CheckYeh(i.ToString() + " added", "\"" + Words[i] + "\"", Indent: indent[1]);
 
@@ -1356,11 +1375,11 @@ namespace UD_FleshGolems.ModdedText
             int indexOfSpace = -1;
             for (int j = 1; j < currentLength; j++)
             {
-                Index index = BeingTrimmed == NoSpaceBefore ? j - 1 : ^j;
+                Index index = BeingTrimmed == NoSpaceBefore ? ^j : j - 1;
 
                 if (CurrentSegment[index] == ' ')
                 {
-                    indexOfSpace = j;
+                    indexOfSpace = index.Value;
                     break;
                 }
                 if (CurrentSegment[index].IsLetterAndNotException(Utils.CapitalizationExceptions))
@@ -1443,13 +1462,13 @@ namespace UD_FleshGolems.ModdedText
             return true;
         }
 
-        public static List<Word> UnguardWords(ref List<Word> Words, bool IncludeInteral = true)
+        public static List<Word> UnguardWords(ref List<Word> Words, bool IncludeInternal = true)
         {
             Words ??= new();
             for (int i = 0; i < Words.Count; i++)
             {
                 Words[i] = Words[i].Unguard();
-                if (IncludeInteral)
+                if (IncludeInternal)
                     Words[i].Text = Words[i].Text.RemoveAll("%");
                 Words[i].DebugLog();
             }
@@ -1458,12 +1477,21 @@ namespace UD_FleshGolems.ModdedText
 
         [UD_FleshGolems_ModdedTextFilter(Key = "snapify")]
         public static string Snapify(string Phrase)
+            => Snapify(Phrase, false);
+
+        public static string Snapify(string Phrase, bool WithDebugLogging)
         {
+            bool silenceLogging = Debug.SilenceLogging;
+            if (!WithDebugLogging)
+                Debug.SilenceLogging = true;
+
+            LastSnapifiedPhrase = Phrase;
+
             using Indent indent = new(1);
             Debug.LogMethod(indent,
                 ArgPairs: new Debug.ArgPair[]
                 {
-                    Debug.Arg(nameof(Phrase) + "." + nameof(Phrase.Length), Phrase?.Length ?? 0),
+                Debug.Arg(nameof(Phrase) + "." + nameof(Phrase.Length), Phrase?.Length ?? 0),
                 });
 
             Stopwatch sw = new();
@@ -1574,8 +1602,9 @@ namespace UD_FleshGolems.ModdedText
             finally
             {
                 Debug.LogTimeStop(Debug.GetCallingMethod() + " took ", sw, Indent: indent[0]);
+                if (!WithDebugLogging)
+                    Debug.SilenceLogging = silenceLogging;
             }
-            
             return output;
         }
         public static StringBuilder Snapify(this StringBuilder SB)
@@ -1583,5 +1612,18 @@ namespace UD_FleshGolems.ModdedText
                 && Snapify(SB.ToString()) is string snapified)
             ? SB.Clear().Append(snapified)
             : null;
+
+        [WishCommand(Command = "UD_FleshGolems debug snapify")]
+        public static void Wish_DebugSnapify()
+        {
+            string lastSnapifiedPhrase = LastSnapifiedPhrase;
+            string output = Snapify(LastSnapifiedPhrase, true);
+
+            UnityEngine.Debug.Log(lastSnapifiedPhrase);
+            UnityEngine.Debug.Log(output);
+
+            Popup.Show(lastSnapifiedPhrase);
+            Popup.Show(output);
+        }
     }
 }

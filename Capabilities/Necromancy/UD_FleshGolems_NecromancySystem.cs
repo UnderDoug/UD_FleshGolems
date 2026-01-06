@@ -1022,7 +1022,9 @@ namespace UD_FleshGolems.Capabilities
         [WishCommand("UD_FleshGolems gimme cache")]
         public static void Debug_GimmeCache_WishHandler()
         {
-            Debug.SetSilenceLogging(true);
+            bool silenceLogging = Debug.SilenceLogging;
+            Debug.SilenceLogging = true;
+
             string output = "NecromancySystem Corpse Caches\n";
             output += nameof(GetCorpseBlueprints) + "\n";
             output += System?.GetCorpseBlueprints()
@@ -1065,7 +1067,7 @@ namespace UD_FleshGolems.Capabilities
                         ?.GenerateBulletList();
             output += "\n\n";
 
-            Debug.SetSilenceLogging(false);
+            Debug.SilenceLogging = silenceLogging;
             string uIFriendlySpace = UIFriendlyNBPS(1);
             UnityEngine.Debug.Log(output.Replace(uIFriendlySpace, " ").Replace(Bullet(), "-"));
             Popup.Show(output);

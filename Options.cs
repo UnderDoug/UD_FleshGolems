@@ -14,6 +14,8 @@ namespace UD_FleshGolems
         [OptionFlag] public static bool DebugEnableAllLogging;
 
         // General Settings
+        [OptionFlag] public static bool GreatlyReduceSuffering;
+
         [OptionFlag] public static int SpecialReanimatedBuilderBaseChanceOneIn;
         [OptionFlag] public static int SpecialReanimatedBuilderChanceOneInMulti;
 

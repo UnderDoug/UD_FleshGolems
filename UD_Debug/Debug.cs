@@ -23,12 +23,15 @@ namespace UD_FleshGolems.Logging
     [HasWishCommand]
     public static class Debug
     {
-        private static bool SilenceLogging = false;
+        public static bool SilenceLogging = false;
 
         public static void SetSilenceLogging(bool Value)
         {
             SilenceLogging = Value;
         }
+        public static bool GetSilenceLogging()
+            => SilenceLogging;
+
         public static void ToggleLogging()
         {
             SetSilenceLogging(!SilenceLogging);
@@ -542,7 +545,11 @@ namespace UD_FleshGolems.Logging
         {
             if (Stop)
                 StopWatch.Stop();
-            return Log(Message ?? StopWatch.Elapsed.ValueUnits(), Message.IsNullOrEmpty() ? StopWatch.Elapsed.ValueUnits() : null, Indent, CallingMethod);
+            return Log(
+                Field: Message ?? StopWatch.Elapsed.ValueUnits(),
+                Value: !Message.IsNullOrEmpty() ? StopWatch.Elapsed.ValueUnits() : null,
+                Indent: Indent,
+                CallingMethod: CallingMethod);
         }
 
         public static Indent LogTimeStop(
