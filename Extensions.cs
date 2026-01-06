@@ -1529,14 +1529,14 @@ namespace UD_FleshGolems
                 || String.Length < Length)
                 yield break;
 
-            for (int i = Length - 1; i < String.Length - Length; i++)
+            for (int i = 0; i < String.Length - Length; i++)
                 yield return String[i..(i + Length)];
         }
 
         public static bool ContainsNoCase(this string Text, string Value)
             => !Text.IsNullOrEmpty()
             && !Value.IsNullOrEmpty()
-            && Text.SubstringsOfLength(Value.Length) is string[] substrings
+            && Text.SubstringsOfLength(Value.Length)?.ToArray() is string[] substrings
             && Value.EqualsAnyNoCase(substrings);
 
         public static bool TryGetFirstStartsWith(
@@ -1624,6 +1624,28 @@ namespace UD_FleshGolems
             }
 
             return false;
+        }
+
+        public static string ValueUnits(this TimeSpan Duration)
+        {
+            string durationUnit = "minute";
+            double durationValue = Duration.TotalMinutes;
+            if (Duration.TotalMinutes < 1)
+            {
+                durationUnit = "second";
+                durationValue = Duration.TotalSeconds;
+            }
+            if (Duration.TotalSeconds < 1)
+            {
+                durationUnit = "millisecond";
+                durationValue = Duration.TotalMilliseconds;
+            }
+            if (Duration.TotalMilliseconds < 1)
+            {
+                durationUnit = "microsecond";
+                durationValue = Duration.TotalMilliseconds / 1000;
+            }
+            return durationValue.Things(durationUnit);
         }
     }
 }

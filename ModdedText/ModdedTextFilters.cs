@@ -36,7 +36,7 @@ namespace UD_FleshGolems.ModdedText
         {
             Dictionary<string, bool> multiMethodRegistrations = new()
             {
-                { nameof(CheckCanBeReplaced), false },
+                // { nameof(CheckCanBeReplaced), false },
                 { nameof(CheckCanStartBeReplaced), false },
                 { nameof(CheckCanEndBeReplaced), false },
             };
@@ -1130,7 +1130,6 @@ namespace UD_FleshGolems.ModdedText
 
                 bool guarded = false;
 
-
                 if (!Word.Contains(key))
                 {
                     Debug.CheckNah(key + " not present in " + Word.Text, indent[1]);
@@ -1176,6 +1175,14 @@ namespace UD_FleshGolems.ModdedText
                         }
 
                         if (!currentChar.IsLetterAndNotException(Utils.CapitalizationExceptions))
+                        {
+                            replacementWord += currentChar;
+                            ClearSwap(ref previousSwap, ref didSwap);
+                            continue;
+                        }
+
+                        if (replacementWord.Length > 0
+                            && replacementWord[^1] == '\\')
                         {
                             replacementWord += currentChar;
                             ClearSwap(ref previousSwap, ref didSwap);
@@ -1233,11 +1240,19 @@ namespace UD_FleshGolems.ModdedText
 
             int wordsCount = Words.Count;
             int i;
-
+            int skip = 0;
             for (i = wordsCount - 1; i >= 0; i--)
             {
-                if (Words[i].Text.EqualsAnyNoCase(ProtectedStrings))
+                if (skip-- > 0)
+                {
+                    Debug.CheckNah(i.ToString(), "skipped", Indent: indent[1]);
                     continue;
+                }
+                if (Words[i].Text.EqualsAnyNoCase(ProtectedStrings))
+                {
+                    Debug.CheckNah(i.ToString(), "protected", Indent: indent[1]);
+                    continue;
+                }
 
                 if (1.ChanceIn(20))
                 {
@@ -1257,11 +1272,13 @@ namespace UD_FleshGolems.ModdedText
 
                         Words[i] = Words[i].ReplaceWord(replacementString + "-" + NoSpaceAfter);
                     }
-                    Debug.CheckYeh(nameof(i) + ": " + i + " \"" + Words[i] + "\"", Indent: indent[1]);
-                    i -= Stat.RandomCosmetic(3, 5);
+                    Debug.CheckYeh(i.ToString() + " added", "\"" + Words[i] + "\"", Indent: indent[1]);
+
+                    skip = Stat.RandomCosmetic(3, 5);
+                    Debug.Log("Skipping " + skip, Indent: indent[2]);
                 }
                 else
-                    Debug.CheckNah(nameof(i) + ": " + i, Indent: indent[1]);
+                    Debug.CheckNah(i.ToString()+ " failed roll", "\"" + Words[i] + "\"", Indent: indent[1]);
             }
             return Words;
         }
@@ -1339,7 +1356,7 @@ namespace UD_FleshGolems.ModdedText
             int indexOfSpace = -1;
             for (int j = 1; j < currentLength; j++)
             {
-                Index index = BeingTrimmed == NoSpaceBefore ? ^j : j;
+                Index index = BeingTrimmed == NoSpaceBefore ? j - 1 : ^j;
 
                 if (CurrentSegment[index] == ' ')
                 {
@@ -1369,8 +1386,8 @@ namespace UD_FleshGolems.ModdedText
                 int halfSnippetLength = SnippetLength / 2;
                 int snippetStart = Math.Max(0, indexOfSpace - halfSnippetLength);
                 int snippetEnd = Math.Min(indexOfSpace + (SnippetLength - Math.Min(halfSnippetLength, snippetStart)), currentLength - 1);
-                string snippetBefore = "{" + CurrentSegment[snippetStart..indexOfSpace];
-                string snippetAfter = CurrentSegment[indexOfSpace..snippetEnd] + "}";
+                string snippetBefore = "{" + segmentForSnippet[snippetStart..indexOfSpace];
+                string snippetAfter = segmentForSnippet[indexOfSpace..snippetEnd] + "}";
                 Debug.Log("Snippet", snippetBefore + "_" + snippetAfter, Indent: indent[3]);
             }
 
@@ -1399,7 +1416,7 @@ namespace UD_FleshGolems.ModdedText
                 string[] noSpaceBeforeSplit = Phrase.Split(NoSpaceBefore);
                 int indices = noSpaceBeforeSplit[0]?.Length ?? 0;
 
-                for (int i = 1; i < noSpaceBeforeSplit.Length; i++)
+                for (int i = 0; i < noSpaceBeforeSplit.Length - 1; i++)
                     TrimNoSpaceFromSegment(ref noSpaceBeforeSplit[i], ref indices, NoSpaceBefore);
 
                 Phrase = noSpaceBeforeSplit.Aggregate("", (a, n) => a + n);
@@ -1417,7 +1434,7 @@ namespace UD_FleshGolems.ModdedText
                 string[] noSpaceAfterSplit = Phrase.Split(NoSpaceAfter);
                 int indices = noSpaceAfterSplit[0]?.Length ?? 0;
 
-                for (int i = 0; i < noSpaceAfterSplit.Length - 1; i++)
+                for (int i = 1; i < noSpaceAfterSplit.Length; i++)
                     TrimNoSpaceFromSegment(ref noSpaceAfterSplit[i], ref indices, NoSpaceAfter);
 
                 Phrase = noSpaceAfterSplit.Aggregate("", (a, n) => a + n);
@@ -1442,9 +1459,6 @@ namespace UD_FleshGolems.ModdedText
         [UD_FleshGolems_ModdedTextFilter(Key = "snapify")]
         public static string Snapify(string Phrase)
         {
-            Stopwatch sw = new();
-            sw.Start();
-
             using Indent indent = new(1);
             Debug.LogMethod(indent,
                 ArgPairs: new Debug.ArgPair[]
@@ -1452,124 +1466,116 @@ namespace UD_FleshGolems.ModdedText
                     Debug.Arg(nameof(Phrase) + "." + nameof(Phrase.Length), Phrase?.Length ?? 0),
                 });
 
-            List<string> processedLines = new();
-            if (Phrase?.Split("\n")?.ToList() is List<string> lines)
+            Stopwatch sw = new();
+            sw.Start();
+            string output = Phrase;
+            try
             {
-                foreach (string line in lines)
+                List<string> processedLines = new();
+                if (Phrase?.Split("\n")?.ToList() is List<string> lines)
                 {
-                    if (line?.Split(' ')?.ToList()?.ConvertAll(s => new Word(s)) is List<Word> words
-                        && words.Count > 0)
+                    foreach (string line in lines)
                     {
-                        for (int i = 0; i < words.Count; i++)
+                        if (line?.Split(' ')?.ToList()?.ConvertAll(s => new Word(s)) is List<Word> words
+                            && words.Count > 0)
                         {
-                            if (words[i] is Word word)
+                            for (int i = 0; i < words.Count; i++)
                             {
-                                Word prevWord = i > 0 ? words[i - 1] : null;
-                                bool stop = false;
+                                if (words[i] is Word word)
+                                {
+                                    Word prevWord = i > 0 ? words[i - 1] : null;
+                                    bool stop = false;
 
-                                if (stop)
-                                    continue;
+                                    if (stop)
+                                        continue;
 
-                                words[i] = PerformSnapifyWordReplacemnts(
-                                    Word: ref word,
-                                    PrevWord: prevWord,
-                                    Stop: out stop);
+                                    words[i] = PerformSnapifyWordReplacemnts(
+                                        Word: ref word,
+                                        PrevWord: prevWord,
+                                        Stop: out stop);
 
-                                if (stop)
-                                    continue;
+                                    if (stop)
+                                        continue;
 
-                                words[i] = PerformSnapifyPartialReplacements(
-                                    ReplacementsList: SnapifyStartReplacements,
-                                    Word: ref word,
-                                    PrevWord: prevWord,
-                                    Stop: out stop,
-                                    ReplacementLocation: ReplacementLocation.Start);
+                                    words[i] = PerformSnapifyPartialReplacements(
+                                        ReplacementsList: SnapifyStartReplacements,
+                                        Word: ref word,
+                                        PrevWord: prevWord,
+                                        Stop: out stop,
+                                        ReplacementLocation: ReplacementLocation.Start);
 
-                                if (stop)
-                                    continue;
+                                    if (stop)
+                                        continue;
 
-                                words[i] = PerformSnapifyPartialReplacements(
-                                    ReplacementsList: SnapifyPartialReplacements,
-                                    Word: ref word,
-                                    PrevWord: prevWord,
-                                    Stop: out stop,
-                                    ReplacementLocation: ReplacementLocation.Middle);
+                                    words[i] = PerformSnapifyPartialReplacements(
+                                        ReplacementsList: SnapifyPartialReplacements,
+                                        Word: ref word,
+                                        PrevWord: prevWord,
+                                        Stop: out stop,
+                                        ReplacementLocation: ReplacementLocation.Middle);
 
-                                if (stop)
-                                    continue;
+                                    if (stop)
+                                        continue;
 
-                                words[i] = PerformSnapifyPartialReplacements(
-                                    ReplacementsList: SnapifyEndReplacements,
-                                    Word: ref word,
-                                    PrevWord: prevWord,
-                                    Stop: out stop,
-                                    ReplacementLocation: ReplacementLocation.End);
+                                    words[i] = PerformSnapifyPartialReplacements(
+                                        ReplacementsList: SnapifyEndReplacements,
+                                        Word: ref word,
+                                        PrevWord: prevWord,
+                                        Stop: out stop,
+                                        ReplacementLocation: ReplacementLocation.End);
 
-                                if (stop)
-                                    continue;
+                                    if (stop)
+                                        continue;
 
-                                words[i] = PerformSnapifySwaps(ref word, out stop);
+                                    words[i] = PerformSnapifySwaps(ref word, out stop);
 
-                                if (stop)
-                                    continue;
+                                    if (stop)
+                                        continue;
+                                }
+                            }
+
+                            if (!UnguardWords(ref words).IsNullOrEmpty()
+                                && !PerformSnapifyAdditions(ref words).IsNullOrEmpty()
+                                && !PerformSnapifyReduplications(ref words).IsNullOrEmpty())
+                            {
+                                string processedLine = words
+                                        ?.Aggregate("", CreateSentence)
+                                        ?.RemoveAllNoCase(" " + DeleteString, DeleteString + " ", DeleteString)
+                                    ?? "";
+
+                                if (TrimNoSpaceString(ref processedLine))
+                                    Debug.CheckYeh("Trimmed NoSpace Strings", Indent: indent[2]);
+
+                                processedLines.Add(processedLine);
                             }
                         }
-
-                        if (!UnguardWords(ref words).IsNullOrEmpty()
-                            && !PerformSnapifyAdditions(ref words).IsNullOrEmpty()
-                            && !PerformSnapifyReduplications(ref words).IsNullOrEmpty())
-                        {
-                            string processedLine = words
-                                    ?.Aggregate("", CreateSentence)
-                                    ?.RemoveAllNoCase(" " + DeleteString, DeleteString + " ", DeleteString)
-                                ?? "";
-
-                            if (TrimNoSpaceString(ref processedLine))
-                                Debug.CheckYeh("Trimmed NoSpace Strings", Indent: indent[2]);
-
-                            processedLines.Add(processedLine);
-                        }
+                    }
+                    if (!processedLines.IsNullOrEmpty())
+                    {
+                        int iteration = 0;
+                        Phrase = processedLines
+                                ?.Aggregate(
+                                    seed: "",
+                                    func: delegate (string Accumulator, string Next)
+                                    {
+                                        if (iteration++ > 0)
+                                            Accumulator += "\n";
+                                        return Accumulator + Next;
+                                    })
+                            ?? Phrase;
                     }
                 }
-                if (!processedLines.IsNullOrEmpty())
-                {
-                    int iteration = 0;
-                    Phrase = processedLines
-                            ?.Aggregate(
-                                seed: "",
-                                func: delegate (string Accumulator, string Next)
-                                {
-                                    if (iteration++ > 0)
-                                        Accumulator += "\n";
-                                    return Accumulator + Next;
-                                })
-                        ?? "";
-                }
+                output = Phrase.RemoveAll("%");
             }
-
-            string output = Phrase.RemoveAll("%");
-
-            sw.Stop();
-            TimeSpan duration = sw.Elapsed;
-            string durationUnit = "minute";
-            double durationValue = duration.TotalMinutes;
-            if (duration.TotalMinutes < 1)
+            catch (Exception x)
             {
-                durationUnit = "second";
-                durationValue = duration.TotalSeconds;
+                MetricsManager.LogCallingModError(x);
             }
-            if (duration.TotalSeconds < 1)
+            finally
             {
-                durationUnit = "millisecond";
-                durationValue = duration.TotalMilliseconds;
+                Debug.LogTimeStop(Debug.GetCallingMethod() + " took ", sw, Indent: indent[0]);
             }
-            if (duration.TotalMilliseconds < 1)
-            {
-                durationUnit = "microsecond";
-                durationValue = duration.TotalMilliseconds / 1000;
-            }
-            Debug.Log(Debug.GetCallingMethod() + " took " + durationValue.Things(durationUnit), Indent: indent[0]);
-
+            
             return output;
         }
         public static StringBuilder Snapify(this StringBuilder SB)

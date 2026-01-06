@@ -533,12 +533,30 @@ namespace UD_FleshGolems.Logging
             [CallerMemberName] string CallingMethod = "")
             => YehNah(Message, null, false, Indent, CallingMethod);
 
+        public static Indent LogTime(
+            string Message,
+            Stopwatch StopWatch,
+            bool Stop = false,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+        {
+            if (Stop)
+                StopWatch.Stop();
+            return Log(Message ?? StopWatch.Elapsed.ValueUnits(), Message.IsNullOrEmpty() ? StopWatch.Elapsed.ValueUnits() : null, Indent, CallingMethod);
+        }
+
+        public static Indent LogTimeStop(
+            string Message,
+            Stopwatch StopWatch,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => LogTime(Message, StopWatch, true, Indent, CallingMethod);
+
         public static void MetricsManager_LogCallingModError(object Message)
         {
             if (!TryGetFirstCallingModNot(ThisMod, out ModInfo callingMod))
-            {
                 callingMod = ThisMod;
-            }
+
             MetricsManager.LogModError(callingMod, Message);
         }
 
@@ -547,94 +565,6 @@ namespace UD_FleshGolems.Logging
          * Wishes!
          * 
          */
-        [WishCommand( Command = "UD_FleshGolems debug indents" )]
-        public static void DebugIndents_WishHandler()
-        {
-            Stack<Indent> oldIndents = new();
-            List<Indent> oldIndentsList = new();
-            foreach (Indent oldindent in Indents)
-            {
-                oldIndentsList.AddItem(new(oldindent, false));
-            }
-            for (int i = oldIndentsList.Count; i < 0; i--)
-            {
-                oldIndents.Push(oldIndentsList[i - 1]);
-            }
-
-            static string padthisString(string StringToPad)
-            {
-                return StringToPad.PadRight(20, ' ');
-            }
-
-            ResetIndent();
-
-            UnityEngine.Debug.Log("Indent Test (New, using)");
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-
-            using Indent uIndent = new();
-            UnityEngine.Debug.Log("using Indent uIndent = new();");
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-
-            UnityEngine.Debug.Log(" ");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + ": ") + "\"" + uIndent.ToString() + "\"(" + (int)uIndent + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + "[1]: ") + "\"" + uIndent[1].ToString() + "\"(" + (int)uIndent[1] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + "[2]: ") + "\"" + uIndent[2].ToString() + "\"(" + (int)uIndent[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + "[3]: ") + "\"" + uIndent[3].ToString() + "\"(" + (int)uIndent[3] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + "[2]: ") + "\"" + uIndent[2].ToString() + "\"(" + (int)uIndent[2] + ")");
-
-            UnityEngine.Debug.Log(" ");
-            using Indent uIndent2 = new();
-            UnityEngine.Debug.Log("using Indent uIndent2 = new();");
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + ": ") + "\"" + uIndent.ToString() + "\"(" + (int)uIndent + ")");
-
-            UnityEngine.Debug.Log(" ");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2) + ": ") + "\"" + uIndent2.ToString() + "\"(" + (int)uIndent2 + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2) + "[1]: ") + "\"" + uIndent2[1].ToString() + "\"(" + (int)uIndent2[1] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2) + "[2]: ") + "\"" + uIndent2[2].ToString() + "\"(" + (int)uIndent2[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2) + "[3]: ") + "\"" + uIndent2[3].ToString() + "\"(" + (int)uIndent2[3] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2) + "[2]: ") + "\"" + uIndent2[2].ToString() + "\"(" + (int)uIndent2[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2) + ": ") + "\"" + uIndent2.ToString() + "\"(" + (int)uIndent2 + ")");
-
-            UnityEngine.Debug.Log(" ");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + ": ") + "\"" + uIndent.ToString() + "\"(" + (int)uIndent + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + "[2]: ") + "\"" + uIndent[2].ToString() + "\"(" + (int)uIndent[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + "[3]: ") + "\"" + uIndent[3].ToString() + "\"(" + (int)uIndent[3] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + ": ") + "\"" + uIndent.ToString() + "\"(" + (int)uIndent + ")");
-
-            UnityEngine.Debug.Log(" ");
-            uIndent2.Dispose();
-            UnityEngine.Debug.Log("uIndent2.Dispose();");
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + ": ") + "\"" + uIndent.ToString() + "\"(" + (int)uIndent + ")");
-
-            UnityEngine.Debug.Log(" ");
-            using Indent uIndent2_2 = new();
-            UnityEngine.Debug.Log("using Indent uIndent2_2 = new()");
-            UnityEngine.Debug.Log(nameof(Indents) + "." + nameof(Indents.Count) + ": " + Indents.Count);
-            UnityEngine.Debug.Log(padthisString(nameof(Indent) + " peek: ") + "\"" + Indents.Peek().ToString() + "\"(" + (int)Indents.Peek() + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + ": ") + "\"" + uIndent.ToString() + "\"(" + (int)uIndent + ")");
-
-            UnityEngine.Debug.Log(" ");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2_2) + ": ") + "\"" + uIndent2_2.ToString() + "\"(" + (int)uIndent2_2 + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2_2) + "[1]: ") + "\"" + uIndent2_2[1].ToString() + "\"(" + (int)uIndent2_2[1] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2_2) + "[2]: ") + "\"" + uIndent2_2[2].ToString() + "\"(" + (int)uIndent2_2[2] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2_2) + "[3]: ") + "\"" + uIndent2_2[3].ToString() + "\"(" + (int)uIndent2_2[3] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent2_2) + ": ") + "\"" + uIndent2_2.ToString() + "\"(" + (int)uIndent2_2 + ")");
-
-            UnityEngine.Debug.Log(" ");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + ": ") + "\"" + uIndent.ToString() + "\"(" + (int)uIndent + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + "[4]: ") + "\"" + uIndent[4].ToString() + "\"(" + (int)uIndent[4] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + "[5]: ") + "\"" + uIndent[5].ToString() + "\"(" + (int)uIndent[5] + ")");
-            UnityEngine.Debug.Log(padthisString(nameof(uIndent) + ": ") + "\"" + uIndent.ToString() + "\"(" + (int)uIndent + ")");
-
-            UnityEngine.Debug.Log(" ");
-            UnityEngine.Debug.Log("Finished Test");
-            Indents = oldIndents;
-        }
+        
     }
 }
