@@ -9,6 +9,7 @@ using static XRL.World.Parts.UD_FleshGolems_HasCyberneticsButcherableCybernetic;
 using UD_FleshGolems;
 using static UD_FleshGolems.Const;
 using XRL.Rules;
+using UD_FleshGolems.Logging;
 
 namespace XRL.World.Parts
 {
@@ -144,25 +145,27 @@ namespace XRL.World.Parts
                 type ??= ParentObject.GetPropertyOrTag("UD_FleshGolems LimbType");
 
                 SanitizeLimbType(type, out type, Wildcards);
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_BecomeRandomLimb) + "." + nameof(BeforeObjectCreatedEvent) + ", " +
-                    nameof(E.Object) + ": " + (E.Object?.DebugName ?? NULL) + ", " +
-                    nameof(blueprint) + ": " + (blueprint ?? NULL) + ", " +
-                    nameof(@base) + ": " + (@base ?? NULL) + ", " +
-                    nameof(tag) + ": " + (tag ?? NULL) + ", " +
-                    nameof(type) + ": " + (type ?? NULL));
-                */
+
+                using Indent indent = new(1);
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(E.Object), E.Object?.DebugName ?? NULL),
+                        Debug.Arg(nameof(blueprint), blueprint ?? NULL),
+                        Debug.Arg(nameof(@base), @base ?? NULL),
+                        Debug.Arg(nameof(tag), tag ?? NULL),
+                        Debug.Arg(nameof(type), type ?? NULL),
+                    });
+
                 string tableSlotType = null;
                 string tableBlueprint = null;
                 if (!CyberneticsTable.IsNullOrEmpty())
                 {
                     string processedTable = CyberneticsTable.Replace("~#~", Stat.RollCached("1d8").ToString());
-                    /*
-                    UnityEngine.Debug.Log(
-                        "    " + nameof(CyberneticsTable) + ": " + (CyberneticsTable ?? NULL) + ", " +
-                        nameof(processedTable) + ": " + processedTable);
-                    */
+
+                    Debug.Log(nameof(CyberneticsTable), CyberneticsTable ?? NULL, indent[1]);
+                    Debug.Log(nameof(processedTable), processedTable ?? NULL, indent[1]);
+
                     for (int i = 0; i < 10; i++)
                     {
                         PopulationResult cyberneticsPopulationResult = PopulationManager.RollOneFrom(processedTable);
@@ -171,11 +174,9 @@ namespace XRL.World.Parts
                             && cyberneticsBlueprint.TryGetPartParameter(nameof(CyberneticsBaseItem), nameof(CyberneticsBaseItem.Slots), out string tableCyberneticSlots)
                             && CyberneticsSlotsContainsSeverableLimbType(tableCyberneticSlots))
                         {
-                            /*
-                            UnityEngine.Debug.Log(
-                                "    " + "    [" + i + "] population result: " + (cyberneticsPopulationResult.Blueprint ?? "null") + ", " +
-                                nameof(tableCyberneticSlots) + ": " + tableCyberneticSlots);
-                            */
+                            Debug.Log("[" + i + "] population result", cyberneticsPopulationResult.Blueprint ?? NULL, indent[2]);
+                            Debug.Log(nameof(tableCyberneticSlots), tableCyberneticSlots ?? NULL, indent[3]);
+
                             if (tableCyberneticSlots.Contains(','))
                             {
                                 foreach (string slotType in tableCyberneticSlots.Split(',').ShuffleInPlace())
@@ -198,12 +199,11 @@ namespace XRL.World.Parts
                         }
                     }
                     bool good = !tableSlotType.IsNullOrEmpty();
-                    /*
-                    UnityEngine.Debug.Log(
-                        "    " + "    [" + (good ? TICK : CROSS) + "] " + (good ? "Success" : "Fail") + "!" +
-                        " " + nameof(tableSlotType) + ": " + tableSlotType + ", " + 
-                        " " + nameof(tableBlueprint) + ": " + tableBlueprint);
-                    */
+
+                    Debug.YehNah((good ? "Success" : "Fail") + "!" +
+                        " " + nameof(tableSlotType) + ": " + tableSlotType + ", " +
+                        " " + nameof(tableBlueprint) + ": " + tableBlueprint,
+                        good, indent[2]);
                 }
                 if (!tableSlotType.IsNullOrEmpty())
                 {

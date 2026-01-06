@@ -12,7 +12,4 @@
     <EmbeddedResource Remove="obj\**" />
     <None Remove="obj\**" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Textures\" />
-  </ItemGroup>
 </Project>

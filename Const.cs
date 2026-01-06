@@ -13,6 +13,7 @@ namespace UD_FleshGolems
         public const string STAR = "\u263C";  // ☼
         public const string SMLE = "\u263A";  // ☺︎
         public const string SMLE2 = "\u263B"; // ☻
+        public const string INF = "\u221E";   // ∞
 
         public const string VANDR = "\u251C"; // ├
         public const string VONLY = "\u2502"; // │
@@ -23,5 +24,8 @@ namespace UD_FleshGolems
 
         public const int MAX_DIST = 9999999;
 
+        public const string GAME_MOD_EXCEPTION = "game_mod_exception";
+
+        public const string PSEUDOCORPSE = "UD_FleshGolems PseudoCorpse";
     }
 }

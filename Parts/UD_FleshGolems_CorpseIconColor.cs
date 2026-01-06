@@ -9,80 +9,107 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_CorpseIconColor : IIconColorPart
     {
+        public const string SET_COLORS_PROPTAG = "UD_FleshGolems CorpseIconColor";
+
         public UD_FleshGolems_CorpseIconColor()
         {
-            TextForeground = "&r";
-            TextForegroundPriority = 110;
-            TileForeground = "&r";
-            TileForegroundPriority = 110;
+            SetTileColor("&r");
         }
-        public UD_FleshGolems_CorpseIconColor(GameObjectBlueprint Blueprint)
-            : this()
+        public UD_FleshGolems_CorpseIconColor(string TileColor, string DetailColor, bool DoDetail = true)
         {
-            if (Blueprint != null)
+            SetTileColor(TileColor);
+            if (DoDetail)
             {
-                if (Blueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.TileColor), out string tileColor))
+                SetDetailColor(DetailColor);
+            }
+        }
+        public UD_FleshGolems_CorpseIconColor(GameObjectBlueprint Blueprint, bool DoDetail = true)
+            : this(
+                  TileColor: Blueprint?.GetPartParameter<string>(nameof(Parts.Render), nameof(Parts.Render.TileColor)),
+                  DetailColor: Blueprint?.GetPartParameter<string>(nameof(Parts.Render), nameof(Parts.Render.DetailColor)),
+                  DoDetail: DoDetail)
+        {
+        }
+        public UD_FleshGolems_CorpseIconColor(string Blueprint)
+            : this(GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint)) { }
+
+        public UD_FleshGolems_CorpseIconColor(GameObject Corpse, bool DoDetail = true)
+            : this(Corpse?.Render?.TileColor, Corpse?.Render?.DetailColor, DoDetail)
+        {
+            Dictionary<string, string> setColors = null;
+            if (setColors.IsNullOrEmpty()
+                && Corpse.TryGetPart(out UD_FleshGolems_PastLife pastLife)
+                && pastLife.GetBlueprint()?.GetPropertyOrTag(SET_COLORS_PROPTAG) is string setColorsPropTagByPastLifeBlueprint)
+            {
+                setColors = setColorsPropTagByPastLifeBlueprint.CachedDictionaryExpansion();
+            }
+            if (setColors.IsNullOrEmpty()
+                && Corpse.GetPropertyOrTag(SET_COLORS_PROPTAG) is string setColorsPropTagByCorpseObject)
+            {
+                setColors = setColorsPropTagByCorpseObject.CachedDictionaryExpansion();
+            }
+            if (!setColors.IsNullOrEmpty())
+            {
+                if (setColors.ContainsKey("TileColor"))
                 {
-                    TextForeground = tileColor;
-                    TextForegroundPriority = 110;
-                    TileForeground = tileColor;
-                    TileForegroundPriority = 110;
+                    SetTileColor("&" + setColors["TileColor"][^1]);
                 }
-                if (Blueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.DetailColor), out string detailColor))
+                if (DoDetail && setColors.ContainsKey("DetailColor"))
                 {
-                    TileDetail = detailColor;
-                    TileDetailPriority = 100;
+                    SetDetailColor(setColors["DetailColor"][^1].ToString());
                 }
             }
         }
-        public UD_FleshGolems_CorpseIconColor(string Blueprint)
-            : this(GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint))
+
+        public UD_FleshGolems_CorpseIconColor SetTileColor(string TileColor)
         {
+            if (!TileColor.IsNullOrEmpty())
+            {
+                TextForeground = TileColor;
+                TextForegroundPriority = 92;
+                TileForeground = TileColor;
+                TileForegroundPriority = 92;
+            }
+            return this;
+        }
+        public UD_FleshGolems_CorpseIconColor SetDetailColor(string DetailColor)
+        {
+            if (!DetailColor.IsNullOrEmpty())
+            {
+                TileDetail = DetailColor;
+                TileDetailPriority = 91;
+            }
+            return this;
         }
 
         public UD_FleshGolems_CorpseIconColor SetTileColorFromBlueprint(GameObjectBlueprint Blueprint)
         {
-            if (Blueprint != null)
+            if (Blueprint != null
+                && Blueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.TileColor), out string tileColor))
             {
-                if (Blueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.TileColor), out string tileColor))
-                {
-                    TextForeground = tileColor;
-                    TextForegroundPriority = 110;
-                    TileForeground = tileColor;
-                    TileForegroundPriority = 110;
-                }
+                SetTileColor(tileColor);
             }
             return this;
         }
         public UD_FleshGolems_CorpseIconColor SetTileColorFromBlueprint(string Blueprint)
-        {
-            return SetTileColorFromBlueprint(GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint));
-        }
+            => SetTileColorFromBlueprint(GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint));
 
         public UD_FleshGolems_CorpseIconColor SetDetailColorFromBlueprint(GameObjectBlueprint Blueprint)
         {
-            if (Blueprint != null)
+            if (Blueprint != null
+                && Blueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.DetailColor), out string detailColor))
             {
-                if (Blueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.DetailColor), out string detailColor))
-                {
-                    TileDetail = detailColor;
-                    TileDetailPriority = 100;
-                }
+                SetDetailColor(detailColor);
             }
             return this;
         }
         public UD_FleshGolems_CorpseIconColor SetDetailColorFromBlueprint(string Blueprint)
-        {
-            return SetDetailColorFromBlueprint(GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint));
-        }
+            => SetDetailColorFromBlueprint(GameObjectFactory.Factory.GetBlueprintIfExists(Blueprint));
 
         public UD_FleshGolems_CorpseIconColor SetColorsFromBlueprint(GameObjectBlueprint Blueprint)
-        {
-            return SetTileColorFromBlueprint(Blueprint).SetDetailColorFromBlueprint(Blueprint);
-        }
+            => SetTileColorFromBlueprint(Blueprint).SetDetailColorFromBlueprint(Blueprint);
+
         public UD_FleshGolems_CorpseIconColor SetColorsFromBlueprint(string Blueprint)
-        {
-            return SetTileColorFromBlueprint(Blueprint).SetDetailColorFromBlueprint(Blueprint);
-        }
+            => SetTileColorFromBlueprint(Blueprint).SetDetailColorFromBlueprint(Blueprint);
     }
 }

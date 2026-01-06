@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<deaths>
+  <death Name="BaseImmolated" Category="immolated" />
+  <death Name="LeaveKitchen" Inherits="BaseImmolated"
+         Were="false"
+         Killed="had to leave the kitchen"
+         Killer=""
+         Method="" />
+</deaths>

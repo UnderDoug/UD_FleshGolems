@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using UD_FleshGolems.Parts.VengeanceHelpers;
+
 using XRL;
+using XRL.Rules;
 using XRL.UI;
 using XRL.World;
 using XRL.World.Conversations;
+using XRL.World.Conversations.Parts;
 using XRL.World.Effects;
 using XRL.World.Parts;
 
@@ -24,17 +28,14 @@ namespace UD_FleshGolems
             if (Conversation.Speaker is GameObject speaker
                 && The.Player is GameObject player)
             {
-                GameObject sufferer = null;
+                GameObject sufferer = speaker;
                 if (Context.Target == speaker)
                 {
                     sufferer = player;
                 }
-                else
-                {
-                    sufferer = speaker;
-                }
                 return sufferer.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering)
-                    && unendingSuffering.SourceObject == Context.Target;
+                    && unendingSuffering.SourceObject == Context.Target
+                    && Context.Value.EqualsNoCase("true");
             }
             return false;
         }
@@ -76,6 +77,23 @@ namespace UD_FleshGolems
                 && quest.GetProperty(propertyName) is var property
                 && property.EqualsNoCase(value);
         }
+
+        [ConversationDelegate(Speaker = false)]
+        public static bool IfAlreadyAskedHowDied(DelegateContext Context)
+            => Conversation.Speaker is GameObject speaker
+            && The.Player is GameObject player
+            && speaker.GetStringProperty(UD_FleshGolems_AskHowDied.ASK_HOW_DIED_PROP) is string whoHasAskedHowDied
+            && whoHasAskedHowDied.Contains(";" + player.ID + ";")
+            && !Context.Value.IsNullOrEmpty()
+            && Context.Value.EqualsNoCase("true");
+
+        [ConversationDelegate(Speaker = false)]
+        public static bool IfKilledByPlayer(DelegateContext Context)
+            => Conversation.Speaker.WasKilledByEntity(The.Player, out _) == Context.Value.EqualsNoCase("true");
+
+        [ConversationDelegate(Speaker = false)]
+        public static bool IfKnowsKilledByPlayer(DelegateContext Context)
+            => Conversation.Speaker.KnowsEntityKilledThem(The.Player, out _) == Context.Value.EqualsNoCase("true");
 
         //
         // Actions

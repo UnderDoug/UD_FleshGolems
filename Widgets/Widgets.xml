@@ -3,4 +3,7 @@
   <object Name="UD_FleshGolems_MadMonger_LabSurface" Inherits="Widget">
     <part Name="UD_FleshGolems_MadMongerSurface" />
   </object>
+  <object Name="UD_FleshGolems_Sample_Librarian" Inherits="Widget">
+    <part Name="MechanimistLibrarian" />
+  </object>
 </objects>

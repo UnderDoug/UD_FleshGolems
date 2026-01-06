@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<objects>
+  <object Name="UD_FleshGolems ObliterateSelf Widget" Inherits="Widget">
+    <part Name="UD_FleshGolems_ObliterateSelf" />
+    <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
+  </object>
+</objects>

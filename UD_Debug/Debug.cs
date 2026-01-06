@@ -1,0 +1,577 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Linq;
+
+using HarmonyLib;
+
+using XRL;
+using XRL.Wish;
+
+using UD_FleshGolems;
+using static UD_FleshGolems.Options;
+using static UD_FleshGolems.Utils;
+using static UD_FleshGolems.Const;
+
+namespace UD_FleshGolems.Logging
+{
+    [HasModSensitiveStaticCache]
+    [HasGameBasedStaticCache]
+    [HasWishCommand]
+    public static class Debug
+    {
+        public static bool SilenceLogging = false;
+
+        public static void SetSilenceLogging(bool Value)
+        {
+            SilenceLogging = Value;
+        }
+        public static bool GetSilenceLogging()
+            => SilenceLogging;
+
+        public static void ToggleLogging()
+        {
+            SetSilenceLogging(!SilenceLogging);
+        }
+
+        private static bool DoDebugSetting
+            => DebugEnableLogging
+            && (!DebugDisableWorldGenLogging || The.Player != null)
+            && !SilenceLogging;
+            
+        private static bool DoDebug
+        {
+            get
+            {
+                try
+                {
+                    if (!DoDebugSetting)
+                        return false;
+
+                    if (TryGetCallingTypeAndMethod(out _, out MethodBase callingMethod)
+                        && GetRegistry() is List<MethodRegistryEntry> registry
+                        && registry.TryGetValue(callingMethod, out bool registryMethodValue)
+                        && !registryMethodValue
+                        && !DebugEnableAllLogging)
+                        return false;
+                }
+                catch (Exception x)
+                {
+                    MetricsManager.LogException(typeof(Debug) + "." + nameof(DoDebug), x, GAME_MOD_EXCEPTION);
+                }
+                return DoDebugSetting;
+            }
+        }
+
+        [ModSensitiveStaticCache(CreateEmptyInstance = false)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        private static List<MethodRegistryEntry> _DoDebugRegistry = null;
+
+        public static List<MethodRegistryEntry> DoDebugRegistry => _DoDebugRegistry ??= GetRegistry();
+
+        public static void Register(
+            Type Class,
+            string MethodName,
+            bool Value,
+            List<MethodRegistryEntry> Registry,
+            ref List<MethodRegistryEntry> ReturnRegistry)
+            => Register(Class?.GetMethod(MethodName), Value, Registry, ref ReturnRegistry);
+
+        public static void Register(
+            MethodBase MethodBase,
+            bool Value,
+            List<MethodRegistryEntry> Registry,
+            ref List<MethodRegistryEntry> ReturnRegistry)
+        {
+            string thisMethodName = nameof(Debug) + "." + nameof(Register);
+            if (MethodBase == null)
+                MetricsManager.LogModWarning(
+                    mod: ThisMod,
+                    Message: thisMethodName + " passed null " + nameof(MethodBase));
+
+            string declaringType = MethodBase?.DeclaringType?.Name;
+            UnityEngine.Debug.Log(thisMethodName + "(" + declaringType + "." + (MethodBase?.Name ?? "NO_METHOD") + ": " + Value + ")");
+            Registry.Add(new(MethodBase, Value));
+
+            ReturnRegistry = Registry;
+        }
+        public static void Register(this List<MethodRegistryEntry> Registry, Type Class, string MethodName, bool Value)
+            => Register(Class, MethodName, Value, Registry, ref _DoDebugRegistry);
+
+        public static void Register(this List<MethodRegistryEntry> Registry, MethodBase MethodBase, bool Value)
+            => Register(MethodBase, Value, Registry, ref _DoDebugRegistry);
+
+        public static void Register(this List<MethodRegistryEntry> Registry, string MethodName, bool Value)
+        {
+            string thisMethodName = nameof(Debug) + "." + nameof(Register);
+            if (TryGetCallingTypeAndMethod(out Type callingType, out MethodBase callingMethod))
+            {
+                bool any = false;
+                foreach (MethodBase methodBase in callingType.GetMethods() ?? new MethodInfo[0])
+                    if (methodBase.Name == MethodName)
+                    {
+                        any = true;
+                        Register(methodBase, Value, Registry, ref _DoDebugRegistry);
+                    }
+                if (!any)
+                    MetricsManager.LogModWarning(
+                        mod: ModManager.GetMod(callingType.Assembly),
+                        Message: CallerSignatureString(callingType, callingMethod) + 
+                            " failed to register any methods called " + MethodName + " with " + thisMethodName);
+            }
+            else
+                MetricsManager.LogModWarning(ThisMod, thisMethodName + " couldn't get " + nameof(callingType));
+        }
+        public static void Register(this List<MethodRegistryEntry> Registry, MethodRegistryEntry RegisterEntry)
+            => Register(RegisterEntry.GetMethod(), RegisterEntry.GetValue(), Registry, ref _DoDebugRegistry);
+
+        public static List<MethodRegistryEntry> GetRegistry()
+        {
+            _DoDebugRegistry ??= new();
+            if (_GotRegistry)
+            {
+                return _DoDebugRegistry;
+            }
+            try
+            {
+                List<MethodInfo> debugRegistryMethods = ModManager.GetMethodsWithAttribute(typeof(UD_FleshGolems_DebugRegistryAttribute))
+                        /*
+                        ?.Where(m 
+                            => m != null
+                            && m.IsStatic 
+                            && m.ReturnType.EqualsAny(typeof(void), typeof(List<MethodRegistryEntry>))
+                            && m.GetParameters() is ParameterInfo[] parameters
+                            && parameters[0].GetType() == typeof(List<MethodRegistryEntry>))
+                        ?.ToList();
+                        */
+                    ?? new();
+                if (debugRegistryMethods.IsNullOrEmpty())
+                    MetricsManager.LogModError(
+                        mod: ThisMod,
+                        Message: nameof(Debug) + "." + nameof(GetRegistry) + " failed to retrieve any " + 
+                            nameof(UD_FleshGolems_DebugRegistryAttribute) + " decorated methods");
+
+                foreach (MethodInfo debugRegistryMethod in debugRegistryMethods)
+                    debugRegistryMethod.Invoke(null, new object[] { _DoDebugRegistry });
+            }
+            catch (Exception x)
+            {
+                MetricsManager.LogException(nameof(Debug) + "." + nameof(GetRegistry), x, GAME_MOD_EXCEPTION);
+                _GotRegistry = true;
+            }
+            _GotRegistry = true;
+            return _DoDebugRegistry;
+        }
+
+        public static void LogRegistry()
+        {
+            UnityEngine.Debug.Log(nameof(Debug) + "." + nameof(LogRegistry));
+            if (_GotRegistry)
+            {
+                foreach (MethodRegistryEntry methodEntry in DoDebugRegistry ?? new())
+                    UnityEngine.Debug.Log(methodEntry.ToString());
+            }
+            else
+                UnityEngine.Debug.Log("registry not cached yet");
+        }
+
+        [ModSensitiveCacheInit]
+        [GameBasedCacheInit]
+        public static void CacheDoDebugRegistry()
+            => GetRegistry();
+
+        public static bool GetDoDebug(string CallingMethod = null)
+        {
+            if (CallingMethod.IsNullOrEmpty())
+                return DoDebug;
+
+            if (GetRegistry() is List<MethodRegistryEntry> doDebugRegistry
+                && !doDebugRegistry.Any(m => m.GetMethod().Name == CallingMethod))
+                return DoDebugSetting;
+
+            return DoDebug;
+        }
+
+        [ModSensitiveStaticCache( CreateEmptyInstance = false )]
+        [GameBasedStaticCache( ClearInstance = false )]
+        private static bool _GotRegistry = false;
+
+        [ModSensitiveStaticCache(CreateEmptyInstance = true)]
+        [GameBasedStaticCache(ClearInstance = false)]
+        private static Stack<Indent> Indents = new();
+
+        public static Indent LastIndent
+            => Indents.TryPeek(out Indent peek)
+            ? peek
+            : ResetIndent();
+
+        public static Indent GetNewIndent(int Offset)
+            => new(Offset);
+
+        public static Indent GetNewIndent()
+            => GetNewIndent(0);
+
+        public static bool HaveIndents()
+            => !Indents.IsNullOrEmpty();
+
+        public static void PushToIndents(Indent Indent)
+        {
+            Indents.Push(Indent);
+        }
+
+        [GameBasedCacheInit]
+        [ModSensitiveCacheInit]
+        public static Indent ResetIndent()
+        {
+            Indents ??= new();
+            Indents.Clear();
+            return GetNewIndent();
+        }
+
+        public static Indent DiscardIndent()
+        {
+            if (!Indents.TryPop(out _))
+            {
+                ResetIndent();
+            }
+            return LastIndent;
+        }
+        public static bool HasIndent(Indent Indent)
+            => Indents.Contains(Indent);
+
+        public static string GetCallingTypeAndMethod(bool AppendSpace = false, bool TrimModPrefix = true)
+        {
+            if (TryGetCallingTypeAndMethod(out Type declaringType, out MethodBase methodBase))
+            {
+                string declaringTypeName = declaringType.Name;
+                if (TrimModPrefix)
+                    declaringTypeName = declaringTypeName.Replace(ThisMod.ID + "_", "");
+
+                return declaringTypeName + "." + methodBase.Name + (AppendSpace ? " " : "");
+            }
+            return null;
+        }
+        public static string GetCallingMethod(bool AppendSpace = false)
+        {
+            if (TryGetCallingTypeAndMethod(out _, out MethodBase methodBase))
+            {
+                return methodBase.Name + (AppendSpace ? " " : "");
+            }
+            return null;
+        }
+        public static bool TryGetCallingTypeAndMethod(out Type CallingType, out MethodBase CallingMethod)
+        {
+            CallingType = null;
+            CallingMethod = null;
+            try
+            {
+                Type[] debugTypes = new Type[3]
+                {
+                    typeof(UD_FleshGolems.Logging.Debug),
+                    typeof(UD_FleshGolems.Logging.Debug.ArgPair),
+                    typeof(UD_FleshGolems.Logging.Indent),
+                };
+                StackTrace stackTrace = new();
+                for (int i = 0; i < 12 && stackTrace?.GetFrame(i) is StackFrame stackFrameI; i++)
+                {
+                    if (stackFrameI?.GetMethod() is MethodBase methodBase
+                        && methodBase.DeclaringType is Type declaringType
+                        && !declaringType.EqualsAny(debugTypes))
+                    {
+                        CallingType = declaringType;
+                        CallingMethod = methodBase;
+                        return true;
+                    }
+                }
+            }
+            catch (Exception x)
+            {
+                MetricsManager.LogException(nameof(TryGetCallingTypeAndMethod), x, GAME_MOD_EXCEPTION);
+            }
+            return false;
+        }
+
+        public static Indent Log<T>(string Field, T Value, Indent Indent = null, [CallerMemberName] string CallingMethod = "")
+        {
+            if (!GetDoDebug(CallingMethod))
+            {
+                return Indent;
+            }
+            Indent ??= LastIndent;
+            string output = Field;
+            if (Value != null &&
+                !Value.ToString().IsNullOrEmpty())
+            {
+                output += ": " + Value;
+            }
+            UnityEngine.Debug.Log(Indent.ToString() + output);
+            return Indent;
+        }
+        public static Indent Log(string Message, Indent Indent = null, [CallerMemberName] string CallingMethod = "")
+            => Log(Message, (string)null, Indent, CallingMethod);
+
+        public readonly struct ArgPair
+        {
+            public static ArgPair Empty = default;
+
+            private readonly string Name;
+            private readonly object Value;
+            public ArgPair(string Name, object Value)
+            {
+                this.Name = Name;
+                this.Value = Value;
+            }
+
+            public override readonly string ToString()
+                => Name.IsNullOrEmpty() 
+                ? Value?.ToString() 
+                : Name + ": " + Value?.ToString();
+
+            public Indent Log(Indent Indent, [CallerMemberName] string CallingMethod = "")
+                => Debug.Log(Name, Value, Indent ?? LastIndent, CallingMethod);
+            public Indent Log([CallerMemberName] string CallingMethod = "")
+                => Log(null, CallingMethod);
+            public Indent Log(int Offset, [CallerMemberName] string CallingMethod = "")
+                => Log(LastIndent[Offset], CallingMethod);
+
+            public override bool Equals(object obj)
+                => (obj is ArgPair argPairObj
+                    && Equals(argPairObj))
+                || base.Equals(obj);
+
+            public bool Equals(ArgPair Other)
+            {
+                if (Name != Other.Name)
+                {
+                    return false;
+                }
+                if ((Value != null) != (Other.Value != null))
+                {
+                    return false;
+                }
+                return Value == Other.Value;
+            }
+
+            public override int GetHashCode()
+                => (Name?.GetHashCode() ?? 0) ^ (Value?.GetHashCode() ?? 0);
+
+            public static bool operator ==(ArgPair Operand1, ArgPair Operand2)
+                => Operand1.Equals(Operand2);
+            public static bool operator !=(ArgPair Operand1, ArgPair Operand2)
+                => !(Operand1 == Operand2);
+        }
+
+        public static ArgPair Arg(string Name, object Value)
+            => new(Name, Value);
+
+        public static ArgPair Arg(object Value)
+            => Arg(null, Value);
+
+        public static Indent LogCaller(
+            string MessageAfter,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
+        {
+            if (!GetDoDebug(CallingMethod))
+            {
+                return Indent;
+            }
+            string output = "";
+            if (!ArgPairs.IsNullOrEmpty())
+            {
+                List<string> joinableArgs = ArgPairs.ToList()
+                    ?.Where(ap => ap != ArgPair.Empty)
+                    ?.ToList()
+                    ?.ConvertAll(ap => ap.ToString())
+                    ?.ToList();
+                if (!joinableArgs.IsNullOrEmpty())
+                {
+                    output += "(" + joinableArgs?.SafeJoin() + ")";
+                }
+            }
+            if (!MessageAfter.IsNullOrEmpty())
+            {
+                output += " " + MessageAfter;
+            }
+            return Log(GetCallingTypeAndMethod() + output, Indent, CallingMethod);
+        }
+        public static Indent LogCaller(
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
+            => LogCaller(null, Indent, CallingMethod, ArgPairs);
+
+        public static Indent LogMethod(
+            string MessageAfter,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
+        {
+            if (!GetDoDebug(CallingMethod))
+            {
+                return Indent;
+            }
+            string output = "";
+            if (!ArgPairs.IsNullOrEmpty())
+            {
+                List<string> joinableArgs = ArgPairs.ToList()
+                    ?.Where(ap => ap != ArgPair.Empty)
+                    ?.ToList()
+                    ?.ConvertAll(ap => ap.ToString())
+                    ?.ToList();
+                if (!joinableArgs.IsNullOrEmpty())
+                {
+                    output += "(" + joinableArgs?.SafeJoin() + ")";
+                }
+            }
+            if (!MessageAfter.IsNullOrEmpty())
+            {
+                output += " " + MessageAfter;
+            }
+            return Log(CallingMethod + output, Indent, CallingMethod);
+        }
+        public static Indent LogMethod(
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
+            => LogMethod(null, Indent, CallingMethod, ArgPairs);
+
+        public static Indent LogArgs(
+            string MessageBefore,
+            string MessageAfter,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
+        {
+            string output = "";
+            if (!MessageBefore.IsNullOrEmpty())
+            {
+                output += MessageBefore;
+            }
+            if (!ArgPairs.IsNullOrEmpty())
+            {
+                List<string> joinableArgs = ArgPairs.ToList()
+                    ?.Where(ap => ap != ArgPair.Empty)
+                    ?.ToList()
+                    ?.ConvertAll(ap => ap.ToString())
+                    ?.ToList();
+                if (!joinableArgs.IsNullOrEmpty())
+                {
+                    output += joinableArgs?.SafeJoin();
+                }
+            }
+            if (!MessageAfter.IsNullOrEmpty())
+            {
+                output += MessageAfter;
+            }
+            return Log(output, Indent, CallingMethod);
+        }
+
+        public static Indent LogArgs(
+            string MessageBefore,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "",
+            params ArgPair[] ArgPairs)
+            => LogArgs(MessageBefore, null, Indent, CallingMethod, ArgPairs);
+
+        public static Indent YehNah(
+            string Message,
+            object Value,
+            bool? Good = null,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+        {
+            string append;
+            if (Good != null)
+            {
+                if (!Good.GetValueOrDefault())
+                {
+                    append = AppendCross("");
+                }
+                else
+                {
+                    append = AppendTick("");
+                }
+            }
+            else
+            {
+                append = "[-] ";
+            }
+            return Log(append + Message, Value, Indent, CallingMethod);
+        }
+        public static Indent YehNah(
+            string Message,
+            bool?Good = null,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, null, Good, Indent, CallingMethod);
+
+        public static Indent CheckYeh(
+            string Message,
+            object Value,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, Value, true, Indent, CallingMethod);
+
+        public static Indent CheckYeh(
+            string Message,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, null, true, Indent, CallingMethod);
+
+        public static Indent CheckNah(
+            string Message,
+            object Value,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, Value, false, Indent, CallingMethod);
+
+        public static Indent CheckNah(
+            string Message,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => YehNah(Message, null, false, Indent, CallingMethod);
+
+        public static Indent LogTime(
+            string Message,
+            Stopwatch StopWatch,
+            bool Stop = false,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+        {
+            if (Stop)
+                StopWatch.Stop();
+            return Log(
+                Field: Message ?? StopWatch.Elapsed.ValueUnits(),
+                Value: !Message.IsNullOrEmpty() ? StopWatch.Elapsed.ValueUnits() : null,
+                Indent: Indent,
+                CallingMethod: CallingMethod);
+        }
+
+        public static Indent LogTimeStop(
+            string Message,
+            Stopwatch StopWatch,
+            Indent Indent = null,
+            [CallerMemberName] string CallingMethod = "")
+            => LogTime(Message, StopWatch, true, Indent, CallingMethod);
+
+        public static void MetricsManager_LogCallingModError(object Message)
+        {
+            if (!TryGetFirstCallingModNot(ThisMod, out ModInfo callingMod))
+                callingMod = ThisMod;
+
+            MetricsManager.LogModError(callingMod, Message);
+        }
+
+        /*
+         * 
+         * Wishes!
+         * 
+         */
+        
+    }
+}

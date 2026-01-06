@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<objects ExcludeFromCorpusGeneration="true">
+
+  <object Name="UD_FleshGolems Ehalcodon Corpse" Inherits="UD_FleshGolems Base Nephal Corpse">
+    <part Name="Render" DisplayName="corpse in the form of {{ehalcodon|Ehalcodon}}" />
+  </object>
+
+  <object Name="Ehalcodon" Load="Merge">
+    <part Name="Corpse" CorpseChance="100" CorpseBlueprint="UD_FleshGolems Ehalcodon Corpse" />
+  </object>
+  
+</objects>

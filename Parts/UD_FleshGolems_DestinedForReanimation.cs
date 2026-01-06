@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 using ConsoleLib.Console;
 
@@ -11,32 +13,261 @@ using XRL.UI;
 using XRL.World.Effects;
 using XRL.World.ObjectBuilders;
 using XRL.World.Capabilities;
+using XRL.World.Parts.Mutation;
+
+using static XRL.World.ObjectBuilders.UD_FleshGolems_Reanimated;
+
+using SerializeField = UnityEngine.SerializeField;
 
 using UD_FleshGolems;
+using UD_FleshGolems.Logging;
+using UD_FleshGolems.Events;
+using UD_FleshGolems.Parts.VengeanceHelpers;
 
 using static UD_FleshGolems.Const;
-using XRL.World.Parts.Mutation;
+using static UD_FleshGolems.Utils;
 
 namespace XRL.World.Parts
 {
     [Serializable]
-    public class UD_FleshGolems_DestinedForReanimation : IScribedPart
+    public class UD_FleshGolems_DestinedForReanimation : IScribedPart, IReanimateEventHandler
     {
+        public static int AccidentalChanceOneIn = 3;
+        // Keys list lifted from books' https://codeberg.org/librarianmage/EloquentDeath
+        // which you should check out for being awesome.
+        public static Dictionary<string, List<DeathDescription>> DeathCategoryDeathDescriptions => new()
+        {
+            {   // Heat damage w/ NoBurn (only steam)
+                "cooked", new()
+                {
+                    new("cooked"),
+                    new("cooked", Killed: "hard-boiled"),
+                    new("cooked", Killed: "soft-boiled"),
+                    new("cooked", Were: false, Killed: "broiled for our sins... ({{W|Ramen}})", Killer: "", Method: ""),
+                    new("cooked", Killed: "cooked in a pot of broth", Method: ""),
+                    new("cooked", Killed: "cooked in a pot of stew", Method: ""),
+                    new("cooked", Were: false, Killed: "fell in a pot of broth", Killer: "", Method: ""),
+                    new("cooked", Were: false, Killed: "fell in a pot of stew", Killer: "", Method: ""),
+                    new("cooked", Were: false, Killed: "didn't realize the pot had come to a boil", Killer: "", Method: ""),
+                }
+            },
+            {   // Heat damage w/o NoBurn
+                "immolated", new()
+                {
+                    new("immolated"),
+                    new("immolated", Killed: "scorched to death"),
+                    new("immolated", Killed: "burned at the stake =subject.pastLife.byFaction.forHateReason=", Killer: "", Method: ""),
+                    new("immolated", Were: false, Killed: "couldn't find a way to put out the fire", By: false, With: false),
+                    new("immolated", Killed: "barbequed"),
+                    new("immolated", Killed: "grilled"),
+                    new("immolated", Killed: "more \"well-done\" than \"medium-rare\"", By: false, With: false),
+                    new("immolated", Were: false, Killed: "had to leave the kitchen", Killer: "", Method: ""),
+                    new("immolated", Were: false, Killed: "jumped out of the frying pan", Killer: "", Method: ""),
+                    new("immolated", Were: false, Killed: "tried to befriend an elder flamebeard", Killer: "", Method: ""),
+                }
+            },
+            {   // Plasma damage
+                "plasma-burned to death", new()
+                {
+                    new("plasma-burned to death"),
+                    new("plasma-burned to death", Killed: "deep fried"),
+                    new("plasma-burned to death", Killed: "fried"),
+                    new("plasma-burned to death", Were: false, Killed: "looked in the wrong end of a spacer rifle", Killer: "", Method: ""),
+                    new("plasma-burned to death", Were: false, Killed: "fell into an astral forge", Killer: "", Method: ""),
+                    new("plasma-burned to death", Killed: "knocked into an astral forge"),
+                    new("plasma-burned to death", Were: false, Killed: "stared at the sun too long", Killer: "", Method: ""),
+                    new("plasma-burned to death", Were: false, Killed: "caught a plasma grenade mkIII", By: false, Method: ""),
+                    new("plasma-burned to death", Were: false, Killed: "mishandled a plasma grenade mkIII", Killer: "", Method: ""),
+                }
+            },
+            {   // Cold damage
+                "frozen to death", new()
+                {
+                    new("frozen to death"),
+                    new("frozen to death", Killed: "snap-frozen"),
+                    new("frozen to death", Killed: "flash frozen"),
+                    new("frozen to death", Killed: "chilled to death"),
+                    new("frozen to death", Killed: "locked inside a faulty cryo-tube", Method: ""),
+                    new("frozen to death", Were: false, Killed: "fell through the ice", Killer: "", Method: ""),
+                    new("frozen to death", Killed: "knocked through the ice"),
+                    new("frozen to death", Were: false, Killed: "didn't hear the ice cracking", Killer: "", Method: ""),
+                    new("immolated", Were: false, Killed: "tried to befriend an elder sleetbeard", Killer: "", Method: ""),
+                }
+            },
+            {   // Electric damage
+                "electrocuted", new()
+                {
+                    new("electrocuted"),
+                    new("electrocuted", Killed: "zapped to death"),
+                    new("electrocuted", Were: false, Killed: "tried to dig through a wired wall", Killer: "", Method: ""),
+                    new("electrocuted", Were: false, Killed: "took a stun-rod to the =subject.bodyPart.NoCase:face=", Killer: "", Method: ""),
+                    new("electrocuted", Killed: "struck by lightning", Killer: "", Method: ""),
+                    new("electrocuted", Killed: "overloaded", With: false, Method: "electrical discharge"),
+                    new("electrocuted", Were: false, Killed: "licked a nuclear cell", Killer: "", Method: ""),
+                    new("electrocuted", Were: false, Killed: "took too many volts"),
+                }
+            },
+            {   // Thirst
+                "thirst", new()
+                {
+                    new("thirst", Killed: "dessicated"),
+                    new("thirst", Were: false, Killed: "ran out of fresh water", Killer: "", Method: ""),
+                    new("thirst", Were: false, Killed: "forgot to drink", Killer: "", Method: ""),
+                    new("thirst", Were: false, Killed: "tried to cross the Moghra'yi", Killer: "", Method: ""),
+                    new("thirst", Were: false, Killed: "bought too many =uD_RandomItems=", By: false, Method: ""),
+                    new("thirst", Were: false, Killed: "drank salt water", Killer: "", Method: ""),
+                    new("thirst", Were: false, Killed: "performed the water-ritual one too many times", Killer: "", Method: ""),
+                    new("thirst", Killed: "dried out"),
+                }
+            },
+            {   // Poison damage
+                "died of poison", new()
+                {
+                    new("died of poison", Killed: "poisoned"),
+                    new("died of poison", Killed: "envenomed"),
+                    new("died of poison", Killed: "tricked into consuming poison", Method: ""),
+                    new("died of poison", Killed: "fed poison", Method: ""),
+                    new("died of poison", Were: false, Killed: "tried to befriend an elder gallbeard"),
+                    new("died of poison", Were: false, Killed: "drank green goo", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "left a wound to fester", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "ate the wrong kind of mushroom", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "didn't read the warning label", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "caught a poison gas grenade mkIII", By: false, Method: ""),
+                    new("died of poison", Were: false, Killed: "mishandled a poison gas grenade mkIII", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "forgot to wear a gas mask", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "had my gas mask tampered with"),
+                }
+            },
+            {   // Bleeding damage
+                "bled to death", new()
+                {
+                    new("bled to death"),
+                    new("bled to death", Killed: "exsanguinated"),
+                    new("bled to death", Killed: "butchered"),
+                    new("bled to death", Killed: "slashed to death"),
+                    new("bled to death", Killed: "eviscerated"),
+                    new("bled to death", Killed: "vivsected"),
+                    new("bled to death", Were: false, Killed: "got too many paper-cuts", Killer: "", Method: ""),
+                    new("bled to death", Were: false, Killed: "tried to remove a hangnail and went a little too far", Killer: "", Method: ""),
+                    new("bled to death", Were: false, Killed: "had a nosebleed that just wouldn't stop", Killer: "", Method: ""),
+                    new("bled to death", Were: false, Killed: "tried to befriend a leech", Killer: "", Method: ""),
+                    new("bled to death", Were: false, Killed: "caught a falling =uD_RandomItem:inherits:BaseDagger=", Killer: "", Method: ""),
+                    new("bled to death", Killed: "too slow to dodge a thrown =uD_RandomItem:inherits:BaseDagger=", By: false, Method: ""),
+                    new("bled to death", Were: false, Killed: "swallowed a =uD_RandomItem:inherits:BaseDagger=", Killer: "", Method: ""),
+                }
+            },
+            {   // Metabolic damage (hulk honey)
+                "failed", new()
+                {
+                    new("failed", Were: false, Killed: "failed to metabolise a hulk honey fast enough", Killer: "", Method: ""),
+                    new("failed", Were: false, Killed: "hulked out too hard", Killer: "", Method: ""),
+                    new("failed", Were: false, Killed: "stayed mad too long", Killer: "", Method: ""),
+                    new("failed", Were: false, Killed: "coped, seethed, and malded", Killing: "coping, seething, and malding", By: false, With: false),
+                    new("failed", Were: false, Killed: "raged to death", Killer: "", Method: ""),
+                    new("failed", Were: false, Killed: "used one too many hulk honey", Killer: "", Method: ""),
+                    new("failed", Killed: "goaded into an uncontainable rage"),
+                    new("failed", Killed: "too juiced up", By: false, With: false),
+                }
+            },
+            {   // Asphyxiation damage (osseous ash)
+                "died of asphyxiation", new()
+                {
+                    new("died of asphyxiation", Killed: "choked to death"),
+                    new("died of asphyxiation", Killed: "suffocated"),
+                    new("died of asphyxiation", Were: false, Killed: "inhaled too much osseous ash", Killer: "", Method: ""),
+                    new("died of asphyxiation", Were: false, Killed: "tried to breathe underwater", Killer: "", Method: ""),
+                    new("died of asphyxiation", Killed: "held underwater"),
+                    new("died of asphyxiation", Were: false, Killed: "forgot to inhale again after the last exhale", Killer: "", Method: ""),
+                    new("died of asphyxiation", Were: false, Killed: "ran out of air", By: false),
+                }
+            },
+            {   // Psionic damage
+                "psychically extinguished", new()
+                {
+                    new("psychically extinguished"),
+                    new("psychically extinguished", Killed: "commanded to die", Method: ""),
+                    new("psychically extinguished", Killed: "compelled to simply die", Method: ""),
+                    new("psychically extinguished", Killed: "convinced to die", Method: ""),
+                    new("psychically extinguished", Killed: "convinced to embrace death", Method: ""),
+                    new("psychically extinguished", Killed: "sundered dead", Method: ""),
+                    new("psychically extinguished", Killed: "mentally obliterated", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "couldn't maintain a strong enough sense of self", Killer: "", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "beheld the breadth of the psychic sea", Method: ""),
+                    new("psychically extinguished", Killed: "shown the breadth of the psychic sea", Killer: "Ptoh", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "tried to understand things better left a mystery", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "dared to challenge Ptoh and, well...", Killer: "", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "risked the proximity of a darkling star", Killer: "", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "sought oblivion too keenly", Killer: "", Method: ""),
+                    new("psychically extinguished", Were: false, Killed: "had a shattered mental mirror", Killer: "", Method: ""),
+                }
+            },
+            {   // Drain damage (syphon vim)
+                "drained to extinction", new()
+                {
+                    new("drained to extinction"),
+                    new("drained to extinction", Killed: "absorbed"),
+                    new("drained to extinction", Were: false, Killed: "went =subject.bodyPart.NoCase:head=-to-head with a leech", Killer: "", Method: ""),
+                    new("drained to extinction", Killed: "drained of all vital essence", Method: ""),
+                    new("drained to extinction", Killed: "syphoned to a husk"),
+                    new("drained to extinction", Were: false, Killed: "didn't notice the stat-saps", Killer: "", Method: ""),
+                    new("drained to extinction", Were: false, Killed: "didn't notice the leeches", Killer: "", Method: ""),
+                }
+            },
+            {   // Thorns damage
+                "pricked to death", new()
+                {
+                    new("pricked to death"),
+                    new("pricked to death", Killed: "pin-cushioned"),
+                    new("pricked to death", Killed: "skewered"),
+                    new("pricked to death", Were: false, Killed: "sat on a junk dollar", Killer: "", Method: ""),
+                    new("pricked to death", Killed: "shoved onto a junk dollar"),
+                    new("pricked to death", Were: false, Killed: "fell on top of an urshiib", Killer: "", Method: ""),
+                    new("pricked to death", Were: false, Killed: "made the wrong urshiib angry", Killer: "", Method: ""),
+                    new("pricked to death", Were: false, Killed: "got the thorns", By: false, Method: ""),
+                }
+            },
+            {   // Bite damage (any bite)
+                "bitten to death", new()
+                {
+                    new("bitten to death"),
+                    new("bitten to death", Killed: "chewed on"),
+                    new("bitten to death", Killed: "half-eaten"),
+                    new("bitten to death", Killed: "chomped"),
+                    new("bitten to death", Were: false, Killed: "got too close to a salt kraken", Killer: "", Method: ""),
+                    new("bitten to death", Were: false, Killed: "tried to swim with a madpole", Killer: "", Method: ""),
+                    new("bitten to death", Were: false, Killed: "upset some cannibals", Killer: "", Method: ""),
+                }
+            },
+            {   // Killed
+                "killed", new()
+                {
+                    new("killed"),
+                    new("killed", Killed: "killed in a duel"),
+                    new("killed", Killed: "thoroughly ended"),
+                    new("killed", Killed: "ended"),
+                    new("killed", Killed: "{{R|wasted}}"),
+                    new("killed", Killed: "merced"),
+                    new("killed", Killed: "taken out"),
+                    new("killed", Killed: "taken down"),
+                    new("killed", Killed: "put down"),
+                    new("killed", Killed: "knocked off"),
+                    new("killed", Killed: "run through"),
+                }
+            },
+        };
+
+        public static bool HaveFakedDeath = false;
+
         public GameObject Corpse;
 
         public bool BuiltToBeReanimated;
 
         public bool Attempted;
 
-        public bool DelayTillZoneBuild;
-
+        [SerializeField]
         private List<int> FailedToRegisterEvents;
 
-        public static bool HaveFakedDeath = false;
-
         public bool PlayerWantsFakeDie;
-
-        private static bool IfPlayerStartUndeadUseTurnTickNotStringy => false;
 
         public UD_FleshGolems_DestinedForReanimation()
         {
@@ -54,17 +285,29 @@ namespace XRL.World.Parts
             GameObject Projectile = null,
             bool Accidental = false,
             bool AlwaysUsePopups = false,
+            string Category = null,
             string KillerText = null,
             string Reason = null,
             string ThirdPersonReason = null,
             bool DoFakeMessage = true,
             bool DoJournal = true,
-            bool DoAchievement = false)
+            bool DoAchievement = false,
+            IRenderable RelentlessIcon = null,
+            string RelentlessTitle = null,
+            DeathDescription DeathDescription = null)
         {
             if (Dying == null)
             {
                 return false;
             }
+
+            if (DeathDescription != null)
+            {
+                Category = DeathDescription.Category;
+                Reason = DeathDescription.Reason(Accidental);
+                ThirdPersonReason = DeathDescription.ThirdPersonReason(Accidental: Accidental);
+            }
+
             AfterDieEvent.Send(
                 Dying: Dying,
                 Killer: Killer,
@@ -89,25 +332,35 @@ namespace XRL.World.Parts
                 Reason: Reason,
                 ThirdPersonReason: ThirdPersonReason);
 
-            string deathMessage = "You died.\n\n" + (Reason ?? The.Game.DeathReason);
-            string deathCategory = The.Game.DeathCategory;
-            Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
-            string deathMessageTitle = "";
-            if (deathMessage.Contains("."))
+            string deathMessageTitle = "You died.";
+            string deathMessage = "=subject.Subjective= " + (Reason ?? The.Game.DeathReason) + ".";
+            if (DeathDescription != null)
             {
-                int titleSubstring = deathMessage.IndexOf('.') + 1;
-                int messageSubstring = deathMessage.IndexOf('.') + 2;
-                deathMessageTitle = deathMessage[..titleSubstring];
-                deathMessage = deathMessage[messageSubstring..];
+                deathMessage = ThirdPersonReason + ".";
             }
+            string deathCategory = Category ?? The.Game.DeathCategory;
             Renderable deathIcon = null;
+            Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
+
+            if (UI.Options.GetOptionBool("Books_EloquentDeath_EnableEloquentDeathMessage"))
+            {
+                deathMessageTitle = "You became a cord in time's silly carpet.";
+            }
+
             if (!deathCategory.IsNullOrEmpty() && deathIcons.ContainsKey(deathCategory))
             {
-                deathMessage = deathMessage.Replace("You died.", "");
                 deathIcon = deathIcons[deathCategory];
             }
-            if (DoFakeMessage)
+
+            if (DoFakeMessage && (Dying.IsPlayer() || Dying.IsPlayerDuringWorldGen()))
             {
+                deathMessage = deathMessage
+                    ?.StartReplace()
+                    ?.AddObject(Dying)
+                    ?.AddObject(Killer)
+                    ?.ToString()
+                    ?.Capitalize();
+
                 Popup.ShowSpace(
                     Message: deathMessage,
                     Title: deathMessageTitle,
@@ -117,35 +370,58 @@ namespace XRL.World.Parts
                     ShowContextFrame: deathIcon != null,
                     PopupID: "DeathMessage");
 
-                IRenderable playerIcon = Dying.RenderForUI();
+                string andYetMsg = "... and yet...";
+                string msgSpaces = "=ud_nbsp:12="
+                    .StartReplace()
+                    .ToString();
+                string notRelentMsg = "...=subject.refname= =subject.verb:don't:afterpronoun= {{UD_FleshGolems_reanimated|relent}}..."
+                    .StartReplace()
+                    .AddObject(Dying)
+                    .ToString();
+
+                string fullMsg = andYetMsg + "\n\n" + msgSpaces + notRelentMsg;
+
+                RelentlessIcon ??= Dying.RenderForUI();
+                
                 Popup.ShowSpace(
-                    Message: "... and yet...\n\n=ud_nbsp:12=...You don't {{UD_FleshGolems_reanimated|relent}}.".StartReplace().ToString(),
-                    AfterRender: deathIcon != null ? (Renderable)playerIcon : null,
+                    Message: fullMsg,
+                    Title: RelentlessTitle,
+                    AfterRender: new(RelentlessIcon),
                     LogMessage: true,
                     ShowContextFrame: deathIcon != null,
-                    PopupID: "DeathMessage");
+                    PopupID: "UndeathMessage");
+                
+                Popup.ShowSpace(
+                    Message: "... some time passes... ",
+                    LogMessage: true,
+                    PopupID: "TimePassMessage");
             }
 
-            string deathReason = Reason ?? The.Game.DeathReason ?? deathCategory;
+            string deathReason = deathMessage;
             if (!deathReason.IsNullOrEmpty())
             {
-                deathReason = deathReason[0].ToString().ToLower() + deathReason.Substring(1);
+                deathReason = deathReason.Uncapitalize();
             }
-            if (DoJournal && !deathReason.IsNullOrEmpty() && The.Player != null)
+            if (DoJournal
+                && !deathReason.IsNullOrEmpty()
+                && (Dying.IsPlayer() || Dying.IsPlayerDuringWorldGen()))
             {
+                // Died
                 JournalAPI.AddAccomplishment(
                     text: "On the " + Calendar.GetDay() + " of " + Calendar.GetMonth() + ", " + deathReason?.Replace("!", "."),
                     muralText: "",
                     gospelText: "");
 
+                // Came back
                 JournalAPI.AddAccomplishment(
                     text: "On the " + Calendar.GetDay() + " of " + Calendar.GetMonth() + ", " +
                         "you returned from the great beyond.",
-                    muralText: "O! Fancieth way to say! Thou hatheth returned whence the thin-veil twixt living and the yonder!",
-                    gospelText: "You just, sorta... woke back up from dying...");
+                    muralText: "O! Fancieth way to say! =Name= hatheth returned whence the thin-veil twixt living and the yonder!",
+                    gospelText: "=Name= just, sorta... woke back up from dying...");
             }
 
-            if (DoAchievement)
+            if (DoAchievement
+                && (Dying.IsPlayer() || Dying.IsPlayerDuringWorldGen()))
             {
                 Achievement.DIE.Unlock();
             }
@@ -170,7 +446,14 @@ namespace XRL.World.Parts
 
             return true;
         }
-        public static bool FakeDeath(GameObject Dying, IDeathEvent E, bool DoFakeMessage = true, bool DoJournal = true, bool DoAchievement = false)
+        public static bool FakeDeath(
+            GameObject Dying,
+            IDeathEvent E,
+            bool DoFakeMessage = true,
+            bool DoJournal = true,
+            bool DoAchievement = false,
+            IRenderable RelentlessIcon = null,
+            string RelentlessTitle = null)
         {
             return FakeDeath(
                 Dying: Dying,
@@ -184,7 +467,9 @@ namespace XRL.World.Parts
                 ThirdPersonReason: E?.ThirdPersonReason,
                 DoFakeMessage: DoFakeMessage,
                 DoJournal: DoJournal,
-                DoAchievement: DoAchievement);
+                DoAchievement: DoAchievement,
+                RelentlessIcon: RelentlessIcon,
+                RelentlessTitle: RelentlessTitle);
         }
         public bool FakeDeath(IDeathEvent E)
         {
@@ -194,46 +479,260 @@ namespace XRL.World.Parts
         {
             return FakeDeath(null);
         }
-        public static bool FakeRandomDeath(GameObject Dying, int ChanceRandomKiller = 50, bool DoAchievement = false)
+
+        public static void RandomDeathDescriptionAndAccidental(
+            GameObject For,
+            out DeathDescription DeathDescription,
+            out bool Accidental,
+            Predicate<DeathDescription> Filter = null)
         {
-            GameObject killer = null;
-            GameObject weapon = null;
-            GameObject projectile = null;
+            DeathDescription = DeathCategoryDeathDescriptions
+                ?.Aggregate(
+                    seed: new List<DeathDescription>(),
+                    func: delegate (List<DeathDescription> acc, KeyValuePair<string, List<DeathDescription>> next)
+                    {
+                        foreach (DeathDescription deathDescription in next.Value)
+                            if (Filter == null || Filter(deathDescription))
+                                acc.AddIf(deathDescription, item => !acc.Contains(item));
+
+                        return acc;
+                    })
+                ?.GetRandomElementCosmetic()
+                ?.Copy();
+
+            if (DeathDescription != null)
+            {
+                DeathDescription.Killed = DeathDescription?.Killed
+                    ?.StartReplace()
+                    ?.AddObject(For)
+                    ?.ToString();
+            }
+
+            Accidental = Stat.RollCached("1d" + AccidentalChanceOneIn) == 1;
+        }
+
+        public static DeathDescription ProduceRandomDeathDescriptionWithComponents(
+            GameObject For,
+            out GameObject Killer,
+            out GameObject Weapon,
+            out GameObject Projectile,
+            out string Category,
+            out string Reason,
+            out bool Accidental,
+            out bool KillerIsCached,
+            int ChanceRandomKiller = 50,
+            Predicate<DeathDescription> Filter = null)
+        {
+            Killer = null;
+            Weapon = null;
+            Projectile = null;
+            Category = null;
+            Reason = null;
+            KillerIsCached = false;
+
+            if (ChanceRandomKiller.in100())
+            {
+                if (50.in100())
+                {
+                    List<GameObject> cachedObjects = Event.NewGameObjectList(The.ZoneManager.CachedObjects.Values)
+                        ?.Where(GO => (GO.HasPart<Combat>() && GO.HasPart<Body>()) || GO.HasTagOrProperty("BodySubstitute"))
+                        ?.ToList();
+                    if (cachedObjects?.GetRandomElement() is GameObject cachedKiller)
+                    {
+                        KillerIsCached = true;
+                        Killer = cachedKiller;
+
+                        Weapon = Killer.GetMissileWeapons()
+                            ?.GetRandomElementCosmetic()
+                            ?? Killer.GetPrimaryWeapon();
+                    }
+                }
+                else
+                if (!1.in10())
+                {
+                    Killer = GameObject.CreateSample(EncountersAPI.GetACreatureBlueprint());
+                }
+                else
+                {
+                    Killer = HeroMaker.MakeHero(GameObject.CreateSample(EncountersAPI.GetALegendaryEligibleCreatureBlueprint()));
+                }
+            }
+            if (Killer != null
+                && !KillerIsCached)
+            {
+                GameObjectBlueprint weaponBlueprint = EncountersAPI.GetAnItemBlueprintModel(
+                    bp => (bp.InheritsFrom("MeleeWeapon") && !bp.InheritsFrom("Projectile"))
+                    || bp.InheritsFrom("BaseMissileWeapon")
+                    || bp.InheritsFrom("BaseThrownWeapon"));
+
+                Weapon = GameObject.CreateSample(weaponBlueprint.Name);
+            }
+            if (Weapon != null
+                && Weapon.HasPart<MissileWeapon>())
+            {
+                if (GetProjectileBlueprintEvent.GetFor(Weapon) is string projectileBlueprint)
+                {
+                    Projectile = GameObject.CreateSample(projectileBlueprint);
+                }
+            }
+
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ChanceRandomKiller), ChanceRandomKiller),
+                });
+
+            bool haveKiller = Killer != null;
+            bool haveWeapon = Weapon != null;
+            bool haveProjectile = Projectile != null;
+            bool haveMethod = haveWeapon || haveProjectile;
+            bool MatchesSpec(DeathDescription DeathDescription)
+            {
+                if (For.GetPropertyOrTag("UD_FleshGolems DeathDetails DeathDescription Category") is string categoryPropTag
+                    && categoryPropTag.CachedCommaExpansion()?.ToArray() is string[] categories
+                    && !DeathDescription.Category.EqualsAny(categories))
+                    return false;
+
+                if (Filter != null && !Filter(DeathDescription))
+                    return false;
+
+                if (haveKiller && DeathDescription.Killer == "")
+                    return false;
+
+                if (haveMethod && DeathDescription.Method == "")
+                    return false;
+
+                return true;
+            }
+            RandomDeathDescriptionAndAccidental(For, out DeathDescription deathDescription, out Accidental, MatchesSpec);
+
+            Category = deathDescription.Category;
+            Reason = deathDescription.Reason(Accidental);
+
+            deathDescription
+                .SetKiller(Killer)
+                .SetMethod(Weapon)
+                .SetMethodFallback(Projectile);
+
+            Debug.Log(nameof(KillerIsCached), KillerIsCached, indent[1]);
+            Debug.Log(nameof(Killer), Killer?.DebugName ?? "null", indent[1]);
+            Debug.Log(nameof(Weapon), Weapon?.DebugName ?? "null", indent[1]);
+            Debug.Log(nameof(Projectile), Projectile?.DebugName ?? "null", indent[1]);
+            Debug.Log(nameof(Accidental), Accidental, indent[1]);
+
+            return deathDescription;
+        }
+        public static DeathDescription ProduceRandomDeathDescription(
+            GameObject For,
+            int ChanceRandomKiller = 50,
+            Predicate<DeathDescription> Filter = null)
+            => ProduceRandomDeathDescriptionWithComponents(
+                For: For,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                ChanceRandomKiller: ChanceRandomKiller,
+                Filter: Filter);
+
+        public UD_FleshGolems_DeathDetails InitializeRandomDeathDetails()
+            => InitializeRandomDeathDetails(ParentObject);
+
+        public static UD_FleshGolems_DeathDetails InitializeRandomDeathDetails(
+            GameObject ForCorpse,
+            UD_FleshGolems_DeathDetails DeathDetails = null)
+        {
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ForCorpse), ForCorpse?.DebugName ?? "null"),
+                    Debug.Arg(nameof(UD_FleshGolems.Extensions.IsCorpse), ForCorpse?.IsInanimateCorpse()),
+                });
+
+            DeathDetails = ForCorpse.RequirePart<UD_FleshGolems_DeathDetails>();
+
+            DeathDescription deathDescription = ProduceRandomDeathDescriptionWithComponents(
+                For: ForCorpse,
+                Killer: out GameObject killer,
+                Weapon: out GameObject weapon,
+                Projectile: out GameObject projectile,
+                Category: out _,
+                Reason: out _,
+                Accidental: out bool accidental,
+                KillerIsCached: out bool killerIsCached);
             try
             {
-                if (ChanceRandomKiller.in100())
+                if (ForCorpse.GetBlueprint().IsCorpse())
                 {
-                    if (!1.in10())
+                    DeathDetails = ForCorpse.RequirePart<UD_FleshGolems_DeathDetails>();
+
+                    if (!DeathDetails.Initialize(killer, weapon, projectile, deathDescription, accidental, killerIsCached))
                     {
-                        killer = GameObject.CreateSample(EncountersAPI.GetACreatureBlueprint());
-                    }
-                    else
-                    {
-                        killer = HeroMaker.MakeHero(GameObject.CreateSample(EncountersAPI.GetALegendaryEligibleCreatureBlueprint()));
+                        Debug.CheckNah("Failed to initialize DeathDetails.", indent[1]);
+                        ForCorpse.RemovePart(DeathDetails);
+                        return null;
                     }
                 }
-                if (killer != null)
+                return DeathDetails;
+            }
+            finally
+            {
+                if (!killerIsCached)
                 {
-                    GameObjectBlueprint weaponBlueprint = EncountersAPI.GetAnItemBlueprintModel(
-                        bp => (bp.InheritsFrom("MeleeWeapon") && !bp.InheritsFrom("Projectile"))
-                        || bp.InheritsFrom("BaseMissileWeapon")
-                        || bp.InheritsFrom("BaseThrownWeapon"));
-                    weapon = GameObject.CreateSample(weaponBlueprint.Name);
-                    if (weaponBlueprint.InheritsFrom("BaseMissileWeapon"))
-                    {
-                        if (weaponBlueprint.TryGetPartParameter(nameof(MagazineAmmoLoader), nameof(MagazineAmmoLoader.ProjectileObject), out string projectileObject))
-                        {
-                            projectile = GameObject.CreateSample(projectileObject);
-                        }
-                        else
-                        if (weaponBlueprint.TryGetPartParameter(nameof(MagazineAmmoLoader), nameof(MagazineAmmoLoader.AmmoPart), out string ammoPart))
-                        {
-                            projectile = GameObject.CreateSample(EncountersAPI.GetAnItemBlueprint(GO => GO.HasPart(ammoPart)));
-                        }
-                    }
+                    killer?.Obliterate();
+                    weapon?.Obliterate();
                 }
-                string reason = CheckpointingSystem.deathIcons.Keys.GetRandomElement();
-                bool accidental = Stat.RollCached("1d2") == 1;
+                projectile?.Obliterate();
+            }
+        }
+
+        public static bool FakeRandomDeath(
+            GameObject Dying,
+            ref UD_FleshGolems_DeathDetails DeathDetails,
+            int ChanceRandomKiller = 50,
+            bool DoAchievement = false,
+            IRenderable RelentlessIcon = null,
+            string RelentlessTitle = null)
+        {
+            bool weaponIsProjectile = DeathDetails?.Weapon is GameObject ddWeapon 
+                && (ddWeapon.InheritsFrom("Projectile")
+                    || ddWeapon.HasPart<Projectile>());
+
+            GameObject killer = DeathDetails?.Killer;
+            GameObject weapon = DeathDetails?.Weapon;
+            GameObject projectile = weaponIsProjectile ? DeathDetails?.Weapon : null;
+            bool killerIsCached = DeathDetails != null && DeathDetails.KillerIsCached;
+            bool accidental = DeathDetails != null && DeathDetails.Accidental;
+            string category = DeathDetails?.DeathDescription?.Category;
+            string reason = DeathDetails?.DeathDescription?.Reason();
+            try
+            {
+                DeathDescription deathDescription = DeathDetails?.DeathDescription
+                    ?? ProduceRandomDeathDescriptionWithComponents(
+                        For: Dying,
+                        Killer: out killer,
+                        Weapon: out weapon,
+                        Projectile: out projectile,
+                        Category: out category,
+                        Reason: out reason,
+                        Accidental: out accidental,
+                        KillerIsCached: out killerIsCached,
+                        ChanceRandomKiller: ChanceRandomKiller);
+
+                if (DeathDetails == null)
+                    MetricsManager.LogModWarning(
+                        mod: ThisMod,
+                        Message: nameof(FakeRandomDeath) + " passed null " + nameof(UD_FleshGolems_DeathDetails) +
+                            " for " + (Dying?.DebugName ?? "null entity"));
+                
+                if (DeathDetails != null
+                    && !DeathDetails.Init)
+                    DeathDetails?.Initialize(killer, weapon, projectile, deathDescription, accidental, killerIsCached);
 
                 bool deathFaked = FakeDeath(
                     Dying: Dying,
@@ -241,120 +740,153 @@ namespace XRL.World.Parts
                     Weapon: weapon,
                     Projectile: projectile,
                     Accidental: accidental,
+                    Category: category,
                     Reason: reason,
                     ThirdPersonReason: reason,
-                    DoAchievement: DoAchievement);
+                    DoAchievement: DoAchievement,
+                    RelentlessIcon: RelentlessIcon,
+                    RelentlessTitle: RelentlessTitle,
+                    DeathDescription: deathDescription);
 
-                killer?.Obliterate();
-                weapon?.Obliterate();
+                if (!killerIsCached)
+                {
+                    killer?.Obliterate();
+                    weapon?.Obliterate();
+                }
                 projectile?.Obliterate();
 
                 return deathFaked;
             }
             finally
             {
-                if (GameObject.Validate(ref killer))
+                if (!killerIsCached)
                 {
-                    killer.Obliterate();
-                }
-                if (GameObject.Validate(ref weapon))
-                {
-                    weapon.Obliterate();
+                    if (GameObject.Validate(ref killer))
+                        killer.Obliterate();
+
+                    if (GameObject.Validate(ref weapon))
+                        weapon.Obliterate();
                 }
                 if (GameObject.Validate(ref projectile))
-                {
                     projectile.Obliterate();
-                }
             }
         }
-        public bool FakeRandomDeath(int ChanceRandomKiller = 50, bool DoAchievement = false)
+        public bool FakeRandomDeath(ref UD_FleshGolems_DeathDetails DeathDetails, int ChanceRandomKiller = 50, bool DoAchievement = false)
         {
             return FakeRandomDeath(
                 Dying: ParentObject,
+                ref DeathDetails,
                 ChanceRandomKiller: ChanceRandomKiller,
                 DoAchievement: DoAchievement);
         }
 
-        public static bool IsDyingCreatureCorpse(GameObject Dying, out GameObject Corpse)
-        {
-            Corpse = null;
-            if (Dying.HasPart<Corpse>()
-                && Dying.GetDropInventory() is Inventory dropInventory)
-            {
-                GameObject bestMatch = null;
-                GameObject secondBestMatch = null;
-                GameObject thirdBestMatch = null;
-                foreach (GameObject dropItem in dropInventory.GetObjects())
-                {
-                    if (!dropItem.GetBlueprint().InheritsFrom("Corpse"))
-                    {
-                        continue;
-                    }
-                    if (Dying.ID == dropItem.GetStringProperty("SourceID"))
-                    {
-                        Corpse = dropItem;
-                        break;
-                    }
-                    if (Dying.Blueprint == dropItem.GetStringProperty("SourceBlueprint"))
-                    {
-                        if (bestMatch != null)
-                        {
-                            secondBestMatch ??= dropItem;
-                            continue;
-                        }
-                        bestMatch ??= dropItem;
-                    }
-                    if (Dying.GetSpecies() == dropItem.Blueprint.Replace(" Corpse", "").Replace("UD_FleshGolems ", ""))
-                    {
-                        if (secondBestMatch != null)
-                        {
-                            thirdBestMatch ??= dropItem;
-                            continue;
-                        }
-                        secondBestMatch ??= dropItem;
-                    }
-                }
-                Corpse ??= bestMatch ?? secondBestMatch ?? thirdBestMatch;
-            }
-            return Corpse != null;
-        }
-        public bool IsDyingCreatureCorpse(GameObject Dying)
-        {
-            return IsDyingCreatureCorpse(Dying, out _);
-        }
-
         public bool ActuallyDoTheFakeDieAndReanimate()
         {
-            if (ParentObject == null || !PlayerWantsFakeDie || HaveFakedDeath)
+            using Indent indent = new(1);
+            Debug.LogMethod(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                    Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
+                    Debug.Arg(nameof(PlayerWantsFakeDie), PlayerWantsFakeDie),
+                    Debug.Arg(nameof(HaveFakedDeath), HaveFakedDeath),
+                });
+            if (ParentObject is not GameObject player
+                || !PlayerWantsFakeDie
+                || HaveFakedDeath
+                || (!player.IsPlayer() 
+                    && !player.IsPlayerDuringWorldGen()))
             {
                 return false;
             }
-            bool success = UD_FleshGolems_Reanimated.ReplaceCreatureWithCorpse(
-                Creature: ParentObject,
+
+            bool success = ReplaceEntityWithCorpse(
+                Entity: player,
                 FakeDeath: PlayerWantsFakeDie,
                 FakedDeath: out HaveFakedDeath,
                 DeathEvent: null,
                 Corpse: Corpse);
+
             PlayerWantsFakeDie = false;
+            if (success)
+            {
+                GetPlayerTaxa().RestoreTaxa(Corpse);
+                Corpse.SetStringProperty("OriginalPlayerBody", "Not really, but we pretend!");
+                if (success
+                    && false)
+                {
+                    foreach (Type playerMutator in ModManager.GetTypesWithAttribute(typeof(PlayerMutator)))
+                    {
+                        Stat.ReseedFrom("PLAYERMUTATOR" + playerMutator.Name);
+                        (Activator.CreateInstance(playerMutator) as IPlayerMutator)?.mutate(Corpse);
+                    }
+                    Stat.ReseedFrom("GameStart");
+                }
+            }
             return success;
         }
 
-        public override bool WantTurnTick()
+        public bool ProcessObjectCreationEvent(IObjectCreationEvent E)
         {
-            return IfPlayerStartUndeadUseTurnTickNotStringy;
+            using Indent indent = new(1);
+            Debug.LogCaller(indent,
+                ArgPairs: new Debug.ArgPair[]
+                {
+                        Debug.Arg(E?.GetType()?.Name),
+                        Debug.Arg(nameof(E.Object), E.Object?.DebugName ?? NULL),
+                        Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
+                });
+
+            if (!Attempted
+                && BuiltToBeReanimated
+                && ParentObject is GameObject entity
+                && entity == E.Object
+                && (Corpse != null
+                    || TryProduceCorpse(entity, out Corpse))
+                && Corpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
+            {
+                if (USE_OLD_METHOD_FOR_PLAYER)
+                {
+                    if (!entity.IsPlayer()
+                        && !entity.IsPlayerDuringWorldGen())
+                    {
+                        reanimationHelper.Animate();
+                        E.ReplacementObject = Corpse;
+                        Attempted = true;
+                    }
+                }
+                else
+                {
+                    if (entity.IsPlayer()
+                        || entity.IsPlayerDuringWorldGen())
+                    {
+                        Corpse.AddPart(this, Creation: true);
+                        PlayerWantsFakeDie = true;
+                        Corpse.RegisterPartEvent(this, "GameStart");
+                    }
+                    reanimationHelper.Animate();
+                    E.ReplacementObject = Corpse;
+                    Attempted = true;
+                }
+                if (Attempted)
+                    return true;
+            }
+            return false;
         }
-        public override void TurnTick(long TimeTick, int Amount)
-        {
-            ActuallyDoTheFakeDieAndReanimate();
-            base.TurnTick(TimeTick, Amount);
-        }
+
+        public bool EventMatchesAndFailedToRegister(int WantID, int EventID)
+            => WantID == EventID
+            && FailedToRegisterEvents.Contains(EventID);
+
+        public override bool AllowStaticRegistration()
+            => true;
+
         public override void Register(GameObject Object, IEventRegistrar Registrar)
         {
-            int eventOrder = EventOrder.EXTREMELY_LATE + EventOrder.EXTREMELY_LATE;
+            int eventOrder = EventOrder.EXTREMELY_EARLY + EventOrder.EXTREMELY_EARLY;
             try
             {
-                Registrar?.Register(BeforeObjectCreatedEvent.ID, -eventOrder);
-                Registrar?.Register(EnvironmentalUpdateEvent.ID, -eventOrder);
+                Registrar?.Register(BeforeObjectCreatedEvent.ID, eventOrder);
+                Registrar?.Register(EnvironmentalUpdateEvent.ID, eventOrder);
             }
             catch (Exception x)
             {
@@ -380,11 +912,12 @@ namespace XRL.World.Parts
         public override bool WantEvent(int ID, int cascade)
         {
             return base.WantEvent(ID, cascade)
-                || (FailedToRegisterEvents.Contains(BeforeObjectCreatedEvent.ID) && ID == BeforeObjectCreatedEvent.ID)
-                || (FailedToRegisterEvents.Contains(EnvironmentalUpdateEvent.ID) && ID == EnvironmentalUpdateEvent.ID)
-                || (DelayTillZoneBuild && ID == BeforeZoneBuiltEvent.ID)
+                || EventMatchesAndFailedToRegister(ID, BeforeObjectCreatedEvent.ID)
+                || EventMatchesAndFailedToRegister(ID, EnvironmentalUpdateEvent.ID)
                 || ID == GetShortDescriptionEvent.ID
-                || ID == BeforeDieEvent.ID;
+                || ID == BeforeDieEvent.ID
+                || ID == GetDebugInternalsEvent.ID
+                ;
         }
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
@@ -413,128 +946,123 @@ namespace XRL.World.Parts
         {
             if (!Attempted
                 && BuiltToBeReanimated
-                && !DelayTillZoneBuild
-                && ParentObject is GameObject soonToBeCorpse)
+                && PlayerWantsFakeDie
+                && ParentObject is GameObject entity)
             {
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(EnvironmentalUpdateEvent) + ", " +
-                    nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
-                    nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL));
-                */
-                if ((soonToBeCorpse.Blueprint.IsPlayerBlueprint() || soonToBeCorpse.IsPlayer())
+                if ((entity.IsPlayer() 
+                        || entity.IsPlayerDuringWorldGen())
                     && !HaveFakedDeath
-                    && UD_FleshGolems_Reanimated.TryProduceCorpse(soonToBeCorpse, out Corpse))
+                    && (Corpse != null 
+                        || TryProduceCorpse(entity, out Corpse)))
                 {
-                    /*
-                    UnityEngine.Debug.Log(
-                        nameof(The) + "." + nameof(The.Player) + ": " + (The.Player?.DebugName ?? NULL) + ", " +
-                        nameof(UD_FleshGolems.Extensions.IsPlayerBlueprint) + ": " + soonToBeCorpse.Blueprint.IsPlayerBlueprint() + ", " +
-                        nameof(soonToBeCorpse.IsPlayer) + ": " + soonToBeCorpse.IsPlayer());
-                    */
-                    soonToBeCorpse.RegisterPartEvent(this, "GameStart");
-                }
-                else
-                if (!soonToBeCorpse.IsPlayer())
-                {   
-                    Attempted = true;
-                    ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
+                    entity.RegisterPartEvent(this, "GameStart");
                 }
             }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
         {
-            bool goAhead = true || UD_FleshGolems_Reanimated.HasWorldGenerated;
-            if (goAhead
-                && !Attempted
-                && BuiltToBeReanimated
-                && !DelayTillZoneBuild
-                && ParentObject is GameObject soonToBeCorpse
-                && soonToBeCorpse == E.Object
-                && Corpse is GameObject soonToBeCreature)
-            {
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(BeforeObjectCreatedEvent) + ", " +
-                    nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
-                    nameof(soonToBeCreature) + ": " + (soonToBeCreature?.DebugName ?? NULL));
-                */
-                bool reanimated = false;
-                if (soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
-                {
-                    if (!soonToBeCorpse.IsPlayer()
-                        && !soonToBeCorpse.Blueprint.IsPlayerBlueprint())
-                    {
-                        reanimated = reanimationHelper.Animate();
-                        E.ReplacementObject = soonToBeCreature;
-                        Attempted = true;
-                    }
-                }
-                // UnityEngine.Debug.Log("    [" + (reanimated ? TICK : CROSS) + "] " + (reanimated ? "Success" : "Fail") + "!");
-            }
-            return base.HandleEvent(E);
-        }
-        public override bool HandleEvent(BeforeZoneBuiltEvent E)
-        {
-            bool goAhead = true || UD_FleshGolems_Reanimated.HasWorldGenerated;
-            if (goAhead
-                && !Attempted
-                && BuiltToBeReanimated
-                && DelayTillZoneBuild
-                && ParentObject is GameObject soonToBeCorpse
-                && soonToBeCorpse.CurrentZone == E.Zone
-                && !soonToBeCorpse.IsPlayer()
-                && !soonToBeCorpse.Blueprint.IsPlayerBlueprint()
-                && UD_FleshGolems_Reanimated.TryProduceCorpse(soonToBeCorpse, out Corpse)
-                && Corpse is GameObject soonToBeCreature
-                && soonToBeCreature.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
-            {
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_DestinedForReanimation) + "." + nameof(BeforeZoneBuiltEvent) + ", " +
-                    nameof(soonToBeCorpse) + ": " + (soonToBeCorpse?.DebugName ?? NULL) + ", " +
-                    nameof(soonToBeCreature) + ": " + (soonToBeCreature?.DebugName ?? NULL));
-                */
-                bool reanimated = reanimationHelper.Animate();
-                ReplaceInContextEvent.Send(soonToBeCorpse, Corpse);
-                Attempted = true;
-                // UnityEngine.Debug.Log("    [" + (reanimated ? TICK : CROSS) + "] " + (reanimated ? "Success" : "Fail") + "!");
-            }
+            ProcessObjectCreationEvent(E);
             return base.HandleEvent(E);
         }
         public override bool FireEvent(Event E)
         {
-            if (E.ID == "GameStart"
-                && Corpse != null
-                && !HaveFakedDeath)
+            if (E.ID == "GameStart")
             {
-                PlayerWantsFakeDie = true;
-                if (!IfPlayerStartUndeadUseTurnTickNotStringy)
+                using Indent indent = new(1);
+                Debug.LogCaller(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(Event), E?.ID),
+                        Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
+                        Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
+                    });
+
+                if (!HaveFakedDeath
+                    && BuiltToBeReanimated
+                    && PlayerWantsFakeDie
+                    && !ActuallyDoTheFakeDieAndReanimate()
+                    )
                 {
-                    ActuallyDoTheFakeDieAndReanimate();
+                    Debug.CheckYeh("!" + nameof(HaveFakedDeath), indent[1]);
+                    Debug.CheckYeh(nameof(BuiltToBeReanimated), indent[1]);
+                    Debug.CheckYeh(nameof(PlayerWantsFakeDie), indent[1]);
+
+                    string replacedTile = null;
+                    string replacedTileColor = null;
+                    string replacedColorString = null;
+                    string replacedDetailColor = null;
+                    if (ParentObject.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper))
+                    {
+                        reanimationHelper.RestoreCorpseTile(out replacedTile);
+                        reanimationHelper.RestoreCorpseColors(out replacedTileColor, out replacedColorString, out replacedDetailColor);
+                    }
+                    if (InitializeDeathDetailsThenFakeDeath(ParentObject, Corpse, null))
+                    {
+                        if (ParentObject.GetBlueprint().IsCorpse())
+                            ParentObject.RemovePart(this);
+                    }
+                    else
+                    {
+                        if (ParentObject.Render != null)
+                        {
+                            if (!replacedTile.IsNullOrEmpty())
+                                ParentObject.Render.Tile = replacedTile;
+
+                            if (!replacedTileColor.IsNullOrEmpty())
+                                ParentObject.Render.TileColor = replacedTileColor;
+
+                            if (!replacedColorString.IsNullOrEmpty())
+                                ParentObject.Render.ColorString = replacedColorString;
+
+                            if (!replacedDetailColor.IsNullOrEmpty())
+                                ParentObject.Render.DetailColor = replacedDetailColor;
+                        }
+                        Debug.CheckNah(nameof(InitializeDeathDetailsThenFakeDeath) + " Failed", indent[0]);
+                    }
                 }
             }
             return base.FireEvent(E);
         }
         public override bool HandleEvent(BeforeDieEvent E)
         {
-            if (!BuiltToBeReanimated
+            if (!Attempted
+                && !BuiltToBeReanimated
                 && ParentObject is GameObject dying
                 && dying == E.Dying
                 && dying.TryGetPart(out Corpse dyingCorpse)
                 && !dyingCorpse.CorpseBlueprint.IsNullOrEmpty()
                 && dying.IsPlayer()
                 && (!PlayerWantsFakeDie || !HaveFakedDeath)
-                && UD_FleshGolems_Reanimated.ReplaceCreatureWithCorpse(
-                    Creature: ParentObject,
+                && ReplaceEntityWithCorpse(
+                    Entity: ParentObject,
                     FakeDeath: PlayerWantsFakeDie,
                     FakedDeath: out HaveFakedDeath,
                     DeathEvent: E,
                     Corpse: Corpse))
             {
+                Attempted = true;
                 return false;
             }
+            return base.HandleEvent(E);
+        }
+        public override bool HandleEvent(GetDebugInternalsEvent E)
+        {
+            E.AddEntry(this, nameof(Corpse), Corpse?.DebugName ?? NULL);
+            E.AddEntry(this, nameof(BuiltToBeReanimated), BuiltToBeReanimated);
+            E.AddEntry(this, nameof(Attempted), Attempted);
+            if (!FailedToRegisterEvents.IsNullOrEmpty())
+            {
+                E.AddEntry(this, nameof(FailedToRegisterEvents),
+                    FailedToRegisterEvents
+                    ?.ConvertAll(id => MinEvent.EventTypes.ContainsKey(id) ? MinEvent.EventTypes[id].ToString() : "Error")
+                    ?.GenerateBulletList(Bullet: null, BulletColor: null));
+            }
+            else
+            {
+                E.AddEntry(this, nameof(FailedToRegisterEvents), "Empty");
+            }
+            E.AddEntry(this, nameof(PlayerWantsFakeDie), PlayerWantsFakeDie);
             return base.HandleEvent(E);
         }
     }

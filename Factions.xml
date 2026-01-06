@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<factions>
+  <faction
+  Name="Previously Sentient Beings"
+  DisplayName="previously sentient beings"
+  Parent="Newly Sentient Beings"
+  HistoricalSignificance="2"
+  ExtradimensionalVersions="true"
+  InitialPlayerReputation="0"
+  EmblemTile="FleshGolems/brothers_flesh_golem_jelly.png"
+  EmblemTileColor="r"
+  EmblemDetailColor="w"
+  >
+    <feeling About="*" Value="0" />
+    <partreputation About="UD_FleshGolems_ReanimatedCorpse" Value="50" />
+    <waterritual
+      Skill="Discipline_MindOverBody"
+      SkillCost="250"
+      BuyMostValuableItem="true"
+      SkillPointAmount=""
+      SkillPointCost=""
+    />
+    <interests Blurb=" might have known all sorts of things while alive">
+      <interest Tags="*" WillBuy="true" WillSell="true" Description="all manner of things" />
+    </interests>
+    <interests BuyDescription=" interested in esoteic knowledge: ">
+      <interest Tags="secretsoflifeanddeath" WillBuy="true" WillSell="false" Description="the secrets of life and death" />
+    </interests>
+    <factionworshipattitudes Default="-50">
+      <factionworshipattitude Name="Newly Sentient Beings" Attitude="-100" />
+      <factionworshipattitude Name="Entropic" Attitude="-100" />
+      <factionworshipattitude Name="Templar" Attitude="-100" />
+    </factionworshipattitudes>
+  </faction>
+</factions>

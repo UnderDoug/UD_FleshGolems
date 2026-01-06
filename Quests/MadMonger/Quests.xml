@@ -17,7 +17,8 @@
 
     <step Name="Don't be nervous!" XP="1000" Hidden="true"
          ID="UD_FleshGolems Don't be nervous!">
-      <text>Bring a phial of thinking liquid to the Mad 'Monger.</text>
+      <text>Come back soon, this step is still being built!</text>
+      <!-- text>Bring a phial of thinking liquid to the Mad 'Monger.</text-->
       <!-- Need 1 Brain Brine -->
     </step>
 

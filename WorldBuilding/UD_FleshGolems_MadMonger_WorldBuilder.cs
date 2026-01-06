@@ -12,6 +12,11 @@ using XRL.Wish;
 using XRL.World.Parts;
 using XRL.World.ZoneBuilders;
 
+using UD_FleshGolems;
+using UD_FleshGolems.Capabilities;
+using UD_FleshGolems.Startup;
+using static UD_FleshGolems.Utils;
+
 namespace XRL.World.WorldBuilders
 {
     [HasGameBasedStaticCache]
@@ -20,6 +25,8 @@ namespace XRL.World.WorldBuilders
     public class UD_FleshGolems_MadMonger_WorldBuilder : IJoppaWorldBuilderExtension
     {
         public const string SECRETID_MAD_MONGER = "$UD_FleshGolems_MadMonger";
+
+        public static UD_FleshGolems_NecromancySystem NecromancySystem => UD_FleshGolems_NecromancySystem.System;
 
         public JoppaWorldBuilder Builder;
 
@@ -56,11 +63,15 @@ namespace XRL.World.WorldBuilders
                 return;
             }
 
-            WorldCreationProgress.StepProgress("Maddening science...");
-
-            GameObject theMadMonger = GameObjectFactory.Factory.CreateObject(
-                ObjectBlueprint: "UD_FleshGolems Mad Monger",
-                Context: nameof(UD_FleshGolems_MadMonger_WorldBuilder));
+            WorldCreationProgress.StepProgress("Maddening science...");            
+            
+            if (NecromancySystem?.TheMadMonger is not GameObject theMadMonger)
+            {
+                theMadMonger = GameObjectFactory.Factory.CreateObject(
+                    ObjectBlueprint: "UD_FleshGolems Mad Monger",
+                    Context: nameof(UD_FleshGolems_MadMonger_WorldBuilder));
+                MetricsManager.LogModWarning(ThisMod, "Failed to retreive " + nameof(NecromancySystem.TheMadMonger) + " from " + nameof(NecromancySystem));
+            }
 
             string madMongerRefname = theMadMonger.GetReferenceDisplayName(Context: "LairName");
 
@@ -119,7 +130,7 @@ namespace XRL.World.WorldBuilders
                 render = secretTerrainObject.GetPart<Render>();
             }
             secretWorldMapCell.GetFirstObjectWithPart("TerrainTravel").AddPart(new UD_FleshGolems_MadMongerTerrain());
-            if (Options.ShowOverlandEncounters && render != null)
+            if (UI.Options.ShowOverlandEncounters && render != null)
             {
                 render.RenderString = "&W*";
                 render.ParentObject.SetStringProperty("OverlayColor", "&M");

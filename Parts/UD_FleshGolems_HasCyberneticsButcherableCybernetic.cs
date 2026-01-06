@@ -10,6 +10,7 @@ using static UD_FleshGolems.Const;
 using XRL.World.Anatomy;
 using System.Linq;
 using XRL.Rules;
+using UD_FleshGolems.Logging;
 
 namespace XRL.World.Parts
 {
@@ -181,26 +182,28 @@ namespace XRL.World.Parts
             bool any = false;
             if (TryGetButcherableCyberneticPart(Corpse, out CyberneticsButcherableCybernetic butcherableCybernetic))
             {
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsList) + ", " +
-                    nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
-                    nameof(Cybernetics) + ": \"" + Cybernetics + "\"");
-                */
+                using Indent indent = new(1);
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
+                        Debug.Arg(nameof(Cybernetics), "\"" + Cybernetics + "\""),
+                    });
+
                 butcherableCybernetic.Cybernetics ??= new();
 
                 if (!Cybernetics.IsNullOrEmpty())
                 {
                     foreach (string cyberneticBlueprint in Cybernetics.CachedCommaExpansion())
                     {
-                        // UnityEngine.Debug.Log("    " + nameof(cyberneticBlueprint) + ": " + cyberneticBlueprint);
+                        Debug.Log(nameof(cyberneticBlueprint), cyberneticBlueprint, indent[1]);
                         if (GameObject.Create(cyberneticBlueprint) is GameObject cyberneticObject)
                         {
                             any = EmbedCyberneticWithSuccessChance(butcherableCybernetic, cyberneticObject, 100);
                         }
                     }
                 }
-                // UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
+                Debug.YehNah((any ? "Success" : "Fail") + "!", any, indent[1]);
             }
             return any;
         }
@@ -217,13 +220,15 @@ namespace XRL.World.Parts
             bool any = false;
             if (TryGetButcherableCyberneticPart(Corpse, out CyberneticsButcherableCybernetic butcherableCybernetic))
             {
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsTable) + ", " +
-                    nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
-                    nameof(Table) + ": \"" + Table + "\"" + ", " +
-                    nameof(rolledCount) + ": " + rolledCount);
-                */
+                using Indent indent = new(1);
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
+                        Debug.Arg(nameof(Table), "\"" + Table + "\""),
+                        Debug.Arg(nameof(rolledCount), rolledCount),
+                    });
+
                 butcherableCybernetic.Cybernetics ??= new();
 
                 if (!Table.IsNullOrEmpty())
@@ -233,7 +238,7 @@ namespace XRL.World.Parts
 
                     if (processTable)
                     {
-                        // UnityEngine.Debug.Log(nameof(processTable) + ": \"" + processTable + "\"");
+                        UnityEngine.Debug.Log(nameof(processTable) + ": \"" + processTable + "\"");
                     }
 
                     int maxAtempts = 5;
@@ -260,7 +265,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
-                // UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
+                Debug.YehNah((any ? "Success" : "Fail") + "!", any, indent[1]);
             }
             return any;
         }
@@ -277,13 +282,15 @@ namespace XRL.World.Parts
             bool any = false;
             if (TryGetButcherableCyberneticPart(Corpse, out CyberneticsButcherableCybernetic butcherableCybernetic))
             {
-                /*
-                UnityEngine.Debug.Log(
-                    nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + "." + nameof(EmbedButcherableCyberneticsForLimb) + ", " +
-                    nameof(Corpse) + ": " + (Corpse?.DebugName ?? NULL) + ", " +
-                    nameof(ForLimb) + ": \"" + (ForLimb ?? NULL)+ "\"" + ", " +
-                    nameof(rolledCount) + ": " + rolledCount);
-                */
+                using Indent indent = new(1);
+                Debug.LogMethod(indent,
+                    ArgPairs: new Debug.ArgPair[]
+                    {
+                        Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
+                        Debug.Arg(nameof(ForLimb), "\"" + ForLimb + "\""),
+                        Debug.Arg(nameof(rolledCount), rolledCount),
+                    });
+
                 butcherableCybernetic.Cybernetics ??= new();
 
                 if (!ForLimb.IsNullOrEmpty())
@@ -300,6 +307,7 @@ namespace XRL.World.Parts
                                     Message: nameof(UD_FleshGolems_HasCyberneticsButcherableCybernetic) + " " +
                                         "pulled non-cybernetic " + (cyberneticObject?.DebugName ?? NULL) + " " +
                                         nameof(ForLimb) + " " + ForLimb);
+
                                 cyberneticObject.Obliterate();
                             }
                             else
@@ -310,7 +318,7 @@ namespace XRL.World.Parts
                         }
                     }
                 }
-                // UnityEngine.Debug.Log("    [" + (any ? TICK : CROSS) + "] " + (any ? "Success" : "Fail") + "!");
+                Debug.YehNah((any ? "Success" : "Fail") + "!", any, indent[1]);
             }
             return any;
         }
@@ -410,9 +418,14 @@ namespace XRL.World.Parts
                 if (EmbedButcherableCybernetics())
                 {
                     GameObjectBlueprint randomCreatureBlueprint = GetCreatureBlueprintFromSpec(Tag: "UD_FleshGolems_NonRobot", Base: Base);
-                    randomCreatureBlueprint ??= EncountersAPI.GetACreatureBlueprintModel(bp => bp.HasTagOrProperty("UD_FleshGolems_NonRobot") && Base == null || bp.InheritsFrom(Base));
-                    if (randomCreatureBlueprint != null
-                        && ParentObject.Render is Render render)
+                    randomCreatureBlueprint ??= EncountersAPI.GetACreatureBlueprintModel(bp 
+                        => bp.HasTagOrProperty("UD_FleshGolems_NonRobot")
+                        && (Base == null || bp.InheritsFrom(Base)));
+
+                    if ((!E.Object.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper reanimationHelper)
+                            || !reanimationHelper.AlwaysAnimate)
+                        && randomCreatureBlueprint != null
+                        && E.Object.Render is Render render)
                     {
                         render.DisplayName = render.DisplayName.Replace(" ", " " + randomCreatureBlueprint.DisplayName() + " ");
                     }
@@ -421,7 +434,7 @@ namespace XRL.World.Parts
                         var cyberneticsHasRandomImplants = new CyberneticsHasRandomImplants();
                         E.Object.RequirePart<DisplayNameAdjectives>().AddAdjective(cyberneticsHasRandomImplants.Adjective);
                     }
-                    ParentObject.RemovePart<Food>();
+                    E.Object.RemovePart<Food>();
                     AdjustCommerceValue(Commerce, BlurValueAmount, BlurValueMargin);
                 }
                 else

@@ -1,30 +1,189 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <conversations>
+  <conversation ID="BaseConversation" Load="Merge">
+    <part Name="UD_FleshGolems_PlayerModdedTextFilter" />
+
+    <choice ID="AskHowDied" Target="HowIDied"
+            IfSpeakerHavePart="UD_FleshGolems_ReanimatedCorpse">
+      <text IfAlreadyAskedHowDied="false" Priority="2">
+        Tell me how you died?~
+        How did you die?~
+        Do you remember at all how you died?
+      </text>
+      <text IfAlreadyAskedHowDied="true" Priority="2">
+        Tell me again how you died?~
+        How was it again that you died?~
+        Remind me how you died?
+      </text>
+      <text>
+        Tell me how you died?~
+        How was it you died?~
+        Do you remember at all how you died?
+      </text>
+    </choice>
+
+    <choice ID="ReanimatedJoinPartyChoice" IfSourceOfSuffering="true">
+      <text>Come along now... {{r|friend}}.</text>
+      <part Name="UD_FleshGolems_ReanimatedJoinParty" />
+    </choice>
+
+    <node ID="HowIDied">
+
+      <text ID="KilledKnown" MemoryElement="Killed" Known="true">
+        <text>I =subject.death.was.killed=, which I do not recommend...</text>
+        <text>let me tell you, =subject.death.beingKilled= is not fun...</text>
+        <text>I =subject.death.was.killed=, which is not how I imagined it would happen... and yet, here we are...</text>
+      </text>
+      <text ID="KilledUnknown" MemoryElement="Killed" Known="false">
+        <text>best I can recall is that I was killed, but that's probably self-evident.</text>
+        <text>any more details about how I was killed than that it happened at all are more than I can recall, sorry.</text>
+        <text>you'd think I'd remember something like dyin', but I don't.</text>
+      </text>
+
+      <text ID="KillerKnown" MemoryElement="Killer" Known="true">
+        <text>I was killed by =subject.death.killer=...</text>
+        <text>=subject.death.killer= killed me...</text>
+        <text>I barely remember, but I'm pretty sure I was killed by =subject.death.killer=...</text>
+      </text>
+      <text ID="KillerUnknown" MemoryElement="Killer" Known="false">
+        <text>I can't recall who it was...</text>
+        <text>I was killed by... by.. you know, I can't remember...</text>
+        <text>I don't remember everything from before my current state... who killed me is unfortunatley one of those things...</text>
+      </text>
+
+      <text ID="KillerNameKnown" MemoryElement="KillerName" Known="true">
+        <text>I was killed by someone called &quot;=subject.death.killer.name=&quot;...</text>
+        <text>=subject.death.killer.name= is the name of who killed me...</text>
+        <text>I barely remember, but I'm pretty sure I was killed by someone who went by &quot;=subject.death.killer.name=&quot;...</text>
+      </text>
+      <text ID="KillerNameUnknown" MemoryElement="KillerName" Known="false">
+        <text>I can't recall the name of who it was...</text>
+        <text>I was killed by... by.. you know, I can't remember their name...</text>
+        <text>I don't remember everything from before my current state... unfortunately, the name of who killed me is one of the things that remains a mystery to me...</text>
+      </text>
+
+      <text ID="KillerCreatureKnown" MemoryElement="KillerCreature" Known="true">
+        <text>the type of creature that killed me was =subject.death.killer.creature=...</text>
+        <text>=subject.death.killer.creature=... that's what got me... {{emote|*slowly shakes =subject.bodyPart.NoCase:head=*}} ... =subject.death.killer.creature=...</text>
+        <text>would you believe it? =subject.death.killer.creature=, of all things... {{K|=subject.death.killer.creature=}}...</text>
+        <text>look out the next time there's =subject.death.killer.creature= nearby... =subject.death.killer.creature='s what got me!</text>
+      </text>
+      <text ID="KillerCreatureUnknown" MemoryElement="KillerCreature" Known="false">
+        <text>I couldn't tell you so much as {{Y|what}} they were, let alone who... some mysterious entity, certainly...</text>
+        <text>really struggling to recall... I don't even know what kind of creature they were, or if they were a creature at all...</text>
+        <text>maybe it's my poor memory... although, I suppose it might not have been bad before... before, well... {{emote|*gestures at =subject.reflexive=*}} ... but I can't even remember what they were...</text>
+      </text>
+
+      <text ID="KillerFeatureKnown" MemoryElement="KillerFeature" Known="true">
+        <text>=subject.death.killer.feature=... that I know for sure...</text>
+        <text>=subject.death.killer.feature= is who killed me...</text>
+        <text>it was =subject.death.killer.feature= that is who ended me...</text>
+      </text>
+      <text ID="KillerFeatureUnknown" MemoryElement="KillerFeature" Known="false">
+        <text>I can't even remember any notable features...</text>
+        <text>Not so much as a notable feature comes to mind...</text>
+        <text>they must have been truly forgettable, I can't recall anything notable... except that they killed me, of course...</text>
+      </text>
+
+      <text ID="MethodKnown" MemoryElement="Method" Known="true">
+        <text>=subject.death.a.method= is what I succumbed to...</text>
+        <text>=subject.death.a.method= was used to kill me...</text>
+        <text>it was =subject.death.with.a.method= that I was killed...</text>
+      </text>
+      <text ID="MethodUnknown" MemoryElement="Method" Known="false">
+        <text>I can't remember what I was actually killed with...</text>
+        <text>what I was killed with has escaped me...</text>
+        <text>it seems I can't recall what was used to kill me...</text>
+      </text>
+
+      <text ID="MultiKillerKnown" MemoryElement="KillerName,KillerCreature,Killed" Known="true">
+        <text>=subject.death.killer.name=, =subject.death.killer.creature= got me... I =subject.death.was.killed=, which wasn't fun...</text>
+        <text>=subject.death.killer.creature= called =subject.death.killer.name= saw me =subject.death.killed=...\n\nLook out if you see =no2nd==killer.objective|no2nd.restore=...</text>
+        <text>I =subject.death.was.killed= by =subject.death.killer.creature= called =subject.death.killer.name=... if I ever see =no2nd==killer.objective|no2nd.restore= again...\n\n... well, I'm not sure what I'd do, actually... =no2nd==killer.subjective|no2nd.restore= did kill me the first time, and I'm not keen on a second...</text>
+      </text>
+
+      <text ID="EnvironmentalKnown" MemoryElement="Environment" Known="true">
+        <text>I wasn't really killed by someone specfic...</text>
+        <text>It was more self-inflicted, I think...=subject.death.accidentally: :, of course...=</text>
+        <text>No one killed me exactly...</text>
+      </text>
+
+      <text ID="ThatsRude" RudeToAsk="true">
+        <text>That's a rather personal thing to ask, don't you think??</text>
+        <text>How presumptuous...\n\nGood for you that it's not a big deal, but maybe I'd rather not think about it...</text>
+        <text>When did you last expell waste?\n\nNot a fan of inappropriately personal questions, then?</text>
+      </text>
+
+      <text ID="KilledByPlayerKnown" KilledByPlayer="true" PlayerLed="false">
+        <text>it... it was {{R|=killer.refname|upper=}}!</text>
+        <text>I think... I think {{Y|=killer.refname=}} killed me...\n\n{{R|I'LL RETURN THE FAVOUR!}}</text>
+        <text>{{R|=killer.Refname|upper=}}\n\n{{R|RARGH!!}}</text>
+      </text>
+
+      <text ID="KilledByPlayerUnknown" KilledByPlayer="true" PlayerLed="true">
+        <text>{{Y|=killer.Refname=}} killed me? I.. I trust you had your reasons...</text>
+        <text>I think... I think {{Y|=killer.refname=}} killed me...\n\n... But that was another time, another life...</text>
+        <text>{{Y|=killer.Refname=}} already =killer.verb:know= who killed me... It's strange that {{Y|=killer.subjective=}} would ask...</text>
+      </text>
+
+      <text ID="Fallback" Priority="1">
+        <text>I don't actually remember at all...</text>
+        <text>I'm struggling to recall...</text>
+        <text>
+          Wait, I {{W|DIED}}??
+        
+          =ud_nbsp:12=...I'm just joking around!
+          I don't actually remember, though...
+        </text>
+      </text>
+
+      <part Name="UD_FleshGolems_AskHowDied" />
+      
+      <choice Target="Start">
+        <text>There was something else...</text>
+      </choice>
+
+      <choice ID="ReanimatedJoinPartyChoice" IfSourceOfSuffering="true">
+        <text>Come along now... {{r|friend}}.</text>
+        <part Name="UD_FleshGolems_ReanimatedJoinParty" />
+      </choice>
+      
+      <choice ID="GoEnd" Target="End">
+        <text IfSourceOfSuffering="true" Priority="1">Unlive and drink... {{r|friend}}...</text>
+        <text>Unlive and drink...</text>
+      </choice>
+      
+    </node>
+    
+  </conversation>
+  
   <conversation ID="UD_FleshGolems NewlyReanimatedBeings">
     
     <node ID="choices">
-      <choice ID="JoinPartyChoice" IfSourceOfSuffering="true">
+      <choice ID="ReanimatedReanimatedJoinPartyChoice" IfSourceOfSuffering="true" IfAlreadyAskedHowDied="true">
         <text>Come along now... {{r|friend}}.</text>
-        <part Name="WaterRitualJoinParty" />
+        <part Name="UD_FleshGolems_ReanimatedJoinParty" />
       </choice>
+      
       <choice ID="GoEnd" Target="End">
         <text IfSourceOfSuffering="true">Uh... Sorry?</text>
         <text IfSourceOfSuffering="false">Unlive and drink...</text>
       </choice>
     </node>
     
-    <node ID="Start">
+    <start ID="Greeting">
       <text IfSourceOfSuffering="false">
         Hrgh.. urgh.. ghuh?~
-        Unlive..... and drink???~
+        Unlive..... and drink???
       </text>
       <text>
         Wh- why??~
         {{emote|*wilhelm scream*}}
       </text>
-      <choice UseID="JoinPartyChoice" />
+      <choice UseID="AskHowDied" />
+      <choice UseID="ReanimatedJoinPartyChoice" />
       <choice UseID="GoEnd" />
-    </node>
+    </start>
     
   </conversation>
   

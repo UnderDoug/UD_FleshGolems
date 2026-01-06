@@ -120,21 +120,21 @@
   Quest Tables
   
   -->
-
   <population Name="UD_FleshGolems_Corpse_BaseRewards">
     <group Name="Rewards" Style="pickeach">
-      <object Blueprint="CyberneticsCreditWedge3" />
-      <object Blueprint="NectarTonic" />
-      <object Blueprint="UbernostrumTonic" />
+      <object Blueprint="CyberneticsCreditWedge3" Number="1-2" />
+      <group Name="Injectors" Style="pickone" Chance="50">
+        <object Weight="10" Blueprint="UbernostrumTonic" />
+        <object Weight="5" Blueprint="NectarTonic" />
+      </group>
       <object Blueprint="Pocketed Lab Coat" />
-      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso 3" />
-      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso 3" />
-      <table Name="UD_FleshGolems Mad Monger Tier 7" />
-      <table Name="UD_FleshGolems Mad Monger Tier 7" />
-      <table Name="UD_FleshGolems Mad Monger Tier 8" />
-      <table Name="UD_FleshGolems Mad Monger Tier 8" />
-      <table Name="Cybernetics5" />
-      <table Name="Cybernetics6" />
+      <table Name="UD_FleshGolems Mad Monger CorpseOrTorso 3" Chance="100,75,45,20" />
+      <table Name="UD_FleshGolems Mad Monger Tier 7" Chance="100,75,45,20" />
+      <table Name="UD_FleshGolems Mad Monger Tier 8" Chance="100,25,5" />
+      <table Name="Cybernetics3" />
+      <table Name="Cybernetics4" />
+      <table Name="Cybernetics5" Chance="50,10" />
+      <table Name="Cybernetics6" Chance="25,5" />
     </group>
   </population>
   

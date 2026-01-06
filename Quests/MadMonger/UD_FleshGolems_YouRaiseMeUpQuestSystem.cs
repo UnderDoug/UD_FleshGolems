@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using UD_FleshGolems.Logging;
+
 using XRL;
 using XRL.Rules;
 using XRL.UI;
@@ -54,7 +56,9 @@ namespace XRL.World.Quests
 
         public override bool HandleEvent(QuestStepFinishedEvent E)
         {
-            // UnityEngine.Debug.Log(E.Quest + ", " + E.Step.ID + " Finished");
+            using Indent indent = new();
+            Debug.Log(E.Quest + ", " + E.Step.ID + " Finished", Indent: indent);
+
             if (E.Quest == Quest
                 && E.Step is QuestStep thisStep
                 && QuestSteps.Contains(thisStep))
@@ -67,7 +71,6 @@ namespace XRL.World.Quests
                 if (QuestSteps[^1] != thisStep
                     && QuestSteps[QuestSteps.IndexOf(E.Step) + 1] is QuestStep nextStep)
                 {
-
                     nextStep.Hidden = false;
                 }
             }

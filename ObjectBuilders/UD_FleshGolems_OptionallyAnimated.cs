@@ -37,6 +37,15 @@ namespace XRL.World.ObjectBuilders
                     AnimatedBuilder.Initialize();
                 }
                 AnimatedBuilder.Apply(Object, Context);
+                if (Object.CurrentZone == The.ActiveZone
+                    && The.ActiveZone != null)
+                {
+                    CombatJuice.playPrefabAnimation(
+                        gameObject: Object,
+                        animation: "Abilities/AbilityVFXAnimated",
+                        objectId: Object.ID,
+                        configurationString: Object.Render.Tile + ";" + Object.Render.GetTileForegroundColor() + ";" + Object.Render.getDetailColor());
+                }
             }
         }
     }
