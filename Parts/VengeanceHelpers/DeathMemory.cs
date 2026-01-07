@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
-using XRL.World;
 using XRL.Rules;
+using XRL.World;
+using XRL.World.Parts;
 using XRL.Collections;
 
 using UD_FleshGolems.Events;
 using static UD_FleshGolems.Const;
-
-using SerializeField = UnityEngine.SerializeField;
-using XRL.World.Parts;
-using System.Linq;
-using UD_FleshGolems.Logging;
 
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
@@ -220,17 +216,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             KillerDetails KillerDetails,
             DeathDescription DeathDescription)
         {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
-                    Debug.Arg(nameof(Killer), Killer?.DebugName ?? NULL),
-                    Debug.Arg(nameof(Weapon), Weapon?.DebugName ?? NULL),
-                    Debug.Arg(nameof(KillerDetails), (KillerDetails != null).YehNah()),
-                    Debug.Arg(nameof(DeathDescription), (DeathDescription != null).YehNah()),
-                });
-
             int rudeToAskChanceOverride = -1;
             int? rudeToAskChanceOneIn = null;
             if (Corpse?.GetPropertyOrTag(RUDE_TO_ASK_CHANCE_PROPTAG, null) is string rudeToAskChancePropTag
@@ -246,8 +231,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 else
                 if (rudeToAskPropTag.EqualsNoCase("false"))
                     overrideRudeToAsk = false;
-
-                Debug.CheckYeh(RUDE_TO_ASK_PROPTAG, rudeToAskPropTag, indent[1]);
             }
 
             SetSeededRudeToAsk(overrideRudeToAsk, rudeToAskChanceOneIn);
@@ -266,10 +249,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             if (Corpse?.GetPropertyOrTag(AMNESIA_CHANCE_PROPTAG) is string amnesiaChancePropTag
                 && int.TryParse(amnesiaChancePropTag, out amnesiaChanceOverride)
                 && amnesiaChanceOverride >= 0)
-            {
                 amnesiaChance = amnesiaChanceOverride;
-                Debug.CheckYeh(AMNESIA_CHANCE_PROPTAG, amnesiaChanceOverride, indent[1]);
-            }
 
             if (Corpse?.GetPropertyOrTag(AMNESIA_PROPTAG) is string amnesiaPropTag)
             {
@@ -278,8 +258,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 else
                 if (amnesiaPropTag.EqualsNoCase("false"))
                     amnesiaChance = 0;
-
-                Debug.CheckYeh(AMNESIA_PROPTAG, amnesiaPropTag, indent[1]);
             }
 
             bool amnesia = amnesiaChance >= amnesiaRoll;
@@ -295,11 +273,8 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 else
                 if (killedOverridePropTag.EqualsNoCase("false"))
                     killedOverride = false;
-
-                Debug.CheckYeh(KILLED_PROPTAG, killedOverridePropTag, indent[1]);
             }
             if (Corpse?.GetPropertyOrTag(KILLER_PROPTAG) is string killerOverridePropTag)
-            {
                 killerOverride = killerOverridePropTag.ToLower().CapitalizeEx() switch
                 {
                     "3" or
@@ -316,8 +291,7 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     "False" or
                     _ => KillerMemory.Amnesia,
                 };
-                Debug.CheckYeh(KILLER_PROPTAG, killerOverridePropTag.ToLower().CapitalizeEx(), indent[1]);
-            }
+
             if (Corpse?.GetPropertyOrTag(METHOD_PROPTAG) is string methodOverridePropTag)
             {
                 if (methodOverridePropTag.EqualsNoCase("true"))
@@ -325,8 +299,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                 else
                 if (methodOverridePropTag.EqualsNoCase("false"))
                     methodOverride = false;
-
-                Debug.CheckYeh(METHOD_PROPTAG, methodOverridePropTag, indent[1]);
             }
 
             if (!DeathDescription.Killed.IsNullOrEmpty())
@@ -337,14 +309,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
             if (Weapon != null || !DeathDescription.Method.IsNullOrEmpty())
                 SetSeededRememberMethod(amnesia, methodOverride);
-
-            Debug.YehNah(nameof(killedOverride), killedOverride, indent[0]);
-            Debug.Log("[" + (killerOverride != null ? (int)killerOverride : "-") + "] " + nameof(killerOverride), Indent: indent[0]);
-            Debug.YehNah(nameof(methodOverride), methodOverride, indent[0]);
-
-            Debug.YehNah(nameof(Killed), Killed, indent[0]);
-            Debug.Log("[" + (this.Killer != null ? (int)this.Killer : "-") + "]", nameof(this.Killer), indent[0]);
-            Debug.YehNah(nameof(Method), Method, indent[0]);
 
             return this;
         }

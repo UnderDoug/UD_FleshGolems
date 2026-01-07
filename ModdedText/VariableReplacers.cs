@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 using Qud.API;
 
@@ -12,40 +8,18 @@ using XRL.World.Text.Attributes;
 using XRL.World.Text.Delegates;
 using XRL.World.Parts;
 using XRL.Language;
-using UD_FleshGolems.Logging;
 using UD_FleshGolems.Parts.VengeanceHelpers;
-using Debug = UD_FleshGolems.Logging.Debug;
-
-using static UD_FleshGolems.Const;
-using UD_FleshGolems.ModdedText.TextHelpers;
 
 namespace UD_FleshGolems.ModdedText
 {
     [HasVariableReplacer]
     public static class VariableReplacers
     {
-        [UD_FleshGolems_DebugRegistry]
-        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
-        {
-            Type thisType = typeof(VariableReplacers);
-            Registry.Register(thisType.GetMethod(nameof(UD_xTag)), false);
-            Registry.Register(thisType.GetMethod(nameof(UD_xTagSingle)), false);
-            Registry.Register(thisType.GetMethod(nameof(UD_xTagMulti)), false);
-            Registry.Register(thisType.GetMethod(nameof(UD_xTagMultiU)), false);
-            Registry.Register(thisType.GetMethod(nameof(UD_xTagMultiU)), false);
-            return Registry;
-        }
-
         /* 
          * 
          * Variable (no object)
          * 
          */
-        [VariableReplacer("test.parameter.separators.with.debug.replacer")]
-        public static string Test_Parameter_Separators(DelegateContext Context)
-            => Context.Parameters
-                ?.Aggregate("", (a, n) => a + ":" + n);
-
         [VariableReplacer]
         public static string ud_nbsp(DelegateContext Context)
         {
@@ -53,12 +27,9 @@ namespace UD_FleshGolems.ModdedText
             string output = nbsp;
             if (!Context.Parameters.IsNullOrEmpty()
                 && int.TryParse(Context.Parameters[0], out int count))
-            {
                 for (int i = 1; i < count; i++)
-                {
                     output += nbsp;
-                }
-            }
+
             return output;
         }
 
@@ -74,17 +45,14 @@ namespace UD_FleshGolems.ModdedText
                     for (int i = 1; i < Context.Parameters.Count; i++)
                     {
                         if (i > 1)
-                        {
                             output += " ";
-                        }
+
                         output += TextFilters.Weird(Context.Parameters[i]);
                     }
                     output += "}}";
                 }
                 else
-                {
                     return TextFilters.Weird(Context.Parameters[0]);
-                }
             }
             return output;
         }
@@ -102,9 +70,8 @@ namespace UD_FleshGolems.ModdedText
         public static string UD_no2nd_restore(DelegateContext Context)
         {
             if (StoredAllowSecondPerson is bool storedAllowSecondPerson)
-            {
                 Grammar.AllowSecondPerson = storedAllowSecondPerson;
-            }
+
             StoredAllowSecondPerson = null;
             return null;
         }
@@ -116,7 +83,6 @@ namespace UD_FleshGolems.ModdedText
             string hasTags = null;
             if (Context.Parameters is List<string> parameters
                 && parameters.Count > 1)
-            {
                 switch (parameters[0])
                 {
                     case "inherits":
@@ -126,7 +92,7 @@ namespace UD_FleshGolems.ModdedText
                         hasTags = parameters[1];
                         break;
                 }
-            }
+
             bool matchesParameters(GameObjectBlueprint Model)
             {
                 if (!inherits.IsNullOrEmpty() && !Model.InheritsFrom(inherits))
@@ -158,11 +124,6 @@ namespace UD_FleshGolems.ModdedText
          * Variable Object
          * 
          */
-        [VariableObjectReplacer("target.test.parameter.separators.with.debug.replacer")]
-        public static string TargetTest_Parameter_Separators(DelegateContext Context)
-            => Context.Parameters
-                ?.Aggregate("", (a, n) => a + ":" + n);
-
         public static void ParseDeathMemoryContextParameters(
             DelegateContext Context,
             out string Article,
@@ -208,9 +169,8 @@ namespace UD_FleshGolems.ModdedText
             if (Context.Target is GameObject frankenCorpse
                 && frankenCorpse.TryGetPart(out UD_FleshGolems_PastLife pastLife)
                 && pastLife.BrainInAJar is GameObject brainInAJar)
-            {
                 faction = GenerateFriendOrFoe.getRandomFaction(brainInAJar);
-            }
+
             return ("by " + faction + " for " + GenerateFriendOrFoe.getHateReason()).ContextCapitalize(Context);
         }
 
@@ -230,33 +190,30 @@ namespace UD_FleshGolems.ModdedText
             if (Parameters.Count > 1
                 && Parameters[0].EqualsNoCase("verb")
                 && !Parameters[1].IsNullOrEmpty()
-                && Parameters[1].Uncapitalize() is string newVerb)
+                && Parameters[1].Uncapitalize() is string newVerb
+                && DeathDescription.StartsWith("=")
+                && DeathDescription.TryGetIndexOf("verb:", out int verbStart)
+                && DeathDescription[..verbStart].TryGetIndexOf("=", out int replacerEnd)
+                && DeathDescription[..verbStart][..(replacerEnd - 1)] is string oldVerb)
             {
-                if (DeathDescription.StartsWith("=")
-                    && DeathDescription.TryGetIndexOf("verb:", out int verbStart)
-                    && DeathDescription[..verbStart].TryGetIndexOf("=", out int replacerEnd)
-                    && DeathDescription[..verbStart][..(replacerEnd - 1)] is string oldVerb)
+                if (!oldVerb.TryGetIndexOf(":", out int verbEnd))
+                    verbEnd = verbStart + replacerEnd;
+
+                DeathDescription = DeathDescription[..verbStart] + newVerb + DeathDescription[(verbEnd - 1)..];
+                verbEnd = verbStart + newVerb.Length;
+                replacerEnd = DeathDescription[verbEnd..].IndexOf("=") - 1;
+                if (Parameters.Count > 2
+                    && !Parameters[2].IsNullOrEmpty()
+                    && Parameters[2].Contains("afterpronoun"))
                 {
-                    if (!oldVerb.TryGetIndexOf(":", out int verbEnd))
+                    if (Parameters[2].Contains("remove"))
                     {
-                        verbEnd = verbStart + replacerEnd;
+                        if (DeathDescription[verbEnd + 1].ToString() == ":")
+                            DeathDescription = DeathDescription[..verbEnd] + DeathDescription[replacerEnd..];
                     }
-                    DeathDescription = DeathDescription[..verbStart] + newVerb + DeathDescription[(verbEnd - 1)..];
-                    verbEnd = verbStart + newVerb.Length;
-                    replacerEnd = DeathDescription[verbEnd..].IndexOf("=") - 1;
-                    if (Parameters.Count > 2
-                        && !Parameters[2].IsNullOrEmpty()
-                        && Parameters[2].Contains("afterpronoun"))
+                    else
                     {
-                        if (Parameters[2].Contains("remove"))
-                        {
-                            if (DeathDescription[verbEnd + 1].ToString() == ":")
-                                DeathDescription = DeathDescription[..verbEnd] + DeathDescription[replacerEnd..];
-                        }
-                        else
-                        {
-                            DeathDescription = DeathDescription[..verbEnd] + ":afterpronoun" + DeathDescription[replacerEnd..];
-                        }
+                        DeathDescription = DeathDescription[..verbEnd] + ":afterpronoun" + DeathDescription[replacerEnd..];
                     }
                 }
             }
@@ -329,61 +286,26 @@ namespace UD_FleshGolems.ModdedText
 
         [VariableObjectReplacer("bodyPart.NoCase", Default = "body")]
         public static string UD_Target_BodyPart(DelegateContext Context)
-        {
-            string bodyPartType = !Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.CapitalizeEx() : null;
-            string output = Context.Target
-                ?.Body
-                ?.LoopPart(bodyPartType)
-                ?.GetRandomElementCosmetic()
-                ?.Description;
-
-            output = output.ContextCapitalize(Context);
-
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(Context.Target), Context.Target?.DebugName ?? "null"),
-                    Debug.Arg(nameof(bodyPartType), bodyPartType ?? "null"),
-                    Debug.Arg(nameof(output), output ?? "null"),
-                });
-            if (!Context.Parameters.IsNullOrEmpty())
-                foreach (string param in Context.Parameters)
-                    Debug.Log(param, Indent: indent[1]);
-
-            return output;
-        }
-        /*
             => Context.Target
                 ?.Body
                 ?.LoopPart(!Context.Parameters.IsNullOrEmpty() ? Context.Parameters[0]?.CapitalizeEx() : null)
                 ?.GetRandomElementCosmetic()
                 ?.Description
                 ?.ContextCapitalize(Context);
-        */
 
         [VariableObjectReplacer]
         public static string UD_xTagSingle(DelegateContext Context)
-        {
-            using Indent indent = new();
-            Debug.LogMethod(indent[1]);
-            string output = null;
-            if (!Context.Parameters.IsNullOrEmpty()
+            => !Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 1
                 && Context.Target is GameObject target
                 && target.GetxTag(Context.Parameters[0], Context.Parameters[1]) is string xtag
-                && xtag.CachedCommaExpansion().GetRandomElementCosmetic() is string tagValue)
-            {
-                output = tagValue.ContextCapitalize(Context);
-            }
-            return output;
-        }
+                && xtag.CachedCommaExpansion().GetRandomElementCosmetic() is string tagValue
+            ? tagValue.ContextCapitalize(Context)
+            : null;
 
         [VariableObjectReplacer]
         public static string UD_xTagMulti(DelegateContext Context)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[1]);
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 2
@@ -394,21 +316,14 @@ namespace UD_FleshGolems.ModdedText
             {
                 List<string> andList = new();
                 for (int i = 0; i < count; i++)
-                {
                     if (multiTagList.GetRandomElementCosmetic() is string entry)
-                    {
                         andList.Add(entry);
-                    }
                     else
-                    {
                         break;
-                    }
-                }
+
                 output = Grammar.MakeAndList(andList);
                 if (andList.Count > 2 && !output.Contains(", and "))
-                {
                     output = output.Replace(" and ", ", and ");
-                }
             }
             return output.ContextCapitalize(Context);
         }
@@ -416,8 +331,6 @@ namespace UD_FleshGolems.ModdedText
         [VariableObjectReplacer]
         public static string UD_xTagMultiU(DelegateContext Context)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[1]);
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Parameters.Count > 3
@@ -429,24 +342,15 @@ namespace UD_FleshGolems.ModdedText
                 && multixTag.CachedCommaExpansion() is List<string> multiTagList)
             {
                 List<string> andList = new();
-                Debug.Log(nameof(multiTagList) + " Entries:", Indent: indent[2]);
                 for (int i = 0; i < count; i++)
-                {
                     if (multiTagList.GetRandomElementCosmeticExcluding(Exclude: s => andList.Contains(s)) is string entry)
-                    {
-                        Debug.Log(entry, Indent: indent[3]);
                         andList.Add(entry);
-                    }
                     else
-                    {
                         break;
-                    }
-                }
+
                 output = Grammar.MakeAndList(andList);
                 if (andList.Count > 2 && !output.Contains(", and "))
-                {
                     output = output.Replace(" and ", ", and ");
-                }
             }
             return output.ContextCapitalize(Context);
         }
@@ -454,55 +358,31 @@ namespace UD_FleshGolems.ModdedText
         [VariableObjectReplacer]
         public static string UD_xTag(DelegateContext Context)
         {
-            using Indent indent = new();
-            Debug.LogCaller(indent[1],
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(Context.Target), Context?.Target?.DebugName ?? NULL),
-                });
             string parameters = null;
             foreach (string parameter in Context.Parameters)
             {
                 if (!parameters.IsNullOrEmpty())
-                {
                     parameters += ", ";
-                }
+
                 parameters += parameter;
             }
-            Debug.Log(nameof(Context.Parameters), parameters, indent[2]);
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
                 && Context.Target is GameObject target)
-            {
-                switch (Context.Parameters.Count)
+                output = Context.Parameters.Count switch
                 {
-                    case 0:
-                    case 1:
-                        Debug.Log("Uh-oh!", Indent: indent[3]);
-                        break;
+                    0 or
+                    1 => null,
 
-                    case 2:
-                        output = UD_xTagSingle(Context);
-                        Debug.Log(nameof(UD_xTagSingle), Indent: indent[3]);
-                        break;
+                    2 => UD_xTagSingle(Context),
 
-                    case 3:
-                        output = UD_xTagMulti(Context);
-                        Debug.Log(nameof(UD_xTagMulti), Indent: indent[3]);
-                        break;
+                    3 => UD_xTagMulti(Context),
 
-                    default: // 4
-                        output = UD_xTagMultiU(Context);
-                        Debug.Log(nameof(UD_xTagMultiU), Indent: indent[3]);
-                        break;
-                }
-                if (Context.Capitalize)
-                {
-                    Debug.Log(nameof(Context.Capitalize), Indent: indent[3]);
-                    output = output.ContextCapitalize(Context);
-                }
-            }
-            return output;
+                    // 4
+                    _ => UD_xTagMultiU(Context)
+                };
+
+            return output?.ContextCapitalize(Context);
         }
 
         /* 
@@ -514,9 +394,8 @@ namespace UD_FleshGolems.ModdedText
         public static void UD_post_no2nd_restore(DelegateContext Context)
         {
             if (StoredAllowSecondPerson is bool storedAllowSecondPerson)
-            {
                 Grammar.AllowSecondPerson = storedAllowSecondPerson;
-            }
+
             StoredAllowSecondPerson = null;
         }
 
@@ -529,9 +408,5 @@ namespace UD_FleshGolems.ModdedText
                 Context.Value.Append(contextValue.CapitalizeEx());
             }
         }
-
-        [VariablePostProcessor("snapify")]
-        public static void UD_Snapify(DelegateContext Context)
-            => Context.Value.Snapify();
     }
 }

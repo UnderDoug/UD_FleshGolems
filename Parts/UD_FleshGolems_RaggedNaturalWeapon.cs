@@ -196,14 +196,18 @@ namespace XRL.World.Parts
 
         public override bool AllowStaticRegistration() => true;
 
-        public override bool WantEvent(int ID, int cascade) => base.WantEvent(ID, cascade)
+        public override bool WantEvent(int ID, int cascade)
+            => base.WantEvent(ID, cascade)
             || ID == GetDisplayNameEvent.ID
             || ID == GetShortDescriptionEvent.ID
-            || ID == GetDebugInternalsEvent.ID;
+            || ID == GetDebugInternalsEvent.ID
+            ;
 
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
-            if ((E.Understood() || E.AsIfKnown) && !E.Object.HasProperName)
+            if (!E.Object.HasProperName
+                && (E.Understood()
+                    || E.AsIfKnown))
             {
                 if (!DisplayNameAdjusted
                     && E.Object.Render is Render render
@@ -219,9 +223,8 @@ namespace XRL.World.Parts
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
             if (Description.IsNullOrEmpty() && Wielder != null)
-            {
                 ProcessDescriptionElements(Wielder);
-            }
+
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(GetDebugInternalsEvent E)

@@ -108,21 +108,12 @@ namespace XRL.World.Conversations.Parts
             }
         }
 
-        public static int CalculateDifficulty(GameObject Player, GameObject Speaker, out int Defense, out int Attack, bool Silent = false)
+        public static int CalculateDifficulty(GameObject Player, GameObject Speaker, out int Defense, out int Attack)
         {
-            using Indent indent = new(1);
-
             Defense = Speaker.Stat("Level");
             Attack = Player.Stat("Level") + Player.StatMod("Ego");
             AdjustDifficultyBasedOnEffects(ref Defense, Player, Speaker);
             int difficulty = Defense - Attack;
-
-            if (!Silent)
-            {
-                Debug.Log(nameof(Defense), Defense, Indent: indent);
-                Debug.Log(nameof(Attack), Attack, Indent: indent);
-                Debug.Log(nameof(difficulty), difficulty, Indent: indent);
-            }
 
             return difficulty;
         }
@@ -136,15 +127,6 @@ namespace XRL.World.Conversations.Parts
 
         public static bool CheckCanRecruit(GameObject Player, GameObject Speaker, out int Difficulty, bool Silent = false)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(Player), Player?.DebugName ?? NULL),
-                    Debug.Arg(nameof(Speaker), Speaker?.DebugName ?? NULL),
-                    Debug.Arg(nameof(Silent), Silent),
-                });
-
             Difficulty = int.MaxValue;
             if (Player == null
                 || Speaker == null)
@@ -159,9 +141,8 @@ namespace XRL.World.Conversations.Parts
             {
                 string telepathicallyFailedMsg = "Without a tongue, =object.name= cannot recruit =subject.name=";
                 if (Player.HasPart<XRL.World.Parts.Mutation.Telepathy>())
-                {
                     telepathicallyFailedMsg += ", as =object.name= cannot make telepathic contact with =subject.objective=";
-                }
+
                 telepathicallyFailedMsg += ".";
                 return Player.Fail(DoReplacement(telepathicallyFailedMsg), Silent);
             }
@@ -172,7 +153,6 @@ namespace XRL.World.Conversations.Parts
             Difficulty = CalculateDifficulty(Player, Speaker, out _, out _);
 
             bool result = Difficulty <= 0;
-            Debug.YehNah("able to recruit", result, Indent: indent[0]);
 
             if (!Silent
                 && !result)
@@ -224,7 +204,7 @@ namespace XRL.World.Conversations.Parts
                 && CanRecruitReanimatedWithoutRep.Check(player, speaker))
             {
                 Visible = true;
-                Difficulty = CalculateDifficulty(player, speaker, out _, out _, Silent: true);
+                Difficulty = CalculateDifficulty(player, speaker, out _, out _);
                 return true;
             }
             Visible = this.Visible;
@@ -234,13 +214,7 @@ namespace XRL.World.Conversations.Parts
 
         public override void Awake()
         {
-            using Indent indent = new(1);
-            string debugString = Debug.GetCallingTypeAndMethod() + "." + nameof(SetVisibleAndDifficulty);
-
-            if (SetVisibleAndDifficulty(out Visible, out Difficulty))
-                Debug.CheckYeh(debugString, indent);
-            else
-                Debug.CheckNah(debugString, indent);
+            SetVisibleAndDifficulty(out Visible, out Difficulty);
 
             base.Awake();
         }
@@ -276,25 +250,15 @@ namespace XRL.World.Conversations.Parts
         }
         public override bool HandleEvent(EnteredElementEvent E)
         {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(EnteredElementEvent)),
-                    Debug.Arg(nameof(RecruitedPropTag), The.Speaker?.GetIntProperty(RecruitedPropTag) ?? -1),
-                });
-
             if (The.Speaker is not GameObject speaker
                 || The.Player is not GameObject player
                 || !CheckCanRecruit(player, speaker, out Difficulty))
                 return false;
 
             Visible = false;
-            Debug.Log(nameof(Difficulty), Difficulty, Indent: indent[1]);
+
             speaker.SetAlliedLeader<AllyProselytize>(player);
             speaker.SetIntProperty(RecruitedPropTag, 1);
-
-            Debug.Log(nameof(RecruitedPropTag), speaker.GetIntProperty(RecruitedPropTag), Indent: indent[1]);
 
             if (speaker.TryGetEffect(out Lovesick lovesick))
                 lovesick.PreviousLeader = player;
@@ -322,7 +286,7 @@ namespace XRL.World.Conversations.Parts
                             superParentElement.Text.Remove(DebugString);
                     }
 
-                    int Difficulty = CalculateDifficulty(player, speaker, out int defense, out int attack, true);
+                    int Difficulty = CalculateDifficulty(player, speaker, out int defense, out int attack);
 
                     string defenseString = "Defense: {{r|" + defense + "}}";
                     string attackString = "Attack: {{g|" + attack + "}}";
@@ -344,13 +308,7 @@ namespace XRL.World.Conversations.Parts
         }
         public override bool HandleEvent(LeaveElementEvent E)
         {
-            using Indent indent = new(1);
-            string debugString = Debug.GetCallingTypeAndMethod() + "(" + nameof(LeaveElementEvent) + ")." + nameof(SetVisibleAndDifficulty);
-
-            if (SetVisibleAndDifficulty(out Visible, out Difficulty))
-                Debug.CheckYeh(debugString, indent);
-            else
-                Debug.CheckNah(debugString, indent);
+            SetVisibleAndDifficulty(out Visible, out Difficulty);
 
             return base.HandleEvent(E);
         }

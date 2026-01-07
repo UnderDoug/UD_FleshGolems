@@ -69,15 +69,6 @@ namespace XRL.World.Parts
 
         public override bool HandleEvent(OnDeathRemovalEvent E)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(OnDeathRemovalEvent)),
-                    Debug.Arg(nameof(E.Dying), E.Dying?.DebugName ?? NULL),
-                    Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
-                });
-
             if (E.Dying.GetDropInventory() is IInventory dropInventory
                 && dropInventory.GetInventoryZone() is Zone deathZone
                 && deathZone.Built
@@ -86,12 +77,9 @@ namespace XRL.World.Parts
                 && corpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper corpseReanimationHelper))
             {
                 if (!corpse.TryGetDeathDetails(out UD_FleshGolems_DeathDetails deathDetails))
-                {
                     deathDetails = corpse.RequirePart<UD_FleshGolems_DeathDetails>();
-                }
+
                 deathDetails.Initialize(E);
-                Debug.CheckYeh(nameof(deathDetails), "Got!", Indent: indent[1]);
-                corpseReanimationHelper.KillerDetails?.Log();
             }
 
             return base.HandleEvent(E);

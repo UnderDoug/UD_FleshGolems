@@ -19,15 +19,13 @@ namespace XRL.World.Parts
         public bool Revealed;
 
         public override bool SameAs(IPart p)
-        {
-            return false;
-        }
+            => false;
 
         public override void Register(GameObject Object, IEventRegistrar Registrar)
         {
+            base.Register(Object, Registrar);
             Object.SetIntProperty("ForceMutableSave", 1);
             Registrar.Register("UD_FleshGolems_MadMongerReveal");
-            base.Register(Object, Registrar);
         }
 
         public override bool FireEvent(Event E)

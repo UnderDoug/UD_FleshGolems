@@ -65,10 +65,11 @@ namespace XRL.World.Parts
             Registrar.Register(EquippedEvent.ID, EventOrder.EXTREMELY_LATE, true);
             base.Register(Object, Registrar);
         }
-        public override bool WantEvent(int ID, int Cascade) => base.WantEvent(ID, Cascade)
-            // || (!Assigned && ID == EquippedEvent.ID)
+        public override bool WantEvent(int ID, int Cascade)
+            => base.WantEvent(ID, Cascade)
             || (RaggedAssigned && ID == UnequippedEvent.ID)
-            || (!Assigned && ID == BeforeMeleeAttackEvent.ID);
+            || (!Assigned && ID == BeforeMeleeAttackEvent.ID)
+            ;
 
         public override bool HandleEvent(EquippedEvent E)
         {
@@ -94,9 +95,8 @@ namespace XRL.World.Parts
                 && bodyPart.DefaultBehavior == item
                 && bodyPart.DefaultBehaviorBlueprint != item.Blueprint
                 && bodyPart.ParentBody.ParentObject is GameObject wielder)
-            {
                 ProcessAssignment(bodyPart, wielder);
-            }
+
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(BeforeUnequippedEvent E)
@@ -105,9 +105,8 @@ namespace XRL.World.Parts
                 && E.Item is GameObject item
                 && item == ParentObject
                 && E.Actor?.Body.FindDefaultBehavior(item) is BodyPart bodyPart)
-            {
                 UnprocessAssignment(bodyPart);
-            }
+
             return base.HandleEvent(E);
         }
     }

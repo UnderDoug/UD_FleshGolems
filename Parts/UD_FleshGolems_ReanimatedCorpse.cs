@@ -29,14 +29,6 @@ namespace XRL.World.Parts
     [Serializable]
     public class UD_FleshGolems_ReanimatedCorpse : IScribedPart, IReanimateEventHandler
     {
-        [UD_FleshGolems_DebugRegistry]
-        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
-        {
-            Registry.Register(AccessTools.Method(typeof(UD_FleshGolems_ReanimatedCorpse), nameof(HandleEvent), new Type[] { typeof(DecorateDefaultEquipmentEvent) }), false);
-            Registry.Register(AccessTools.Method(typeof(UD_FleshGolems_ReanimatedCorpse), nameof(HandleEvent), new Type[] { typeof(EnteredCellEvent) }), false);
-            return Registry;
-        }
-
         [Serializable]
         private struct LiquidPortion : IComposite
         {
@@ -98,14 +90,6 @@ namespace XRL.World.Parts
             }
             set
             {
-                using Indent indent = new(1);
-                Debug.LogCaller(indent, 
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(_Reanimator), _Reanimator?.DebugName ?? NULL),
-                        Debug.Arg(nameof(value), value?.DebugName ?? NULL),
-                    });
-
                 if (_Reanimator != value)
                 {
                     _Reanimator = value;
@@ -176,38 +160,10 @@ namespace XRL.World.Parts
 
         public override void Initialize()
         {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
-                    Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
-                    Debug.Arg(nameof(IsAlteredDescription), IsAlteredDescription),
-                    Debug.Arg(nameof(NewDescription), !NewDescription.IsNullOrEmpty()),
-                });
-
             if (ParentObject.HasTagOrIntProperty(REANIMATED_USE_ICONCOLOR_PART_PROPTAG))
-            {
-                Debug.CheckYeh("Adding " + nameof(UD_FleshGolems_CorpseIconColor), indent[1]);
                 ParentObject?.AddPart(new UD_FleshGolems_CorpseIconColor(ParentObject));
-            }
-            Debug.Log(nameof(PartsInNeedOfRemovalWhenAnimated), PartsInNeedOfRemovalWhenAnimated?.Count, indent[1]);
-            foreach (string partToRemove in PartsInNeedOfRemovalWhenAnimated)
-            {
-                Debug.YehNah(
-                    Message: partToRemove,
-                    Good: ParentObject?.RemovePart(partToRemove),
-                    Indent: indent[2]);
-            }
-            Debug.Log(nameof(BleedLiquid), BleedLiquid ?? NULL, indent[1]);
-            if (BleedLiquid.IsNullOrEmpty())
-            {
-                Debug.Log(
-                    nameof(GetBleedLiquidEvent) + "." +
-                    nameof(GetBleedLiquidEvent.GetFor),
-                    GetBleedLiquidEvent.GetFor(ParentObject),
-                    indent[2]);
-            }
+
+            _ = BleedLiquid;
 
             HaltGreaterVoiderLairCreation(ParentObject, Reanimator);
             SecretlySealLiquidVolume(ParentObject);
@@ -217,9 +173,7 @@ namespace XRL.World.Parts
         }
 
         public override bool SameAs(IPart p)
-        {
-            return false;
-        }
+            => false;
 
         public UD_FleshGolems_ReanimatedCorpse RenderDisplayNameSetAltered()
         {
@@ -254,9 +208,8 @@ namespace XRL.World.Parts
         private static List<LiquidPortion> GetBleedLiquids(string BleedLiquids)
         {
             if (BleedLiquids.IsNullOrEmpty())
-            {
                 return new();
-            }
+
             List<LiquidPortion> liquids = new();
             if (!BleedLiquids.Contains(',') && TryGetLiquidPortion(BleedLiquids, out LiquidPortion singleLiquidPortion))
             {
@@ -264,12 +217,9 @@ namespace XRL.World.Parts
                 return liquids;
             }
             foreach (string liquidComponent in BleedLiquids.CachedCommaExpansion())
-            {
                 if (TryGetLiquidPortion(liquidComponent, out LiquidPortion liquidPortion))
-                {
                     liquids.Add(new(liquidPortion.Liquid, liquidPortion.Portion));
-                }
-            }
+
             return liquids;
         }
 
@@ -280,46 +230,30 @@ namespace XRL.World.Parts
             => LiquidDict.ToList().ConvertAll(kvp => new LiquidPortion(kvp.Key, kvp.Value));
 
         public static int GetTierFromLevel(GameObject Creature)
-        {
-            return Capabilities.Tier.Constrain((Creature.Stat("Level") - 1) / 5 + 1);
-        }
-        public int GetTierFromLevel() => GetTierFromLevel(ParentObject);
+            => Capabilities.Tier.Constrain((Creature.Stat("Level") - 1) / 5 + 1);
+
+        public int GetTierFromLevel()=> GetTierFromLevel(ParentObject);
 
         public bool AttemptToSuffer()
         {
-            using Indent indent = new();
-            if (ParentObject is GameObject frankenCorpse)
+            if (ParentObject is GameObject frankenCorpse
+                && !NoSuffer)
             {
-                if (!NoSuffer)
+                if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
                 {
-                    if (!frankenCorpse.TryGetEffect(out UD_FleshGolems_UnendingSuffering unendingSuffering))
-                    {
-                        int tier = GetTierFromLevel(frankenCorpse);
-                        Debug.LogMethod(indent[1],
-                            ArgPairs: new Debug.ArgPair[]
-                            {
-                            Debug.Arg(nameof(unendingSuffering), unendingSuffering != null),
-                            Debug.Arg(nameof(tier), tier),
-                            });
-                        int timesReanimated = 1;
-                        if (ParentObject.TryGetPart(out UD_FleshGolems_PastLife pastLife))
-                        {
-                            timesReanimated = pastLife.TimesReanimated;
-                        }
-                        NoSuffer = !frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier, timesReanimated + 1), Reanimator);
-                        return !NoSuffer;
-                    }
-                    if (unendingSuffering.SourceObject != Reanimator)
-                    {
-                        Debug.LogMethod(indent[1],
-                            ArgPairs: new Debug.ArgPair[]
-                            {
-                            Debug.Arg(nameof(unendingSuffering.SourceObject), unendingSuffering.SourceObject?.DebugName ?? NULL),
-                            Debug.Arg(nameof(Reanimator), Reanimator?.DebugName ?? NULL),
-                            });
-                        unendingSuffering.SourceObject = Reanimator;
-                        return true;
-                    }
+                    int tier = GetTierFromLevel(frankenCorpse);
+                    int timesReanimated = 1;
+
+                    if (ParentObject.TryGetPart(out UD_FleshGolems_PastLife pastLife))
+                        timesReanimated = pastLife.TimesReanimated;
+
+                    NoSuffer = !frankenCorpse.ForceApplyEffect(new UD_FleshGolems_UnendingSuffering(Reanimator, tier, timesReanimated + 1), Reanimator);
+                    return !NoSuffer;
+                }
+                if (unendingSuffering.SourceObject != Reanimator)
+                {
+                    unendingSuffering.SourceObject = Reanimator;
+                    return true;
                 }
             }
             return false;
@@ -337,20 +271,16 @@ namespace XRL.World.Parts
             {
                 greaterVoider.createdLair = true;
                 greaterVoider.lairZone = FrankenCorpse?.CurrentZone?.ZoneID;
-                Location2D lairOrigin = null;
+                Location2D lairOrigin;
+
                 if (FrankenCorpse?.CurrentCell is Cell currentCell)
-                {
                     lairOrigin = currentCell.Location;
-                }
                 else
                 if (Reanimator?.CurrentCell is Cell reanimatorCell)
-                {
                     lairOrigin = reanimatorCell.Location;
-                }
                 else
-                {
                     lairOrigin = new(Stat.RandomCosmetic(0, 79), Stat.RandomCosmetic(0, 24));
-                }
+
                 greaterVoider.lairRect = new(lairOrigin.X - 1, lairOrigin.Y - 1, lairOrigin.X + 1, lairOrigin.Y + 1);
             }
         }
@@ -371,19 +301,19 @@ namespace XRL.World.Parts
             base.Register(Object, Registrar);
         }
         public override bool WantEvent(int ID, int cascade)
-        {
-            return base.WantEvent(ID, cascade)
-                || ID == GetDisplayNameEvent.ID
-                || ID == GetShortDescriptionEvent.ID
-                || ID == DecorateDefaultEquipmentEvent.ID
-                || ID == EndTurnEvent.ID
-                || ID == EnteredCellEvent.ID
-                || ID == EnvironmentalUpdateEvent.ID
-                || ID == AfterZoneBuiltEvent.ID
-                || ID == GetBleedLiquidEvent.ID
-                || ID == BeforeTakeActionEvent.ID
-                || ID == GetDebugInternalsEvent.ID;
-        }
+            => base.WantEvent(ID, cascade)
+            || ID == GetDisplayNameEvent.ID
+            || ID == GetShortDescriptionEvent.ID
+            || ID == DecorateDefaultEquipmentEvent.ID
+            || ID == EndTurnEvent.ID
+            || ID == EnteredCellEvent.ID
+            || ID == EnvironmentalUpdateEvent.ID
+            || ID == AfterZoneBuiltEvent.ID
+            || ID == GetBleedLiquidEvent.ID
+            || ID == BeforeTakeActionEvent.ID
+            || ID == GetDebugInternalsEvent.ID
+            ;
+
         public override bool HandleEvent(GetDisplayNameEvent E)
         {
             if (E.Context == "CreatureType" && E.Reference)
@@ -402,9 +332,7 @@ namespace XRL.World.Parts
                 }
                 else
                 if (IdentityType < IdentityType.Corpse)
-                {
                     E.AddClause("corpse", CorpseClause);
-                }
 
                 E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
 
@@ -418,18 +346,13 @@ namespace XRL.World.Parts
                 if (E.BaseOnly) // this is largely for the stone statues, we'll see if it busts anything else.
                 {
                     if (identityType < IdentityType.ParticipantVillager)
-                    {
                         newDisplayName = "corpse of " + newDisplayName;
-                    }
                     else
                     if (identityType < IdentityType.Corpse)
-                    {
                         newDisplayName += " corpse";
-                    }
+
                     if (AllowReanimatedPrefix(E.Object) && identityType != IdentityType.Librarian)
-                    {
                         newDisplayName = REANIMATED_ADJECTIVE + " " + newDisplayName;
-                    }
                 }
                 else
                 {
@@ -440,13 +363,9 @@ namespace XRL.World.Parts
                     }
                     else
                     if (identityType < IdentityType.Corpse)
-                    {
                         E.AddClause("corpse", CorpseClause);
-                    }
                     if (AllowReanimatedPrefix(E.Object) && identityType != IdentityType.Librarian)
-                    {
                         E.AddAdjective(REANIMATED_ADJECTIVE, CorpseAdjective - 1);
-                    }
                 }
                 E.ReplacePrimaryBase(newDisplayName);
             }
@@ -468,23 +387,12 @@ namespace XRL.World.Parts
         {
             if (ParentObject?.Body is Body frankenBody
                 && frankenBody == E.Body)
-            {
-                Debug.LogCaller(
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(DecorateDefaultEquipmentEvent)),
-                        Debug.Arg(ParentObject?.DebugName ?? NULL),
-                    });
                 foreach (BodyPart bodyPart in frankenBody.LoopParts(BodyPartHasRaggedNaturalWeapon))
-                {
                     if (bodyPart.DefaultBehavior is GameObject defaultBehavior
                         && defaultBehavior.InheritsFrom("UD_FleshGolems Ragged Weapon")
                         && defaultBehavior.TryGetPart(out UD_FleshGolems_RaggedNaturalWeapon raggedNaturalWeaponPart))
-                    {
                         raggedNaturalWeaponPart.Wielder = ParentObject;
-                    }
-                }
-            }
+
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(EndTurnEvent E)
@@ -494,34 +402,21 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(EnteredCellEvent E)
         {
-            using Indent indent = new(1);
             if (ParentObject is GameObject frankenCorpse
                 && IdentityType <= IdentityType.ParticipantVillager)
             {
                 bool wantsToAlign = !frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS && a.Value > 0);
-                if (wantsToAlign
-                    || !IsAlteredDescription)
-                {
-                    Debug.LogCaller(indent,
-                        ArgPairs: new Debug.ArgPair[]
-                        {
-                            Debug.Arg(nameof(EnteredCellEvent)),
-                            Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
-                        });
-                }
+
                 if (!IsAlteredDescription
                     && !NewDescription.IsNullOrEmpty()
                     && ParentObject.TryGetPart(out Description description))
                 {
-                    Debug.Log(nameof(NewDescription), !NewDescription.IsNullOrEmpty(), Indent: indent[1]);
                     if (IdentityType == IdentityType.Librarian
                         && description._Short.Contains(LIBRARIAN_FRAGMENT))
                     {
-                        Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[2]);
                         if (frankenCorpse.GetBlueprint().TryGetPartParameter(nameof(Description), nameof(Description._Short), out string corpseDescription)
                             && !corpseDescription.IsNullOrEmpty())
                         {
-                            Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[3]);
                             IsAlteredDescription = true;
                             string combinedDescription = corpseDescription + "\n\n" + NewDescription;
                             description._Short = combinedDescription;
@@ -532,13 +427,11 @@ namespace XRL.World.Parts
                     {
                         IsAlteredDescription = true;
                         description._Short += "\n\n" + NewDescription;
-                        Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[2]);
                     }
                 }
+
                 if (wantsToAlign)
-                {
                     PastLife.AlignWithPreviouslySentientBeings();
-                }
             }
             return base.HandleEvent(E);
         }
@@ -551,44 +444,25 @@ namespace XRL.World.Parts
             {
                 IsRenderDisplayNameUpdated = true;
                 PastLife?.AlignWithPreviouslySentientBeings();
-                if (ParentObject.Render is Render corpseRender)
-                {
-                    // PastLife.RenderDisplayName = null;
-                    // corpseRender.DisplayName = ParentObject.GetReferenceDisplayName(Short: true);
-                }
             }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(AfterZoneBuiltEvent E)
         {
-            using Indent indent = new(1);
             if (ParentObject is GameObject frankenCorpse
                 && frankenCorpse.CurrentZone == E.Zone
                 && IdentityType > IdentityType.ParticipantVillager)
             {
-                if (!frankenCorpse.Brain.Allegiance.Any(a => a.Key == UD_FleshGolems_PastLife.PREVIOUSLY_SENTIENT_BEINGS)
-                    || !IsAlteredDescription)
-                {
-                    Debug.LogCaller(indent,
-                        ArgPairs: new Debug.ArgPair[]
-                        {
-                            Debug.Arg(nameof(EnteredCellEvent)),
-                            Debug.Arg(nameof(IdentityType), IdentityType.ToStringWithNum()),
-                        });
-                }
                 if (!IsAlteredDescription
                     && !NewDescription.IsNullOrEmpty()
                     && ParentObject.TryGetPart(out Description description))
                 {
-                    Debug.Log(nameof(NewDescription), !NewDescription.IsNullOrEmpty(), Indent: indent[1]);
                     if (IdentityType == IdentityType.Librarian
                         && description._Short.Contains(LIBRARIAN_FRAGMENT))
                     {
-                        Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[2]);
                         if (frankenCorpse.GetBlueprint().TryGetPartParameter(nameof(Description), nameof(Description._Short), out string corpseDescription)
                             && !corpseDescription.IsNullOrEmpty())
                         {
-                            Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[3]);
                             IsAlteredDescription = true;
                             string combinedDescription = corpseDescription + "\n\n" + NewDescription;
                             description._Short = combinedDescription;
@@ -599,7 +473,6 @@ namespace XRL.World.Parts
                     {
                         IsAlteredDescription = true;
                         description._Short += "\n\n" + NewDescription;
-                        Debug.Log(nameof(IsAlteredDescription), IsAlteredDescription, Indent: indent[2]);
                     }
                 }
                 PastLife.AlignWithPreviouslySentientBeings();
@@ -608,28 +481,19 @@ namespace XRL.World.Parts
         }
         public override bool HandleEvent(GetBleedLiquidEvent E)
         {
-            if (BleedLiquidPortions == null || BleedLiquid.IsNullOrEmpty())
-            {
-                Debug.LogMethod(
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(GetBleedLiquidEvent)),
-                        Debug.Arg(ParentObject?.DebugName ?? NULL),
-                    });
-            }
             if (BleedLiquidPortions == null)
             {
                 string baseBlood = E.BaseLiquid ?? E.Actor.GetStringProperty("BleedLiquid", "blood-1000");
+
                 BleedLiquidPortions = GetBleedLiquids(baseBlood);
+
                 int combinedPortions = 0;
                 foreach ((string _, int portion) in BleedLiquidPortions)
-                {
                     combinedPortions += portion;
-                }
+
                 if (combinedPortions == 0)
-                {
                     combinedPortions = 500;
-                }
+
                 int combinedFactor = combinedPortions / 10;
 
                 List<string> contaminationLiquids = DetermineTaxonomyAdjective(E.Actor) switch
@@ -648,16 +512,11 @@ namespace XRL.World.Parts
                 };
                 Dictionary<string, int> bleedLiquids = GetBleedLiquidDict(BleedLiquidPortions);
                 foreach ((string liquid, int portion) in contamination)
-                {
                     if (bleedLiquids.ContainsKey(liquid))
-                    {
                         bleedLiquids[liquid] += portion;
-                    }
                     else
-                    {
                         bleedLiquids.Add(liquid, portion);
-                    }
-                }
+
                 BleedLiquidPortions = GetBleedLiquidPortions(bleedLiquids);
             }
             if (BleedLiquid.IsNullOrEmpty())
@@ -667,9 +526,7 @@ namespace XRL.World.Parts
                 foreach ((string liquid, int portion) in bleedLiquidVolume.ComponentLiquids)
                 {
                     if (!BleedLiquid.IsNullOrEmpty())
-                    {
                         BleedLiquid += ",";
-                    }
 
                     BleedLiquid += liquid + "-" + portion;
                 }
@@ -680,9 +537,8 @@ namespace XRL.World.Parts
         public override bool HandleEvent(BeforeTakeActionEvent E)
         {
             if (ParentObject.TryGetPart(out Stomach undeadStomach))
-            {
                 undeadStomach.Water = RuleSettings.WATER_MAXIMUM - 1000;
-            }
+
             return base.HandleEvent(E);
         }
         public override bool FireEvent(Event E)
@@ -695,9 +551,8 @@ namespace XRL.World.Parts
                     ?? ParentObject.GetSpecies()?.ToLower();
 
                 if (!creatureType.IsNullOrEmpty())
-                {
                     creatureType = REANIMATED_ADJECTIVE + " " + creatureType + " corpse";
-                }
+
                 ParentObject.SetCreatureType(creatureType);
             }
             return base.FireEvent(E);

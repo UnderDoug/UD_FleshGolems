@@ -8,7 +8,6 @@ using XRL.World;
 using UD_FleshGolems.Logging;
 
 using Relationship = UD_FleshGolems.Capabilities.Necromancy.CorpseEntityPair.PairRelationship;
-using ArgPair = UD_FleshGolems.Logging.Debug.ArgPair;
 
 using SerializeField = UnityEngine.SerializeField;
 
@@ -233,9 +232,6 @@ namespace UD_FleshGolems.Capabilities.Necromancy
 
         private IReadOnlyList<CorpseBlueprint> GetInheritedCorpses()
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent, ArgPairs: Debug.Arg(nameof(Corpse), Corpse.ToString()));
-
             List<CorpseBlueprint> outputList = new();
             foreach (GameObjectBlueprint inheritedCorpse in Corpse.GetGameObjectBlueprint().GetBlueprintInherits())
             {
@@ -243,15 +239,12 @@ namespace UD_FleshGolems.Capabilities.Necromancy
                     && NecromancySystem?.RequireCorpseSheet(inheritedCorpse)?.Corpse is CorpseBlueprint inheritedCorpseBlueprint)
                 {
                     outputList.Add(inheritedCorpseBlueprint);
-                    Debug.Log(inheritedCorpseBlueprint.ToString(), Indent: indent[1]);
                 }
             }
             return outputList;
         }
         public CorpseSheet InitializeInheritedCorpseList()
         {
-            // using Indent indent = new(1);
-            // Debug.LogMethod(indent, ArgPairs: Debug.Arg(nameof(Corpse), Corpse.ToString()));
             InheritedCorpses = GetInheritedCorpses().ToList();
             return this;
         }
@@ -307,14 +300,6 @@ namespace UD_FleshGolems.Capabilities.Necromancy
             int Weight,
             Relationship Relationship)
         {
-            using Indent indent = new();
-            Debug.LogMethod("for corpse " + Corpse.ToString(), indent[1],
-                ArgPairs: new ArgPair[]
-                {
-                    Debug.Arg(EntityBlueprint),
-                    Debug.Arg(Weight),
-                    Debug.Arg(Relationship),
-                });
             EntityWeight entityWeight = new(NecromancySystem?.RequireEntityBlueprint(EntityBlueprint), Weight);
             EntityBlueprint entityBlueprint = entityWeight.GetBlueprint();
             Entities ??= new();

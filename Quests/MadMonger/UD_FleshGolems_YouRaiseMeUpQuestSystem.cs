@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using UD_FleshGolems.Logging;
-
-using XRL;
-using XRL.Rules;
-using XRL.UI;
-using XRL.World;
-using XRL.World.Conversations.Parts;
 using XRL.World.QuestManagers;
+
+using UD_FleshGolems.Capabilities;
 
 namespace XRL.World.Quests
 {
@@ -56,42 +51,23 @@ namespace XRL.World.Quests
 
         public override bool HandleEvent(QuestStepFinishedEvent E)
         {
-            using Indent indent = new();
-            Debug.Log(E.Quest + ", " + E.Step.ID + " Finished", Indent: indent);
-
             if (E.Quest == Quest
                 && E.Step is QuestStep thisStep
                 && QuestSteps.Contains(thisStep))
             {
                 if (thisStep.ID == StepIDs[0]
                     && The.Game.Quests.TryGetValue(CorpseQuestSystem.QuestID, out Quest corpseQuest))
-                {
                     corpseQuest.Finish();
-                }
+
                 if (QuestSteps[^1] != thisStep
                     && QuestSteps[QuestSteps.IndexOf(E.Step) + 1] is QuestStep nextStep)
-                {
                     nextStep.Hidden = false;
-                }
             }
             return base.HandleEvent(E);
         }
 
-        public override bool HandleEvent(ZoneActivatedEvent E)
-        {
-            
-            return base.HandleEvent(E);
-        }
-
-        public override bool HandleEvent(AfterConsumeEvent E)
-        {
-            
-            return base.HandleEvent(E);
-        }
-
         public override GameObject GetInfluencer()
-        {
-            return GameObject.FindByBlueprint("UD_FleshGolems Mad Monger");
-        }
+            => GameObject.FindByBlueprint("UD_FleshGolems Mad Monger")
+            ?? UD_FleshGolems_NecromancySystem.System?.TheMadMonger;
     }
 }

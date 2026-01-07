@@ -1,19 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Linq;
 
 using XRL.World;
-using XRL.Rules;
 using XRL.Collections;
-using XRL.World.Parts;
 
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
-
-using UD_FleshGolems.Events;
-
-using UD_FleshGolems.Logging;
-using static UD_FleshGolems.Const;
 
 namespace UD_FleshGolems.Parts.PastLifeHelpers
 {
@@ -59,25 +50,12 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
         {
             if (Blueprint.GetGameObjectBlueprint().xTags is Dictionary<string, Dictionary<string, string>> entityXTags
                 && entityXTags.TryGetValue(REANIMATED_TAXA_XTAG, out Dictionary<string, string> sourceTaxa))
-            {
                 foreach ((string label, string value) in sourceTaxa)
-                {
                     this[label] ??= value;
-                }
-            }
         }
 
         public bool RestoreTaxa(GameObject Entity, bool RestoreNull = false, bool OverrideValues = false)
         {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(Entity?.DebugName ?? ("no " + nameof(Entity))),
-                    Debug.Arg(nameof(RestoreNull), RestoreNull),
-                    Debug.Arg(nameof(OverrideValues), OverrideValues),
-                });
-
             bool any = false;
             foreach ((string label, string value) in this)
             {
@@ -96,12 +74,6 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
                     Entity.SetStringProperty(label, value);
                     any = true;
                 }
-                Debug.YehNah(
-                    Message: "[" + label + "," + Entity.GetStringProperty(label) + "->" + value + "]",
-                    Good: restoreNullOrIsNotNull && overrideValuesOrExistingValueNull,
-                    Indent: indent[1]);
-                Debug.YehNah(nameof(restoreNullOrIsNotNull), restoreNullOrIsNotNull, indent[2]);
-                Debug.YehNah(nameof(overrideValuesOrExistingValueNull), overrideValuesOrExistingValueNull, indent[2]);
             }
             return any;
         }

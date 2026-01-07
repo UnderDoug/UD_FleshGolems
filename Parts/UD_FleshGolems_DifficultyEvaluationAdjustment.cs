@@ -25,17 +25,14 @@
         public override bool HandleEvent(GetDifficultyEvaluationEvent E)
         {
             if (AdjustRating != 0)
-            {
                 E.Rating += AdjustRating;
-            }
+
             if (MinRating > int.MinValue)
-            {
                 E.MinimumRating(MinRating);
-            }
+
             if (MaxRating < int.MaxValue)
-            {
                 E.MaximumRating(MaxRating);
-            }
+
             return base.HandleEvent(E);
         }
     }

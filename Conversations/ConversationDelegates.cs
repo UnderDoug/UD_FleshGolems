@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using UD_FleshGolems.Parts.VengeanceHelpers;
+﻿using System.Linq;
 
 using XRL;
-using XRL.Rules;
 using XRL.UI;
 using XRL.World;
 using XRL.World.Conversations;

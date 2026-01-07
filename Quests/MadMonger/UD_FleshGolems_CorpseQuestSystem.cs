@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-
-using Qud.API;
 
 using XRL;
 using XRL.Rules;
 using XRL.UI;
-using XRL.World;
 using XRL.World.Parts;
 using XRL.World.Quests;
 using XRL.Language;
@@ -18,8 +14,6 @@ using CorpseItem = XRL.World.QuestManagers.UD_FleshGolems_CorpseQuestStep.Corpse
 using CorpseTaxonomy = XRL.World.QuestManagers.UD_FleshGolems_CorpseQuestStep.CorpseItem.CorpseTaxonomy;
 
 using UD_FleshGolems;
-using static UD_FleshGolems.Const;
-using static UD_FleshGolems.Utils;
 using UD_FleshGolems.Logging;
 
 namespace XRL.World.QuestManagers
@@ -405,9 +399,6 @@ namespace XRL.World.QuestManagers
             }
             Steps ??= new();
 
-            using Indent indent = new();
-            Debug.LogCaller(indent);
-
             int desiredCorpsSteps = 10;
             bool haveAnAnyQuestStep = false;
 
@@ -425,7 +416,6 @@ namespace XRL.World.QuestManagers
                 {
                     int processedRoll = (questStepRoll % 3) + 1;
                     CorpseTaxonomy questStepTaxonomy = (CorpseTaxonomy)processedRoll;
-                    Debug.Log(nameof(questStepTaxonomy) + " roll " + processedRoll, Indent: indent[1]);
                     corpseQuestStep = (questStepTaxonomy) switch
                     {
                         CorpseTaxonomy.Species => CreateASpeciesCorpseQuestStep(),
@@ -434,22 +424,17 @@ namespace XRL.World.QuestManagers
                         _ => CreateAnAnyCorpseQuestStep(),
                     };
                 }
-                Debug.Log(corpseQuestStep.Corpse.Taxonomy.ToString(), corpseQuestStep.Name, indent[2]);
+
                 if (!HasStepWithName(corpseQuestStep.Name))
-                {
                     Steps.Add(corpseQuestStep);
-                }
             }
         }
         private bool HasStepWithName(string s)
         {
             foreach (UD_FleshGolems_CorpseQuestStep questStep in Steps)
-            {
                 if (questStep.Name == s)
-                {
                     return true;
-                }
-            }
+
             return false;
         }
 
@@ -461,9 +446,8 @@ namespace XRL.World.QuestManagers
         {
             if (Item.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
                 && corpseQuestHelperPart.MarkedForCollection)
-            {
                 return false;
-            }
+
             foreach (UD_FleshGolems_CorpseQuestStep finishableQuestStep in CorpseQuestSystem?.GetQuestStepsMatchingCorpse(Item))
             {
                 if (!Unfinish)
@@ -500,9 +484,7 @@ namespace XRL.World.QuestManagers
             return false;
         }
         public bool CheckItem(GameObject Item, bool Unfinish = false)
-        {
-            return CheckItem(this, Item, Unfinish);
-        }
+            => CheckItem(this, Item, Unfinish);
 
         public void ProcessEvent(IActOnItemEvent E, bool Unfinish = false)
         {
@@ -510,9 +492,8 @@ namespace XRL.World.QuestManagers
             {
                 if (item.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart corpseQuestHelperPart)
                     && corpseQuestHelperPart.MarkedForCollection)
-                {
                     return;
-                }
+
                 if (CheckItem(item, Unfinish))
                 {
                     if (!Unfinish)
@@ -532,15 +513,12 @@ namespace XRL.World.QuestManagers
         }
 
         public static bool StartQuest()
-        {
-            return The.Game.StartQuest(UD_FleshGolems_YouRaiseMeUpQuestSystem.MongerQuestID) != null;
-        }
+            => The.Game.StartQuest(UD_FleshGolems_YouRaiseMeUpQuestSystem.MongerQuestID) != null;
+
         public static bool StartQuest(UD_FleshGolems_YouRaiseMeUpQuestSystem ParentSystem, Quest ParentQuest)
         {
             try
             {
-                using Indent indent = new();
-                Debug.LogCaller(indent);
                 var corpseQuestSystem = The.Game.RequireSystem<UD_FleshGolems_CorpseQuestSystem>();
                 corpseQuestSystem.ParentQuest = ParentQuest;
                 corpseQuestSystem.ParentSystem = ParentSystem;
@@ -574,13 +552,13 @@ namespace XRL.World.QuestManagers
                     corpseQuestSystem.Steps[i].Name = questStep.ID;
                     quest.StepsByID.Add(questStep.ID, questStep);
                 }
+
                 if (corpseQuestSystem.Steps.Count > 0)
                 {
                     The.Game.StartQuest(quest, corpseQuestSystem.InfluencerRefName);
                     foreach (GameObject item in corpseQuestSystem.Player.GetInventory())
-                    {
                         corpseQuestSystem.CheckItem(item);
-                    }
+
                     _ = corpseQuestSystem.Completable;
                     return true;
                 }
@@ -594,59 +572,50 @@ namespace XRL.World.QuestManagers
 
         public override void Finish()
         {
-            using Indent indent = new();
-            Debug.LogCaller(indent);
             if (ParentQuest == null)
-            {
                 Game.TryGetQuest(UD_FleshGolems_YouRaiseMeUpQuestSystem.MongerQuestID, out ParentQuest);
-            }
+
             if (ParentQuest != null && !ParentQuest.IsStepFinished(ParentQuestStep.ID))
-            {
                 ParentQuest.FinishStep(ParentQuestStep);
-            }
+
             base.Finish();
         }
 
         // Game Events
         public override void Register(XRLGame Game, IEventRegistrar Registrar)
         {
+            base.Register(Game, Registrar);
             Registrar.Register(QuestFinishedEvent.ID);
         }
         public override bool HandleEvent(QuestFinishedEvent E)
         {
             if (E.Quest == Quest
-                && !Quest.Finished)
+                && !Quest.Finished
+                && GetInfluencer() is GameObject influencer
+                && Player.CurrentZone == influencer?.CurrentZone
+                && Player.CurrentCell.GetAdjacentCells().Contains(influencer.CurrentCell))
             {
-                if (GetInfluencer() is GameObject influencer
-                    && Player.CurrentZone == influencer?.CurrentZone
-                    && Player.CurrentCell.GetAdjacentCells().Contains(influencer.CurrentCell))
-                {
-                    int giveCount = 0;
-                    List<GameObject> corpseItems = Event.NewGameObjectList(Player.GetInventory(IsCorpseWithQuestHelperPart));
-                    foreach (GameObject corpse in corpseItems)
+                int giveCount = 0;
+                List<GameObject> corpseItems = Event.NewGameObjectList(Player.GetInventory(IsCorpseWithQuestHelperPart));
+                foreach (GameObject corpse in corpseItems)
+                    if (corpse.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart questHelperPart))
                     {
-                        if (corpse.TryGetPart(out UD_FleshGolems_CorpseQuestHelperPart questHelperPart))
+                        questHelperPart.MarkedForCollection = true;
+                        if (questHelperPart.MarkedForCollection
+                            && !influencer.ReceiveObject(corpse, Context: "Quest"))
                         {
-                            questHelperPart.MarkedForCollection = true;
-                            if (questHelperPart.MarkedForCollection
-                                && !influencer.ReceiveObject(corpse, Context: "Quest"))
-                            {
-                                Popup.ShowFail("You cannot give " + corpse.t() + " to " + influencer.t() + "!");
-                                Player.ReceiveObject(corpse);
-                                continue;
-                            }
-                            foreach(UD_FleshGolems_CorpseQuestStep questStep in GetQuestStepsMatchingCorpse(corpse))
-                            {
-                                questStep.MarkHandedIn();
-                            }
-                            giveCount++;
+                            Popup.ShowFail("You cannot give " + corpse.t() + " to " + influencer.t() + "!");
+                            Player.ReceiveObject(corpse);
+                            continue;
                         }
+                        foreach(UD_FleshGolems_CorpseQuestStep questStep in GetQuestStepsMatchingCorpse(corpse))
+                            questStep.MarkHandedIn();
+
+                        giveCount++;
                     }
-                    if (giveCount < RequiredToComplete)
-                    {
-                        return false;
-                    }
-                }
+
+                if (giveCount < RequiredToComplete)
+                    return false;
             }
             return base.HandleEvent(E);
         }
@@ -654,6 +623,7 @@ namespace XRL.World.QuestManagers
         // Player Events
         public override void RegisterPlayer(GameObject Player, IEventRegistrar Registrar)
         {
+            base.RegisterPlayer(Player, Registrar);
             Registrar.Register(TookEvent.ID);
         }
         public override bool HandleEvent(TookEvent E)
@@ -677,116 +647,23 @@ namespace XRL.World.QuestManagers
          * Wishes!
          * 
          */
-        [WishCommand(Command = "UD_FleshGolems debug quest species")]
-        public static void DebugQuestSpecies_Wish()
-        {
-            using Indent indent = new();
-            Debug.Log("All species (included or not)...", Indent: indent);
-            foreach (string species in GetAllSpecies())
-            {
-                Debug.YehNah(species, SpeciesIsNotExcluded(species), indent[1]);
-            }
-        }
-        [WishCommand(Command = "UD_FleshGolems debug quest species corpses")]
-        public static void DebugQuestSpeciesCorpses_Wish()
-        {
-            using Indent indent = new();
-            if (Popup.PickOption("pick which species", Options: AllSpecies, AllowEscape: true) is int pickedOption)
-            {
-                if (AllFactions.Count > pickedOption)
-                {
-                    Debug.Log("All " + AllSpecies[pickedOption] + " corpses...", Indent: indent);
-                    foreach (string corpse in GetAllCorpsesOfSpecies(AllSpecies[pickedOption]))
-                    {
-                        Debug.CheckYeh(SpeciesIsNotExcluded(corpse) + corpse, indent[1]);
-                    }
-                }
-                else
-                {
-                    Popup.Show("Something went wrong there, " + nameof(AllSpecies) + " doesn't appear to have the picked entry.");
-                }
-            }
-        }
-        [WishCommand(Command = "UD_FleshGolems debug quest base")]
-        public static void DebugQuestBases_Wish()
-        {
-            using Indent indent = new();
-            Debug.Log("All Base Corpse blueprints...", Indent: indent);
-            foreach (string baseCorpse in GetAllBaseCorpses())
-            {
-                Debug.Log(baseCorpse, Indent: indent[1]);
-            }
-        }
-        [WishCommand(Command = "UD_FleshGolems debug quest faction corpses")]
-        public static void DebugQuestFactionCorpses_Wish()
-        {
-            using Indent indent = new();
-
-            List<string> factionNames = new();
-            foreach (string factionName in AllFactions)
-            {
-                factionNames.Add(Factions.Get(factionName).DisplayName);
-            }
-            if (Popup.PickOption("pick which faction", Options: factionNames, AllowEscape: true) is int pickedOption)
-            {
-                if (AllFactions.Count < pickedOption)
-                {
-                    Debug.Log("All " + AllFactions[pickedOption] + " corpses...", Indent: indent);
-                    foreach (string corpse in GetAllCorpsesOfSpecies(AllFactions[pickedOption]))
-                    {
-                        Debug.Log(corpse, Indent: indent[1]);
-                    }
-                }
-                else
-                {
-                    Popup.Show("Something went wrong there, " + nameof(AllFactions) + " doesn't appear to have the picked entry.");
-                }
-            }
-        }
         [WishCommand(Command = "UD_FleshGolems debug quest corpses")]
         public static void DebugQuestCorpses_Wish()
         {
-            using Indent indent = new();
-
             if (The.Game.HasQuest("UD_FleshGolems You Raise Me Up")
                 && The.Game.GetSystem<UD_FleshGolems_CorpseQuestSystem>() is UD_FleshGolems_CorpseQuestSystem corpseQuestSystem
                 && !corpseQuestSystem.Steps.IsNullOrEmpty())
-            {
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(corpseQuestSystem.ParentQuest), corpseQuestSystem?.ParentQuest?.ID ?? NULL),
-                        Debug.Arg(nameof(corpseQuestSystem.Quest), corpseQuestSystem?.Quest?.ID ?? NULL),
-                        Debug.Arg("UD_FleshGolems debug quest corpses..."),
-                    });
-
                 foreach (UD_FleshGolems_CorpseQuestStep questStep in corpseQuestSystem.Steps)
-                {
                     if (questStep.Corpse is CorpseItem corpseItem)
-                    {
-                        Debug.Log(corpseItem.Taxonomy.ToString(), corpseItem.Value, indent[1]);
                         for (int i = 0; i < 3; i++)
-                        {
-
-                            if (corpseItem.GetACorpseForThisStep() is string corpseBlueprint)
-                            {
-                                Debug.Log(i.ToString(), corpseBlueprint, indent[2]);
-                                if (GameObject.Create(corpseBlueprint) is GameObject corpseObject)
-                                {
-                                    The.Player.CurrentCell
-                                        .GetAdjacentCells(2)
-                                        .GetRandomElementCosmetic(c => c.IsEmptyFor(corpseObject))
-                                        .AddObject(corpseObject);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+                            if (corpseItem.GetACorpseForThisStep() is string corpseBlueprint
+                                && GameObject.Create(corpseBlueprint) is GameObject corpseObject)
+                                The.Player.CurrentCell
+                                    .GetAdjacentCells(2)
+                                    .GetRandomElementCosmetic(c => c.IsEmptyFor(corpseObject))
+                                    .AddObject(corpseObject);
             else
-            {
                 Popup.Show("You don't have that quest. Spawn the Mad Monger first and start it.");
-            }
         }
     }
 }

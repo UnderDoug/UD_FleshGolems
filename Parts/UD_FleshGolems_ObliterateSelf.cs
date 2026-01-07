@@ -6,14 +6,14 @@ namespace XRL.World.Parts
     {
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
-            || ID == EnteredCellEvent.ID;
+            || ID == EnteredCellEvent.ID
+            ;
 
         public override bool HandleEvent(EnteredCellEvent E)
         {
             if ((ParentObject?.Obliterate()).GetValueOrDefault())
-            {
                 return false;
-            }
+
             MetricsManager.LogModError(ThisMod, (ParentObject?.DebugName ?? "null object") + " failed to obliterate itself.");
             return base.HandleEvent(E);
         }

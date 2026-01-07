@@ -40,24 +40,19 @@ namespace XRL.World.Parts
             if (setColors.IsNullOrEmpty()
                 && Corpse.TryGetPart(out UD_FleshGolems_PastLife pastLife)
                 && pastLife.GetBlueprint()?.GetPropertyOrTag(SET_COLORS_PROPTAG) is string setColorsPropTagByPastLifeBlueprint)
-            {
                 setColors = setColorsPropTagByPastLifeBlueprint.CachedDictionaryExpansion();
-            }
+
             if (setColors.IsNullOrEmpty()
                 && Corpse.GetPropertyOrTag(SET_COLORS_PROPTAG) is string setColorsPropTagByCorpseObject)
-            {
                 setColors = setColorsPropTagByCorpseObject.CachedDictionaryExpansion();
-            }
+
             if (!setColors.IsNullOrEmpty())
             {
                 if (setColors.ContainsKey("TileColor"))
-                {
                     SetTileColor("&" + setColors["TileColor"][^1]);
-                }
+
                 if (DoDetail && setColors.ContainsKey("DetailColor"))
-                {
                     SetDetailColor(setColors["DetailColor"][^1].ToString());
-                }
             }
         }
 
@@ -86,9 +81,8 @@ namespace XRL.World.Parts
         {
             if (Blueprint != null
                 && Blueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.TileColor), out string tileColor))
-            {
                 SetTileColor(tileColor);
-            }
+
             return this;
         }
         public UD_FleshGolems_CorpseIconColor SetTileColorFromBlueprint(string Blueprint)
@@ -98,9 +92,8 @@ namespace XRL.World.Parts
         {
             if (Blueprint != null
                 && Blueprint.TryGetPartParameter(nameof(Parts.Render), nameof(Parts.Render.DetailColor), out string detailColor))
-            {
                 SetDetailColor(detailColor);
-            }
+
             return this;
         }
         public UD_FleshGolems_CorpseIconColor SetDetailColorFromBlueprint(string Blueprint)

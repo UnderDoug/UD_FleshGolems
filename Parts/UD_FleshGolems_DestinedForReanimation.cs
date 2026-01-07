@@ -1,26 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 using ConsoleLib.Console;
 
 using Qud.API;
 
-using XRL.Core;
 using XRL.Rules;
 using XRL.UI;
-using XRL.World.Effects;
-using XRL.World.ObjectBuilders;
 using XRL.World.Capabilities;
-using XRL.World.Parts.Mutation;
 
 using static XRL.World.ObjectBuilders.UD_FleshGolems_Reanimated;
 
 using SerializeField = UnityEngine.SerializeField;
 
 using UD_FleshGolems;
-using UD_FleshGolems.Logging;
 using UD_FleshGolems.Events;
 using UD_FleshGolems.Parts.VengeanceHelpers;
 
@@ -297,9 +291,7 @@ namespace XRL.World.Parts
             DeathDescription DeathDescription = null)
         {
             if (Dying == null)
-            {
                 return false;
-            }
 
             if (DeathDescription != null)
             {
@@ -335,24 +327,21 @@ namespace XRL.World.Parts
             string deathMessageTitle = "You died.";
             string deathMessage = "=subject.Subjective= " + (Reason ?? The.Game.DeathReason) + ".";
             if (DeathDescription != null)
-            {
                 deathMessage = ThirdPersonReason + ".";
-            }
+
             string deathCategory = Category ?? The.Game.DeathCategory;
             Renderable deathIcon = null;
             Dictionary<string, Renderable> deathIcons = CheckpointingSystem.deathIcons;
 
             if (UI.Options.GetOptionBool("Books_EloquentDeath_EnableEloquentDeathMessage"))
-            {
                 deathMessageTitle = "You became a cord in time's silly carpet.";
-            }
 
             if (!deathCategory.IsNullOrEmpty() && deathIcons.ContainsKey(deathCategory))
-            {
                 deathIcon = deathIcons[deathCategory];
-            }
 
-            if (DoFakeMessage && (Dying.IsPlayer() || Dying.IsPlayerDuringWorldGen()))
+            if (DoFakeMessage
+                && (Dying.IsPlayer()
+                    || Dying.IsPlayerDuringWorldGen()))
             {
                 deathMessage = deathMessage
                     ?.StartReplace()
@@ -399,9 +388,8 @@ namespace XRL.World.Parts
 
             string deathReason = deathMessage;
             if (!deathReason.IsNullOrEmpty())
-            {
                 deathReason = deathReason.Uncapitalize();
-            }
+
             if (DoJournal
                 && !deathReason.IsNullOrEmpty()
                 && (Dying.IsPlayer() || Dying.IsPlayerDuringWorldGen()))
@@ -421,10 +409,9 @@ namespace XRL.World.Parts
             }
 
             if (DoAchievement
-                && (Dying.IsPlayer() || Dying.IsPlayerDuringWorldGen()))
-            {
+                && (Dying.IsPlayer() 
+                    || Dying.IsPlayerDuringWorldGen()))
                 Achievement.DIE.Unlock();
-            }
 
             WeaponUsageTracking.TrackKill(
                 Actor: Killer,
@@ -472,13 +459,10 @@ namespace XRL.World.Parts
                 RelentlessTitle: RelentlessTitle);
         }
         public bool FakeDeath(IDeathEvent E)
-        {
-            return FakeDeath(ParentObject, E);
-        }
+            => FakeDeath(ParentObject, E);
+
         public bool FakeDeath()
-        {
-            return FakeDeath(null);
-        }
+            => FakeDeath(null);
 
         public static void RandomDeathDescriptionAndAccidental(
             GameObject For,
@@ -501,12 +485,10 @@ namespace XRL.World.Parts
                 ?.Copy();
 
             if (DeathDescription != null)
-            {
                 DeathDescription.Killed = DeathDescription?.Killed
                     ?.StartReplace()
                     ?.AddObject(For)
                     ?.ToString();
-            }
 
             Accidental = Stat.RollCached("1d" + AccidentalChanceOneIn) == 1;
         }
@@ -568,20 +550,9 @@ namespace XRL.World.Parts
                 Weapon = GameObject.CreateSample(weaponBlueprint.Name);
             }
             if (Weapon != null
-                && Weapon.HasPart<MissileWeapon>())
-            {
-                if (GetProjectileBlueprintEvent.GetFor(Weapon) is string projectileBlueprint)
-                {
-                    Projectile = GameObject.CreateSample(projectileBlueprint);
-                }
-            }
-
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(ChanceRandomKiller), ChanceRandomKiller),
-                });
+                && Weapon.HasPart<MissileWeapon>()
+                && GetProjectileBlueprintEvent.GetFor(Weapon) is string projectileBlueprint)
+                Projectile = GameObject.CreateSample(projectileBlueprint);
 
             bool haveKiller = Killer != null;
             bool haveWeapon = Weapon != null;
@@ -615,12 +586,6 @@ namespace XRL.World.Parts
                 .SetMethod(Weapon)
                 .SetMethodFallback(Projectile);
 
-            Debug.Log(nameof(KillerIsCached), KillerIsCached, indent[1]);
-            Debug.Log(nameof(Killer), Killer?.DebugName ?? "null", indent[1]);
-            Debug.Log(nameof(Weapon), Weapon?.DebugName ?? "null", indent[1]);
-            Debug.Log(nameof(Projectile), Projectile?.DebugName ?? "null", indent[1]);
-            Debug.Log(nameof(Accidental), Accidental, indent[1]);
-
             return deathDescription;
         }
         public static DeathDescription ProduceRandomDeathDescription(
@@ -646,14 +611,6 @@ namespace XRL.World.Parts
             GameObject ForCorpse,
             UD_FleshGolems_DeathDetails DeathDetails = null)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(ForCorpse), ForCorpse?.DebugName ?? "null"),
-                    Debug.Arg(nameof(UD_FleshGolems.Extensions.IsCorpse), ForCorpse?.IsInanimateCorpse()),
-                });
-
             DeathDetails = ForCorpse.RequirePart<UD_FleshGolems_DeathDetails>();
 
             DeathDescription deathDescription = ProduceRandomDeathDescriptionWithComponents(
@@ -673,7 +630,6 @@ namespace XRL.World.Parts
 
                     if (!DeathDetails.Initialize(killer, weapon, projectile, deathDescription, accidental, killerIsCached))
                     {
-                        Debug.CheckNah("Failed to initialize DeathDetails.", indent[1]);
                         ForCorpse.RemovePart(DeathDetails);
                         return null;
                     }
@@ -782,22 +738,12 @@ namespace XRL.World.Parts
 
         public bool ActuallyDoTheFakeDieAndReanimate()
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
-                    Debug.Arg(nameof(PlayerWantsFakeDie), PlayerWantsFakeDie),
-                    Debug.Arg(nameof(HaveFakedDeath), HaveFakedDeath),
-                });
             if (ParentObject is not GameObject player
                 || !PlayerWantsFakeDie
                 || HaveFakedDeath
                 || (!player.IsPlayer() 
                     && !player.IsPlayerDuringWorldGen()))
-            {
                 return false;
-            }
 
             bool success = ReplaceEntityWithCorpse(
                 Entity: player,
@@ -809,33 +755,14 @@ namespace XRL.World.Parts
             PlayerWantsFakeDie = false;
             if (success)
             {
-                GetPlayerTaxa().RestoreTaxa(Corpse);
-                Corpse.SetStringProperty("OriginalPlayerBody", "Not really, but we pretend!");
-                if (success
-                    && false)
-                {
-                    foreach (Type playerMutator in ModManager.GetTypesWithAttribute(typeof(PlayerMutator)))
-                    {
-                        Stat.ReseedFrom("PLAYERMUTATOR" + playerMutator.Name);
-                        (Activator.CreateInstance(playerMutator) as IPlayerMutator)?.mutate(Corpse);
-                    }
-                    Stat.ReseedFrom("GameStart");
-                }
+                GetPlayerTaxa()?.RestoreTaxa(Corpse);
+                Corpse?.SetStringProperty("OriginalPlayerBody", "Not really, but we pretend!");
             }
             return success;
         }
 
         public bool ProcessObjectCreationEvent(IObjectCreationEvent E)
         {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                        Debug.Arg(E?.GetType()?.Name),
-                        Debug.Arg(nameof(E.Object), E.Object?.DebugName ?? NULL),
-                        Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
-                });
-
             if (!Attempted
                 && BuiltToBeReanimated
                 && ParentObject is GameObject entity
@@ -897,28 +824,24 @@ namespace XRL.World.Parts
                 if (ParentObject == null
                     || ParentObject.RegisteredEvents == null
                     || !ParentObject.RegisteredEvents.ContainsKey(BeforeObjectCreatedEvent.ID))
-                {
                     FailedToRegisterEvents.Add(BeforeObjectCreatedEvent.ID);
-                }
+
                 if (ParentObject == null
                     || ParentObject.RegisteredEvents == null
                     || !ParentObject.RegisteredEvents.ContainsKey(EnvironmentalUpdateEvent.ID))
-                {
                     FailedToRegisterEvents.Add(EnvironmentalUpdateEvent.ID);
-                }
             }
             base.Register(Object, Registrar);
         }
         public override bool WantEvent(int ID, int cascade)
-        {
-            return base.WantEvent(ID, cascade)
-                || EventMatchesAndFailedToRegister(ID, BeforeObjectCreatedEvent.ID)
-                || EventMatchesAndFailedToRegister(ID, EnvironmentalUpdateEvent.ID)
-                || ID == GetShortDescriptionEvent.ID
-                || ID == BeforeDieEvent.ID
-                || ID == GetDebugInternalsEvent.ID
-                ;
-        }
+            => base.WantEvent(ID, cascade)
+            || EventMatchesAndFailedToRegister(ID, BeforeObjectCreatedEvent.ID)
+            || EventMatchesAndFailedToRegister(ID, EnvironmentalUpdateEvent.ID)
+            || ID == GetShortDescriptionEvent.ID
+            || ID == BeforeDieEvent.ID
+            || ID == GetDebugInternalsEvent.ID
+            ;
+
         public override bool HandleEvent(GetShortDescriptionEvent E)
         {
             string persistanceText =
@@ -929,15 +852,12 @@ namespace XRL.World.Parts
                     .ToString();
 
             if (E.Object.HasTag("VerseDescription"))
-            {
                 E.Base.AppendLine().AppendLine().Append(persistanceText);
-            }
             else
             {
                 if (!E.Base.IsNullOrEmpty())
-                {
                     E.Base.Append(" ");
-                }
+
                 E.Base.Append(persistanceText);
             }
             return base.HandleEvent(E);
@@ -947,17 +867,14 @@ namespace XRL.World.Parts
             if (!Attempted
                 && BuiltToBeReanimated
                 && PlayerWantsFakeDie
-                && ParentObject is GameObject entity)
-            {
-                if ((entity.IsPlayer() 
-                        || entity.IsPlayerDuringWorldGen())
-                    && !HaveFakedDeath
-                    && (Corpse != null 
-                        || TryProduceCorpse(entity, out Corpse)))
-                {
-                    entity.RegisterPartEvent(this, "GameStart");
-                }
-            }
+                && ParentObject is GameObject entity
+                && (entity.IsPlayer()
+                    || entity.IsPlayerDuringWorldGen())
+                && !HaveFakedDeath
+                && (Corpse != null
+                    || TryProduceCorpse(entity, out Corpse)))
+                entity.RegisterPartEvent(this, "GameStart");
+
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(BeforeObjectCreatedEvent E)
@@ -969,25 +886,11 @@ namespace XRL.World.Parts
         {
             if (E.ID == "GameStart")
             {
-                using Indent indent = new(1);
-                Debug.LogCaller(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(Event), E?.ID),
-                        Debug.Arg(nameof(ParentObject), ParentObject?.DebugName ?? NULL),
-                        Debug.Arg(nameof(Corpse), Corpse?.DebugName ?? NULL),
-                    });
-
                 if (!HaveFakedDeath
                     && BuiltToBeReanimated
                     && PlayerWantsFakeDie
-                    && !ActuallyDoTheFakeDieAndReanimate()
-                    )
+                    && !ActuallyDoTheFakeDieAndReanimate())
                 {
-                    Debug.CheckYeh("!" + nameof(HaveFakedDeath), indent[1]);
-                    Debug.CheckYeh(nameof(BuiltToBeReanimated), indent[1]);
-                    Debug.CheckYeh(nameof(PlayerWantsFakeDie), indent[1]);
-
                     string replacedTile = null;
                     string replacedTileColor = null;
                     string replacedColorString = null;
@@ -1018,7 +921,6 @@ namespace XRL.World.Parts
                             if (!replacedDetailColor.IsNullOrEmpty())
                                 ParentObject.Render.DetailColor = replacedDetailColor;
                         }
-                        Debug.CheckNah(nameof(InitializeDeathDetailsThenFakeDeath) + " Failed", indent[0]);
                     }
                 }
             }
@@ -1040,10 +942,8 @@ namespace XRL.World.Parts
                     FakedDeath: out HaveFakedDeath,
                     DeathEvent: E,
                     Corpse: Corpse))
-            {
-                Attempted = true;
-                return false;
-            }
+                return !(Attempted = true);
+
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(GetDebugInternalsEvent E)
@@ -1052,16 +952,13 @@ namespace XRL.World.Parts
             E.AddEntry(this, nameof(BuiltToBeReanimated), BuiltToBeReanimated);
             E.AddEntry(this, nameof(Attempted), Attempted);
             if (!FailedToRegisterEvents.IsNullOrEmpty())
-            {
                 E.AddEntry(this, nameof(FailedToRegisterEvents),
                     FailedToRegisterEvents
                     ?.ConvertAll(id => MinEvent.EventTypes.ContainsKey(id) ? MinEvent.EventTypes[id].ToString() : "Error")
                     ?.GenerateBulletList(Bullet: null, BulletColor: null));
-            }
             else
-            {
                 E.AddEntry(this, nameof(FailedToRegisterEvents), "Empty");
-            }
+
             E.AddEntry(this, nameof(PlayerWantsFakeDie), PlayerWantsFakeDie);
             return base.HandleEvent(E);
         }

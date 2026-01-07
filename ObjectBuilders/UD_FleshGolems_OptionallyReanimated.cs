@@ -38,9 +38,8 @@ namespace XRL.World.ObjectBuilders
                 && !Object.HasTagOrProperty("UD_FleshGolems OptionallyReanimated Excluded"))
             {
                 if (UD_FleshGolems_Reanimated.HasWorldGenerated)
-                {
                     Object.SetStringProperty("UD_FleshGolems_Reanimator", "UD_FleshGolems Mad Monger");
-                }
+
                 Object.SetStringProperty(REANIMATED_BYBUILDER, "Yep! I was built reanimated.");
                 Object.RequireAbilities();
                 UD_FleshGolems_Reanimated.Unkill(Object, Context);

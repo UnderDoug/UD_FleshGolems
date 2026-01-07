@@ -19,9 +19,7 @@ namespace XRL.World.Parts
         public string RevealKey = "UD_FleshGolems_MadMonger_LocationKnown";
 
         public override bool SameAs(IPart p)
-        {
-            return false;
-        }
+            => false;
 
         public override void Register(GameObject Object, IEventRegistrar Registrar)
         {
@@ -36,9 +34,7 @@ namespace XRL.World.Parts
                 The.Game.SetIntGameState(RevealKey, 1);
                 ZoneManager.instance.GetZone("JoppaWorld").BroadcastEvent("UD_FleshGolems_MadMongerReveal");
                 if (SecretMapNote != null && !SecretMapNote.Revealed)
-                {
                     JournalAPI.RevealMapNote(SecretMapNote);
-                }
             }
             return base.FireEvent(E);
         }

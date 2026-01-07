@@ -23,14 +23,6 @@ namespace XRL.World.Conversations.Parts
 {
     public class UD_FleshGolems_AskHowDied : IConversationPart
     {
-        [UD_FleshGolems_DebugRegistry]
-        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
-        {
-            Registry.Register(nameof(GetDeathMemoryElements), false);
-            Registry.Register(nameof(CheckConversationTextFitsInList), false);
-            return Registry;
-        }
-
         public const string RUDE_TO_ASK = "RudeToAsk";
         public const string MEMORY_ELEMENT = "MemoryElement";
         public const string KNOWN = "Known";
@@ -228,14 +220,6 @@ namespace XRL.World.Conversations.Parts
 
         public static List<ConversationText> GetDeathMemoryCompatibleTexts(GetTextElementEvent E, DeathMemory DeathMemory = null)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(E), E != null),
-                    Debug.Arg(nameof(DeathMemory), DeathMemory?.IsValid),
-                });
-
             List<ConversationText> possibleTexts = E.Texts
                 ?.Aggregate(
                     seed: new List<ConversationText>(),
@@ -252,32 +236,18 @@ namespace XRL.World.Conversations.Parts
 
             if (DeathMemory is DeathMemory deathMemory
                 && deathMemory.IsValid)
-            {
                 possibleTexts = possibleTexts
                     ?.Where(ct => IsCompatibleWithDeathMemory(ct, deathMemory))
                     ?.ToList();
-            }
 
             return possibleTexts;
         }
 
         public static List<string> GetDeathMemoryElements(ConversationText ConversationText)
-        {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(ConversationText), ConversationText?.PathID?.TextAfter(".")),
-                });
-
-            if (ConversationText == null
-                || !ConversationText.TryGetAttribute(MEMORY_ELEMENT, out string deathMemoryElements))
-                return new();
-
-            Debug.Log(nameof(deathMemoryElements), deathMemoryElements, indent[1]);
-
-            return deathMemoryElements.CachedCommaExpansion();
-        }
+            => ConversationText == null
+                || !ConversationText.TryGetAttribute(MEMORY_ELEMENT, out string deathMemoryElements)
+            ? new()
+            : deathMemoryElements.CachedCommaExpansion();
 
         public static bool HasMemoryElement(ConversationText ConversationText, string MemoryElement)
             => GetDeathMemoryElements(ConversationText) is List<string> memoryElementList
@@ -455,15 +425,6 @@ namespace XRL.World.Conversations.Parts
             DeathMemory DeathMemory,
             ConversationText ProspectiveConversationText)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(ConversationTextList.Count), ConversationTextList?.Count ?? 0),
-                    Debug.Arg(nameof(DeathMemory) + "." + nameof(DeathMemory.IsValid), DeathMemory.IsValid),
-                    Debug.Arg(nameof(ProspectiveConversationText.PathID), ProspectiveConversationText?.PathID?.TextAfter(".") ?? "no ID"),
-                });
-
             ConversationTextList ??= new();
 
             if (!DeathMemory.IsValid
@@ -495,12 +456,6 @@ namespace XRL.World.Conversations.Parts
                     })
                 ?? new();
 
-            Debug.Log(nameof(combinedMemoryElementsStrings), combinedMemoryElementsStrings?.Count ?? 0, Indent: indent[1]);
-            Debug.Log(
-                nameof(combinedMemoryElementsStrings) + "." + nameof(Enumerable.Distinct),
-                combinedMemoryElementsStrings?.Distinct()?.Count() ?? 0,
-                Indent: indent[1]);
-
             if (combinedMemoryElementsStrings.Count != combinedMemoryElementsStrings.Distinct().Count())
                 return false;
 
@@ -512,57 +467,31 @@ namespace XRL.World.Conversations.Parts
             DeathMemory DeathMemory,
             ConversationText ProspectiveConversationText)
         {
-            string attributesString = ProspectiveConversationText?.Attributes?.ToStringForCachedDictionaryExpansion();
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(ConversationTextList.Count), ConversationTextList?.Count ?? 0),
-                    Debug.Arg("(" + attributesString + ")"),
-                    Debug.Arg(nameof(ProspectiveConversationText.PathID), ProspectiveConversationText?.PathID?.TextAfter(".") ?? "no ID"),
-                });
-
             ConversationTextList ??= new();
             if (DeathMemory.IsValid
                 && ProspectiveConversationText != null
                 && CheckConversationTextFitsInList(ref ConversationTextList, DeathMemory, ProspectiveConversationText))
             {
                 ConversationTextList.Add(ProspectiveConversationText);
-                Debug.CheckYeh("Added", Indent: indent[1]);
                 return true;
             }
-            Debug.CheckNah("Not added", Indent: indent[1]);
             return false;
         }
 
         public static void SortCompleteConversationTextList(ref List<ConversationText> ConversationTextList)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(ConversationTextList), ConversationTextList?.Count ?? 0),
-                });
-
             List<ConversationText> sortedConversationTextList = new();
             int maxAttempts = (ConversationTextList?.Count ?? 1) * 10;
             int attemptCount = 0;
             if ((ConversationTextList?.Count ?? 1) > 1)
-            {
                 while (!ConversationTextList.IsNullOrEmpty() && attemptCount++ < maxAttempts)
                 {
                     ConversationText currentText = ConversationTextList[0];
                     ConversationTextList.Remove(currentText);
-                    string attributesString = "(" + currentText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
-                    Debug.Log(
-                        attemptCount + "] " + attributesString + currentText?.PathID?.TextAfter("."),
-                        nameof(sortedConversationTextList.Count) + " (" + sortedConversationTextList.Count + ")",
-                        Indent: indent[1]);
 
                     if (HasKilledMemoryElement(currentText))
                     {
                         sortedConversationTextList.Add(currentText);
-                        Debug.CheckYeh(nameof(HasKilledMemoryElement), indent[2]);
                         continue;
                     }
                     if (sortedConversationTextList.Any(ct => HasKilledMemoryElement(ct)))
@@ -570,7 +499,6 @@ namespace XRL.World.Conversations.Parts
                         if (HasKillerEquivalentMemoryElement(currentText))
                         {
                             sortedConversationTextList.Add(currentText);
-                            Debug.CheckYeh(nameof(HasKillerEquivalentMemoryElement), indent[2]);
                             continue;
                         }
                         if (sortedConversationTextList.Any(ct => HasKillerEquivalentMemoryElement(ct)))
@@ -578,19 +506,16 @@ namespace XRL.World.Conversations.Parts
                             if (HasMethodMemoryElement(currentText))
                             {
                                 sortedConversationTextList.Add(currentText);
-                                Debug.CheckYeh(nameof(HasMethodMemoryElement), indent[2]);
                                 continue;
                             }
                         }
                     }
                     ConversationTextList.Add(currentText);
-                    Debug.CheckNah("Added back to pool.", indent[2]);
                 }
-            }
+
             if (!ConversationTextList.IsNullOrEmpty())
-            {
                 sortedConversationTextList.AddRange(ConversationTextList);
-            }
+
             ConversationTextList = sortedConversationTextList;
         }
 
@@ -603,8 +528,7 @@ namespace XRL.World.Conversations.Parts
             ConversationText Accumulate,
             ConversationText Next,
             ref int Iteration,
-            ConversationText SeedConversationText,
-            Indent Indent)
+            ConversationText SeedConversationText)
         {
             int capIteration = 2;
             int capOffset = 0;
@@ -619,26 +543,19 @@ namespace XRL.World.Conversations.Parts
                 newConversationText = Accumulate.Append(Next, GetJoiner(Iteration), new() { MEMORY_ELEMENT });
             }
             string capitalized = doCapitalization ? " Cap" : " noCap";
-            Debug.Log("[" + Iteration + "] " + newConversationText?.PathID?.TextAfter(".") + capitalized, Indent: Indent);
             Iteration++;
             return newConversationText;
         }
         public static ConversationText CompileConversationTexts(params ConversationText[] ConversationTexts)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(ConversationTexts), ConversationTexts?.Length ?? 0),
-                });
-
             if (ConversationTexts.IsNullOrEmpty())
                 return null;
 
             int iteration = 0;
             ConversationText seedConversationText = ConversationTexts[0];
             ConversationText mergeAccumulatedTextWithNextText(ConversationText Accumulate, ConversationText Next)
-                => MergeAccumulatedTextWithNextText(Accumulate, Next, ref iteration, seedConversationText, indent[1]);
+                => MergeAccumulatedTextWithNextText(Accumulate, Next, ref iteration, seedConversationText);
+
             return ConversationTexts
                 .Aggregate(
                     seed: seedConversationText,
@@ -679,13 +596,6 @@ namespace XRL.World.Conversations.Parts
                 && The.Player is GameObject player
                 && speaker.KnowsEntityKilledThem(player);
 
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(KnowsPlayerKilledThem), KnowsPlayerKilledThem),
-                });
-
             SetPlayerHasAskedBefore(The.Player, The.Speaker);
         }
 
@@ -699,37 +609,27 @@ namespace XRL.World.Conversations.Parts
         public override bool HandleEvent(EnteredElementEvent E)
         {
             if (The.Speaker is GameObject speaker
-                && The.Player is GameObject player)
+                && The.Player is GameObject player
+                && KnowsPlayerKilledThem
+                && !speaker.IsPlayerLed())
             {
-                if (KnowsPlayerKilledThem
-                    && !speaker.IsPlayerLed())
-                {
-                    ParentElement.Attributes ??= new();
-                    ParentElement.Attributes["AllowEscape"] = "false";
-                    if (ParentElement is Node parentNode)
-                        parentNode.AllowEscape = false;
+                ParentElement.Attributes ??= new();
+                ParentElement.Attributes["AllowEscape"] = "false";
+                if (ParentElement is Node parentNode)
+                    parentNode.AllowEscape = false;
 
-                    ParentElement.Elements?.RemoveAll(e => e is Choice && !e.HasPart<StartFight>());
-                    if (ParentElement.Elements?.Where(e => e is Choice) is not List<IConversationElement> choices
-                        || choices.IsNullOrEmpty())
-                    {
-                        Choice fightChoice = ParentElement.AddChoice(Text: "Oh! Shi-", Target: "End");
-                        fightChoice.AddPart(new StartFight());
-                    }
+                ParentElement.Elements?.RemoveAll(e => e is Choice && !e.HasPart<StartFight>());
+                if (ParentElement.Elements?.Where(e => e is Choice) is not List<IConversationElement> choices
+                    || choices.IsNullOrEmpty())
+                {
+                    Choice fightChoice = ParentElement.AddChoice(Text: "Oh! Shi-", Target: "End");
+                    fightChoice.AddPart(new StartFight());
                 }
             }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(GetTextElementEvent E)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(GetTextElementEvent)),
-                    Debug.Arg(nameof(The.Speaker), The.Speaker?.DebugName),
-                });
-
             if (!E.Texts.IsNullOrEmpty()
                 && The.Speaker is GameObject speaker
                 && The.Player is GameObject player
@@ -737,36 +637,10 @@ namespace XRL.World.Conversations.Parts
             {
                 if (deathDetails.DeathQuestionsAreRude
                     && !speaker.IsPlayerLed())
-                {
-                    Debug.Log(nameof(deathDetails.DeathQuestionsAreRude), Indent: indent[1]);
-
                     E.Selected = GetRudeToAskText(E);
-
-                    Debug.Log(nameof(E.Selected), E.Selected.Text, Indent: indent[2]);
-                }
                 else
                 {
-                    if (deathDetails.DeathQuestionsAreRude)
-                    {
-                        string playerRefName = player?.GetReferenceDisplayName(Short: true);
-                        Debug.Log(nameof(deathDetails.DeathQuestionsAreRude) + " but I'm friends with " + playerRefName, Indent: indent[1]);
-                    }
-
-                    if (!deathDetails.DeathMemory.Validate(speaker))
-                        Debug.Log(
-                            nameof(deathDetails.DeathMemory) + " failed to validate " + speaker?.DebugName,
-                            speaker.ID + "/" + deathDetails.DeathMemory.GetCorpseID(),
-                            Indent: indent[1]);
-
                     List<ConversationText> possibleTexts = GetDeathMemoryCompatibleTexts(E, deathDetails.DeathMemory);
-
-                    Debug.Log(nameof(possibleTexts), Indent: indent[1]);
-                    foreach (ConversationText possibleText in possibleTexts)
-                    {
-                        string attributesString = "(" + possibleText.Attributes?.ToStringForCachedDictionaryExpansion() + "): ";
-                        Debug.Log(attributesString + possibleText.Text, Indent: indent[2]);
-                        Debug.Log(HONLY.ThisManyTimes(25), Indent: indent[2]);
-                    }
 
                     CompleteTexts ??= possibleTexts
                         ?.Where(ct => CheckCompleteConversationText(ct, deathDetails.DeathMemory))
@@ -775,9 +649,8 @@ namespace XRL.World.Conversations.Parts
                     possibleTexts?.RemoveAll(ct => !CompleteTexts.IsNullOrEmpty() && CompleteTexts.Contains(ct));
 
                     if (!CompleteTexts.IsNullOrEmpty())
-                    {
                         E.Selected = CompleteTexts?.GetRandomElementCosmetic();
-                    }
+
                     if (!possibleTexts.IsNullOrEmpty())
                     {
                         int maxAttempts = possibleTexts.Count * 10;
@@ -788,7 +661,6 @@ namespace XRL.World.Conversations.Parts
                         bool isConversationTextUnableToFitInList(ConversationText ConversationText)
                             => !CheckConversationTextFitsInList(ref constructedCompleteTextList, deathDetails.DeathMemory, ConversationText);
 
-                        Debug.Log("Compiling " + nameof(constructedCompleteTextList), Indent: indent[1]);
                         while (!possibleTextsWorkingList.IsNullOrEmpty() && attempt++ < maxAttempts)
                         {
                             ConversationText prospectiveText = possibleTextsWorkingList
@@ -802,25 +674,18 @@ namespace XRL.World.Conversations.Parts
                                 break;
                             }
 
-                            Debug.Log(nameof(prospectiveText), prospectiveText.PathID.TextAfter("."), Indent: indent[2]);
-
                             if (AddConversationTextToListIfFits(ref constructedCompleteTextList, deathDetails.DeathMemory, prospectiveText))
                                 possibleTextsWorkingList.RemoveAll(isConversationTextUnableToFitInList);
                             else
                                 possibleTextsWorkingList.Remove(prospectiveText);
 
-                            _ = indent[1];
                             if (CheckCompleteConversationText(possibleTextsWorkingList, deathDetails.DeathMemory))
-                            {
-                                Debug.CheckYeh("Texts Completed", indent[1]);
                                 break;
-                            }
                         }
                         if (!constructedCompleteTextList.IsNullOrEmpty())
                         {
                             SortCompleteConversationTextList(ref constructedCompleteTextList);
                             E.Selected = CompileConversationTexts(constructedCompleteTextList.ToArray());
-                            Debug.YehNah(nameof(E.Selected), E.Selected != null, indent[1]);
                         }
                     }
                     E.Selected ??= CompleteTexts
@@ -830,7 +695,6 @@ namespace XRL.World.Conversations.Parts
                 if (KnowsPlayerKilledThem)
                 {
                     string playerLedString = speaker.IsPlayerLed() ? "true" : "false";
-                    Debug.Log(nameof(KnowsPlayerKilledThem), Indent: indent[1]);
                     KilledByPlayerTexts = E.Texts
                         ?.Aggregate(
                             seed: new List<ConversationText>(),
@@ -843,26 +707,12 @@ namespace XRL.World.Conversations.Parts
                         KilledByPlayerTexts ??= new();
                         KilledByPlayerTexts.Add(DefaultPlayerKilledText);
                     }
-
-                    Debug.Log(nameof(KilledByPlayerTexts), Indent: indent[1]);
-                    foreach (ConversationText playerKilledText in KilledByPlayerTexts)
-                    {
-                        Debug.Log(playerKilledText.Text, Indent: indent[2]);
-                    }
                 }
             }
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(PrepareTextEvent E)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(PrepareTextEvent)),
-                    Debug.Arg(nameof(The.Speaker), The.Speaker?.DebugName),
-                });
-
             if (The.Speaker is GameObject speaker)
             {
                 bool killerIsSample = true;
@@ -960,7 +810,6 @@ namespace XRL.World.Conversations.Parts
 
                         if (!speaker.IsPlayerLed())
                         {
-                            Debug.Log("Preparing " + nameof(KilledByPlayerTexts) + " for non-party member...", Indent: indent[1]);
                             if (E.Text?.ToString()?.Split(' ')?.ToList() is List<string> textWords)
                             {
                                 int offset = Stat.RandomCosmetic(-2, 2);
@@ -990,9 +839,6 @@ namespace XRL.World.Conversations.Parts
                                     }
                                     fragment = lastWord.FirstRoughlyHalf(1);
 
-                                    Debug.Log(nameof(shader), shader, indent[2]);
-                                    Debug.Log(nameof(fragment), fragment, indent[2]);
-
                                     textWords[^1] = colorFormatOpen + shader + fragment + colorFormatClose;
                                 }
                                 E.Text.Clear().Append(textWords.Aggregate(
@@ -1005,15 +851,12 @@ namespace XRL.World.Conversations.Parts
                                     }));
                             }
                             else
-                            {
                                 E.Text.TrimLatterRoughlyHalf(5);
-                            }
+
                             killedByPlayerString = "=no2nd.restore=... \n\n=ud_nbsp:4=... " + killedByPlayerString;
                         }
                         else
-                        {
                             E.Text.Clear();
-                        }
 
                         E.Text.Append(killedByPlayerString
                             .StartReplace()

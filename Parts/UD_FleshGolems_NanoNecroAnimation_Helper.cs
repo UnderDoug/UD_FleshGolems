@@ -23,7 +23,8 @@ namespace XRL.World.Parts
 
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
-            || ((IsReanimatableCorpse || HasCorpse) && ID == GetInventoryActionsEvent.ID);
+            || ((IsReanimatableCorpse || HasCorpse) && ID == GetInventoryActionsEvent.ID)
+            ;
 
         public override bool HandleEvent(GetInventoryActionsEvent E)
         {
@@ -54,7 +55,6 @@ namespace XRL.World.Parts
                 }
                 if (NanoNecroAnimation.HasCorpse(E.Object)
                     && !NanoNecroAnimation.IsReanimatableCorpse(E.Object))
-                {
                     E.AddAction(
                         Name: "Power Word: Kill",
                         Display: "power word: kill",
@@ -65,7 +65,6 @@ namespace XRL.World.Parts
                         WorksAtDistance: true,
                         WorksTelekinetically: true,
                         WorksTelepathically: true);
-                }
             }
             return base.HandleEvent(E);
         }

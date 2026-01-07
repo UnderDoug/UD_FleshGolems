@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <conversations>
   <conversation ID="BaseConversation" Load="Merge">
-    <part Name="UD_FleshGolems_PlayerModdedTextFilter" />
 
     <choice ID="AskHowDied" Target="HowIDied"
             IfSpeakerHavePart="UD_FleshGolems_ReanimatedCorpse">

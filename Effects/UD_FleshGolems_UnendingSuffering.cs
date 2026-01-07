@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-using XRL;
 using XRL.Core;
 using XRL.Rules;
-using XRL.World;
 using XRL.World.Parts;
 using XRL.World.ObjectBuilders;
 using XRL.World.Capabilities;
@@ -13,14 +9,12 @@ using XRL.World.Conversations;
 
 using static XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon;
 
-using SerializeField = UnityEngine.SerializeField;
-using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdjective;
-
 using UD_FleshGolems;
 using static UD_FleshGolems.Utils;
 using static UD_FleshGolems.Const;
 
-using UD_FleshGolems.Logging;
+using SerializeField = UnityEngine.SerializeField;
+using Taxonomy = XRL.World.Parts.UD_FleshGolems_RaggedNaturalWeapon.TaxonomyAdjective;
 
 namespace XRL.World.Effects
 {
@@ -164,9 +158,6 @@ namespace XRL.World.Effects
         {
             Tier = Capabilities.Tier.Constrain(Stat.Random(Tier - 1, Tier + 1));
 
-            using Indent indent = new(1);
-            Debug.LogMethod(indent, ArgPairs: Debug.Arg(nameof(Tier), Tier));
-
             if (Tier >= 7)
                 Damage = "3-4";
             else
@@ -212,9 +203,6 @@ namespace XRL.World.Effects
 
         public override bool Apply(GameObject Object)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent, ArgPairs: Debug.Arg(nameof(Object), Object?.DebugName ?? NULL));
-
             StatShifter.SetStatShift(
                 target: Object,
                 statName: "AcidResistance",
@@ -231,7 +219,6 @@ namespace XRL.World.Effects
 
             StartMessage(Object);
 
-            Debug.Log("Calling base." + nameof(Apply), Indent: indent[1]);
             return base.Apply(Object);
         }
         public override void Remove(GameObject Object)
@@ -244,15 +231,6 @@ namespace XRL.World.Effects
         {
             if (UD_FleshGolems_Reanimated.HasWorldGenerated)
             {
-                using Indent indent = new(1);
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated),
-                    });
-                Debug.Arg(nameof(Object), Object?.DebugName ?? NULL).Log(1);
-                Debug.Arg(nameof(DisplayNameStripped), DisplayNameStripped).Log(1);
-
                 Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
                 DidX(Verb: "begin", Extra: DisplayNameStripped, EndMark: "!", ColorAsBadFor: Object);
             }
@@ -262,15 +240,6 @@ namespace XRL.World.Effects
         {
             if (UD_FleshGolems_Reanimated.HasWorldGenerated)
             {
-                using Indent indent = new(1);
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(UD_FleshGolems_Reanimated.HasWorldGenerated), UD_FleshGolems_Reanimated.HasWorldGenerated),
-                    });
-                Debug.Arg(nameof(Object), Object?.DebugName ?? NULL).Log(1);
-                Debug.Arg(nameof(DisplayNameStripped), DisplayNameStripped).Log(1);
-
                 Object?.PlayWorldSound("Sounds/StatusEffects/sfx_statusEffect_physicalRupture");
                 DidX(Verb: "start", Extra: DisplayNameStripped + " even worse", EndMark: "!", ColorAsBadFor: Object);
             }

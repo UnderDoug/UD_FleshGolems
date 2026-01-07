@@ -1,25 +1,16 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System;
-
-using Qud.UI;
 
 using XRL;
 using XRL.UI;
 using XRL.World;
 using XRL.World.Parts;
 using XRL.World.Parts.Mutation;
-
-using PastLife = XRL.World.Parts.UD_FleshGolems_PastLife;
-
-using UD_FleshGolems.Logging;
+using XRL.World.Tinkering;
 
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Options;
-using XRL.World.Tinkering;
 using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
-using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
-using XRL.Language;
 
 namespace UD_FleshGolems.Startup
 {
@@ -165,18 +156,12 @@ namespace UD_FleshGolems.Startup
                         { "Mental", nameof(UD_FleshGolems_NecromanticAura) }
                     };
                     if (player.IsChimera())
-                    {
                         playerMutations.AddMutation(reanimationMutationEntries["Physical"]);
-                    }
                     else
                     if (player.IsEsper())
-                    {
                         playerMutations.AddMutation(reanimationMutationEntries["Mental"]);
-                    }
                     else
-                    {
                         playerMutations.AddMutation(reanimationMutationEntries.GetRandomElementCosmetic().Value);
-                    }
                 }
                 foreach (GameObjectBlueprint recoilerModel in GameObjectFactory.Factory.GetBlueprints(IsStaticRecoiler))
                 {
@@ -194,17 +179,13 @@ namespace UD_FleshGolems.Startup
 
                         if (cellSocket.Cell != antiMatterCell
                             && GameObject.Validate(ref antiMatterCell))
-                        {
                             antiMatterCell.Obliterate();
-                        }
                     }
                     player.ReceiveObject(recoilerObject);
                 }
                 player.ReceiveObject("Floating Glowsphere");
                 if (GameObject.Create("ScrapCape", AutoMod: "ModDisguise") is GameObject scrapCape)
-                {
                     player.ReceiveObject(scrapCape);
-                }
             }
         }
         public static bool IsStaticRecoiler(GameObjectBlueprint Model)

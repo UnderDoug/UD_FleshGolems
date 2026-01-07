@@ -1,45 +1,15 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
-using System.Reflection;
 
-using HarmonyLib;
-
-using Genkit;
-using Qud.API;
-
-using XRL;
-using XRL.UI;
-using XRL.Wish;
-using XRL.Rules;
-using XRL.Language;
 using XRL.Collections;
 using XRL.World;
-using XRL.World.AI;
 using XRL.World.Parts;
 using XRL.World.Parts.Mutation;
-using XRL.World.Parts.Skill;
 using XRL.World.Anatomy;
-using XRL.World.ObjectBuilders;
-using XRL.World.Effects;
-using XRL.World.Capabilities;
 
-using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
-using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
-using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
-
-using UD_FleshGolems;
-using UD_FleshGolems.Logging;
-using UD_FleshGolems.Capabilities;
-using UD_FleshGolems.Capabilities.Necromancy;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
-
-using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
-
-using SerializeField = UnityEngine.SerializeField;
 using static UD_FleshGolems.Parts.VengeanceHelpers.DeathMemory;
 
 namespace UD_FleshGolems.Parts.VengeanceHelpers
@@ -213,19 +183,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
             || !NotableFeature.IsNullOrEmpty()
             || !CreatureType.IsNullOrEmpty()
             || !DisplayName.IsNullOrEmpty();
-
-        public KillerDetails Log()
-        {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent);
-            Debug.Log(nameof(ID), ID ?? NULL, indent[1]);
-            Debug.Log(nameof(Blueprint), Blueprint ?? NULL, indent[1]);
-            Debug.Log(nameof(DisplayName), DisplayName ?? NULL, indent[1]);
-            Debug.Log(nameof(CreatureType), CreatureType ?? NULL, indent[1]);
-            Debug.Log(nameof(NotableFeature), NotableFeature ?? NULL, indent[1]);
-            Debug.Log(nameof(KillerIsDeceased), KillerIsDeceased?.ToString() ?? NULL, indent[1]);
-            return this;
-        }
 
         public StringMap<string> DebugInternals() => new()
         {

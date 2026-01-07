@@ -1,48 +1,14 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
-using System.Reflection;
-
-using HarmonyLib;
-
-using Genkit;
-using Qud.API;
-
-using XRL;
-using XRL.UI;
-using XRL.Wish;
 using XRL.Rules;
-using XRL.Language;
-using XRL.Collections;
-using XRL.World;
-using XRL.World.AI;
-using XRL.World.Parts;
-using XRL.World.Parts.Mutation;
-using XRL.World.Parts.Skill;
-using XRL.World.Anatomy;
-using XRL.World.ObjectBuilders;
-using XRL.World.Effects;
-using XRL.World.Capabilities;
 
-using static XRL.World.Parts.UD_FleshGolems_CorpseReanimationHelper;
-using static XRL.World.Parts.UD_FleshGolems_ReanimatedCorpse;
-using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
 using static XRL.World.Parts.UD_FleshGolems_VengeanceAssistant;
-using static XRL.World.Parts.Mutation.UD_FleshGolems_NanoNecroAnimation;
 
 using UD_FleshGolems;
-using UD_FleshGolems.Logging;
-using UD_FleshGolems.Capabilities;
-using UD_FleshGolems.Capabilities.Necromancy;
 using UD_FleshGolems.Parts.VengeanceHelpers;
 using static UD_FleshGolems.Const;
 using static UD_FleshGolems.Utils;
-
-using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
-
-using SerializeField = UnityEngine.SerializeField;
 
 namespace XRL.World.Parts
 {
@@ -222,17 +188,6 @@ namespace XRL.World.Parts
 
         public bool Initialize(IDeathEvent DeathEvent)
         {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(ParentObject?.DebugName ?? NULL),
-                    Debug.Arg(nameof(Init), Init),
-                    Debug.Arg(nameof(DeathEvent.Killer), DeathEvent?.Killer?.DebugName ?? NULL),
-                    Debug.Arg(nameof(DeathEvent.Weapon), DeathEvent?.Weapon?.DebugName ?? NULL),
-                    Debug.Arg(nameof(DeathEvent.Accidental), DeathEvent?.Accidental),
-                });
-
             if (Init)
                 return true;
 
@@ -260,19 +215,6 @@ namespace XRL.World.Parts
             bool Accidental,
             bool KillerIsCached)
         {
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(ParentObject?.DebugName ?? NULL),
-                    Debug.Arg(nameof(Init), Init),
-                    Debug.Arg(nameof(Killer), Killer?.DebugName ?? NULL),
-                    Debug.Arg(nameof(Weapon), Weapon?.DebugName ?? NULL),
-                    Debug.Arg(nameof(Projectile), Projectile?.DebugName ?? NULL),
-                    Debug.Arg(nameof(DeathDescription), DeathDescription != null),
-                    Debug.Arg(nameof(Accidental), Accidental),
-                });
-
             if (Init)
                 return true;
 

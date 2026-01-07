@@ -103,9 +103,8 @@
     </start>
     
     <!-- Merges/overrides -->
-    <node ID="HowIDied" Load="Merge">
-      <part Name="UD_FleshGolems_ModdedTextFilter" Filters="snapify" />
-    </node>
+    <removenode ID="HowIDied" />
+    <removechoice ID="AskHowDied" />
     
     <!-- Branching/sequential nodes -->
     <node ID="ReactWhoMadMonger" Inherits="AlwaysHaveChoices">

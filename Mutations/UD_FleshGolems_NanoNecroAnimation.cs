@@ -18,7 +18,6 @@ using static XRL.World.Parts.UD_FleshGolems_PastLife;
 
 using UD_FleshGolems;
 using UD_FleshGolems.Logging;
-using ArgPair =  UD_FleshGolems.Logging.Debug.ArgPair;
 
 using UD_FleshGolems.Capabilities.Necromancy;
 using static UD_FleshGolems.Capabilities.Necromancy.CorpseSheet;
@@ -391,14 +390,10 @@ namespace XRL.World.Parts.Mutation
 
         public bool ProcessReanimateOne(GameObject TargetCorpse = null)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[0], ArgPairs: Debug.Arg(nameof(TargetCorpse), TargetCorpse?.DebugName));
-
             if (TargetCorpse == null
                 && IsReanimatableCorpse(ParentObject?.Target))
-            {
                 TargetCorpse = ParentObject?.Target;
-            }
+
             int startX = 40;
             int startY = 12;
             if (ParentObject.CurrentCell is Cell reanimatorCell)
@@ -408,9 +403,8 @@ namespace XRL.World.Parts.Mutation
             }
             if (TargetCorpse == null
                 && IsReanimatableCorpse(ParentObject.Target))
-            {
                 TargetCorpse = ParentObject.Target;
-            }
+
             if (TargetCorpse == null
                 && PickTarget.ShowPicker(
                     PickTarget.PickStyle.EmptyCell,
@@ -422,23 +416,18 @@ namespace XRL.World.Parts.Mutation
                 && !cellCorpses.IsNullOrEmpty())
             {
                 if (cellCorpses.Count == 1)
-                {
                     TargetCorpse = cellCorpses[0];
-                }
+
                 if (TargetCorpse == null
                     && Popup.PickGameObject(
                         Title: "Which corpse did you want to " + REANIMATE_NAME,
                         Objects: cellCorpses,
                         AllowEscape: true,
                         ShortDisplayNames: true) is GameObject pickedObject)
-                {
                     TargetCorpse = pickedObject;
-                }
                 else
                 if (TargetCorpse == null)
-                {
                     Popup.Show("No corpse selected to reanimate.");
-                }
             }
             if (TargetCorpse != null
                 && IsReanimatableCorpse(TargetCorpse)
@@ -459,14 +448,10 @@ namespace XRL.World.Parts.Mutation
 
         public bool ProcessAssessCorpse(GameObject TargetCorpse = null)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[0], ArgPairs: Debug.Arg(nameof(TargetCorpse), TargetCorpse?.DebugName));
-
             if (TargetCorpse == null
                 && IsReanimatableCorpse(ParentObject?.Target))
-            {
                 TargetCorpse = ParentObject?.Target;
-            }
+
             int startX = 40;
             int startY = 12;
             if (ParentObject?.CurrentCell is Cell assesserCell)
@@ -486,18 +471,15 @@ namespace XRL.World.Parts.Mutation
                 && !corpseList.IsNullOrEmpty())
             {
                 if (corpseList.Count == 1)
-                {
                     TargetCorpse = corpseList[0];
-                }
+
                 if (TargetCorpse == null
                     && Popup.PickGameObject(
                         Title: "which corpse?",
                         Objects: corpseList,
                         AllowEscape: true,
                         ShortDisplayNames: true) is GameObject pickedObject)
-                {
                     TargetCorpse = pickedObject;
-                }
             }
             if (TargetCorpse != null)
             {
@@ -515,9 +497,8 @@ namespace XRL.World.Parts.Mutation
                 {
                     string pastLifeName = pastLife.BaseDisplayName;
                     if (!pastLife.WasProperlyNamed)
-                    {
                         pastLifeName = Grammar.A(pastLife.BaseDisplayName);
-                    }
+
                     corpseListLabel += (" was\n" + pastLifeName.PrependBullet() + "\n\n" +
                         "but, if =subject.subjective= =subject.verb:wasn't:afterpronoun=... " +
                         "=subject.subjective= ").StartReplace().ToString();
@@ -533,21 +514,17 @@ namespace XRL.World.Parts.Mutation
                 return true;
             }
             else
-            {
                 Popup.Show("No corpse selected to get a creature list from.");
-            }
+
             return false;
         }
 
         public bool ProcessPowerWordKill(GameObject TargetCreature = null)
         {
-            using Indent indent = new();
-            Debug.LogMethod(indent[0], ArgPairs: Debug.Arg(nameof(TargetCreature), TargetCreature?.DebugName));
             if (TargetCreature == null
                 && HasCorpse(ParentObject.Target))
-            {
                 TargetCreature = ParentObject.Target;
-            }
+
             int startX = 40;
             int startY = 12;
             if (ParentObject.CurrentCell is Cell sayerCell)
@@ -567,18 +544,15 @@ namespace XRL.World.Parts.Mutation
                 && !creatureList.IsNullOrEmpty())
             {
                 if (creatureList.Count == 1)
-                {
                     TargetCreature = creatureList[0];
-                }
+
                 if (TargetCreature == null
                     && Popup.PickGameObject(
                         Title: "which corpse?",
                         Objects: creatureList,
                         AllowEscape: true,
                         ShortDisplayNames: true) is GameObject pickedObject)
-                {
                     TargetCreature = pickedObject;
-                }
             }
             if (TargetCreature != null
                 && HasCorpse(TargetCreature)
@@ -640,9 +614,8 @@ namespace XRL.World.Parts.Mutation
                 }
             }
             else
-            {
                 Popup.Show("no creatures selected to make instantly die");
-            }
+
             return false;
         }
 
@@ -682,9 +655,7 @@ namespace XRL.World.Parts.Mutation
         {
             if (E.Command == COMMAND_NAME_REANIMATE_ONE
                 && ProcessReanimateOne())
-            {
                 return true;
-            }
             else
             if (E.Command == COMMAND_NAME_REANIMATE_ALL)
             {
@@ -729,9 +700,7 @@ namespace XRL.World.Parts.Mutation
                             Message: excessiveCorpsesMsg +
                             "You can cancel this mid-way the same way as other auto actions.\n\n" +
                             "Are you sure you want that many?") != DialogResult.Yes)
-                    {
                         return false;
-                    }
 
                     UD_FleshGolems_OngoingSummonCorpse ongoingSummon = new(
                         Summoner: ParentObject,
@@ -751,15 +720,12 @@ namespace XRL.World.Parts.Mutation
             else
             if (E.Command == COMMAND_NAME_ASSESS_CORPSE
                 && ProcessAssessCorpse())
-            {
                 return true;
-            }
             else
             if (E.Command == COMMAND_NAME_POWERWORD_KILL
                 && ProcessPowerWordKill())
-            {
                 return true;
-            }
+
             return base.HandleEvent(E);
         }
     }

@@ -1,52 +1,28 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.Diagnostics;
 using System.Reflection;
 
 using HarmonyLib;
 
-using Qud.API;
-
 using XRL;
-using XRL.Wish;
 using XRL.World;
-using XRL.World.Parts.Mutation;
-using XRL.World.Text.Attributes;
-using XRL.World.Text.Delegates;
 using XRL.Language;
 using XRL.CharacterBuilds;
 using XRL.CharacterBuilds.Qud;
 using XRL.World.Parts;
-using XRL.UI;
 
-using UD_FleshGolems;
-using UD_FleshGolems.Logging;
 using UD_FleshGolems.Capabilities;
-using Debug = UD_FleshGolems.Logging.Debug;
-using Options = UD_FleshGolems.Options;
+using UD_FleshGolems.Parts.PastLifeHelpers;
 
 using static UD_FleshGolems.Const;
-using XRL.Rules;
-using UD_FleshGolems.Parts.VengeanceHelpers;
-using XRL.World.Effects;
-using UD_FleshGolems.Parts.PastLifeHelpers;
 
 
 namespace UD_FleshGolems
 {
-    [HasWishCommand]
     public static class Utils
     {
-        [UD_FleshGolems_DebugRegistry]
-        public static List<MethodRegistryEntry> doDebugRegistry(List<MethodRegistryEntry> Registry)
-        {
-            // Registry.Register(typeof(Utils).GetMethod(nameof(UD_xTag)), false);
-            return Registry;
-        }
-
         public static ModInfo ThisMod => ModManager.GetMod(MOD_ID);
 
         private static EntityTaxa PlayerTaxa = null;
@@ -168,19 +144,8 @@ namespace UD_FleshGolems
         
         public static EntityTaxa GetPlayerTaxa()
         {
-            using Indent indent = new(1);
-
             if (PlayerTaxa != null)
-            {
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
-                        Debug.Arg(nameof(The.Player), The.Player != null),
-                        Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
-                    });
                 return PlayerTaxa;
-            }
 
             if (PlayerTaxa == null 
                 && TryGetEmbarkBuilderModule(out QudSpecificCharacterInitModule characterInit))
@@ -224,14 +189,6 @@ namespace UD_FleshGolems
                             ?.Name;
 
                     PlayerTaxa.Species = PlayerTaxa.Blueprint?.GetGameObjectBlueprint()?.GetPropertyOrTag(nameof(PlayerTaxa.Species));
-
-                    Debug.LogMethod(indent,
-                        ArgPairs: new Debug.ArgPair[]
-                        {
-                            Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
-                            Debug.Arg(nameof(The.Player), The.Player != null),
-                            Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
-                        });
                 }
                             
                 return PlayerTaxa;
@@ -245,23 +202,8 @@ namespace UD_FleshGolems
                 PlayerTaxa.Genotype = The.Player.GetGenotype();
                 PlayerTaxa.Species = The.Player.GetSpecies();
 
-                Debug.LogMethod(indent,
-                    ArgPairs: new Debug.ArgPair[]
-                    {
-                        Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
-                        Debug.Arg(nameof(The.Player), The.Player != null),
-                        Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
-                    });
                 return PlayerTaxa;
             }
-
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(PlayerTaxa), PlayerTaxa != null),
-                    Debug.Arg(nameof(The.Player), The.Player != null),
-                    Debug.Arg(nameof(PlayerTaxa.Blueprint), PlayerTaxa?.Blueprint ?? NULL),
-                });
 
             return null;
         }
@@ -311,9 +253,6 @@ namespace UD_FleshGolems
         public static string CreateSentence(string Accumulator, string Next)
             => Accumulator + (!Accumulator.IsNullOrEmpty() ? " " : null) + Next;
 
-        public static string CreateSentence(string Accumulator, ModdedText.TextHelpers.Word Next)
-            => Accumulator + (!Accumulator.IsNullOrEmpty() ? " " : null) + Next.ToString();
-
         public static int CapDamageTo1HPRemaining(GameObject Creature, int DamageAmount)
             => (Creature == null
                 || Creature.GetStat("Hitpoints") is not Statistic hitpoints)
@@ -357,28 +296,12 @@ namespace UD_FleshGolems
             Dictionary<string, string> Vars = null,
             string DefaultIfNull = null)
         {
-            using Indent indent = new();
-            Debug.LogCaller(indent[1],
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(TableName), TableName),
-                    Debug.Arg(nameof(N), N),
-                    Debug.Arg(nameof(Vars), Vars == null ? 0 : Vars.Count),
-                    Debug.Arg(nameof(DefaultIfNull), DefaultIfNull)
-                });
-
             List<string> returnList = new();
             if (PopulationManager.RollDistinctFrom(TableName, N, Vars, DefaultIfNull) is List<List<PopulationResult>> populationResultsList)
-            {
                 foreach (List<PopulationResult> populationResults in populationResultsList)
-                {
                     foreach (PopulationResult populationResult in populationResults)
-                    {
-                        Debug.Log(populationResult.Blueprint, Indent: indent[2]);
                         returnList.AddUnique(populationResult.Blueprint);
-                    }
-                }
-            }
+
             return returnList;
         }
 
@@ -386,9 +309,8 @@ namespace UD_FleshGolems
         {
             AreEqual = (x is null) == (y is null);
             if (x is null || y is null)
-            {
                 return true;
-            }
+
             return false;
         }
 
@@ -452,41 +374,6 @@ namespace UD_FleshGolems
             return false;
         }
 
-        public static bool HasSpecialIdentity(GameObject Object)
-        {
-            if (Object == null)
-            {
-                return false;
-            }
-            if (Object.GetTagOrStringProperty("SpawnedFrom") is string spawnedFrom
-                && spawnedFrom.EqualsAny("Mechanimist Convert Librarian"))
-            {
-                return true;
-            }
-            if (Object.TryGetIntProperty("Villager", out int villagerProp)
-                && villagerProp > 0)
-            {
-                // return true;
-            }
-            return false;
-        }
-
-        public static ICollection<T> SafeCombineLists<T>(params ICollection<T>[] args)
-        {
-            if (args.IsNullOrEmpty())
-                return null;
-
-            List<T> output = new();
-            foreach (ICollection<T> arg in args)
-            {
-                if (arg.IsNullOrEmpty())
-                    continue;
-
-                output.AddRange(arg);
-            }
-            return output;
-        }
-
         public static bool HasValueIsPrimativeType(Traverse Member)
             => Member != null
             && Member.GetValueType() != null
@@ -501,17 +388,6 @@ namespace UD_FleshGolems
         public static string IndefiniteArticle(string Word)
             => Grammar.IndefiniteArticle(Word, false)
                 ?.Trim();
-
-        public static string IndefiniteArticle(GameObject Object)
-        {
-            if (Object == null)
-                return null;
-
-            return Object.IsPlural 
-                ? "some"
-                : Grammar.IndefiniteArticle(Object.GetReferenceDisplayName(Short: true), false)
-                    ?.Trim();
-        }
 
         public static string WithIndefiniteArticle(string Word)
             => !Word.IsNullOrEmpty()
@@ -531,12 +407,5 @@ namespace UD_FleshGolems
         public static bool IsNotImprovisedWeapon(GameObject Object)
             => Object.TryGetPart(out MeleeWeapon mw)
             && !mw.IsImprovisedWeapon();
-
-        /* 
-         * 
-         * Wishes!
-         * 
-         */
-
     }
 }

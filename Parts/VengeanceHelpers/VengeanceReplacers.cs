@@ -1,20 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-
-using UD_FleshGolems.Logging;
 
 using XRL;
-using XRL.Collections;
-using XRL.Language;
-using XRL.World;
 using XRL.World.Parts;
 using XRL.World.Text.Attributes;
 using XRL.World.Text.Delegates;
-
-using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
-using static UD_FleshGolems.Parts.VengeanceHelpers.DeathDescription;
 
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
@@ -303,39 +294,6 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
                     + Context.Target
                         ?.GetDeathDetails()
                         ?.Method(WithIndefiniteArticle: true));
-
-        /*
-        {
-            string with = Context.Target
-                        ?.GetDeathDescription()
-                        ?.GetWith(
-                            Killer: "",
-                            With: true,
-                            ForceNoMethodArticle: true,
-                            PrependSpace: false);
-
-            string aMethod = Context.Target
-                        ?.GetDeathDetails()
-                        ?.Method(WithIndefiniteArticle: true);
-
-            string capitalize = "null";
-            if (Context != null)
-                capitalize = Context.Capitalize.ToString();
-
-            using Indent indent = new(1);
-            Debug.LogCaller(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(Context.Capitalize), capitalize),
-                    Debug.Arg(nameof(with), with),
-                    Debug.Arg(nameof(aMethod), aMethod),
-                });
-
-            return ContextCapitalize(
-                Context: Context,
-                Output: with + aMethod);
-        }
-        */
 
         // parameter0: adverb.
         // parameter1: killer override.

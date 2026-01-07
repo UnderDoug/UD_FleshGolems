@@ -92,34 +92,15 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
             PseudoLimb root = Root ?? this;
             DistanceFromRoot = AttachedTo == null ? 0 : AttachedTo.DistanceFromRoot + 1;
 
-            using Indent indent = new(1);
-            Debug.LogArgs(ToString() + "(", ")", Indent: indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(BodyPart), ToString() ?? NULL),
-                    Debug.Arg(nameof(AttachedTo), AttachedTo?.ToString() ?? NULL),
-                    Debug.Arg(nameof(Attached), Attached?.Count ?? 0),
-                    Debug.Arg(nameof(Root), Root?.ToString() ?? NULL),
-                    Debug.Arg(nameof(DistanceFromRoot), DistanceFromRoot),
-                    Debug.Arg(nameof(AmountStored), AmountStored),
-                });
-            List<BodyPart> subParts = BodyPart?.Parts?.Where(IsConcreteIntrinsic)?.ToList() ?? new();
-            foreach (BodyPart subPart in subParts)
-            {
+            foreach (BodyPart subPart in BodyPart?.Parts?.Where(IsConcreteIntrinsic)?.ToList() ?? new())
                 Attached.Add(new PseudoLimb(subPart, this, Root ?? this, ref AmountStored));
-            }
-            if (root == this)
-            {
-                Debug.CheckYeh(ToString() + " limb-tree stored!", Indent: indent[0]);
-            }
         }
 
         public override string ToString()
         {
             if (GetModel() is not BodyPartType limbModel)
-            {
                 return "Invalid";
-            }
+
             string variant = VariantType ?? "base";
             string manager = Manager.IsNullOrEmpty() ? null : ("[::" + Manager + "]");
             return Type + "/" + variant + "" + manager;
@@ -132,25 +113,11 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
         {
             string attachAtString = AttachAt?.BodyPartString();
 
-            using Indent indent = new(1);
-            Debug.LogMethod(Indent: indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(ToString() ?? NULL),
-                    Root == null ? Debug.Arg(nameof(Entity), Entity?.DebugName ?? NULL) : Debug.ArgPair.Empty,
-                    Debug.Arg(nameof(AttachAt), attachAtString ?? NULL),
-                    Debug.Arg(nameof(AmountGiven), AmountGiven),
-                });
             if (Entity.Body is not Body parentBody)
-            {
-                Debug.CheckNah("no parent body", Indent: indent[1]);
                 return false;
-            }
+
             if (GetModel() is not BodyPartType bodyPartType)
-            {
-                Debug.CheckNah(nameof(BodyPartType) + " invalid", Indent: indent[1]);
                 return false;
-            }
 
             BodyPart newPart = new(
                 Base: bodyPartType,
@@ -159,10 +126,8 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
                 Dynamic: true);
 
             if (newPart == null)
-            {
-                Debug.CheckNah(nameof(newPart) + " failed creation", Indent: indent[1]);
                 return false;
-            }
+
             if (newPart.Laterality == 0)
             {
                 if (!bodyPartType.UsuallyOn.IsNullOrEmpty() && bodyPartType.UsuallyOn != AttachAt.Type)
@@ -171,34 +136,23 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
                     newPart.ModifyNameAndDescriptionRecursively(attachAtPartType.Name.Replace(" ", "-"), attachAtPartType.Description.Replace(" ", "-"));
                 }
                 if (AttachAt.Laterality != 0)
-                {
                     newPart.ChangeLaterality(AttachAt.Laterality | newPart.Laterality, Recursive: true);
-                }
             }
 
             AttachAt.AddPart(newPart, newPart.Type, new string[2] { "Thrown Weapon", "Floating Nearby" });
-            Debug.CheckYeh(newPart.BodyPartString().Strip() + " added to " + attachAtString, Indent: indent[1]);
+
             AmountGiven++;
             foreach (PseudoLimb subPart in Attached)
-            {
                 subPart.GiveToEntity(Entity, newPart, ref AmountGiven);
-            }
 
-            if (Root == null)
-            {
-                Debug.Log(ToString() + " limb-tree attached to " + (Entity?.DebugName ?? NULL) + "!", Indent: indent[0]);
-            }
             return true;
         }
 
-        public void DebugPseudoLimb()
+        public void DebugPseudoLimb(int Indent = 0)
         {
-            using Indent indent = new(1);
-            Debug.Log(ToString(), Indent: indent);
+            UnityEngine.Debug.Log(" ".ThisManyTimes(Indent * 4) + ToString());
             foreach (PseudoLimb pseudoLimb in Attached)
-            {
-                pseudoLimb.DebugPseudoLimb();
-            }
+                pseudoLimb.DebugPseudoLimb(++Indent);
         }
     }
 }

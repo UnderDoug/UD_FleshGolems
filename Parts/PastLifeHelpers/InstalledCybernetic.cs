@@ -57,8 +57,6 @@ namespace UD_FleshGolems.Parts.PastLifeHelpers
         {
             this.Cybernetic = Cybernetic;
             ImplantedLimbType = ImplantedPart;
-            using Indent indent = new(1);
-            Debug.Log(ImplantedPart ?? NULL, Cybernetic?.DebugName ?? NULL, indent);
         }
         public InstalledCybernetic(GameObject Cybernetic, BodyPart ImplantedPart)
             : this(Cybernetic, ImplantedPart.Type) { }

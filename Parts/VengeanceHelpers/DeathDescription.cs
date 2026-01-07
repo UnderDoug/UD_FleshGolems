@@ -1,22 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 using XRL;
 using XRL.Collections;
-using XRL.Language;
 using XRL.World;
 using XRL.World.Parts;
-using XRL.World.Text.Attributes;
-using XRL.World.Text.Delegates;
 
 using static XRL.World.Parts.UD_FleshGolems_DestinedForReanimation;
 
-using UD_FleshGolems.Logging;
 using static UD_FleshGolems.Const;
-
-using SerializeField = UnityEngine.SerializeField;
 
 namespace UD_FleshGolems.Parts.VengeanceHelpers
 {
@@ -288,71 +281,39 @@ namespace UD_FleshGolems.Parts.VengeanceHelpers
 
         public static string GetDeathCategoryFromEvent(string DeathEventReason, out bool By)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(DeathEventReason),
-                });
-
             By = true;
             if (DeathEventReason.TryGetIndexOf(CATEGORY_MARKER, out int categoryStart))
-            {
                 DeathEventReason = DeathEventReason[categoryStart..];
-                Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
-            }
+
             if (DeathEventReason.TryGetIndexOf(REASON_MARKER, out int categoryEnd, false))
             {
                 DeathEventReason = DeathEventReason[..categoryEnd];
-                Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
                 if (DeathEventReason.TryGetIndexOf(" by ", out int byStart, false))
-                {
                     DeathEventReason = DeathEventReason[..byStart];
-                    Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
-                }
                 else
                 if (DeathEventReason.TryGetIndexOf(" from ", out int fromStart, false))
                 {
                     DeathEventReason = DeathEventReason[..fromStart];
-                    Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
                     By = false;
                 }
             }
-            Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
-            Debug.Log(nameof(By), By, indent[1]);
             return DeathEventReason;
         }
 
         public static string GetMethodFromEvent(string DeathEventReason)
         {
-            using Indent indent = new(1);
-            Debug.LogMethod(indent,
-                ArgPairs: new Debug.ArgPair[]
-                {
-                    Debug.Arg(nameof(DeathEventReason), DeathEventReason),
-                });
             if (DeathEventReason.TryGetIndexOf(REASON_MARKER, out int categoryEnd))
-            {
                 DeathEventReason = DeathEventReason[categoryEnd..].Remove("##").TrimStart();
-                Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
-            }
+
             if (DeathEventReason.StartsWith("with ")
                 && DeathEventReason.TryGetIndexOf("with ", out int withEnd))
-            {
                 DeathEventReason = DeathEventReason[withEnd..];
-                Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
-            }
-            Debug.Log("Remove articles", Indent: indent[1]);
+
             foreach (string article in new List<string>() { "some", "an", "a", })
-            {
                 if (DeathEventReason.StartsWith(article + " ")
                     && DeathEventReason.TryGetIndexOf(article + " ", out int articleEnd))
-                {
                     DeathEventReason = DeathEventReason[articleEnd..];
-                    Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[2]);
-                }
-            }
-            Debug.Log(nameof(DeathEventReason), DeathEventReason, indent[1]);
+
             return DeathEventReason;
         }
 

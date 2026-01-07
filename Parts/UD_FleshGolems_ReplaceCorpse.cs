@@ -160,31 +160,25 @@ namespace XRL.World.Parts
 
                     if (entityToSpec != null
                         && UD_FleshGolems_Reanimated.TryGetRandomCorpseFromNecronomicon(entityToSpec.Name, out GameObjectBlueprint corpseModel, corpseSheetHasAcceptableCorpse))
-                    {
                         replacementCorpse = corpseModel.createUnmodified();
-                    }
                 }
                 if (replacementCorpse == null
-                    && (!anySpec || FallbackOnSpecFail)
+                    && (!anySpec
+                        || FallbackOnSpecFail)
                     && UD_FleshGolems_NecromancySystem.IsReanimatableCorpse(corpseToReplace.GetBlueprint()))
                 {
                     if (!corpseToReplace.TryGetPart(out UD_FleshGolems_PastLife pastLifePart) || !pastLifePart.Init)
-                    {
                         pastLifePart = corpseToReplace.RequirePart<UD_FleshGolems_PastLife>().Initialize();
-                    }
+
                     if (pastLifePart.Corpse?.CorpseBlueprint is string pastLifeCorpseBlueprint
                         && pastLifeCorpseBlueprint != corpseToReplace.Blueprint
                         && !pastLifeCorpseBlueprint.GetGameObjectBlueprint().HasPart(nameof(ReplaceObject)))
-                    {
                         replacementCorpse = GameObjectFactory.Factory.CreateObject(pastLifeCorpseBlueprint);
-                    }
                     else
                     if (pastLifePart.GetBlueprint().TryGetCorpseBlueprint(out pastLifeCorpseBlueprint)
                         && pastLifeCorpseBlueprint != corpseToReplace.Blueprint
                         && !pastLifeCorpseBlueprint.GetGameObjectBlueprint().HasPart(nameof(ReplaceObject)))
-                    {
                         replacementCorpse = GameObjectFactory.Factory.CreateObject(pastLifeCorpseBlueprint);
-                    }
                 }
                 if (replacementCorpse != null)
                 {
@@ -193,13 +187,9 @@ namespace XRL.World.Parts
                         && replacementCorpse.TryGetPart(out UD_FleshGolems_CorpseReanimationHelper newCorpseReanimationHelper))
                     {
                         if (oldCorpseReanimationHelper.AlwaysAnimate)
-                        {
                             doReplacement = newCorpseReanimationHelper.Animate() && GameObject.Validate(ref replacementCorpse);
-                        }
                         else
-                        {
                             doReplacement = true;
-                        }
                     }
                     if (doReplacement)
                     {
