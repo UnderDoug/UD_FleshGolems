@@ -3,7 +3,7 @@
 
   <quest Name="You Raise Me Up" Level="20" System="UD_FleshGolems_YouRaiseMeUpQuestSystem"
          ID="UD_FleshGolems You Raise Me Up"
-         Factions="Newly Sentient Beings" Reputation="250"
+         Factions="Previously Sentient Beings" Reputation="250"
          Accomplishment="Conspiring with a &quot;scientist&quot; most mad, you broke &quot;important&quot; scientfic discovery into the nature of life and death."
          Hagiograph="Blessed be, for eternity, the name =name=, who revolutionized sience as it was known to all denizens of Qud! With the aid of =player.possessive= loyal servant, =name= discovered the secrets of life and death, an achievement thought impossible even by the Saads of old!"
          HagiographCategory="DoesSomethingRad"

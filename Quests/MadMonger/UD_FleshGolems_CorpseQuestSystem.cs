@@ -28,6 +28,8 @@ namespace XRL.World.QuestManagers
 
         public static string QuestGiverBlueprint = "UD_FleshGolems Mad Monger";
 
+        public const string PREVIOUSLY_SENTIENT_BEINGS = "Previously Sentient Beings";
+
         public static List<string> SpeciesExclusions => new()
         {
             "robot",
@@ -63,7 +65,9 @@ namespace XRL.World.QuestManagers
 
         public string MyQuestID;
 
-        public QuestStep ParentQuestStep => (ParentQuest == null || ParentQuest.StepsByID.IsNullOrEmpty()) ? null : ParentQuest.StepsByID["UD_FleshGolems I'm dead serious!"];
+        public QuestStep ParentQuestStep => (ParentQuest != null && !ParentQuest.StepsByID.IsNullOrEmpty())
+            ? ParentQuest.StepsByID["UD_FleshGolems I'm dead serious!"]
+            : null;
 
         public List<UD_FleshGolems_CorpseQuestStep> Steps;
 
@@ -519,48 +523,50 @@ namespace XRL.World.QuestManagers
         {
             try
             {
-                var corpseQuestSystem = The.Game.RequireSystem<UD_FleshGolems_CorpseQuestSystem>();
-                corpseQuestSystem.ParentQuest = ParentQuest;
-                corpseQuestSystem.ParentSystem = ParentSystem;
-                corpseQuestSystem.Init();
-                Quest quest = new()
+                if (The.Game.RequireSystem<UD_FleshGolems_CorpseQuestSystem>() is var corpseQuestSystem)
                 {
-                    ID = "UD_FleshGolems " + QuestName,
-                    System = corpseQuestSystem,
-                    Name = QuestName,
-                    Level = 20,
-                    Factions = "Newly Sentient Beings",
-                    Reputation = "100",
-                    Finished = false,
-                    Accomplishment = "Conspiring with a \"scientist\" most mad, you broke \"important\" scientfic discovery into the nature of life and death.",
-                    Hagiograph = "Forget not the bloody " + Calendar.GetDay() + " of darkest " + Calendar.GetMonth() + ", when =name= demanded of =pronouns.possessive= loyal servant, that he take the first born babe of every denizen of Bethesda Susa in recompence for the sins of the Saads of old!",
-                    HagiographCategory = "DoesSomethingRad",
-                    StepsByID = new Dictionary<string, QuestStep>()
-                };
-                corpseQuestSystem.MyQuestID = quest.ID;
-                for (int i = 0; i < corpseQuestSystem.Steps.Count; i++)
-                {
-                    QuestStep questStep = new()
+                    corpseQuestSystem.ParentQuest = ParentQuest;
+                    corpseQuestSystem.ParentSystem = ParentSystem;
+                    corpseQuestSystem.Init();
+                    Quest quest = new()
                     {
-                        ID = Guid.NewGuid().ToString(),
-                        Name = corpseQuestSystem.Steps[i].Name,
+                        ID = "UD_FleshGolems " + QuestName,
+                        System = corpseQuestSystem,
+                        Name = QuestName,
+                        Level = 20,
+                        Factions = PREVIOUSLY_SENTIENT_BEINGS,
+                        Reputation = "100",
                         Finished = false,
-                        Text = corpseQuestSystem.Steps[i].Text,
-                        XP = 0,
-                        Awarded = true,
+                        Accomplishment = "Conspiring with a \"scientist\" most mad, you broke \"important\" scientfic discovery into the nature of life and death.",
+                        Hagiograph = "Forget not the bloody " + Calendar.GetDay() + " of darkest " + Calendar.GetMonth() + ", when =name= demanded of =pronouns.possessive= loyal servant, that he take the first born babe of every denizen of Bethesda Susa in recompence for the sins of the Saads of old!",
+                        HagiographCategory = "DoesSomethingRad",
+                        StepsByID = new Dictionary<string, QuestStep>()
                     };
-                    corpseQuestSystem.Steps[i].Name = questStep.ID;
-                    quest.StepsByID.Add(questStep.ID, questStep);
-                }
+                    corpseQuestSystem.MyQuestID = quest.ID;
+                    for (int i = 0; i < corpseQuestSystem.Steps.Count; i++)
+                    {
+                        QuestStep questStep = new()
+                        {
+                            ID = Guid.NewGuid().ToString(),
+                            Name = corpseQuestSystem.Steps[i].Name,
+                            Finished = false,
+                            Text = corpseQuestSystem.Steps[i].Text,
+                            XP = 0,
+                            Awarded = true,
+                        };
+                        corpseQuestSystem.Steps[i].Name = questStep.ID;
+                        quest.StepsByID.Add(questStep.ID, questStep);
+                    }
 
-                if (corpseQuestSystem.Steps.Count > 0)
-                {
-                    The.Game.StartQuest(quest, corpseQuestSystem.InfluencerRefName);
-                    foreach (GameObject item in corpseQuestSystem.Player.GetInventory())
-                        corpseQuestSystem.CheckItem(item);
+                    if (corpseQuestSystem.Steps.Count > 0)
+                    {
+                        The.Game.StartQuest(quest, corpseQuestSystem.InfluencerRefName);
+                        foreach (GameObject item in corpseQuestSystem.Player.GetInventory())
+                            corpseQuestSystem.CheckItem(item);
 
-                    _ = corpseQuestSystem.Completable;
-                    return true;
+                        _ = corpseQuestSystem.Completable;
+                        return true;
+                    }
                 }
             }
             catch (Exception x)
@@ -575,7 +581,8 @@ namespace XRL.World.QuestManagers
             if (ParentQuest == null)
                 Game.TryGetQuest(UD_FleshGolems_YouRaiseMeUpQuestSystem.MongerQuestID, out ParentQuest);
 
-            if (ParentQuest != null && !ParentQuest.IsStepFinished(ParentQuestStep.ID))
+            if (ParentQuest != null
+                && !ParentQuest.IsStepFinished(ParentQuestStep.ID))
                 ParentQuest.FinishStep(ParentQuestStep);
 
             base.Finish();
@@ -653,6 +660,7 @@ namespace XRL.World.QuestManagers
             if (The.Game.HasQuest("UD_FleshGolems You Raise Me Up")
                 && The.Game.GetSystem<UD_FleshGolems_CorpseQuestSystem>() is UD_FleshGolems_CorpseQuestSystem corpseQuestSystem
                 && !corpseQuestSystem.Steps.IsNullOrEmpty())
+            {
                 foreach (UD_FleshGolems_CorpseQuestStep questStep in corpseQuestSystem.Steps)
                     if (questStep.Corpse is CorpseItem corpseItem)
                         for (int i = 0; i < 3; i++)
@@ -662,6 +670,7 @@ namespace XRL.World.QuestManagers
                                     .GetAdjacentCells(2)
                                     .GetRandomElementCosmetic(c => c.IsEmptyFor(corpseObject))
                                     .AddObject(corpseObject);
+            }
             else
                 Popup.Show("You don't have that quest. Spawn the Mad Monger first and start it.");
         }

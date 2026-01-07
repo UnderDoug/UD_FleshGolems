@@ -411,6 +411,7 @@ namespace XRL.World.Parts
 
         public override bool AllowStaticRegistration()
             => true;
+
         public override bool WantEvent(int ID, int Cascade)
             => base.WantEvent(ID, Cascade)
             || ID == ReplaceInContextEvent.ID
@@ -420,14 +421,11 @@ namespace XRL.World.Parts
         public override bool HandleEvent(ReplaceInContextEvent E)
         {
             if (E.Object == Killer)
-            {
                 Killer = E.Replacement;
-            }
             else
             if (E.Replacement == ParentObject)
-            {
                 DeathMemory = DeathMemory.CopyMemories(E.Replacement, DeathMemory);
-            }
+
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(OnDeathRemovalEvent E)
@@ -446,12 +444,13 @@ namespace XRL.World.Parts
         public override bool HandleEvent(GetExtraPhysicalFeaturesEvent E)
         {
             if (E.Object == ParentObject)
-            {
                 foreach (string evidence in GetEvidenceOfDeath() ?? new())
-                {
-                    E.Features.Add(evidence);
-                }
-            }
+                    E.Features.Add(
+                        item: evidence
+                            ?.StartReplace()
+                            ?.AddObject(ParentObject)
+                            ?.ToString());
+
             return base.HandleEvent(E);
         }
         public override bool HandleEvent(GetDebugInternalsEvent E)

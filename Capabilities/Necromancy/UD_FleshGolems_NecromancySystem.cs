@@ -376,12 +376,14 @@ namespace UD_FleshGolems.Capabilities
                 return new();
 
             List<GameObjectBlueprint> outputList = new();
-            if (!processedProductValue.StartsWith('@')
-                && processedProductValue.GetGameObjectBlueprint() is GameObjectBlueprint processedProductValueBlueprint
-                && (ProductFilter == null
-                    || ProductFilter(processedProductValueBlueprint))
-                && processedProductValueBlueprint.IsCorpse())
-                outputList.AddUnique(processedProductValueBlueprint);
+            if (!processedProductValue.StartsWith('@'))
+            {
+                if (processedProductValue.GetGameObjectBlueprint() is GameObjectBlueprint processedProductValueBlueprint
+                    && (ProductFilter == null
+                        || ProductFilter(processedProductValueBlueprint))
+                    && processedProductValueBlueprint.IsCorpse())
+                    outputList.AddUnique(processedProductValueBlueprint);
+            }
             else
                 foreach (string populationResult in GetDistinctFromPopulation(processedProductValue[1..], 15))
                     if (populationResult.GetGameObjectBlueprint() is GameObjectBlueprint processedProductBlueprint

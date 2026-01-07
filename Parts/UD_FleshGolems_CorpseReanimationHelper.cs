@@ -1285,7 +1285,7 @@ namespace XRL.World.Parts
                         {
                             sampleSourceEntity = GameObject.CreateSample(sourceBlueprint?.Name);
                             if (sampleSourceEntity != null)
-                                UD_FleshGolems_Reanimated.TryTransferInventoryToCorpse(sampleSourceEntity, Corpse);
+                                UD_FleshGolems_Reanimated.TryTransferInventoryToCorpse(sampleSourceEntity, Corpse, true);
                         }
                         catch (Exception x)
                         {

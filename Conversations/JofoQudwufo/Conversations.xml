@@ -103,8 +103,8 @@
     </start>
     
     <!-- Merges/overrides -->
-    <removenode ID="HowIDied" />
-    <removechoice ID="AskHowDied" />
+    <node ID="HowIDied" IfHaveItemWithID="0" />
+    <choice ID="AskHowDied" IfHaveItemWithID="0"  />
     
     <!-- Branching/sequential nodes -->
     <node ID="ReactWhoMadMonger" Inherits="AlwaysHaveChoices">

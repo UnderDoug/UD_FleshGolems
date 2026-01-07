@@ -297,7 +297,7 @@ namespace XRL.World.ObjectBuilders
             return Corpse != null;
         }
 
-        public static bool TransferInventory(GameObject Entity, GameObject Corpse)
+        public static bool TransferInventory(GameObject Entity, GameObject Corpse, bool SkipNatural)
         {
             if (Entity == null
                 || Corpse == null)
@@ -316,8 +316,12 @@ namespace XRL.World.ObjectBuilders
                 {
                     GameObject inventoryItem = entityInventory.Objects[0];
                     entityInventory.RemoveObject(inventoryItem);
-                    corpseInventory.AddObject(inventoryItem);
-                    any = true;
+                    if (!SkipNatural
+                        || !inventoryItem.IsNatural())
+                    {
+                        corpseInventory.AddObject(inventoryItem);
+                        any = true;
+                    }
                 }
                 catch (Exception x)
                 {
@@ -353,13 +357,13 @@ namespace XRL.World.ObjectBuilders
             entityInventory.Clear();
 
             return !anyToTransfer
-                || (any && EquipPastLifeItems(Corpse));
+                || (any && EquipPastLifeItems(Corpse, SkipNatural));
         }
 
         private static bool WantsToBeEquippedByReanimated(GameObject Item)
             => Item.HasStringProperty(ReanimatedEquipped);
 
-        public static bool EquipPastLifeItems(GameObject FrankenCorpse, bool RemoveProperty = false)
+        public static bool EquipPastLifeItems(GameObject FrankenCorpse, bool SkipNatural, bool RemoveProperty = false)
         {
             if (FrankenCorpse == null
                 || FrankenCorpse.Body is not Body frankenBody
@@ -370,8 +374,13 @@ namespace XRL.World.ObjectBuilders
 
             List<GameObject> itemsToEquip = frankenInventory.GetObjects(WantsToBeEquippedByReanimated);
 
+            bool isNotSkipNaturalOrNotNatural(GameObject Item)
+                => Item != null
+                && (!SkipNatural
+                    || !Item.IsNatural());
+
             bool any = false;
-            bool anyToEquip = (itemsToEquip?.Count ?? 0) > 1;
+            bool anyToEquip = itemsToEquip?.Any(isNotSkipNaturalOrNotNatural) ?? false;
 
             List<int> equippedBodyParts = new();
             bool bodyPartNotHasBeenEquipped(BodyPart BodyPart)
@@ -380,7 +389,8 @@ namespace XRL.World.ObjectBuilders
             foreach (GameObject inventoryItem in itemsToEquip)
                 try
                 {
-                    if (inventoryItem.GetStringProperty(ReanimatedEquipped) is string bodyPartType
+                    if (isNotSkipNaturalOrNotNatural(inventoryItem)
+                        && inventoryItem.GetStringProperty(ReanimatedEquipped) is string bodyPartType
                         && frankenBody.GetUnequippedPart(bodyPartType)?.Where(bodyPartNotHasBeenEquipped).ToList() is List<BodyPart> unequippedParts
                         && unequippedParts.GetRandomElementCosmetic() is BodyPart equippablePart)
                         any = FrankenCorpse.FireEvent(Event.New("CommandEquipObject", "Object", inventoryItem, "BodyPart", equippablePart)) || any;
@@ -398,12 +408,12 @@ namespace XRL.World.ObjectBuilders
             return any || !anyToEquip;
         }
 
-        public static bool TryTransferInventoryToCorpse(GameObject Entity, GameObject Corpse)
+        public static bool TryTransferInventoryToCorpse(GameObject Entity, GameObject Corpse, bool SkipNatural)
         {
             bool transferred;
             try
             {
-                transferred = TransferInventory(Entity, Corpse);
+                transferred = TransferInventory(Entity, Corpse, SkipNatural);
             }
             catch (Exception x)
             {
@@ -523,7 +533,7 @@ namespace XRL.World.ObjectBuilders
                 || !reanimationHelper.Animate(out Corpse))
                 return false;
 
-            if (!TryTransferInventoryToCorpse(Entity, Corpse))
+            if (!TryTransferInventoryToCorpse(Entity, Corpse, true))
             {
                 MetricsManager.LogModError(Utils.ThisMod, 
                     "Failed to " + nameof(ReplaceEntityWithCorpse) + " due to failure of " + nameof(TryTransferInventoryToCorpse));

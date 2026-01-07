@@ -358,17 +358,9 @@ namespace UD_FleshGolems.ModdedText
         [VariableObjectReplacer]
         public static string UD_xTag(DelegateContext Context)
         {
-            string parameters = null;
-            foreach (string parameter in Context.Parameters)
-            {
-                if (!parameters.IsNullOrEmpty())
-                    parameters += ", ";
-
-                parameters += parameter;
-            }
             string output = null;
             if (!Context.Parameters.IsNullOrEmpty()
-                && Context.Target is GameObject target)
+                && Context.Target is not null)
                 output = Context.Parameters.Count switch
                 {
                     0 or
