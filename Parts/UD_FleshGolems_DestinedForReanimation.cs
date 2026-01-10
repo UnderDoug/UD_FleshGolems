@@ -125,7 +125,7 @@ namespace XRL.World.Parts
                     new("died of poison", Were: false, Killed: "drank green goo", Killer: "", Method: ""),
                     new("died of poison", Were: false, Killed: "left a wound to fester", Killer: "", Method: ""),
                     new("died of poison", Were: false, Killed: "ate the wrong kind of mushroom", Killer: "", Method: ""),
-                    new("died of poison", Were: false, Killed: "didn't read the warning label", Killer: "", Method: ""),
+                    new("died of poison", Were: false, Killed: "failed to read the warning label", Killer: "", Method: ""),
                     new("died of poison", Were: false, Killed: "caught a poison gas grenade mkIII", By: false, Method: ""),
                     new("died of poison", Were: false, Killed: "mishandled a poison gas grenade mkIII", Killer: "", Method: ""),
                     new("died of poison", Were: false, Killed: "forgot to wear a gas mask", Killer: "", Method: ""),
