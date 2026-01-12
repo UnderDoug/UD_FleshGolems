@@ -99,9 +99,7 @@ namespace UD_FleshGolems.Startup
             return ".".ThisManyTimes(3 - (Periods % 4));
         }
         public static void SetLoadingStatusCaching()
-        {
-            Loading.SetLoadingStatus("Loading Corpses" + GetPeriods(CachingPeriods, out CachingPeriods));
-        }
+            => Loading.SetLoadingStatus("Loading Corpses" + GetPeriods(CachingPeriods, out CachingPeriods));
 
         public static Dictionary<string, T> RequireCachedEnumValueDictionary<T>()
             where T : struct, Enum
@@ -117,9 +115,8 @@ namespace UD_FleshGolems.Startup
         }
         private static List<Type> CachedEnumTypes = new();
         public static void CacheSomeEnumValueDictionaries()
-        {
-            RequireCachedEnumValueDictionary<TileMappingKeyword>();
-        }
+            => RequireCachedEnumValueDictionary<TileMappingKeyword>();
+
         public static void ClearSomeCachedEnumValueDictionaries()
         {
             foreach (Type enumBeingCached in CachedEnumTypes)
