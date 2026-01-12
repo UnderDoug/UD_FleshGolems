@@ -142,7 +142,7 @@ namespace XRL.World.Parts
                     new("bled to death", Killed: "eviscerated"),
                     new("bled to death", Killed: "vivsected"),
                     new("bled to death", Were: false, Killed: "got too many paper-cuts", Killer: "", Method: ""),
-                    new("bled to death", Were: false, Killed: "tried to remove a hangnail and went a little too far", Killer: "", Method: ""),
+                    new("bled to death", Were: false, Killed: "tried to remove a hangnail and went a little too far", Killing: "trying to remove a hangnail and going a little too far", Killer: "", Method: ""),
                     new("bled to death", Were: false, Killed: "had a nosebleed that just wouldn't stop", Killer: "", Method: ""),
                     new("bled to death", Were: false, Killed: "tried to befriend a leech", Killer: "", Method: ""),
                     new("bled to death", Were: false, Killed: "caught a falling =uD_RandomItem:inherits:BaseDagger=", Killer: "", Method: ""),
