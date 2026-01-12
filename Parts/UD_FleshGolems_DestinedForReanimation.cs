@@ -129,7 +129,7 @@ namespace XRL.World.Parts
                     new("died of poison", Were: false, Killed: "caught a poison gas grenade mkIII", By: false, Method: ""),
                     new("died of poison", Were: false, Killed: "mishandled a poison gas grenade mkIII", Killer: "", Method: ""),
                     new("died of poison", Were: false, Killed: "forgot to wear a gas mask", Killer: "", Method: ""),
-                    new("died of poison", Were: false, Killed: "had my gas mask tampered with"),
+                    new("died of poison", Were: false, Killed: "had =subject.possessive= gas mask tampered with"),
                 }
             },
             {   // Bleeding damage
