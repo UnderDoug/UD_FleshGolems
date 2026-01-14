@@ -223,8 +223,8 @@
     <removepart Name="Interesting" />
     <part Name="ConversationScript" ConversationID="tinker" />
     <!--part Name="ConversationScript" ConversationID="UD_FleshGolems Skref" /-->
-    <stat Name="Level" sValue="4-7" Value="" />
-    <stat Name="Hitpoints" sValue="8,6d2,(t)d3" Value="" />
+    <stat Name="Level" sValue="4-7" Value="0" />
+    <stat Name="Hitpoints" sValue="8,6d2,(t)d3" Value="0" />
     <removeinventoryobject Blueprint="Scratched Data Disk" />
     <removeproperty Name="WontSell" />
     <part Name="Corpse" CorpseBlueprint="SkrefCorpse" CorpseChance="100" />
