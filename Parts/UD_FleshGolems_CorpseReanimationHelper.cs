@@ -62,9 +62,10 @@ namespace XRL.World.Parts
                 ?.Select(m => m as MethodBase)
                 ?.ToList();
             foreach (MethodBase method in methodsToSilence)
-            {
                 Registry.Register(method, false);
-            }
+
+            if (AccessTools.PropertyGetter(typeof(UD_FleshGolems_CorpseReanimationHelper), nameof(TileMappings)) is MethodBase tileMappingsGetter)
+                Registry.Register(tileMappingsGetter, false);
             return Registry;
         }
 
@@ -85,7 +86,7 @@ namespace XRL.World.Parts
                     if (GameObjectFactory.Factory.GetBlueprintsInheritingFrom("UD_FleshGolems_BaseTileMappings", false) is var tileMappingBlueprints)
                         foreach (GameObjectBlueprint tileMappingsBlueprint in tileMappingBlueprints)
                         {
-                            Debug.Log(nameof(tileMappingsBlueprint), tileMappingsBlueprint, Indent: indent[1]);
+                            Debug.Log(nameof(tileMappingsBlueprint), tileMappingsBlueprint.Name, Indent: indent[1]);
                             if (!tileMappingsBlueprint.Tags.IsNullOrEmpty())
                                 foreach ((string name, string value) in tileMappingsBlueprint.Tags)
                                     if (name.StartsWith(REANIMATED_ALT_TILE_PROPTAG))
