@@ -40,7 +40,7 @@ namespace XRL.World.Parts
     {
         public const string BRAIN_IN_A_JAR_BLUEPRINT = "UD_FleshGolems Brain In A Jar Widget";
         public const string PASTLIFE_BLUEPRINT_PROPTAG = "UD_FleshGolems_PastLife_Blueprint";
-        public const string PREVIOUSLY_SENTIENT_BEINGS = "Previously Sentient Beings";
+        public const string PREVIOUSLY_SENTIENT_BEINGS = "UD_FleshGolems_PreviouslySentientBeings";
 
         public static List<string> PropTagsToNotRestore = new()
         {
@@ -161,8 +161,8 @@ namespace XRL.World.Parts
         public Skills Skills => BrainInAJar?.GetPart<Skills>();
 
         public Dictionary<string, string> Tags => Blueprint?.GetGameObjectBlueprint()?.Tags;
-        public Dictionary<string, string> StringProperties => BrainInAJar?._Property;
-        public Dictionary<string, int> IntProperties => BrainInAJar?._IntProperty;
+        public Dictionary<string, string> StringProperties => BrainInAJar?.Property;
+        public Dictionary<string, int> IntProperties => BrainInAJar?.IntProperty;
 
         public EffectRack Effects => BrainInAJar?._Effects;
 
@@ -224,12 +224,13 @@ namespace XRL.World.Parts
             bool Include0Weight = true,
             bool GuaranteeBlueprint = true)
         {
-            Dictionary<string, int> weightedBlueprints = NecromancySystem
+            var weightedBlueprints = NecromancySystem
                 ?.GetWeightedEntityStringsThisCorpseCouldBe(
                     CorpseBlueprint: CorpseBlueprint,
                     Include0Weight: Include0Weight,
                     Filter: IsNotBaseBlueprintOrPossiblyExcludedFromDynamicEncounters,
-                    DrillIntoInheritance: false);
+                    DrillIntoInheritance: false)
+                    ?? new();
 
             if (GuaranteeBlueprint
                 && weightedBlueprints.IsNullOrEmpty())
@@ -238,7 +239,8 @@ namespace XRL.World.Parts
                         CorpseBlueprint: CorpseBlueprint,
                         Include0Weight: Include0Weight,
                         Filter: IsNotBaseBlueprintOrPossiblyExcludedFromDynamicEncounters,
-                        DrillIntoInheritance: true);
+                        DrillIntoInheritance: true)
+                    ?? new();
 
             if (GuaranteeBlueprint
                 && weightedBlueprints.IsNullOrEmpty())
@@ -247,7 +249,8 @@ namespace XRL.World.Parts
                         CorpseBlueprint: CorpseBlueprint,
                         Include0Weight: Include0Weight,
                         Filter: IsNotBaseBlueprint,
-                        DrillIntoInheritance: false);
+                        DrillIntoInheritance: false)
+                    ?? new();
 
             if (weightedBlueprints.GetWeightedRandom(Include0Weight) is string entity)
                 return entity;
@@ -304,8 +307,8 @@ namespace XRL.World.Parts
                             && prevPastLife.DeepCopy(BrainInAJar, DeepCopyMapInventory) is UD_FleshGolems_PastLife prevPastLifeCopy)
                             BrainInAJar.AddPart(prevPastLifeCopy);
 
-                        BrainInAJar._Property = new(PastLife._Property);
-                        BrainInAJar._IntProperty = new(PastLife._IntProperty);
+                        BrainInAJar.Property = new(PastLife.Property);
+                        BrainInAJar.IntProperty = new(PastLife.IntProperty);
 
                         if (PastLife.IsPlayer()
                             || PastLife.IsPlayerDuringWorldGen())

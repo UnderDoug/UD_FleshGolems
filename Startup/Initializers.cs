@@ -160,31 +160,36 @@ namespace UD_FleshGolems.Startup
                     else
                         playerMutations.AddMutation(reanimationMutationEntries.GetRandomElementCosmetic().Value);
                 }
-                foreach (GameObjectBlueprint recoilerModel in GameObjectFactory.Factory.GetBlueprints(IsStaticRecoiler))
+                if (DebugEnableTestKitItems)
                 {
-                    GameObject recoilerObject = recoilerModel.createUnmodified();
-                    TinkeringHelpers.StripForTinkering(recoilerObject);
-                    recoilerObject.MakeUnderstood();
-
-                    GameObject antiMatterCell = GameObject.Create("Antimatter Cell", AutoMod: "ModRadioPowered");
-                    antiMatterCell.MakeUnderstood();
-
-                    if (recoilerObject.TryGetPart(out EnergyCellSocket cellSocket))
+                    foreach (GameObjectBlueprint recoilerModel in GameObjectFactory.Factory.GetBlueprints(IsStaticRecoiler))
                     {
-                        cellSocket.Cell = antiMatterCell;
-                        CellChangedEvent.Send(null, recoilerObject, null, antiMatterCell);
+                        GameObject recoilerObject = recoilerModel.createUnmodified();
+                        TinkeringHelpers.StripForTinkering(recoilerObject);
+                        recoilerObject.MakeUnderstood();
 
-                        if (cellSocket.Cell != antiMatterCell
-                            && GameObject.Validate(ref antiMatterCell))
-                            antiMatterCell.Obliterate();
+                        GameObject antiMatterCell = GameObject.Create("Antimatter Cell", AutoMod: "ModRadioPowered");
+                        antiMatterCell.MakeUnderstood();
+
+                        if (recoilerObject.TryGetPart(out EnergyCellSocket cellSocket))
+                        {
+                            cellSocket.Cell = antiMatterCell;
+                            CellChangedEvent.Send(null, recoilerObject, null, antiMatterCell);
+
+                            if (cellSocket.Cell != antiMatterCell
+                                && GameObject.Validate(ref antiMatterCell))
+                                antiMatterCell.Obliterate();
+                        }
+                        player.ReceiveObject(recoilerObject);
                     }
-                    player.ReceiveObject(recoilerObject);
+                    player.ReceiveObject("Floating Glowsphere");
+
+                    if (GameObject.Create("ScrapCape", AutoMod: "ModDisguise") is GameObject scrapCape)
+                        player.ReceiveObject(scrapCape);
                 }
-                player.ReceiveObject("Floating Glowsphere");
-                if (GameObject.Create("ScrapCape", AutoMod: "ModDisguise") is GameObject scrapCape)
-                    player.ReceiveObject(scrapCape);
             }
         }
+
         public static bool IsStaticRecoiler(GameObjectBlueprint Model)
             => Model.InheritsFrom("BaseRecoiler")
             && !Model.IsBaseBlueprint()

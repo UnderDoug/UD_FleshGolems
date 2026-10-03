@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <factions>
   <faction
-  Name="Previously Sentient Beings"
+  Name="UD_FleshGolems_PreviouslySentientBeings"
   DisplayName="previously sentient beings"
   Parent="Newly Sentient Beings"
   HistoricalSignificance="2"

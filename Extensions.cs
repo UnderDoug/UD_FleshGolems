@@ -582,6 +582,9 @@ namespace UD_FleshGolems
 
         public static T GetWeightedSeededRandom<T>(this Dictionary<T, int> WeightedList, string Seed, bool Include0Weight = true)
         {
+            if (WeightedList.IsNullOrEmpty())
+                return default;
+
             int maxWeight = 0;
             List<T> tickets = new(WeightedList.Keys);
             foreach (T ticket in tickets)

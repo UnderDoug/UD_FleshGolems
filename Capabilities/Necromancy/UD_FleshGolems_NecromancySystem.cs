@@ -716,7 +716,9 @@ namespace UD_FleshGolems.Capabilities
             Predicate<GameObjectBlueprint> Filter = null,
             bool DrillIntoInheritance = true)
             => RequireCorpseSheet(CorpseBlueprint)
-                ?.GetWeightedEntityNameList(Include0Weight, Filter, DrillIntoInheritance);
+                ?.GetWeightedEntityNameList(Include0Weight, Filter, DrillIntoInheritance)
+            ?? new()
+            ;
 
         public Dictionary<string, int> GetWeightedEntityStringsThisCorpseCouldBe(
             CorpseBlueprint CorpseBlueprint,

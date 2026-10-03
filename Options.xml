@@ -19,6 +19,19 @@
       The default is {{w|Disabled}}.
     </helptext>
   </option>
+  <option
+        ID="Option_UD_FleshGolems_DebugEnableTestKitItems"
+		    Requires="Option_UD_FleshGolems_DebugEnableTestKit==Yes"
+        DisplayText="{{UD_FleshGolems_reanimated|Re-animatable Corpses}}: Include some helpful items in the &quot;Test Kit&quot; for this mod."
+        Category="Debug"
+        Type="Checkbox"
+        Default="Yes">
+    <helptext>
+      When enabled, the player will start each run with a set of items designed to assist in the process of debugging, the primary of which are a copy each of every &quot;static&quot; recoiler, (that is, recoiler with a bespooke blueprint) pre-fitted with a radio-powered antimatter cell.
+
+      The default is {{w|Disabled}}.
+    </helptext>
+  </option>
   
   <option
         ID="Option_UD_FleshGolems_DebugEnableConversationDebugText"

@@ -10,6 +10,9 @@ using UD_FleshGolems.Capabilities;
 using UD_FleshGolems.Capabilities.Necromancy;
 using UD_FleshGolems.Events;
 using static UD_FleshGolems.Utils;
+using Qud.API;
+using XRL.Collections;
+using System.Linq;
 
 namespace XRL.World.Parts
 {
@@ -60,10 +63,9 @@ namespace XRL.World.Parts
                 GameObject replacementCorpse = null;
 
                 DieRoll specLevel = null;
-                List<string> specSpecies = null;
-                List<string> specFaction = null;
-                List<string> specTags = null;
-                string specPopulation = null;
+                using var specSpecies = ScopeDisposedList<string>.GetFromPool();
+                using var specFaction = ScopeDisposedList<string>.GetFromPool();
+                using var specTags = ScopeDisposedList<string>.GetFromPool();
                 bool anySpec = false;
                 if (!Level.IsNullOrEmpty())
                 {
@@ -76,28 +78,31 @@ namespace XRL.World.Parts
                         anySpec = false;
                     }
                 }
+
                 if (!Species.IsNullOrEmpty())
                 {
-                    specSpecies = Species.CachedCommaExpansion();
+                    specSpecies.AddRange(Species.CachedCommaExpansion());
                     anySpec = true;
                 }
                 if (!Faction.IsNullOrEmpty())
                 {
-                    specFaction = Faction.CachedCommaExpansion();
+                    specFaction.AddRange(Faction.CachedCommaExpansion());
                     anySpec = true;
                 }
                 if (!Tags.IsNullOrEmpty())
                 {
-                    specTags = Tags.CachedCommaExpansion();
+                    specTags.AddRange(Tags.CachedCommaExpansion());
                     anySpec = true;
                 }
 
+                string specPopulation = null;
                 if (!Population.IsNullOrEmpty()
                     && Population.CachedCommaExpansion()?.GetRandomElement() is string rolledPopulation)
                 {
                     specPopulation = rolledPopulation;
                     anySpec = true;
                 }
+
                 if (replacementCorpse == null
                     && !specPopulation.IsNullOrEmpty()
                     && PopulationManager.RollOneFrom(specPopulation).Blueprint.GetGameObjectBlueprint() is var populationEntityModel)
@@ -197,8 +202,38 @@ namespace XRL.World.Parts
                         return base.HandleEvent(E);
                     }
                 }
-                E.ReplacementObject = GameObject.CreateUnmodified("UD_FleshGolems ObliterateSelf Widget");
-                MetricsManager.LogModError(ThisMod, Name + " " + " failed to find appropriate replacement corpse for " + (ParentObject?.DebugName ?? "null object") + ".");
+
+                bool matchingSpec(GameObjectBlueprint blueprint)
+                {
+                    if (!specSpecies.IsNullOrEmpty())
+                    {
+                        if (blueprint.GetPropertyOrTag("Species") is not string species
+                            || species.IsNullOrEmpty()
+                            || !specSpecies.Contains(species))
+                            return false;
+                    }
+
+                    if (!specFaction.IsNullOrEmpty())
+                    {
+                        if (blueprint.GetPrimaryFaction() is not string faction
+                            || faction.IsNullOrEmpty()
+                            || !specFaction.Contains(faction))
+                            return false;
+                    }
+
+                    if (!specTags.IsNullOrEmpty()
+                        && specTags.Any(t => !blueprint.HasTag(t)))
+                        return false;
+
+                    return true;
+                }
+
+                E.ReplacementObject = (specLevel != null
+                        ? EncountersAPI.GetNonLegendaryCreatureAroundLevel(specLevel.Max(), matchingSpec)
+                        : EncountersAPI.GetANonLegendaryCreature(matchingSpec))
+                    ?? GameObject.CreateUnmodified("Dog");
+
+                ThisMod.Error($"{Name} failed to find appropriate replacement corpse for {ParentObject?.DebugName ?? "MISSING_OBJECT"}, fell back to {E.ReplacementObject?.DebugName ?? "MISSING_OBJECT"}.");
             }
             return base.HandleEvent(E);
         }

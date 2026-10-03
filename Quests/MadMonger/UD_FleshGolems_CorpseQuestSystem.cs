@@ -28,7 +28,7 @@ namespace XRL.World.QuestManagers
 
         public static string QuestGiverBlueprint = "UD_FleshGolems Mad Monger";
 
-        public const string PREVIOUSLY_SENTIENT_BEINGS = "Previously Sentient Beings";
+        public const string PREVIOUSLY_SENTIENT_BEINGS = "UD_FleshGolems_PreviouslySentientBeings";
 
         public static List<string> SpeciesExclusions => new()
         {

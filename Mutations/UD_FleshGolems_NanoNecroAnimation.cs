@@ -57,6 +57,17 @@ namespace XRL.World.Parts.Mutation
             PowerWordKillActivatedAbilityID = Guid.Empty;
         }
 
+        public override void FinalizeCopyLate(
+            GameObject Source,
+            bool CopyEffects,
+            bool CopyID,
+            Func<GameObject, GameObject> MapInv
+            )
+        {
+            base.FinalizeCopyLate(Source, CopyEffects, CopyID, MapInv);
+            ParentObject.RemovePart(this);
+        }
+
         public virtual Guid AddActivatedAbilityReanimateOne(GameObject GO, bool Force = false, bool Silent = false)
         {
             if (ReanimateOneActivatedAbilityID == Guid.Empty || Force)

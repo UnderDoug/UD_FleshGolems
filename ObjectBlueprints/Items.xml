@@ -48,8 +48,9 @@
   
   <object Name="UD_FleshGolems Corpse AlwaysReanimated Parts" >
     <part Name="UD_FleshGolems_CorpseReanimationHelper" AlwaysAnimate="true" />
-    <part Name="Brain" Factions="Previously Sentient Beings-100" />
-    <tag Name="AssociatedFactions" Value="Previously Sentient Beings" />
+    <part Name="Brain" Factions="UD_FleshGolems_PreviouslySentientBeings-100" />
+    <part Name="Description" Short="A once living mess writhes towards a manner of living again." />
+    <tag Name="AssociatedFactions" Value="UD_FleshGolems_PreviouslySentientBeings" />
   </object>
 
   <object Name="UD_FleshGolems Base Reanimated Corpse" Inherits="Corpse">
@@ -59,12 +60,14 @@
     <tag Name="Creature" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="BaseObject" Value="*noinherit" />
+    <tag Name="Plaidman_SSR_NoFactionCard" Value="true" />
   </object>
 
   <object Name="UD_FleshGolems Extradimensional Eligible Reanimated Corpse" Inherits="UD_FleshGolems Base Reanimated Corpse">
     <part Name="UD_FleshGolems_ReplaceCorpse" />
     <tag Name="ExcludeFromDynamicEncounters" Value="*noinherit" />
     <tag Name="BaseObject" Value="*noinherit" />
+    <tag Name="ExcludeFromVillagePopulations" />
   </object>
 
   <object Name="UD_FleshGolems Reanimated Corpse0" Inherits="UD_FleshGolems Extradimensional Eligible Reanimated Corpse">
