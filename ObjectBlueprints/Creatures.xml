@@ -135,7 +135,7 @@
   </object>
 
   <object Name="UD_FleshGolems BaseAncientEaterTrueKin" Inherits="TrueKinNPC">
-    <part Name="Render" DisplayName="acient eater" 
+    <part Name="Render" DisplayName="ancient eater" 
           Tile="Creatures/sw_eater_5.bmp" ColorString="&amp;Y" 
           TileColor="&amp;y" DetailColor="Y" RenderString="T" />
     <builder Name="RandomTile" Tiles="Creatures/sw_eater_1.bmp,Creatures/sw_eater_2.bmp,Creatures/sw_eater_3.bmp,Creatures/sw_eater_4.bmp,Creatures/sw_eater_5.bmp,Creatures/sw_eater_6.bmp,Creatures/sw_eater_9.bmp,Creatures/sw_eater_11.bmp,Creatures/sw_eater_14.bmp,Creatures/sw_eater_16.bmp,Creatures/sw_eater_18.bmp,Creatures/sw_eater_21.bmp,Creatures/sw_eater_23.bmp,Creatures/sw_eater_33.bmp" />
@@ -151,7 +151,7 @@
     <part Name="CyberneticsHasRandomImplants" ImplantChance="80" ImplantTable="Cybernetics8" LicensesAtLeast="6-42" />
   </object>
   <object Name="UD_FleshGolems BaseAncientEater" Inherits="NPC">
-    <part Name="Render" DisplayName="acient eater" Tile="Creatures/sw_eater_7.bmp" ColorString="&amp;Y" TileColor="&amp;y" DetailColor="Y" RenderString="T" />
+    <part Name="Render" DisplayName="ancient eater" Tile="Creatures/sw_eater_7.bmp" ColorString="&amp;Y" TileColor="&amp;y" DetailColor="Y" RenderString="T" />
     <builder Name="RandomTile" Tiles="Creatures/sw_eater_7.bmp,Creatures/sw_eater_8.bmp,Creatures/sw_eater_11.bmp,Creatures/sw_eater_12.bmp,Creatures/sw_eater_13.bmp,Creatures/sw_eater_14.bmp,Creatures/sw_eater_16.bmp,Creatures/sw_eater_17.bmp,Creatures/sw_eater_18.bmp,Creatures/sw_eater_19.bmp,Creatures/sw_eater_20.bmp,Creatures/sw_eater_21.bmp,Creatures/sw_eater_22.bmp,Creatures/sw_eater_23.bmp,Creatures/sw_eater_25.bmp,Creatures/sw_eater_26.bmp,Creatures/sw_eater_27.bmp,Creatures/sw_eater_28.bmp,Creatures/sw_eater_33.bmp" />
     <part Name="RandomColors" TileColor="y,w,Y" DetailColor="all" SetColorStringToDetailColor="true" />
     <part Name="Description" Short="A being whose likelness is unlike anything seen by living memory and yet familiar in a way that is hard shake. =subject.Subjective= =subject.verb:exist:afterprnoun= as an example; a prototype. A veritable could-be, or, perhaps, should-have-been. =subject.Possessive= eyes caress the environment, as =pronouns.subjective= =subject.verb:cast:afterpronoun= a curious gaze on a world made defamiliar." />
